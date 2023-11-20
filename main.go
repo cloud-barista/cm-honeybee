@@ -41,8 +41,6 @@ func init() {
 
 func end() {
 	logger.CloseLogFile()
-
-	return
 }
 
 func main() {
