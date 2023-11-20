@@ -1,4 +1,7 @@
-.vscode/
-/vendor
-/_venodr-*
+cm-honeybee
+coverage.out
+
 .idea/
+.vscode/
+
+*.log
