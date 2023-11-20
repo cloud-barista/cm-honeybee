@@ -5,6 +5,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/common"
 	"github.com/cloud-barista/cm-honeybee/lib/config"
 	"github.com/jollaman999/utils/logger"
+	"github.com/jollaman999/utils/syscheck"
 	"log"
 	"os"
 	"os/signal"
@@ -13,7 +14,12 @@ import (
 )
 
 func init() {
-	err := config.PrepareConfigs()
+	err := syscheck.CheckRoot()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	err = config.PrepareConfigs()
 	if err != nil {
 		log.Fatalln(err)
 	}
