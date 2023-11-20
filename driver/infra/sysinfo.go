@@ -8,7 +8,7 @@ import (
 	"github.com/zcalusic/sysinfo"
 )
 
-func print_all_struct() {
+func printAllStruct() {
 	var si sysinfo.SysInfo
 	si.GetSysInfo()
 	data, err := json.MarshalIndent(&si, "", "  ")
@@ -18,7 +18,7 @@ func print_all_struct() {
 	fmt.Println(string(data))
 }
 
-func print_custom_info() {
+func printCustomInfo() {
 	var si sysinfo.SysInfo
 
 	fmt.Println("CPU Info:")
@@ -74,12 +74,12 @@ func print_custom_info() {
 
 }
 
-func Example_sysinfo() {
+func ExampleSysInfo() {
 	fmt.Println("### Print All of sysinfo strcut\n")
-	print_all_struct()
+	printAllStruct()
 	fmt.Println("###############\n")
 	fmt.Println("### Print Custom sysinfo\n")
-	print_custom_info()
+	printCustomInfo()
 	fmt.Println("###############\n")
 
 }

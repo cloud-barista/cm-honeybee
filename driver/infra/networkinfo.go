@@ -8,7 +8,7 @@ import (
 	"github.com/moxspec/moxspec/bonding"
 )
 
-func print_net_all_struct() {
+func printNetAllStruct() {
 	// var si sysinfo.SysInfo
 	// si.GetSysInfo()
 	// data, err := json.MarshalIndent(&si, "", "  ")
@@ -81,9 +81,9 @@ func print_net_all_struct() {
 
 // }
 
-func Example_netinfo() {
+func ExampleNetInfo() {
 	fmt.Println("### Print All of sysinfo strcut\n")
-	print_net_all_struct()
+	printNetAllStruct()
 	fmt.Println("###############\n")
 	// fmt.Println("### Print Custom sysinfo\n")
 	// print_custom_info()
