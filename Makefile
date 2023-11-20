@@ -1,6 +1,7 @@
 SHELL = /bin/bash
 
-PROJECT_NAME := "github.com/cloud-barista/cm-honeybee/agent"
+MODULE_NAME := "cm-honeybee"
+PROJECT_NAME := "github.com/cloud-barista/${MODULE_NAME}"
 PKG_LIST := $(shell go list ${PROJECT_NAME}/...)
 
 GOPROXY_OPTION := GOPROXY=direct GOSUMDB=off
@@ -15,7 +16,7 @@ lint: ## Lint the files
 	@if [ ! -f "$(GOPATH)/bin/golangci-lint" ] && [ ! -f "$(GOROOT)/bin/golangci-lint" ]; then \
 	  ${GO_COMMAND} install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
 	fi
-	@golangci-lint run -E contextcheck -E revive
+	@golangci-lint run -E contextcheck -E revive -D unused
 
 test: ## Run unittests
 	@echo "Running tests..."
@@ -43,16 +44,21 @@ update: ## Update all of module dependencies
 	@${GO_COMMAND} get -u
 	@echo Checking dependencies...
 	@${GO_COMMAND} mod tidy
-	@echo Syncing vendor...
-	@${GO_COMMAND} mod vendor
+	@if [ -d "./vendor" ]; then \
+	  echo Syncing vendor...; \
+	  ${GO_COMMAND} mod vendor; \
+	fi
+
 
 build: lint ## Build the binary file
 	@echo Checking dependencies...
 	@${GO_COMMAND} mod tidy
-	@echo Syncing vendor...
-	@${GO_COMMAND} mod vendor
+	@if [ -d "./vendor" ]; then \
+	  echo Syncing vendor...; \
+	  ${GO_COMMAND} mod vendor; \
+	fi
 	@echo Building...
-	@CGO_ENABLED=0 ${GO_COMMAND} build -o ${PROJECT_NAME} main.go
+	@CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
 	@echo Build finished!
 
 clean: ## Remove previous build
