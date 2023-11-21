@@ -2,13 +2,24 @@ package infra
 
 import "github.com/cloud-barista/cm-honeybee/gpu/nvidia"
 
-func GetNVIDIAGpuInfo() (nvidia.AllGPUStats, error) {
-	var stats nvidia.AllGPUStats
+type GPU struct {
+	NVIDIA []nvidia.NVIDIA `json:"nvidia"`
+}
 
+func GetNVIDIAGpuInfo() (GPU, error) {
 	nv, err := nvidia.NewNVReader()
 	if err != nil {
-		return stats, err
+		return GPU{}, err
 	}
 
-	return nv.GPUStats()
+	nvStats, err := nv.GPUStats()
+	if err != nil {
+		return GPU{}, err
+	}
+
+	gpu := GPU{
+		NVIDIA: nvStats,
+	}
+
+	return gpu, nil
 }

@@ -2,12 +2,11 @@ package infra
 
 import (
 	"encoding/json"
-	"github.com/cloud-barista/cm-honeybee/gpu/nvidia"
 )
 
 type Infra struct {
-	Compute Compute            `json:"compute"`
-	GPU     nvidia.AllGPUStats `json:"gpu"`
+	Compute Compute `json:"compute"`
+	GPU     GPU     `json:"gpu"`
 }
 
 func GetInfraInfo() (string, error) {
