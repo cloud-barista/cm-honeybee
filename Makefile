@@ -6,6 +6,7 @@ PKG_LIST := $(shell go list ${PROJECT_NAME}/...)
 
 GOPROXY_OPTION := GOPROXY=direct GOSUMDB=off
 GO_COMMAND := ${GOPROXY_OPTION} go
+GOPATH := $(shell go env GOPATH)
 
 .PHONY: all lint test race coverage coverhtml gofmt update build clean help
 
@@ -13,7 +14,7 @@ all: build
 
 lint: ## Lint the files
 	@echo "Running linter..."
-	@if [ ! -f "$(GOPATH)/bin/golangci-lint" ] && [ ! -f "$(GOROOT)/bin/golangci-lint" ]; then \
+	@if [ ! -f "${GOPATH}/bin/golangci-lint" ] && [ ! -f "$(GOROOT)/bin/golangci-lint" ]; then \
 	  ${GO_COMMAND} install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
 	fi
 	@golangci-lint run -E contextcheck -E revive -D unused
@@ -44,22 +45,18 @@ update: ## Update all of module dependencies
 	@${GO_COMMAND} get -u
 	@echo Checking dependencies...
 	@${GO_COMMAND} mod tidy
-	@if [ -d "./vendor" ]; then \
-	  echo Syncing vendor...; \
-	  ${GO_COMMAND} mod vendor; \
-	fi
-
 
 build: lint ## Build the binary file
 	@echo Checking dependencies...
 	@${GO_COMMAND} mod tidy
-	@if [ -d "./vendor" ]; then \
-	  echo Syncing vendor...; \
-	  ${GO_COMMAND} mod vendor; \
-	fi
 	@echo Building...
-	@CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
+# go-nvml has issue with go1.21.x
+	@GOTOOLCHAIN=go1.20.11 go build -o ${MODULE_NAME} main.go
 	@echo Build finished!
+
+install:
+	@sudo cp -R ./libc-2.27 /libc-2.27
+	@sudo cp ${MODULE_NAME} /usr/bin/${MODULE_NAME}
 
 clean: ## Remove previous build
 	@echo Cleaning build...
