@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"github.com/cloud-barista/cm-honeybee/api/echo"
 	"github.com/cloud-barista/cm-honeybee/common"
-	"github.com/cloud-barista/cm-honeybee/driver/infra"
 	"github.com/cloud-barista/cm-honeybee/lib/config"
 	"github.com/jollaman999/utils/logger"
 	"github.com/jollaman999/utils/syscheck"
@@ -37,9 +35,6 @@ func init() {
 	}
 
 	logger.Println(logger.INFO, false, "Agent UUID: "+common.AgentUUID)
-
-	infra, _ := infra.GetInfraInfo()
-	fmt.Println(infra)
 
 	echo.Init()
 }
