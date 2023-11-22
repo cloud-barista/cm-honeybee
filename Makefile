@@ -54,10 +54,6 @@ build: lint ## Build the binary file
 	@GOTOOLCHAIN=go1.20.11 go build -o ${MODULE_NAME} main.go
 	@echo Build finished!
 
-install:
-	@sudo cp -R ./libc-2.27 /libc-2.27
-	@sudo cp ${MODULE_NAME} /usr/bin/${MODULE_NAME}
-
 clean: ## Remove previous build
 	@echo Cleaning build...
 	@rm -f coverage.out
