@@ -6,7 +6,7 @@ type GPU struct {
 	NVIDIA []nvidia.NVIDIA `json:"nvidia"`
 }
 
-func GetNVIDIAGpuInfo() (GPU, error) {
+func GetGPUInfo() (GPU, error) {
 	nvStats, err := nvidia.QueryGPU()
 	if err != nil {
 		return GPU{}, err

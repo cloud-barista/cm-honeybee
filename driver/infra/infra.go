@@ -14,7 +14,7 @@ func GetInfraInfo() (*Infra, error) {
 		return nil, err
 	}
 
-	infra.GPU, err = GetNVIDIAGpuInfo()
+	infra.GPU, err = GetGPUInfo()
 	if err != nil {
 		return nil, err
 	}
