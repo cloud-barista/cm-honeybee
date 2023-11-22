@@ -7,12 +7,7 @@ type GPU struct {
 }
 
 func GetNVIDIAGpuInfo() (GPU, error) {
-	nv, err := nvidia.NewNVReader()
-	if err != nil {
-		return GPU{}, err
-	}
-
-	nvStats, err := nv.GPUStats()
+	nvStats, err := nvidia.QueryGPU()
 	if err != nil {
 		return GPU{}, err
 	}

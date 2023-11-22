@@ -50,8 +50,7 @@ build: lint ## Build the binary file
 	@echo Checking dependencies...
 	@${GO_COMMAND} mod tidy
 	@echo Building...
-# go-nvml has issue with go1.21.x
-	@GOTOOLCHAIN=go1.20.11 go build -o ${MODULE_NAME} main.go
+	@CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
 	@echo Build finished!
 
 clean: ## Remove previous build

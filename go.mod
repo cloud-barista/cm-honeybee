@@ -3,7 +3,6 @@ module github.com/cloud-barista/cm-honeybee
 go 1.21
 
 require (
-	github.com/NVIDIA/go-nvml v0.12.0-1
 	github.com/google/uuid v1.4.0
 	github.com/jollaman999/utils v1.0.2
 	github.com/labstack/echo/v4 v4.11.3
