@@ -1,8 +1,6 @@
 package infra
 
 import (
-	"github.com/shirou/gopsutil/v3/cpu"
-	"github.com/shirou/gopsutil/v3/host"
 	"github.com/zcalusic/sysinfo"
 )
 
@@ -34,13 +32,13 @@ type _OS struct {
 }
 
 type CPU struct {
-	Vendor  string  `json:"vendor"`
-	Model   string  `json:"model"`
-	Speed   float64 `json:"speed"`   // MHz
-	Cache   uint    `json:"cache"`   // KB
-	Cpus    uint    `json:"cpus"`    // ea
-	Cores   uint    `json:"cores"`   // ea
-	Threads uint    `json:"threads"` // ea
+	Vendor  string `json:"vendor"`
+	Model   string `json:"model"`
+	Speed   uint   `json:"speed"`   // MHz
+	Cache   uint   `json:"cache"`   // KB
+	Cpus    uint   `json:"cpus"`    // ea
+	Cores   uint   `json:"cores"`   // ea
+	Threads uint   `json:"threads"` // ea
 }
 
 type Memory struct {
@@ -75,16 +73,6 @@ func GetComputeInfo() (Compute, error) {
 	var si sysinfo.SysInfo
 	si.GetSysInfo()
 
-	c, err := cpu.Info()
-	if err != nil {
-		return compute, nil
-	}
-
-	h, err := host.Info()
-	if err != nil {
-		return compute, nil
-	}
-
 	var storage []Storage
 	for _, s := range si.Storage {
 		storage = append(storage, Storage{
@@ -113,7 +101,7 @@ func GetComputeInfo() (Compute, error) {
 			},
 			Node: Node{
 				Hostname:   si.Node.Hostname,
-				Hypervisor: h.VirtualizationSystem,
+				Hypervisor: si.Node.Hypervisor,
 				Machineid:  si.Node.MachineID,
 				Timezone:   si.Node.Timezone,
 			},
@@ -122,7 +110,7 @@ func GetComputeInfo() (Compute, error) {
 			CPU: CPU{
 				Vendor:  si.CPU.Vendor,
 				Model:   si.CPU.Model,
-				Speed:   c[0].Mhz,
+				Speed:   si.CPU.Speed,
 				Cache:   si.CPU.Cache,
 				Cpus:    si.CPU.Cpus,
 				Cores:   si.CPU.Cores,
