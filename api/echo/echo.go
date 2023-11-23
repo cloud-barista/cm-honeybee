@@ -15,5 +15,5 @@ func Init() {
 	SoftwreInfo()
 
 	err := e.Start(":" + config.CMHoneybeeConfig.CMHoneybeeAgent.Listen.Port)
-	logger.Panic(logger.ERROR, true, err)
+	logger.Panicln(logger.ERROR, true, err)
 }
