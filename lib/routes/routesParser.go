@@ -112,7 +112,7 @@ func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 }
 
 func linuxLittleEndianHexToNetIP(hex string) (net.IP, error) {
-	gateway := make(net.IP, 4)
+	netIP := make(net.IP, 4)
 
 	// cast hex address to uint32
 	d, err := strconv.ParseInt(hex, 0, 64)
@@ -121,9 +121,9 @@ func linuxLittleEndianHexToNetIP(hex string) (net.IP, error) {
 	}
 	d32 := uint32(d)
 
-	binary.LittleEndian.PutUint32(gateway, d32)
+	binary.LittleEndian.PutUint32(netIP, d32)
 
-	return gateway, nil
+	return netIP, nil
 }
 
 // getLinuxGateways parses the route file located at /proc/net/route
