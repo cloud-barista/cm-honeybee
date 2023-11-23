@@ -1,6 +1,8 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"github.com/cloud-barista/cm-honeybee/common"
 	"github.com/jollaman999/utils/fileutil"
 	"gopkg.in/yaml.v3"
@@ -53,7 +55,9 @@ func readCMHoneybeeAgentConfigFile() error {
 
 	data, err := os.ReadFile(configDir + "/" + cmHoneybeeConfigFile)
 	if err != nil {
-		return err
+		return errors.New("can't find the config file (" + cmHoneybeeConfigFile + ")" + fmt.Sprintln() +
+			"Must be placed in 'conf' directory in user's home directory or 'conf' directory where running the binary " +
+			"or 'conf' directory where placed in the path of '" + common.ModuleROOT + "' environment variable")
 	}
 
 	err = yaml.Unmarshal(data, &CMHoneybeeConfig)
