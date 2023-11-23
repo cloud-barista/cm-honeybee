@@ -91,7 +91,7 @@ func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 			routes = append(routes, RouteStruct{
 				Destination: fields[destinationField],
 				Netmask:     fields[netmaskField],
-				NextHop:     fields[gatewayField],
+				NextHop:     strings.ToLower(fields[gatewayField]),
 				Interface:   fields[interfaceField],
 			})
 		}
@@ -218,11 +218,16 @@ func GetLinuxRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 			continue
 		}
 
+		nextHopStr := nextHop.String()
+		if nextHop.String() == "0.0.0.0" {
+			nextHopStr = "on-link"
+		}
+
 		routes = append(routes, RouteStruct{
 			Interface:   tokens[interfaceField],
 			Destination: destination.String(),
 			Netmask:     netmask.String(),
-			NextHop:     nextHop.String(),
+			NextHop:     nextHopStr,
 		})
 	}
 
