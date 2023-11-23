@@ -5,6 +5,7 @@ import (
 	"github.com/jollaman999/utils/fileutil"
 	"gopkg.in/yaml.v3"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -39,7 +40,13 @@ func readCMHoneybeeAgentConfigFile() error {
 		return err
 	}
 
-	configDir := "./conf"
+	ex, err := os.Executable()
+	if err != nil {
+		return err
+	}
+
+	exPath := filepath.Dir(ex)
+	configDir := exPath + "/conf"
 	if !fileutil.IsExist(configDir) {
 		configDir = common.RootPath + "/conf"
 	}
