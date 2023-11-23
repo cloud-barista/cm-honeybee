@@ -132,7 +132,7 @@ func GetDEBs() ([]DEB, error) {
 
 	fd, err := os.Open(dpkgStatusFile)
 	if err != nil {
-		return nil, err
+		return []DEB{}, err
 	}
 	defer func() {
 		_ = fd.Close()
