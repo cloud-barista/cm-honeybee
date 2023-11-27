@@ -2,6 +2,7 @@ package software
 
 import (
 	"github.com/docker/docker/api/types"
+	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/host"
 )
 
@@ -10,10 +11,16 @@ type Docker struct {
 	//Images     []types.ImageMetadata
 }
 
+type Podman struct {
+	Containers []types.Container
+	//Images     []types.ImageMetadata
+}
+
 type Software struct {
 	DEB    []DEB  `json:"deb"`
 	RPM    []RPM  `json:"rpm"`
 	Docker Docker `json:"docker"`
+	Podman Podman `json:"podman"`
 }
 
 func GetSoftwareInfo() (*Software, error) {
@@ -40,15 +47,25 @@ func GetSoftwareInfo() (*Software, error) {
 		}
 	}
 
-	containers, err := GetContainers()
+	dockerContainers, err := GetDockerContainers()
 	if err != nil {
-		return nil, err
+		logger.Print(logger.DEBUG, true, "DOCKER: "+err.Error())
+	}
+
+	podmanContainers, err := GetPodmanContainers()
+	if err != nil {
+		logger.Print(logger.DEBUG, true, "PODMAN: "+err.Error())
 	}
 
 	software := Software{
-		DEB:    deb,
-		RPM:    rpm,
-		Docker: Docker{Containers: containers},
+		DEB: deb,
+		RPM: rpm,
+		Docker: Docker{
+			Containers: dockerContainers,
+		},
+		Podman: Podman{
+			Containers: podmanContainers,
+		},
 	}
 
 	return &software, nil

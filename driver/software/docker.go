@@ -4,17 +4,20 @@ import (
 	"context"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/jollaman999/utils/logger"
 )
 
-func GetContainers() ([]types.Container, error) {
+func GetDockerContainers() ([]types.Container, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		return nil, err
+		logger.Print(logger.DEBUG, true, "DOCKER: "+err.Error())
+		return []types.Container{}, err
 	}
 
 	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
 	if err != nil {
-		return nil, err
+		logger.Print(logger.ERROR, true, "DOCKER: "+err.Error())
+		return []types.Container{}, err
 	}
 
 	return containers, nil

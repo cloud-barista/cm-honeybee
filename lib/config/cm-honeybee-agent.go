@@ -102,7 +102,8 @@ func readCMHoneybeeAgentConfigFile() error {
 	data, err := os.ReadFile(configDir + "/" + cmHoneybeeConfigFile)
 	if err != nil {
 		return errors.New("can't find the config file (" + cmHoneybeeConfigFile + ")" + fmt.Sprintln() +
-			"Must be placed in 'conf' directory in user's home directory or 'conf' directory where running the binary " +
+			"Must be placed in '." + strings.ToLower(common.ModuleName) + "/conf' directory " +
+			"under user's home directory or 'conf' directory where running the binary " +
 			"or 'conf' directory where placed in the path of '" + common.ModuleROOT + "' environment variable")
 	}
 
