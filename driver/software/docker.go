@@ -11,7 +11,7 @@ import (
 func isRealDocker(cli *client.Client) (bool, error) {
 	info, err := cli.Info(context.Background())
 	if err != nil {
-		logger.Print(logger.ERROR, true, "DOCKER: Failed to get information of the docker.")
+		logger.Println(logger.ERROR, true, "DOCKER: Failed to get information of the docker.")
 		return false, err
 	}
 
@@ -26,23 +26,23 @@ func isRealDocker(cli *client.Client) (bool, error) {
 func GetDockerContainers() ([]types.Container, error) {
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		logger.Print(logger.DEBUG, true, "DOCKER: "+err.Error())
+		logger.Println(logger.DEBUG, true, "DOCKER: "+err.Error())
 		return []types.Container{}, err
 	}
 
 	yes, err := isRealDocker(cli)
 	if err != nil {
-		logger.Print(logger.ERROR, true, "DOCKER: "+err.Error())
+		logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
 		return []types.Container{}, err
 	}
 	if !yes {
-		logger.Print(logger.INFO, true, "DOCKER: Docker not found.")
+		logger.Println(logger.INFO, true, "DOCKER: Docker not found.")
 		return []types.Container{}, nil
 	}
 
 	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
 	if err != nil {
-		logger.Print(logger.ERROR, true, "DOCKER: "+err.Error())
+		logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
 		return []types.Container{}, err
 	}
 

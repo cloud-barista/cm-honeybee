@@ -49,12 +49,12 @@ func GetSoftwareInfo() (*Software, error) {
 
 	dockerContainers, err := GetDockerContainers()
 	if err != nil {
-		logger.Print(logger.DEBUG, true, "DOCKER: "+err.Error())
+		logger.Println(logger.DEBUG, true, "DOCKER: "+err.Error())
 	}
 
 	podmanContainers, err := GetPodmanContainers()
 	if err != nil {
-		logger.Print(logger.DEBUG, true, "PODMAN: "+err.Error())
+		logger.Println(logger.DEBUG, true, "PODMAN: "+err.Error())
 	}
 
 	software := Software{

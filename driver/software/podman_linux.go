@@ -72,19 +72,19 @@ func newPodmanClient() (*client.Client, error) {
 	err := checkPodman()
 	if err != nil {
 		errMsg := "Podman not found."
-		logger.Print(logger.DEBUG, true, "PODMAN: "+errMsg)
-		return nil, err
+		logger.Println(logger.DEBUG, true, "PODMAN: "+errMsg)
+		return nil, errors.New(errMsg)
 	}
 
 	err = startPodmanSocketService()
 	if err != nil {
-		logger.Print(logger.ERROR, true, "PODMAN: "+err.Error())
+		logger.Println(logger.ERROR, true, "PODMAN: "+err.Error())
 		return nil, err
 	}
 
 	socketPath, err := getPodmanSocketPath()
 	if err != nil {
-		logger.Print(logger.ERROR, true, "PODMAN: "+err.Error())
+		logger.Println(logger.ERROR, true, "PODMAN: "+err.Error())
 		return nil, err
 	}
 
@@ -94,13 +94,13 @@ func newPodmanClient() (*client.Client, error) {
 		_ = os.Unsetenv(client.EnvOverrideHost)
 	}()
 	if err != nil {
-		logger.Print(logger.ERROR, true, "PODMAN: "+err.Error())
+		logger.Println(logger.ERROR, true, "PODMAN: "+err.Error())
 		return nil, err
 	}
 
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		logger.Print(logger.ERROR, true, "PODMAN: "+err.Error())
+		logger.Println(logger.ERROR, true, "PODMAN: "+err.Error())
 		return nil, err
 	}
 
