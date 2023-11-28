@@ -15,7 +15,7 @@ import (
 )
 
 type cmHoneybeeConfig struct {
-	CMHoneybeeAgent struct {
+	CMHoneybee struct {
 		Server struct {
 			Address string `yaml:"address"`
 			Timeout string `yaml:"timeout"`
@@ -30,11 +30,11 @@ var CMHoneybeeConfig cmHoneybeeConfig
 var cmHoneybeeConfigFile = "cm-honeybee.yaml"
 
 func checkCMHoneybeeAgentConfigFile() error {
-	if CMHoneybeeConfig.CMHoneybeeAgent.Server.Address == "" {
+	if CMHoneybeeConfig.CMHoneybee.Server.Address == "" {
 		return errors.New("config error: server.address is empty")
 	}
 
-	addrSplit := strings.Split(CMHoneybeeConfig.CMHoneybeeAgent.Server.Address, ":")
+	addrSplit := strings.Split(CMHoneybeeConfig.CMHoneybee.Server.Address, ":")
 	if len(addrSplit) < 2 {
 		return errors.New("config error: invalid server.address must be {IP or IPv6 or Domain}:{Port} form")
 	}
@@ -42,7 +42,7 @@ func checkCMHoneybeeAgentConfigFile() error {
 	if err != nil || port < 1 || port > 65535 {
 		return errors.New("config error: server.address has invalid port value")
 	}
-	addr, _ := strings.CutSuffix(CMHoneybeeConfig.CMHoneybeeAgent.Server.Address, ":"+strconv.Itoa(port))
+	addr, _ := strings.CutSuffix(CMHoneybeeConfig.CMHoneybee.Server.Address, ":"+strconv.Itoa(port))
 	_, err = netip.ParseAddr(addr)
 	if err != nil {
 		_, err = net.LookupIP(addr)
@@ -52,19 +52,19 @@ func checkCMHoneybeeAgentConfigFile() error {
 		}
 	}
 
-	if CMHoneybeeConfig.CMHoneybeeAgent.Server.Timeout == "" {
+	if CMHoneybeeConfig.CMHoneybee.Server.Timeout == "" {
 		return errors.New("config error: server.timeout is empty")
 	}
 
-	timeout, err := strconv.Atoi(CMHoneybeeConfig.CMHoneybeeAgent.Server.Timeout)
+	timeout, err := strconv.Atoi(CMHoneybeeConfig.CMHoneybee.Server.Timeout)
 	if err != nil || timeout < 1 {
 		return errors.New("config error: server.timeout has invalid value")
 	}
 
-	if CMHoneybeeConfig.CMHoneybeeAgent.Listen.Port == "" {
+	if CMHoneybeeConfig.CMHoneybee.Listen.Port == "" {
 		return errors.New("config error: listen.port is empty")
 	}
-	port, err = strconv.Atoi(CMHoneybeeConfig.CMHoneybeeAgent.Listen.Port)
+	port, err = strconv.Atoi(CMHoneybeeConfig.CMHoneybee.Listen.Port)
 	if err != nil || port < 1 || port > 65535 {
 		return errors.New("config error: listen.port has invalid value")
 	}

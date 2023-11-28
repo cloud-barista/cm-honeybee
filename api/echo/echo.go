@@ -14,6 +14,6 @@ func Init() {
 	InfraInfo()
 	SoftwreInfo()
 
-	err := e.Start(":" + config.CMHoneybeeConfig.CMHoneybeeAgent.Listen.Port)
+	err := e.Start(":" + config.CMHoneybeeConfig.CMHoneybee.Listen.Port)
 	logger.Panicln(logger.ERROR, true, err)
 }
