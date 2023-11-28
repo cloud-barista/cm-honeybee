@@ -31,42 +31,42 @@ var cmHoneybeeConfigFile = "cm-honeybee.yaml"
 
 func checkCMHoneybeeAgentConfigFile() error {
 	if CMHoneybeeConfig.CMHoneybee.Server.Address == "" {
-		return errors.New("config error: server.address is empty")
+		return errors.New("config error: cm-honeybee.server.address is empty")
 	}
 
 	addrSplit := strings.Split(CMHoneybeeConfig.CMHoneybee.Server.Address, ":")
 	if len(addrSplit) < 2 {
-		return errors.New("config error: invalid server.address must be {IP or IPv6 or Domain}:{Port} form")
+		return errors.New("config error: invalid cm-honeybee.server.address must be {IP or IPv6 or Domain}:{Port} form")
 	}
 	port, err := strconv.Atoi(addrSplit[len(addrSplit)-1])
 	if err != nil || port < 1 || port > 65535 {
-		return errors.New("config error: server.address has invalid port value")
+		return errors.New("config error: cm-honeybee.server.address has invalid port value")
 	}
 	addr, _ := strings.CutSuffix(CMHoneybeeConfig.CMHoneybee.Server.Address, ":"+strconv.Itoa(port))
 	_, err = netip.ParseAddr(addr)
 	if err != nil {
 		_, err = net.LookupIP(addr)
 		if err != nil {
-			return errors.New("config error: server.address has invalid address value " +
+			return errors.New("config error: cm-honeybee.server.address has invalid address value " +
 				"or can't find the domain (" + addr + ")")
 		}
 	}
 
 	if CMHoneybeeConfig.CMHoneybee.Server.Timeout == "" {
-		return errors.New("config error: server.timeout is empty")
+		return errors.New("config error: cm-honeybee.server.timeout is empty")
 	}
 
 	timeout, err := strconv.Atoi(CMHoneybeeConfig.CMHoneybee.Server.Timeout)
 	if err != nil || timeout < 1 {
-		return errors.New("config error: server.timeout has invalid value")
+		return errors.New("config error: cm-honeybee.server.timeout has invalid value")
 	}
 
 	if CMHoneybeeConfig.CMHoneybee.Listen.Port == "" {
-		return errors.New("config error: listen.port is empty")
+		return errors.New("config error: cm-honeybee.listen.port is empty")
 	}
 	port, err = strconv.Atoi(CMHoneybeeConfig.CMHoneybee.Listen.Port)
 	if err != nil || port < 1 || port > 65535 {
-		return errors.New("config error: listen.port has invalid value")
+		return errors.New("config error: cm-honeybee.listen.port has invalid value")
 	}
 
 	return nil
