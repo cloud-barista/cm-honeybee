@@ -319,7 +319,7 @@ func runNVIDIASmi(args []string) (string, error) {
 			output = []byte(err.Error())
 		}
 		errMsg := "NVIDIA-SMI: " + string(output)
-		logger.Println(logger.ERROR, true, errMsg)
+		logger.Println(logger.DEBUG, true, errMsg)
 		return string(output), errors.New(errMsg)
 	}
 

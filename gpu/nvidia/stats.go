@@ -2,7 +2,6 @@ package nvidia
 
 import (
 	"encoding/xml"
-	"errors"
 	"github.com/jollaman999/utils/logger"
 	"strconv"
 	"strings"
@@ -38,7 +37,7 @@ func QueryGPU() ([]NVIDIA, error) {
 		errMsg := "NVIDIA: nvidia-smi command is not available"
 		logger.Println(logger.DEBUG, false, errMsg)
 
-		return []NVIDIA{}, errors.New(errMsg)
+		return []NVIDIA{}, nil
 	}
 
 	var args []string
