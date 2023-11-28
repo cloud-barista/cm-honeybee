@@ -3,6 +3,7 @@ module github.com/cloud-barista/cm-honeybee
 go 1.21
 
 require (
+	github.com/NeowayLabs/drm v0.0.0-20190824133025-4939fc0ad345
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/glebarez/go-sqlite v1.20.3
 	github.com/google/uuid v1.4.0
@@ -10,6 +11,7 @@ require (
 	github.com/jollaman999/utils v1.0.2
 	github.com/knqyf263/go-rpmdb v0.0.0-20231120005747-4c52bf7a6c13
 	github.com/labstack/echo/v4 v4.11.3
+	github.com/pkg/errors v0.9.1
 	github.com/shirou/gopsutil/v3 v3.23.10
 	github.com/zcalusic/sysinfo v1.0.2
 	gopkg.in/yaml.v3 v3.0.1
@@ -37,7 +39,6 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc5 // indirect
 	github.com/opencontainers/selinux v1.11.0 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230126093431-47fa9a501578 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
