@@ -6,6 +6,7 @@ package software
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
@@ -14,7 +15,7 @@ import (
 	"os/exec"
 )
 
-func StartPodmanSocketService() error {
+func startPodmanSocketService() error {
 	cmd := exec.Command("sh", "-c", "systemctl status podman.socket")
 	output, err := cmd.CombinedOutput()
 	if exiterr, ok := err.(*exec.ExitError); ok {
@@ -32,15 +33,62 @@ func StartPodmanSocketService() error {
 	return nil
 }
 
-func newPodmanClient() (*client.Client, error) {
-	err := StartPodmanSocketService()
+type remoteSocket struct {
+	Path   string `json:"path"`
+	Exists bool   `json:"exists"`
+}
+
+func checkPodman() error {
+	cmd := exec.Command("sh", "-c", "podman --help")
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		logger.Print(logger.DEBUG, true, "PODMAN: "+err.Error())
+		return errors.New(string(output))
+	}
+
+	return nil
+}
+
+func getPodmanSocketPath() (string, error) {
+	cmd := exec.Command("sh", "-c", "podman system info -f '{{json .Host.RemoteSocket}}'")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", errors.New(string(output))
+	}
+
+	var remoteSocket remoteSocket
+	err = json.Unmarshal(output, &remoteSocket)
+	if err != nil {
+		return "", err
+	}
+
+	if !remoteSocket.Exists {
+		return "", errors.New("socket path '" + remoteSocket.Path + "' is not exist.")
+	}
+
+	return remoteSocket.Path, nil
+}
+
+func newPodmanClient() (*client.Client, error) {
+	err := checkPodman()
+	if err != nil {
+		errMsg := "Podman not found."
+		logger.Print(logger.DEBUG, true, "PODMAN: "+errMsg)
 		return nil, err
 	}
 
-	socket := "unix:///var/run/podman/podman.sock"
+	err = startPodmanSocketService()
+	if err != nil {
+		logger.Print(logger.ERROR, true, "PODMAN: "+err.Error())
+		return nil, err
+	}
 
+	socketPath, err := getPodmanSocketPath()
+	if err != nil {
+		logger.Print(logger.ERROR, true, "PODMAN: "+err.Error())
+		return nil, err
+	}
+
+	socket := "unix://" + socketPath
 	err = os.Setenv(client.EnvOverrideHost, socket)
 	defer func() {
 		_ = os.Unsetenv(client.EnvOverrideHost)
