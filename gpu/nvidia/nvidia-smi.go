@@ -315,6 +315,9 @@ func runNVIDIASmi(args []string) (string, error) {
 	cmd := exec.Command("nvidia-smi", args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
+		if len(output) == 0 {
+			output = []byte(err.Error())
+		}
 		errMsg := "NVIDIA-SMI: " + string(output)
 		logger.Println(logger.ERROR, true, errMsg)
 		return string(output), errors.New(errMsg)
