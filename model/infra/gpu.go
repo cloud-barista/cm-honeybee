@@ -7,5 +7,5 @@ import (
 
 type GPU struct {
 	NVIDIA []nvidia.NVIDIA `json:"nvidia"`
-	DRM    drm.DRM         `json:"drm"`
+	DRM    []drm.DRM       `json:"drm"`
 }

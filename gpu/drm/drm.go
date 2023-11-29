@@ -13,18 +13,22 @@ type DRM struct {
 	DriverDescription string `json:"driver_description"`
 }
 
-func GetDRMInfo() (DRM, error) {
-	v, err := drm.Available()
-	if err != nil {
+func GetDRMInfo() ([]DRM, error) {
+	versions := drm.ListDevices()
+	if len(versions) == 0 {
 		logger.Println(logger.DEBUG, true, "DRM: DRM is not available.")
-		return DRM{}, nil
+		return []DRM{}, nil
 	}
 
-	d := DRM{
-		DriverName:        v.Name,
-		DriverVersion:     strconv.Itoa(int(v.Major)) + "." + strconv.Itoa(int(v.Minor)) + "." + strconv.Itoa(int(v.Patch)),
-		DriverDate:        v.Date,
-		DriverDescription: v.Desc,
+	var d []DRM
+	for _, v := range versions {
+		d = append(d, DRM{
+			DriverName: v.Name,
+			DriverVersion: strconv.Itoa(int(v.Major)) + "." +
+				strconv.Itoa(int(v.Minor)) + "." + strconv.Itoa(int(v.Patch)),
+			DriverDate:        v.Date,
+			DriverDescription: v.Desc,
+		})
 	}
 
 	return d, nil
