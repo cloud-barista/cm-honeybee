@@ -1,13 +1,9 @@
 package infra
 
-type Infra struct {
-	Compute Compute `json:"compute"`
-	Network Network `json:"network"`
-	GPU     GPU     `json:"gpu"`
-}
+import "github.com/cloud-barista/cm-honeybee/model/infra"
 
-func GetInfraInfo() (*Infra, error) {
-	var infra Infra
+func GetInfraInfo() (*infra.Infra, error) {
+	var infra infra.Infra
 	var err error
 
 	infra.Compute, err = GetComputeInfo()
