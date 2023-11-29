@@ -2,28 +2,12 @@ package software
 
 import (
 	"bufio"
+	"github.com/cloud-barista/cm-honeybee/model/software"
 	"io"
 	"os"
 	"strconv"
 	"strings"
 )
-
-type DEB struct {
-	Package       string `json:"package"`
-	Status        string `json:"status"`
-	Priority      string `json:"priority"`
-	Architecture  string `json:"architecture"`
-	MultiArch     string `json:"multi_arch"`
-	Maintainer    string `json:"maintainer"`
-	Version       string `json:"version"`
-	Section       string `json:"section"`
-	InstalledSize int64  `json:"installed_size"`
-	Depends       string `json:"depends"`
-	PreDepends    string `json:"pre_depends"`
-	Description   string `json:"description"`
-	Source        string `json:"source"`
-	Homepage      string `json:"homepage"`
-}
 
 func parseLine(line string) (string, string) {
 	// returns (key, value) or ("", value) if multi-line value
@@ -44,8 +28,8 @@ func parseLine(line string) (string, string) {
 	return key, value
 }
 
-func mapToDEB(m map[string]string) (DEB, error) {
-	pkg := DEB{}
+func mapToDEB(m map[string]string) (software.DEB, error) {
+	pkg := software.DEB{}
 
 	for key, value := range m {
 		value = strings.TrimRight(value, " \n")
@@ -89,9 +73,9 @@ func mapToDEB(m map[string]string) (DEB, error) {
 	return pkg, nil
 }
 
-func parse(rd io.Reader) []DEB {
+func parse(rd io.Reader) []software.DEB {
 	prevKey := ""
-	var packages []DEB
+	var packages []software.DEB
 	m := make(map[string]string)
 
 	for {
@@ -127,12 +111,12 @@ func parse(rd io.Reader) []DEB {
 	return packages
 }
 
-func GetDEBs() ([]DEB, error) {
+func GetDEBs() ([]software.DEB, error) {
 	dpkgStatusFile := "/var/lib/dpkg/status"
 
 	fd, err := os.Open(dpkgStatusFile)
 	if err != nil {
-		return []DEB{}, err
+		return []software.DEB{}, err
 	}
 	defer func() {
 		_ = fd.Close()
