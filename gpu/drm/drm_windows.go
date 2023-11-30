@@ -1,3 +1,7 @@
+// Getting DRM information is only available on Linux
+
+//go:build !linux
+
 package drm
 
 import (
