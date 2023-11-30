@@ -1,31 +1,14 @@
 package software
 
 import (
-	"github.com/docker/docker/api/types"
+	"github.com/cloud-barista/cm-honeybee/model/software"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/host"
 )
 
-type Docker struct {
-	Containers []types.Container
-	//Images     []types.ImageMetadata
-}
-
-type Podman struct {
-	Containers []types.Container
-	//Images     []types.ImageMetadata
-}
-
-type Software struct {
-	DEB    []DEB  `json:"deb"`
-	RPM    []RPM  `json:"rpm"`
-	Docker Docker `json:"docker"`
-	Podman Podman `json:"podman"`
-}
-
-func GetSoftwareInfo() (*Software, error) {
-	deb := make([]DEB, 0)
-	rpm := make([]RPM, 0)
+func GetSoftwareInfo() (*software.Software, error) {
+	deb := make([]software.DEB, 0)
+	rpm := make([]software.RPM, 0)
 	var err error
 
 	h, err := host.Info()
@@ -57,16 +40,16 @@ func GetSoftwareInfo() (*Software, error) {
 		logger.Println(logger.DEBUG, true, "PODMAN: "+err.Error())
 	}
 
-	software := Software{
+	sw := software.Software{
 		DEB: deb,
 		RPM: rpm,
-		Docker: Docker{
+		Docker: software.Docker{
 			Containers: dockerContainers,
 		},
-		Podman: Podman{
+		Podman: software.Podman{
 			Containers: podmanContainers,
 		},
 	}
 
-	return &software, nil
+	return &sw, nil
 }
