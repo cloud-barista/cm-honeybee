@@ -40,12 +40,7 @@ func QueryGPU() ([]NVIDIA, error) {
 		return []NVIDIA{}, nil
 	}
 
-	var args []string
-
-	args = append(args, "-q")
-	args = append(args, "-x")
-
-	output, err := runNVIDIASmi(args)
+	output, err := runNVIDIASmi("-q -x")
 	if err != nil {
 		return []NVIDIA{}, err
 	}

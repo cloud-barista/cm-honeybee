@@ -6,11 +6,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/logger"
 	"io"
 	"net"
 	"os"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -45,8 +45,7 @@ type RouteStruct struct {
 //
 // If multiple default gateways are present, then the one with the lowest metric is returned.
 func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
-	routeCmd := exec.Command("route", "print", "0.0.0.0")
-	output, err := routeCmd.CombinedOutput()
+	output, err := cmd.RunCMD("route print 0.0.0.0")
 	if err != nil {
 		errMsg := err.Error()
 		logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
@@ -62,7 +61,7 @@ func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 
 	ipRegex := regexp.MustCompile(`^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4})`)
 	var routes []RouteStruct
-	lines := strings.Split(string(output), "\n")
+	lines := strings.Split(output, "\n")
 	sep := 0
 	for idx, line := range lines {
 		if sep == 3 {
