@@ -1,6 +1,6 @@
-// Getting DRM information for Linux
+// Getting DRM information for Linux & Unix like systems
 
-//go:build linux
+//go:build !windows
 
 package drm
 
