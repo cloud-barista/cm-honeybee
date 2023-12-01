@@ -45,7 +45,7 @@ type RouteStruct struct {
 //
 // If multiple default gateways are present, then the one with the lowest metric is returned.
 func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
-	output, err := cmd.RunCMD("route print 0.0.0.0")
+	output, err := cmd.RunCMD("route print")
 	if err != nil {
 		errMsg := err.Error()
 		logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
@@ -83,7 +83,7 @@ func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 			}
 
 			// found default route
-			if getOnlyDefaults && fields[0] != "0.0.0.0" {
+			if getOnlyDefaults && (fields[destinationField] != "0.0.0.0" || fields[netmaskField] != "0.0.0.0") {
 				continue
 			}
 
