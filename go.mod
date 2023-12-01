@@ -9,7 +9,7 @@ require (
 	github.com/glebarez/go-sqlite v1.21.2
 	github.com/google/uuid v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/jollaman999/utils v1.0.6
+	github.com/jollaman999/utils v1.0.9
 	github.com/knqyf263/go-rpmdb v0.0.0-20231120005747-4c52bf7a6c13
 	github.com/labstack/echo/v4 v4.11.3
 	github.com/shirou/gopsutil/v3 v3.23.10

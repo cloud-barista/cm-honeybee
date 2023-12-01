@@ -1,3 +1,7 @@
+// Getting compute information for Linux
+
+//go:build linux
+
 package infra
 
 import (

@@ -12,14 +12,5 @@ type DRM struct {
 }
 
 func GetDRMInfo() ([]DRM, error) {
-	var d []DRM
-
-	d = append(d, DRM{
-		DriverName:        "N/A",
-		DriverVersion:     "N/A",
-		DriverDate:        "N/A",
-		DriverDescription: "N/A",
-	})
-
-	return d, nil
+	return []DRM{}, nil
 }

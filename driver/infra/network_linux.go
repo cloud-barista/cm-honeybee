@@ -1,3 +1,7 @@
+// Getting network information for Linux
+
+//go:build linux
+
 package infra
 
 import (
