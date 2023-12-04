@@ -5,9 +5,11 @@
 package infra
 
 import (
+	"bufio"
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/model/infra"
 	"github.com/jollaman999/utils/cmd"
+	"github.com/jollaman999/utils/fileutil"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/yumaojun03/dmidecode"
@@ -17,6 +19,29 @@ import (
 	"time"
 )
 
+func getOSVersion() (string, error) {
+	content, err := fileutil.ReadFile("/etc/os-release")
+	if err != nil {
+		return "", err
+	}
+	content = strings.TrimSpace(content)
+	scanner := bufio.NewScanner(strings.NewReader(content))
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		split := strings.Split(line, "=")
+		if len(split) < 2 {
+			continue
+		}
+		name := strings.TrimSpace(split[0])
+		value := strings.Replace(strings.TrimSpace(split[1]), "\"", "", -1)
+		if name == "VERSION" {
+			return value, nil
+		}
+	}
+
+	return "", errors.New("failed to parse os version")
+}
 func getKernelVersion() (string, error) {
 	output, err := cmd.RunCMD("uname -v")
 	if err != nil {
@@ -32,9 +57,14 @@ func GetComputeInfo() (infra.Compute, error) {
 	var compute infra.Compute
 
 	// host information
+	osVersion, err := getOSVersion()
+	if err != nil {
+		return compute, err
+	}
+
 	h, err := host.Info()
 	if err != nil {
-		return infra.Compute{}, err
+		return compute, err
 	}
 	virtualizationSystem := h.VirtualizationSystem
 	if h.VirtualizationRole != "guest" {
@@ -44,24 +74,24 @@ func GetComputeInfo() (infra.Compute, error) {
 	// Get kernel version
 	kernelVersion, err := getKernelVersion()
 	if err != nil {
-		return infra.Compute{}, err
+		return compute, err
 	}
 
 	// Get DMI
 	dmi, err := dmidecode.New()
 	if err != nil {
-		return infra.Compute{}, err
+		return compute, err
 	}
 
 	// CPU information
 	c, err := cpu.Info()
 	if err != nil {
-		return infra.Compute{}, err
+		return compute, err
 	}
 
 	pro, err := dmi.Processor()
 	if err != nil {
-		return infra.Compute{}, err
+		return compute, err
 	}
 
 	cpus := uint(len(pro))
@@ -71,7 +101,7 @@ func GetComputeInfo() (infra.Compute, error) {
 		cores = uint(pro[0].CoreCount)
 		threads = uint(pro[0].ThreadCount)
 	} else {
-		return infra.Compute{}, errors.New("failed to get information of processors")
+		return compute, errors.New("failed to get information of processors")
 	}
 
 	// timezone information
@@ -80,7 +110,7 @@ func GetComputeInfo() (infra.Compute, error) {
 
 	mem, err := dmi.MemoryDevice()
 	if err != nil {
-		return infra.Compute{}, err
+		return compute, err
 	}
 
 	var memType = memory.MemoryDeviceTypeUnknown
@@ -119,7 +149,7 @@ func GetComputeInfo() (infra.Compute, error) {
 			OS: infra.OS{
 				Name:         h.OS,
 				Vendor:       h.Platform,
-				Version:      h.PlatformVersion,
+				Version:      osVersion,
 				Release:      h.PlatformVersion,
 				Architecture: h.KernelArch,
 			},
