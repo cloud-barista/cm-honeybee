@@ -13,11 +13,19 @@ import (
 	"github.com/yumaojun03/dmidecode"
 	"github.com/yumaojun03/dmidecode/parser/memory"
 	"github.com/zcalusic/sysinfo"
+	"strings"
 	"time"
 )
 
 func getKernelVersion() (string, error) {
-	return cmd.RunCMD("uname -v")
+	output, err := cmd.RunCMD("uname -v")
+	if err != nil {
+		return "", err
+	}
+
+	output = strings.TrimSuffix(output, "\n")
+
+	return output, nil
 }
 
 func GetComputeInfo() (infra.Compute, error) {
