@@ -28,9 +28,9 @@ func GetComputeInfo() (infra.Compute, error) {
 	if err != nil {
 		return infra.Compute{}, err
 	}
-	var virtualizationSystem string
-	if h.VirtualizationRole == "host" {
-		virtualizationSystem = "host"
+	virtualizationSystem := h.VirtualizationSystem
+	if h.VirtualizationRole != "guest" {
+		virtualizationSystem = ""
 	}
 
 	// Get kernel version

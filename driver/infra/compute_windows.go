@@ -211,7 +211,7 @@ func checkVirtualMachineRegistry() string {
 		return VIRTUAL_MACHINE_TYPE_XEN
 	}
 
-	return VIRTUAL_MACHINE_TYPE_UNKNOWN
+	return ""
 }
 
 func checkVirtualMachineTypeString(input string) string {
