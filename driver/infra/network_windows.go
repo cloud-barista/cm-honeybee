@@ -5,7 +5,6 @@
 package infra
 
 import (
-	"fmt"
 	"github.com/cloud-barista/cm-honeybee/lib/routes"
 	"github.com/cloud-barista/cm-honeybee/model/infra"
 	"github.com/shirou/gopsutil/v3/net"
@@ -48,7 +47,6 @@ func GetNetworkInfo() (infra.Network, error) {
 
 		for _, route := range defaultRoutes {
 			for _, a := range addressesWithoutPrefix {
-				fmt.Println(route.Interface, a)
 				if route.Interface == a {
 					gateways = append(gateways, route.NextHop)
 				}
