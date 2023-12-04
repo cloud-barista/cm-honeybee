@@ -19,5 +19,13 @@ func GetNetworkInfo() (modelNet.Network, error) {
 		return n, errors.New(errMsg)
 	}
 
+	n.Bonding, err = network.GetBondingInfo()
+	if err != nil {
+		errMsg := "BONDING: " + err.Error()
+		logger.Println(logger.DEBUG, true, errMsg)
+
+		return n, errors.New(errMsg)
+	}
+
 	return n, nil
 }
