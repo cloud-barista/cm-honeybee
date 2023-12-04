@@ -234,7 +234,10 @@ func getVirtualMachineType(dmidecode *dmidecode.Decoder) (string, error) {
 
 	if len(pro) > 0 {
 		manufacturer := strings.ToLower(pro[0].Manufacturer)
-		return checkVirtualMachineTypeString(manufacturer), nil
+		typeByCPU := checkVirtualMachineTypeString(manufacturer)
+		if typeByCPU != VIRTUAL_MACHINE_TYPE_UNKNOWN {
+			return typeByCPU, nil
+		}
 	}
 
 	bios, err := dmidecode.BIOS()
