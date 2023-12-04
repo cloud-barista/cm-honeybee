@@ -1,39 +1,40 @@
-// Getting network information for Linux
+// Getting network interfaces for Linux
 
 //go:build linux
 
-package infra
+package network
 
 import (
 	"github.com/cloud-barista/cm-honeybee/lib/routes"
-	"github.com/cloud-barista/cm-honeybee/model/infra"
+	"github.com/cloud-barista/cm-honeybee/model/network"
 	"github.com/shirou/gopsutil/v3/net"
 )
 
-func GetNetworkInfo() (infra.Network, error) {
+func GetNICs() ([]network.NIC, error) {
+	var nics []network.NIC
+
 	interfaces, err := net.Interfaces()
 	if err != nil {
-		return infra.Network{}, err
+		return nics, err
 	}
 
-	var physicalNetworks []infra.PhysicalNetwork
 	var defaultRoutes []routes.RouteStruct
 	var allRoutes []routes.RouteStruct
 
 	defaultRoutes, err = routes.GetLinuxRoutes(true)
 	if err != nil {
-		return infra.Network{}, err
+		return nics, err
 	}
 
 	allRoutes, err = routes.GetLinuxRoutes(false)
 	if err != nil {
-		return infra.Network{}, err
+		return nics, err
 	}
 
 	for _, i := range interfaces {
 		var addresses []string
 		var gateways []string
-		var ros []infra.Route
+		var ros []network.Route
 
 		for _, a := range i.Addrs {
 			addresses = append(addresses, a.Addr)
@@ -47,7 +48,7 @@ func GetNetworkInfo() (infra.Network, error) {
 
 		for _, route := range allRoutes {
 			if route.Interface == i.Name {
-				ros = append(ros, infra.Route{
+				ros = append(ros, network.Route{
 					Destination: route.Destination,
 					Netmask:     route.Netmask,
 					NextHop:     route.NextHop,
@@ -55,7 +56,7 @@ func GetNetworkInfo() (infra.Network, error) {
 			}
 		}
 
-		physicalNetworks = append(physicalNetworks, infra.PhysicalNetwork{
+		nics = append(nics, network.NIC{
 			Interface: i.Name,
 			Address:   addresses,
 			Gateway:   gateways,
@@ -65,9 +66,5 @@ func GetNetworkInfo() (infra.Network, error) {
 		})
 	}
 
-	network := infra.Network{
-		PhysicalNetwork: physicalNetworks,
-	}
-
-	return network, nil
+	return nics, nil
 }
