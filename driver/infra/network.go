@@ -19,6 +19,14 @@ func GetNetworkInfo() (modelNet.Network, error) {
 		return n, errors.New(errMsg)
 	}
 
+	n.Netfilter, err = network.GetNetfilterList()
+	if err != nil {
+		errMsg := "NETFILTER: " + err.Error()
+		logger.Println(logger.DEBUG, true, errMsg)
+
+		return n, errors.New(errMsg)
+	}
+
 	n.Bonding, err = network.GetBondingInfo()
 	if err != nil {
 		errMsg := "BONDING: " + err.Error()
