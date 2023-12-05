@@ -10,7 +10,6 @@ import (
 	"github.com/jollaman999/utils/fileutil"
 	"github.com/shirou/gopsutil/v3/net"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -53,6 +52,32 @@ func parseBondPart(bond *network.Bonding, bondPart string) error {
 			bond.MIIStatus = value
 		} else if strings.Contains(name, "MII Polling Interval") {
 			bond.MIIPollingInterval = value
+		} else if strings.Contains(bond.BondingMode, "802.3ad") {
+			if strings.Contains(name, "LACP active") {
+				bond.ADInfo.LACPActive = value
+			} else if strings.Contains(name, "LACP rate") {
+				bond.ADInfo.LACPRate = value
+			} else if strings.Contains(name, "Min links") {
+				bond.ADInfo.MinLinks = value
+			} else if strings.Contains(name, "Aggregator selection policy") {
+				bond.ADInfo.ADSelect = value
+			} else if strings.Contains(name, "System priority") {
+				bond.ADInfo.SystemPriority = value
+			} else if strings.Contains(name, "System MAC address") {
+				bond.ADInfo.SystemMACAddress = strings.TrimSpace(strings.Replace(line, name+":", "", -1))
+			} else if strings.Contains(bond.BondingMode, "Active Aggregator Info") {
+				continue
+			} else if strings.Contains(name, "Aggregator ID") {
+				bond.ADInfo.ActiveAggregatorInfo.AggregatorID = value
+			} else if strings.Contains(name, "Number of ports") {
+				bond.ADInfo.ActiveAggregatorInfo.NumberOfPorts = value
+			} else if strings.Contains(name, "Actor Key") {
+				bond.ADInfo.ActiveAggregatorInfo.ActorKey = value
+			} else if strings.Contains(name, "Partner Key") {
+				bond.ADInfo.ActiveAggregatorInfo.PartnerKey = value
+			} else if strings.Contains(name, "Partner Mac Address") {
+				bond.ADInfo.ActiveAggregatorInfo.PartnerMACAddress = strings.TrimSpace(strings.Replace(line, name+":", "", -1))
+			}
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -89,8 +114,7 @@ func parseSlavePart(bond *network.Bonding, bondPart string) error {
 		} else if strings.Contains(name, "Duplex") {
 			slaveInterfaces[slaveIdx].Duplex = value
 		} else if strings.Contains(name, "Link Failure Count") {
-			count, _ := strconv.Atoi(value)
-			slaveInterfaces[slaveIdx].LinkFailureCount = uint(count)
+			slaveInterfaces[slaveIdx].LinkFailureCount = value
 		} else if strings.Contains(name, "Permanent HW addr") {
 			slaveInterfaces[slaveIdx].PermanentHWAddr = strings.TrimSpace(strings.Replace(line, name+":", "", -1))
 		} else if strings.Contains(name, "Aggregator ID") {
