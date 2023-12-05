@@ -92,7 +92,7 @@ func parseSlavePart(bond *network.Bonding, bondPart string) error {
 			count, _ := strconv.Atoi(value)
 			slaveInterfaces[slaveIdx].LinkFailureCount = uint(count)
 		} else if strings.Contains(name, "Permanent HW addr") {
-			slaveInterfaces[slaveIdx].PermanentHWAddr = strings.Replace(strings.TrimSpace(line), name+":", "", -1)
+			slaveInterfaces[slaveIdx].PermanentHWAddr = strings.TrimSpace(strings.Replace(line, name+":", "", -1))
 		} else if strings.Contains(name, "Aggregator ID") {
 			slaveInterfaces[slaveIdx].AggregatorID = value
 		}
