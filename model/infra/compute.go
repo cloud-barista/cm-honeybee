@@ -39,7 +39,7 @@ type CPU struct {
 
 type Memory struct {
 	Type  string `json:"type"`
-	Speed uint   `json:"speed"` // MT/s
+	Speed uint   `json:"speed"` // MHz
 	Size  uint   `json:"size"`  // MB
 }
 

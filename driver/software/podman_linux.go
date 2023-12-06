@@ -10,24 +10,23 @@ import (
 	"errors"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/logger"
 	"os"
 	"os/exec"
 )
 
 func startPodmanSocketService() error {
-	cmd := exec.Command("sh", "-c", "systemctl status podman.socket")
-	output, err := cmd.CombinedOutput()
+	_, err := cmd.RunCMD("systemctl status podman.socket")
 	if exiterr, ok := err.(*exec.ExitError); ok {
 		if exiterr.ExitCode() == 3 { // systemctl exit code 3 : service is not started
-			cmd = exec.Command("sh", "-c", "systemctl start podman.socket")
-			output, err = cmd.CombinedOutput()
+			_, err = cmd.RunCMD("systemctl start podman.socket")
 			if err != nil {
-				return errors.New(string(output))
+				return err
 			}
-		} else {
-			return errors.New(string(output))
 		}
+
+		return err
 	}
 
 	return nil
@@ -39,24 +38,22 @@ type remoteSocket struct {
 }
 
 func checkPodman() error {
-	cmd := exec.Command("sh", "-c", "podman --help")
-	output, err := cmd.CombinedOutput()
+	_, err := cmd.RunCMD("podman --help")
 	if err != nil {
-		return errors.New(string(output))
+		return err
 	}
 
 	return nil
 }
 
 func getPodmanSocketPath() (string, error) {
-	cmd := exec.Command("sh", "-c", "podman system info -f '{{json .Host.RemoteSocket}}'")
-	output, err := cmd.CombinedOutput()
+	output, err := cmd.RunCMD("podman system info -f '{{json .Host.RemoteSocket}}'")
 	if err != nil {
-		return "", errors.New(string(output))
+		return "", err
 	}
 
 	var remoteSocket remoteSocket
-	err = json.Unmarshal(output, &remoteSocket)
+	err = json.Unmarshal([]byte(output), &remoteSocket)
 	if err != nil {
 		return "", err
 	}

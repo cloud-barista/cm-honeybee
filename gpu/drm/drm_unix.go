@@ -1,3 +1,7 @@
+// Getting DRM information for Linux & Unix like systems
+
+//go:build !windows
+
 package drm
 
 import (

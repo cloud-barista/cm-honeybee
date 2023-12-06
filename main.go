@@ -9,17 +9,20 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 )
 
 func init() {
-	err := syscheck.CheckRoot()
-	if err != nil {
-		log.Fatalln(err)
+	if runtime.GOOS != "windows" {
+		err := syscheck.CheckRoot()
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 
-	err = config.PrepareConfigs()
+	err := config.PrepareConfigs()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -46,7 +49,7 @@ func end() {
 func main() {
 	// Catch the exit signal
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigChan
 		logger.Println(logger.INFO, false, "Exiting "+common.ModuleName+" module...")

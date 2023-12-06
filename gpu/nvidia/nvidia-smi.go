@@ -3,8 +3,8 @@ package nvidia
 import (
 	"encoding/xml"
 	"errors"
+	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/logger"
-	"os/exec"
 )
 
 // SmiLog was generated 2023-11-22 11:48:41 by https://xml-to-go.github.io/ in Ukraine.
@@ -311,27 +311,19 @@ type SmiLog struct {
 	} `xml:"gpu"`
 }
 
-func runNVIDIASmi(args []string) (string, error) {
-	cmd := exec.Command("nvidia-smi", args...)
-	output, err := cmd.CombinedOutput()
+func runNVIDIASmi(argString string) (string, error) {
+	output, err := cmd.RunCMD("nvidia-smi " + argString)
 	if err != nil {
-		if len(output) == 0 {
-			output = []byte(err.Error())
-		}
-		errMsg := "NVIDIA-SMI: " + string(output)
+		errMsg := "NVIDIA-SMI: " + output
 		logger.Println(logger.DEBUG, true, errMsg)
-		return string(output), errors.New(errMsg)
+		return output, errors.New(errMsg)
 	}
 
-	return string(output), nil
+	return output, nil
 }
 
 func isNVIDIASmiAvailable() bool {
-	var args []string
-
-	args = append(args, "--help")
-
-	_, err := runNVIDIASmi(args)
+	_, err := runNVIDIASmi("--help")
 
 	return err == nil
 }

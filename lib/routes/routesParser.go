@@ -6,11 +6,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/logger"
 	"io"
 	"net"
 	"os"
-	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -45,11 +45,10 @@ type RouteStruct struct {
 //
 // If multiple default gateways are present, then the one with the lowest metric is returned.
 func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
-	routeCmd := exec.Command("route", "print", "0.0.0.0")
-	output, err := routeCmd.CombinedOutput()
+	output, err := cmd.RunCMD("route print")
 	if err != nil {
 		errMsg := err.Error()
-		logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
+		logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 		return nil, errors.New(errMsg)
 	}
 
@@ -62,7 +61,7 @@ func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 
 	ipRegex := regexp.MustCompile(`^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4})`)
 	var routes []RouteStruct
-	lines := strings.Split(string(output), "\n")
+	lines := strings.Split(output, "\n")
 	sep := 0
 	for idx, line := range lines {
 		if sep == 3 {
@@ -79,12 +78,12 @@ func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 			fields := strings.Fields(inputLine)
 			if len(fields) < 5 || !ipRegex.MatchString(fields[0]) {
 				errMsg := "invalid filed found"
-				logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
+				logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 				return nil, errors.New(errMsg)
 			}
 
 			// found default route
-			if getOnlyDefaults && fields[0] != "0.0.0.0" {
+			if getOnlyDefaults && (fields[destinationField] != "0.0.0.0" || fields[netmaskField] != "0.0.0.0") {
 				continue
 			}
 
@@ -104,7 +103,7 @@ func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 	if sep == 0 {
 		// We saw no separator lines, so input must have been garbage.
 		errMsg := "got invalid result from route command"
-		logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
+		logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 		return nil, errors.New(errMsg)
 	}
 
@@ -143,7 +142,7 @@ func GetLinuxRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		errMsg := fmt.Sprintf("can't access %s", file)
-		logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
+		logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 		return nil, errors.New(errMsg)
 	}
 	defer func() {
@@ -153,7 +152,7 @@ func GetLinuxRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 	readAll, err := io.ReadAll(f)
 	if err != nil {
 		errMsg := fmt.Sprintf("can't read %s", file)
-		logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
+		logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 		return nil, errors.New(errMsg)
 	}
 
@@ -171,7 +170,7 @@ func GetLinuxRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 		err := scanner.Err()
 		if err != nil {
 			errMsg := err.Error()
-			logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
+			logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 			return nil, errors.New(errMsg)
 		}
 
@@ -185,7 +184,7 @@ func GetLinuxRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 		tokens := strings.Split(row, sep)
 		if len(tokens) < 11 {
 			errMsg := "invalid file format of " + file
-			logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
+			logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 			return nil, errors.New(errMsg)
 		}
 
@@ -193,7 +192,7 @@ func GetLinuxRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 		destination, err := linuxLittleEndianHexToNetIP(destinationHex)
 		if err != nil {
 			errMsg := err.Error()
-			logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
+			logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 			return nil, errors.New(errMsg)
 		}
 
@@ -201,7 +200,7 @@ func GetLinuxRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 		netmask, err := linuxLittleEndianHexToNetIP(netmaskHex)
 		if err != nil {
 			errMsg := err.Error()
-			logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
+			logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 			return nil, errors.New(errMsg)
 		}
 
@@ -209,7 +208,7 @@ func GetLinuxRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 		nextHop, err := linuxLittleEndianHexToNetIP(nextHopHex)
 		if err != nil {
 			errMsg := err.Error()
-			logger.Println(logger.ERROR, true, "GATEWAY: "+errMsg)
+			logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 			return nil, errors.New(errMsg)
 		}
 
