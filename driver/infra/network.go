@@ -35,5 +35,13 @@ func GetNetworkInfo() (modelNet.Network, error) {
 		return n, errors.New(errMsg)
 	}
 
+	n.VirtualNetwork.OVS, err = network.GetOVSInfo()
+	if err != nil {
+		errMsg := "OVS: " + err.Error()
+		logger.Println(logger.DEBUG, true, errMsg)
+
+		return n, errors.New(errMsg)
+	}
+
 	return n, nil
 }
