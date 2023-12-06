@@ -11,7 +11,7 @@ func GetNetworkInfo() (modelNet.Network, error) {
 	var n modelNet.Network
 	var err error
 
-	n.NetworkInterfaces, err = network.GetNICs()
+	n.NetworkSubsystem.NetworkInterfaces, err = network.GetNICs()
 	if err != nil {
 		errMsg := "NIC: " + err.Error()
 		logger.Println(logger.DEBUG, true, errMsg)
@@ -19,7 +19,7 @@ func GetNetworkInfo() (modelNet.Network, error) {
 		return n, errors.New(errMsg)
 	}
 
-	n.Netfilter, err = network.GetNetfilterList()
+	n.NetworkSubsystem.Netfilter, err = network.GetNetfilterList()
 	if err != nil {
 		errMsg := "NETFILTER: " + err.Error()
 		logger.Println(logger.DEBUG, true, errMsg)
@@ -27,7 +27,7 @@ func GetNetworkInfo() (modelNet.Network, error) {
 		return n, errors.New(errMsg)
 	}
 
-	n.Bonding, err = network.GetBondingInfo()
+	n.NetworkSubsystem.Bonding, err = network.GetBondingInfo()
 	if err != nil {
 		errMsg := "BONDING: " + err.Error()
 		logger.Println(logger.DEBUG, true, errMsg)
