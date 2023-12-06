@@ -19,6 +19,14 @@ func GetNetworkInfo() (modelNet.Network, error) {
 		return n, errors.New(errMsg)
 	}
 
+	n.NetworkSubsystem.Routes, err = network.GetRoutes()
+	if err != nil {
+		errMsg := "ROUTES: " + err.Error()
+		logger.Println(logger.DEBUG, true, errMsg)
+
+		return n, errors.New(errMsg)
+	}
+
 	n.NetworkSubsystem.Netfilter, err = network.GetNetfilterList()
 	if err != nil {
 		errMsg := "NETFILTER: " + err.Error()
