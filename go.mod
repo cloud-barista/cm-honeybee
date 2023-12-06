@@ -10,9 +10,9 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jaypipes/ghw v0.12.0
 	github.com/jollaman999/utils v1.0.9 // Original codes from https://github.com/hcloud-classic/hcc-harp
-	github.com/knqyf263/go-rpmdb v0.0.0-20231120005747-4c52bf7a6c13
+	github.com/knqyf263/go-rpmdb v0.0.0-20231206071317-a8af76a6220f
 	github.com/labstack/echo/v4 v4.11.3
-	github.com/shirou/gopsutil/v3 v3.23.10
+	github.com/shirou/gopsutil/v3 v3.23.11
 	github.com/yumaojun03/dmidecode v0.1.4
 	github.com/zcalusic/sysinfo v1.0.2
 	golang.org/x/sys v0.15.0
@@ -58,8 +58,8 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
-	github.com/tklauser/go-sysconf v0.3.12 // indirect
-	github.com/tklauser/numcpus v0.6.1 // indirect
+	github.com/tklauser/go-sysconf v0.3.13 // indirect
+	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/yusufpapurcu/wmi v1.2.3 // indirect
@@ -72,8 +72,8 @@ require (
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
-	howett.net/plist v1.0.0 // indirect
-	modernc.org/libc v1.34.11 // indirect
+	howett.net/plist v1.0.1 // indirect
+	modernc.org/libc v1.36.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
 	modernc.org/sqlite v1.27.0 // indirect
