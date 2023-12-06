@@ -21,7 +21,9 @@ require (
 
 require (
 	github.com/coreos/go-iptables v0.7.0
+	github.com/digitalocean/go-libvirt v0.0.0-20221205150000-2939327a8519
 	github.com/digitalocean/go-openvswitch v0.0.0-20230210190010-977d98586f70
+	github.com/libvirt/libvirt-go-xml v7.4.0+incompatible
 	github.com/ovn-org/libovsdb v0.6.0
 )
 

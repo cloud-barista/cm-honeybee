@@ -43,5 +43,13 @@ func GetNetworkInfo() (modelNet.Network, error) {
 		return n, errors.New(errMsg)
 	}
 
+	n.VirtualNetwork.LibvirtNet, err = network.GetLibvirtNetInfo()
+	if err != nil {
+		errMsg := "LIBVIRT_NET: " + err.Error()
+		logger.Println(logger.DEBUG, true, errMsg)
+
+		return n, errors.New(errMsg)
+	}
+
 	return n, nil
 }

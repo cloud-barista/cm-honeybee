@@ -7,7 +7,8 @@ type _NetworkSubsystem struct {
 }
 
 type VirtualNetwork struct {
-	OVS []OVSBridge `json:"ovs"`
+	OVS        []OVSBridge `json:"ovs"`
+	LibvirtNet LibvirtNet  `json:"libvirt_net"`
 }
 
 type Network struct {
