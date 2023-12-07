@@ -9,7 +9,7 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jaypipes/ghw v0.12.0
-	github.com/jollaman999/utils v1.0.9 // Original codes from https://github.com/hcloud-classic/hcc-harp
+	github.com/jollaman999/utils v1.0.10 // Original codes from https://github.com/hcloud-classic/hcc-harp
 	github.com/knqyf263/go-rpmdb v0.0.0-20231206071317-a8af76a6220f
 	github.com/labstack/echo/v4 v4.11.3
 	github.com/shirou/gopsutil/v3 v3.23.11
@@ -73,7 +73,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 	howett.net/plist v1.0.1 // indirect
-	modernc.org/libc v1.36.0 // indirect
+	modernc.org/libc v1.37.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect
 	modernc.org/sqlite v1.27.0 // indirect
