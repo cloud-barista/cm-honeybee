@@ -9,20 +9,17 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"runtime"
 	"strings"
 	"syscall"
 )
 
 func init() {
-	if runtime.GOOS != "windows" {
-		err := syscheck.CheckRoot()
-		if err != nil {
-			log.Fatalln(err)
-		}
+	err := syscheck.CheckRoot()
+	if err != nil {
+		log.Fatalln(err)
 	}
 
-	err := config.PrepareConfigs()
+	err = config.PrepareConfigs()
 	if err != nil {
 		log.Fatalln(err)
 	}
