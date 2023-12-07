@@ -17,7 +17,6 @@ import (
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
 	"os"
-	"path"
 	"strings"
 	"time"
 	"unsafe"
@@ -67,6 +66,19 @@ const (
 	VIRTUAL_MACHINE_TYPE_UNKNOWN   = "unknown"
 )
 
+func lastPathSeparator(s string) int {
+	i := len(s) - 1
+	for i >= 0 && s[i] != os.PathSeparator {
+		i--
+	}
+	return i
+}
+
+func pathSplit(path string) (dir, file string) {
+	i := lastPathSeparator(path)
+	return path[:i+1], path[i+1:]
+}
+
 func extractKeyTypeFrom(registryKey string) (registry.Key, string, error) {
 	firstSeparatorIndex := strings.Index(registryKey, string(os.PathSeparator))
 	keyTypeStr := registryKey[:firstSeparatorIndex]
@@ -102,7 +114,7 @@ func doesRegistryKeyExist(registryKeys []string) (bool, error) {
 
 		// Handle trailing wildcard
 		if key[len(key)-1:] == "*" {
-			key, subkeyPrefix = path.Split(key)
+			key, subkeyPrefix = pathSplit(key)
 			subkeyPrefix = subkeyPrefix[:len(subkeyPrefix)-1] // remove *
 		}
 
