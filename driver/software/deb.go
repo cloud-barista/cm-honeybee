@@ -3,6 +3,8 @@ package software
 import (
 	"bufio"
 	"github.com/cloud-barista/cm-honeybee/model/software"
+	"github.com/jollaman999/utils/fileutil"
+	"github.com/jollaman999/utils/logger"
 	"io"
 	"os"
 	"strconv"
@@ -111,7 +113,41 @@ func parse(rd io.Reader) []software.DEB {
 	return packages
 }
 
+func getConfigFiles(packageName string) ([]string, error) {
+	var configs []string
+
+	conffiles := "/var/lib/dpkg/info/" + packageName + ".conffiles"
+
+	if !fileutil.IsExist(conffiles) {
+		return []string{}, nil
+	}
+
+	fd, err := os.Open(conffiles)
+	if err != nil {
+		return []string{}, err
+	}
+	defer func() {
+		_ = fd.Close()
+	}()
+
+	var line string
+	scanner := bufio.NewScanner(fd)
+	for scanner.Scan() {
+		line = scanner.Text()
+		line = strings.TrimSpace(line)
+		configs = append(configs, line)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return []string{}, err
+	}
+
+	return configs, nil
+}
+
 func GetDEBs() ([]software.DEB, error) {
+	var DEBs []software.DEB
+
 	dpkgStatusFile := "/var/lib/dpkg/status"
 
 	fd, err := os.Open(dpkgStatusFile)
@@ -123,5 +159,17 @@ func GetDEBs() ([]software.DEB, error) {
 	}()
 
 	rd := bufio.NewReader(fd)
-	return parse(rd), nil
+	DEBs = parse(rd)
+
+	for i := range DEBs {
+		packageName := DEBs[i].Package
+		configs, err := getConfigFiles(DEBs[i].Package)
+		if err != nil {
+			logger.Println(logger.DEBUG, false, "DEB: Error occurred while reading conffiles of '"+
+				packageName+"' package.")
+		}
+		DEBs[i].Conffiles = configs
+	}
+
+	return DEBs, nil
 }
