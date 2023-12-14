@@ -18,6 +18,12 @@
       - .cm-honeybee/conf directory under user's home directory
       - 'conf' directory where running the binary
       - 'conf' directory where placed in the path of 'CMHONEYBEE_ROOT' environment variable
+   - Configuration options
+       - server (Need to implementation.)
+           - address : Specify collection server's address ({IP or Domain}:{Port})
+           - timeout : HTTP timeout value as seconds.
+       - listen
+           - port : Listen port of the API.
    - Configuration file example
      ```yaml
      cm-honeybee:
