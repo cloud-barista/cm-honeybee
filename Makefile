@@ -8,26 +8,30 @@ GOPROXY_OPTION := GOPROXY=direct GOSUMDB=off
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all lint test race coverage coverhtml gofmt update build windows clean help
+.PHONY: all dependency lint test race coverage coverhtml gofmt update build windows clean help
 
 all: build
 
-lint: ## Lint the files
+dependency: ## Get dependencies
+	@echo Checking dependencies...
+	@${GO_COMMAND} mod tidy
+
+lint: dependency ## Lint the files
 	@echo "Running linter..."
 	@if [ ! -f "${GOPATH}/bin/golangci-lint" ] && [ ! -f "$(GOROOT)/bin/golangci-lint" ]; then \
 	  ${GO_COMMAND} install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
 	fi
 	@golangci-lint run -E contextcheck -E revive -D unused
 
-test: ## Run unittests
+test: dependency ## Run unittests
 	@echo "Running tests..."
 	@${GO_COMMAND} test -v ${PKG_LIST}
 
-race: ## Run data race detector
+race: dependency ## Run data race detector
 	@echo "Checking races..."
 	@${GO_COMMAND} test -race -v ${PKG_LIST}
 
-coverage: ## Generate global code coverage report
+coverage: dependency ## Generate global code coverage report
 	@echo "Generating coverage report..."
 	@${GO_COMMAND} test -v -coverprofile=coverage.out ${PKG_LIST}
 	@${GO_COMMAND} tool cover -func=coverage.out
@@ -47,15 +51,11 @@ update: ## Update all of module dependencies
 	@${GO_COMMAND} mod tidy
 
 build: lint ## Build the binary file
-	@echo Checking dependencies...
-	@${GO_COMMAND} mod tidy
 	@echo Building...
 	@CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
 	@echo Build finished!
 
 windows: lint ## Build the Windows exe binary file
-	@echo Checking dependencies...
-	@${GO_COMMAND} mod tidy
 	@echo Building for Windows system...
 	@GOOS=windows CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go
 	@echo Build finished!
