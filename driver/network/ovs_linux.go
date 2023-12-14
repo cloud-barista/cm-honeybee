@@ -87,6 +87,11 @@ func (u ovsUUID) validateUUID() error {
 }
 
 func (u ovsUUID) MarshalJSON() ([]byte, error) {
+	err := u.validateUUID()
+	if err != nil {
+		return nil, err
+	}
+
 	return json.Marshal(u.UUID)
 }
 
