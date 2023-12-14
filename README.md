@@ -19,7 +19,7 @@ Collecting and Aggregating Information From Source Computing framework (codename
 </details>
 
 ## Execution and development environment
-* Operating system (OS):
-  * Ubuntu 22.04
-* Languages:
-  * Go: 1.20
+* Tested operating systems (OSs):
+  * Ubuntu 23.10, Ubuntu 22.04, Ubuntu 18.04, Rocky Linux 9, Windows 11
+* Language:
+  * Go: 1.21.5
