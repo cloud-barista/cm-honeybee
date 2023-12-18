@@ -91,7 +91,7 @@ make swag
 ```
 
 Access to Swagger UI
-(Default link) http://localhost:8056/beetle/swagger/index.html
+(Default link) http://localhost:8056/honeybee/swagger/index.html
 
 #### Run CM-Honeybee binary
 
