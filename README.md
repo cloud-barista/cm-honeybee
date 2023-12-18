@@ -66,3 +66,50 @@ Collecting and Aggregating Information From Source Computing framework (codename
   - Windows
     - Run cm-honeybee.exe
     - Click Yes when UAC window is appears.
+
+#### Download source code
+
+Clone CM-Honeybee repository
+
+```bash
+git clone https://github.com/cloud-barista/cm-honeybee.git ${HOME}/cm-honeybee
+```
+
+#### Build CM-Honeybee
+
+Build CM-Honeybee source code
+
+```bash
+cd ${HOME}/cm-honeybee
+make build
+```
+
+(Optional) Update Swagger API document
+```bash
+cd ${HOME}/cm-honeybee
+make swag
+```
+
+Access to Swagger UI
+(Default link) http://localhost:8056/beetle/swagger/index.html
+
+#### Run CM-Honeybee binary
+
+Run CM-Honeybee server
+
+```bash
+cd ${HOME}/cm-honeybee
+make build
+./cm-honeybee
+```
+
+#### Health-check CM-Honeybee
+
+Check if CM-Honeybee is running
+
+```bash
+curl http://localhost:8056/honeybee/health
+
+# Output if it's running successfully
+# {"message":"CM-Honeybee API server is running"}
+```
