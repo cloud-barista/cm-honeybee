@@ -2,11 +2,14 @@ package echo
 
 import (
 	"fmt"
+	"strconv"
+
+	_ "github.com/cloud-barista/cm-honeybee/docs"
 	"github.com/cloud-barista/cm-honeybee/lib/config"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"strconv"
+	echoSwagger "github.com/swaggo/echo-swagger"
 )
 
 var e *echo.Echo
@@ -48,7 +51,8 @@ func Init() {
 
 	InfraInfo()
 	SoftwreInfo()
-
+	e.GET("/honeybee/swagger/*", echoSwagger.WrapHandler)
+	e.GET("/honeybee/health", RestGetHealth)
 	err := e.Start(":" + config.CMHoneybeeConfig.CMHoneybee.Listen.Port)
 	logger.Panicln(logger.ERROR, true, err)
 }
