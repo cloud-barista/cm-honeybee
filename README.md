@@ -27,13 +27,8 @@ Collecting and Aggregating Information From Source Computing framework (codename
 ## How to run
 
 1. Build the binary
-  - Run on Linux.
     ```shell
     make
-    ```
-  - Run on Linux for build Windows binary or run on Windows where make command is available.
-    ```shell
-    make windows
     ```
 
 2. Write the configuration file.
@@ -91,7 +86,7 @@ make swag
 ```
 
 Access to Swagger UI
-(Default link) http://localhost:8056/honeybee/swagger/index.html
+(Default link) http://localhost:8082/honeybee/swagger/index.html
 
 #### Run CM-Honeybee binary
 
@@ -108,7 +103,7 @@ make build
 Check if CM-Honeybee is running
 
 ```bash
-curl http://localhost:8056/honeybee/health
+curl http://localhost:8082/honeybee/health
 
 # Output if it's running successfully
 # {"message":"CM-Honeybee API server is running"}
