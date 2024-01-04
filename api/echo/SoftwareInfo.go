@@ -3,7 +3,7 @@ package echo
 import (
 	"net/http"
 
-	_ "github.com/cloud-barista/cm-honeybee/docs"
+	_ "github.com/cloud-barista/cm-honeybee/docs" // Honeybee Documentation
 	"github.com/cloud-barista/cm-honeybee/driver/software"
 	model "github.com/cloud-barista/cm-honeybee/model/software"
 	"github.com/labstack/echo/v4"
@@ -15,6 +15,7 @@ type GetSoftwareResponse struct {
 }
 
 // GetSoftware godoc
+//
 //	@Summary		Get a list of Integrated Software information
 //	@Description	Get information of all Software.
 //	@Tags			[Sample] Software

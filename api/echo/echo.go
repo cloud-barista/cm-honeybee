@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	_ "github.com/cloud-barista/cm-honeybee/docs"
+	_ "github.com/cloud-barista/cm-honeybee/docs" // Honeybee Documentation
 	"github.com/cloud-barista/cm-honeybee/lib/config"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"

@@ -3,7 +3,7 @@ package echo
 import (
 	"net/http"
 
-	_ "github.com/cloud-barista/cm-honeybee/docs"
+	_ "github.com/cloud-barista/cm-honeybee/docs" // Honeybee Documentation
 	"github.com/cloud-barista/cm-honeybee/driver/infra"
 	model "github.com/cloud-barista/cm-honeybee/model/infra"
 	"github.com/labstack/echo/v4"
@@ -15,6 +15,7 @@ type GetInfraResponse struct {
 }
 
 // GetInfra godoc
+//
 //	@Summary		Get a list of Integrated Infra information
 //	@Description	Get information of all Infra.
 //	@Tags			[Sample] Infra
