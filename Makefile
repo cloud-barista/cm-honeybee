@@ -8,7 +8,7 @@ GOPROXY_OPTION := GOPROXY=direct GOSUMDB=off
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build windows run clean help
+.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build run clean help
 
 all: build
 
@@ -59,22 +59,25 @@ swag swagger: ## Generate Swagger Documentation
 
 build: lint swag ## Build the binary file
 	@echo Building...
-	@cd cmd/${MODULE_NAME} && CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
-	@echo Build finished!
-
-windows: lint ## Build the Windows exe binary file
-	@echo Building for Windows system...
-	@cd cmd/${MODULE_NAME} && GOOS=windows CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go
+	@kernel_name=`uname -s` && \
+	  if [[ $$kernel_name == "Linux" ]]; then \
+	    cd cmd/${MODULE_NAME} && CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go; \
+	  elif [[ $$kernel_name == "CYGWIN"* ]] || [[ $$kernel_name == "MINGW"* ]]; then \
+	    cd cmd/${MODULE_NAME} && GOOS=windows CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go; \
+	  else \
+	    echo $$kernel_name; \
+	    echo "Not supported Operating System. ($$kernel_name)"; \
+	  fi
 	@echo Build finished!
 
 run: ## Run the built binary
-	@cd cmd/${MODULE_NAME} && ln -sf ../../conf conf && ./${MODULE_NAME} || echo "Trying with sudo..." && sudo ./${MODULE_NAME}
+	@cp -RpPf conf cmd/${MODULE_NAME}/ && ./cmd/${MODULE_NAME}/${MODULE_NAME}* || echo "Trying with sudo..." && sudo ./cmd/${MODULE_NAME}/${MODULE_NAME}*
 
 clean: ## Remove previous build
 	@echo Cleaning build...
 	@rm -f coverage.out
 	@rm -f pkg/api/rest/docs/docs.go pkg/api/rest/docs/swagger.*
-	@rm -f cmd/${MODULE_NAME}/conf
+	@rm -rf cmd/${MODULE_NAME}/conf
 	@cd cmd/${MODULE_NAME} && ${GO_COMMAND} clean
 
 help: ## Display this help screen
