@@ -61,10 +61,11 @@ windows: lint ## Build the Windows exe binary file
 	@echo Build finished!
 
 swag swagger:
-	@if [ ! -f "${GOPATH}/bin/swag" ]; then \
+	@echo "Running swag..."
+	@if [ ! -f "${GOPATH}/bin/swag" ] && [ ! -f "$(GOROOT)/bin/swag" ]; then \
 	  ${GO_COMMAND} install github.com/swaggo/swag/cmd/swag@latest; \
 	fi
-	@${GOPATH}/bin/swag init --parseDependency
+	@swag init --parseDependency
 
 clean: ## Remove previous build
 	@echo Cleaning build...
