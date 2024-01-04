@@ -89,21 +89,16 @@ func extractKeyTypeFrom(registryKey string) (registry.Key, string, error) {
 	switch keyTypeStr {
 	case "HKLM":
 		keyType = registry.LOCAL_MACHINE
-		break
 	case "HKCR":
 		keyType = registry.CLASSES_ROOT
-		break
 	case "HKCU":
 		keyType = registry.CURRENT_USER
-		break
 	case "HKU":
 		keyType = registry.USERS
-		break
 	case "HKCC":
 		keyType = registry.CURRENT_CONFIG
-		break
 	default:
-		return keyType, "", errors.New(fmt.Sprintf("Invalid keytype (%v)", keyTypeStr))
+		return keyType, "", fmt.Errorf("Invalid keytype (%v)", keyTypeStr)
 	}
 
 	return keyType, keyPath, nil
@@ -126,7 +121,7 @@ func doesRegistryKeyExist(registryKeys []string) (bool, error) {
 
 		keyHandle, err := registry.OpenKey(keyType, keyPath, registry.QUERY_VALUE|registry.ENUMERATE_SUB_KEYS)
 		if err != nil {
-			return false, errors.New(fmt.Sprintf("can't open %v : %v", key, err))
+			return false, fmt.Errorf("can't open %v : %v", key, err)
 		}
 		defer func() {
 			_ = keyHandle.Close()
@@ -256,6 +251,10 @@ func getVirtualMachineType(dmidecode *dmidecode.Decoder) (string, error) {
 	}
 
 	bios, err := dmidecode.BIOS()
+	if err != nil {
+		return "", err
+	}
+
 	for _, b := range bios {
 		typeByVendor := checkVirtualMachineTypeString(b.Vendor)
 		if typeByVendor != VIRTUAL_MACHINE_TYPE_UNKNOWN {
