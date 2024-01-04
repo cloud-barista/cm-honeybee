@@ -8,7 +8,7 @@ GOPROXY_OPTION := GOPROXY=direct GOSUMDB=off
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all dependency lint test race coverage coverhtml gofmt update build windows clean help
+.PHONY: all dependency lint test race coverage coverhtml gofmt update build windows swag swagger clean help
 
 all: build
 
@@ -50,7 +50,7 @@ update: ## Update all of module dependencies
 	@echo Checking dependencies...
 	@${GO_COMMAND} mod tidy
 
-build: lint ## Build the binary file
+build: lint swag ## Build the binary file
 	@echo Building...
 	@CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
 	@echo Build finished!
@@ -60,7 +60,7 @@ windows: lint ## Build the Windows exe binary file
 	@GOOS=windows CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go
 	@echo Build finished!
 
-swag swagger:
+swag swagger: ## Generate Swagger Documentation
 	@echo "Running swag..."
 	@if [ ! -f "${GOPATH}/bin/swag" ] && [ ! -f "$(GOROOT)/bin/swag" ]; then \
 	  ${GO_COMMAND} install github.com/swaggo/swag/cmd/swag@latest; \
@@ -70,6 +70,7 @@ swag swagger:
 clean: ## Remove previous build
 	@echo Cleaning build...
 	@rm -f coverage.out
+	@rm -f docs/docs.go docs/swagger.*
 	@${GO_COMMAND} clean
 
 help: ## Display this help screen
