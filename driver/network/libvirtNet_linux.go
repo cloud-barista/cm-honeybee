@@ -7,7 +7,7 @@ package network
 import (
 	"errors"
 	"fmt"
-	"github.com/cloud-barista/cm-honeybee/model/network"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/network"
 	"github.com/digitalocean/go-libvirt"
 	"github.com/digitalocean/go-libvirt/socket/dialers"
 	"github.com/jollaman999/utils/fileutil"

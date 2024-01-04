@@ -1,23 +1,15 @@
-package echo
+package middlewares
 
 import (
 	"fmt"
-	"strconv"
-
-	_ "github.com/cloud-barista/cm-honeybee/docs" // Honeybee Documentation
-	"github.com/cloud-barista/cm-honeybee/lib/config"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	echoSwagger "github.com/swaggo/echo-swagger"
+	"strconv"
 )
 
-var e *echo.Echo
-
-func Init() {
-	e = echo.New()
-
-	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+func CustomLogger() echo.MiddlewareFunc {
+	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
 		LogMethod:    true,
 		LogURI:       true,
 		LogHost:      true,
@@ -47,12 +39,5 @@ func Init() {
 
 			return nil
 		},
-	}))
-
-	InfraInfo()
-	SoftwreInfo()
-	e.GET("/honeybee/swagger/*", echoSwagger.WrapHandler)
-	e.GET("/honeybee/health", RestGetHealth)
-	err := e.Start(":" + config.CMHoneybeeConfig.CMHoneybee.Listen.Port)
-	logger.Panicln(logger.ERROR, true, err)
+	})
 }

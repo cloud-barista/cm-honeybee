@@ -6,12 +6,12 @@ package network
 
 import (
 	"github.com/cloud-barista/cm-honeybee/lib/routes"
-	"github.com/cloud-barista/cm-honeybee/model/network"
+	network2 "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/network"
 	"github.com/shirou/gopsutil/v3/net"
 )
 
-func GetNICs() ([]network.NIC, error) {
-	var nics []network.NIC
+func GetNICs() ([]network2.NIC, error) {
+	var nics []network2.NIC
 
 	interfaces, err := net.Interfaces()
 	if err != nil {
@@ -34,7 +34,7 @@ func GetNICs() ([]network.NIC, error) {
 	for _, i := range interfaces {
 		var addresses []string
 		var gateways []string
-		var ros []network.Route
+		var ros []network2.Route
 
 		for _, a := range i.Addrs {
 			addresses = append(addresses, a.Addr)
@@ -48,7 +48,7 @@ func GetNICs() ([]network.NIC, error) {
 
 		for _, route := range allRoutes {
 			if route.Interface == i.Name {
-				ros = append(ros, network.Route{
+				ros = append(ros, network2.Route{
 					Destination: route.Destination,
 					Netmask:     route.Netmask,
 					NextHop:     route.NextHop,
@@ -56,7 +56,7 @@ func GetNICs() ([]network.NIC, error) {
 			}
 		}
 
-		nics = append(nics, network.NIC{
+		nics = append(nics, network2.NIC{
 			Interface: i.Name,
 			Address:   addresses,
 			Gateway:   gateways,

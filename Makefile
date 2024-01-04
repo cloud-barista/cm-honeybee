@@ -2,13 +2,13 @@ SHELL = /bin/bash
 
 MODULE_NAME := "cm-honeybee"
 PROJECT_NAME := "github.com/cloud-barista/${MODULE_NAME}"
-PKG_LIST := $(shell go list ${PROJECT_NAME}/...)
+PKG_LIST := $(shell go list ${PROJECT_NAME}/... 2>&1)
 
 GOPROXY_OPTION := GOPROXY=direct GOSUMDB=off
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all dependency lint test race coverage coverhtml gofmt update build windows swag swagger clean help
+.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build windows clean help
 
 all: build
 
@@ -50,28 +50,29 @@ update: ## Update all of module dependencies
 	@echo Checking dependencies...
 	@${GO_COMMAND} mod tidy
 
-build: lint swag ## Build the binary file
-	@echo Building...
-	@CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
-	@echo Build finished!
-
-windows: lint ## Build the Windows exe binary file
-	@echo Building for Windows system...
-	@GOOS=windows CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go
-	@echo Build finished!
-
 swag swagger: ## Generate Swagger Documentation
 	@echo "Running swag..."
 	@if [ ! -f "${GOPATH}/bin/swag" ] && [ ! -f "$(GOROOT)/bin/swag" ]; then \
 	  ${GO_COMMAND} install github.com/swaggo/swag/cmd/swag@latest; \
 	fi
-	@swag init --parseDependency > /dev/null
+	@swag init -g ./pkg/api/rest/server/server.go --pd -o ./pkg/api/rest/docs/ > /dev/null
+
+build: lint swag ## Build the binary file
+	@echo Building...
+	@cd cmd/${MODULE_NAME} && CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
+	@echo Build finished!
+
+windows: lint ## Build the Windows exe binary file
+	@echo Building for Windows system...
+	@cd cmd/${MODULE_NAME} && GOOS=windows CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go
+	@echo Build finished!
 
 clean: ## Remove previous build
 	@echo Cleaning build...
 	@rm -f coverage.out
-	@rm -f docs/docs.go docs/swagger.*
-	@${GO_COMMAND} clean
+	@rm -f pkg/api/rest/docs/docs.go pkg/api/rest/docs/swagger.*
+	@rm -f cmd/${MODULE_NAME}/conf
+	@cd cmd/${MODULE_NAME} && ${GO_COMMAND} clean
 
 help: ## Display this help screen
 	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

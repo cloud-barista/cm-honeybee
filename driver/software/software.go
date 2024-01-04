@@ -1,14 +1,14 @@
 package software
 
 import (
-	"github.com/cloud-barista/cm-honeybee/model/software"
+	software2 "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/software"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/host"
 )
 
-func GetSoftwareInfo() (*software.Software, error) {
-	deb := make([]software.DEB, 0)
-	rpm := make([]software.RPM, 0)
+func GetSoftwareInfo() (*software2.Software, error) {
+	deb := make([]software2.DEB, 0)
+	rpm := make([]software2.RPM, 0)
 	var err error
 
 	h, err := host.Info()
@@ -40,13 +40,13 @@ func GetSoftwareInfo() (*software.Software, error) {
 		logger.Println(logger.DEBUG, true, "PODMAN: "+err.Error())
 	}
 
-	sw := software.Software{
+	sw := software2.Software{
 		DEB: deb,
 		RPM: rpm,
-		Docker: software.Docker{
+		Docker: software2.Docker{
 			Containers: dockerContainers,
 		},
-		Podman: software.Podman{
+		Podman: software2.Podman{
 			Containers: podmanContainers,
 		},
 	}

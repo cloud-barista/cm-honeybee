@@ -5,7 +5,7 @@
 package network
 
 import (
-	"github.com/cloud-barista/cm-honeybee/model/network"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/network"
 )
 
 func GetNetfilterList() (network.Netfilter, error) {

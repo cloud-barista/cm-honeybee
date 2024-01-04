@@ -7,7 +7,7 @@ package infra
 import (
 	"bufio"
 	"errors"
-	"github.com/cloud-barista/cm-honeybee/model/infra"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/infra"
 	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/fileutil"
 	"github.com/shirou/gopsutil/v3/cpu"

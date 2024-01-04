@@ -5,7 +5,7 @@
 package network
 
 import (
-	"github.com/cloud-barista/cm-honeybee/model/network"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/network"
 	"github.com/coreos/go-iptables/iptables"
 	"github.com/jollaman999/utils/logger"
 )

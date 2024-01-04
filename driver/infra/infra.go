@@ -1,6 +1,8 @@
 package infra
 
-import "github.com/cloud-barista/cm-honeybee/model/infra"
+import (
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/infra"
+)
 
 func GetInfraInfo() (*infra.Infra, error) {
 	var i infra.Infra

@@ -1,6 +1,8 @@
 package infra
 
-import "github.com/cloud-barista/cm-honeybee/model/network"
+import (
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/network"
+)
 
 type Infra struct {
 	Compute Compute         `json:"compute"`

@@ -2,7 +2,7 @@ package software
 
 import (
 	"bufio"
-	"github.com/cloud-barista/cm-honeybee/model/software"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/software"
 	"github.com/jollaman999/utils/fileutil"
 	"github.com/jollaman999/utils/logger"
 	"io"

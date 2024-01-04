@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/cloud-barista/cm-honeybee/model/network"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/network"
 	"github.com/jollaman999/utils/fileutil"
 	"github.com/jollaman999/utils/logger"
 	"regexp"

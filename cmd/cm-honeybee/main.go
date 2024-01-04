@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/cloud-barista/cm-honeybee/api/echo"
 	"github.com/cloud-barista/cm-honeybee/common"
 	"github.com/cloud-barista/cm-honeybee/lib/config"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/server"
 	"github.com/jollaman999/utils/logger"
 	"github.com/jollaman999/utils/syscheck"
 	"log"
@@ -36,7 +36,7 @@ func init() {
 
 	logger.Println(logger.INFO, false, "Agent UUID: "+common.AgentUUID)
 
-	echo.Init()
+	server.Init()
 }
 
 func end() {

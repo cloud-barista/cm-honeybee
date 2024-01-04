@@ -3,7 +3,7 @@ package network
 import (
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/lib/routes"
-	"github.com/cloud-barista/cm-honeybee/model/network"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/network"
 	"runtime"
 )
 
