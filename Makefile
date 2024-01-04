@@ -65,7 +65,7 @@ swag swagger: ## Generate Swagger Documentation
 	@if [ ! -f "${GOPATH}/bin/swag" ] && [ ! -f "$(GOROOT)/bin/swag" ]; then \
 	  ${GO_COMMAND} install github.com/swaggo/swag/cmd/swag@latest; \
 	fi
-	@swag init --parseDependency
+	@swag init --parseDependency > /dev/null
 
 clean: ## Remove previous build
 	@echo Cleaning build...
