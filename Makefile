@@ -46,7 +46,7 @@ gofmt: ## Run gofmt for go files
 
 update: ## Update all of module dependencies
 	@echo Updating dependencies...
-	@${GO_COMMAND} get -u
+	@cd cmd/${MODULE_NAME} && ${GO_COMMAND} get -u
 	@echo Checking dependencies...
 	@${GO_COMMAND} mod tidy
 
