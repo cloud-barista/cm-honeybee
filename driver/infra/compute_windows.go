@@ -57,14 +57,14 @@ func getKernelLastModifiedDate() (string, error) {
 }
 
 const (
-	VIRTUAL_MACHINE_TYPE_QEMU      = "qemu"
-	VIRTUAL_MACHINE_TYPE_XEN       = "xen"
-	VIRTUAL_MACHINE_TYPE_VMWARE    = "vmware"
-	VIRTUAL_MACHINE_TYPE_VBOX      = "vbox"
-	VIRTUAL_MACHINE_TYPE_PARALLELS = "parallels"
-	VIRTUAL_MACHINE_TYPE_VIRTUALPC = "virtual pc"
-	VIRTUAL_MACHINE_TYPE_HYPERV    = "hyper-v"
-	VIRTUAL_MACHINE_TYPE_UNKNOWN   = "unknown"
+	VirtualMachineTypeQemu      = "qemu"
+	VirtualMachineTypeXen       = "xen"
+	VirtualMachineTypeVmware    = "vmware"
+	VirtualMachineTypeVbox      = "vbox"
+	VirtualMachineTypeParallels = "parallels"
+	VirtualMachineTypeVirtualpc = "virtual pc"
+	VirtualMachineTypeHyperv    = "hyper-v"
+	VirtualMachineTypeUnknown   = "unknown"
 )
 
 func lastPathSeparator(s string) int {
@@ -127,27 +127,25 @@ func doesRegistryKeyExist(registryKeys []string) (bool, error) {
 			_ = keyHandle.Close()
 		}()
 
-		// If a wildcard has been specified...
-		if subkeyPrefix != "" {
-			// ... we look for sub-keys to see if one exists
-			subKeys, err := keyHandle.ReadSubKeyNames(0xFFFF)
-			if err != nil {
-				if err == io.EOF {
-					return false, nil
-				}
-				return false, err
-			}
+		// The registryKey we were looking for has been found
+		if subkeyPrefix == "" {
+			break
+		}
 
-			for _, subKeyName := range subKeys {
-				if strings.HasPrefix(subKeyName, subkeyPrefix) {
-					return true, nil
-				}
+		// If a wildcard has been specified,
+		// we look for sub-keys to see if one exists
+		subKeys, err := keyHandle.ReadSubKeyNames(0xFFFF)
+		if err != nil {
+			if err == io.EOF {
+				return false, nil
 			}
+			return false, err
+		}
 
-			return false, nil
-		} else {
-			// The registryKey we were looking for has been found
-			return true, nil
+		for _, subKeyName := range subKeys {
+			if strings.HasPrefix(subKeyName, subkeyPrefix) {
+				return true, nil
+			}
 		}
 	}
 
@@ -194,7 +192,7 @@ func checkVirtualMachineRegistry() string {
 		logger.Println(logger.DEBUG, true, "COMPUTE: "+err.Error())
 	}
 	if exist {
-		return VIRTUAL_MACHINE_TYPE_HYPERV
+		return VirtualMachineTypeHyperv
 	}
 
 	exist, err = doesRegistryKeyExist(parallelsKeys)
@@ -202,7 +200,7 @@ func checkVirtualMachineRegistry() string {
 		logger.Println(logger.DEBUG, true, "COMPUTE: "+err.Error())
 	}
 	if exist {
-		return VIRTUAL_MACHINE_TYPE_PARALLELS
+		return VirtualMachineTypeParallels
 	}
 
 	exist, err = doesRegistryKeyExist(virtualPCKeys)
@@ -210,7 +208,7 @@ func checkVirtualMachineRegistry() string {
 		logger.Println(logger.DEBUG, true, "COMPUTE: "+err.Error())
 	}
 	if exist {
-		return VIRTUAL_MACHINE_TYPE_VIRTUALPC
+		return VirtualMachineTypeVirtualpc
 	}
 
 	exist, err = doesRegistryKeyExist(xenKeys)
@@ -218,7 +216,7 @@ func checkVirtualMachineRegistry() string {
 		logger.Println(logger.DEBUG, true, "COMPUTE: "+err.Error())
 	}
 	if exist {
-		return VIRTUAL_MACHINE_TYPE_XEN
+		return VirtualMachineTypeXen
 	}
 
 	return ""
@@ -226,14 +224,14 @@ func checkVirtualMachineRegistry() string {
 
 func checkVirtualMachineTypeString(input string) string {
 	if strings.Contains(input, "qemu") {
-		return VIRTUAL_MACHINE_TYPE_QEMU
+		return VirtualMachineTypeQemu
 	} else if strings.Contains(input, "vbox") || strings.Contains(input, "virtualbox") {
-		return VIRTUAL_MACHINE_TYPE_VBOX
+		return VirtualMachineTypeVbox
 	} else if strings.Contains(input, "vmware") {
-		return VIRTUAL_MACHINE_TYPE_VMWARE
+		return VirtualMachineTypeVmware
 	}
 
-	return VIRTUAL_MACHINE_TYPE_UNKNOWN
+	return VirtualMachineTypeUnknown
 }
 
 func getVirtualMachineType(dmidecode *dmidecode.Decoder) (string, error) {
@@ -245,7 +243,7 @@ func getVirtualMachineType(dmidecode *dmidecode.Decoder) (string, error) {
 	if len(pro) > 0 {
 		manufacturer := strings.ToLower(pro[0].Manufacturer)
 		typeByCPU := checkVirtualMachineTypeString(manufacturer)
-		if typeByCPU != VIRTUAL_MACHINE_TYPE_UNKNOWN {
+		if typeByCPU != VirtualMachineTypeUnknown {
 			return typeByCPU, nil
 		}
 	}
@@ -257,11 +255,11 @@ func getVirtualMachineType(dmidecode *dmidecode.Decoder) (string, error) {
 
 	for _, b := range bios {
 		typeByVendor := checkVirtualMachineTypeString(b.Vendor)
-		if typeByVendor != VIRTUAL_MACHINE_TYPE_UNKNOWN {
+		if typeByVendor != VirtualMachineTypeUnknown {
 			return typeByVendor, nil
 		}
 		typeByVersion := checkVirtualMachineTypeString(b.BIOSVersion)
-		if typeByVersion != VIRTUAL_MACHINE_TYPE_UNKNOWN {
+		if typeByVersion != VirtualMachineTypeUnknown {
 			return typeByVersion, nil
 		}
 	}
