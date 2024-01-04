@@ -19,7 +19,7 @@ type SimpleMsg struct {
 // @Success 200 {object} SimpleMsg
 // @Failure 404 {object} SimpleMsg
 // @Failure 500 {object} SimpleMsg
-// @Router /health [get]
+// @Router /honeybee/health [get]
 func GetHealth(c echo.Context) error {
 	okMessage := SimpleMsg{}
 	okMessage.Message = "CM-Honeybee API server is running"
