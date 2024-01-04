@@ -8,7 +8,7 @@ GOPROXY_OPTION := GOPROXY=direct GOSUMDB=off
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build windows clean help
+.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build windows run clean help
 
 all: build
 
@@ -66,6 +66,9 @@ windows: lint ## Build the Windows exe binary file
 	@echo Building for Windows system...
 	@cd cmd/${MODULE_NAME} && GOOS=windows CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go
 	@echo Build finished!
+
+run: ## Run the built binary
+	@cd cmd/${MODULE_NAME} && ln -sf ../../conf conf && ./${MODULE_NAME} || echo "Trying with sudo..." && sudo ./${MODULE_NAME}
 
 clean: ## Remove previous build
 	@echo Cleaning build...
