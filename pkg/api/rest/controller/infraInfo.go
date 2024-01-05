@@ -3,25 +3,21 @@ package controller
 import (
 	"github.com/cloud-barista/cm-honeybee/driver/infra"
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/common"
-	model "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/infra"
+	_ "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/infra" // Need for swag
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
 
-type GetInfraResponse struct {
-	// InfraList []infra.Infra `json:"infra"`
-	model.Infra
-}
-
 // GetInfraInfo godoc
 //
-//	@Summary		Get a list of Integrated Infra information
-//	@Description	Get information of all Infra.
-//	@Tags			[Sample] Infra
+//	@Summary		Get a list of integrated infra information
+//	@Description	Get infra information.
+//	@Tags			[Infra] Get infra info
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	GetInfraResponse	"Successfully get information of the infra."
-//	@Failure		404	{object}	GetInfraResponse	"Failed to get information of the infra."
+//	@Success		200	{object}	infra.Infra	"Successfully get information of the infra."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
 //	@Router			/infra [get]
 func GetInfraInfo(c echo.Context) error {
 	infraInfo, err := infra.GetInfraInfo()

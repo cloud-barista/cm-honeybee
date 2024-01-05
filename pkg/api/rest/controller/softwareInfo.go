@@ -3,25 +3,21 @@ package controller
 import (
 	"github.com/cloud-barista/cm-honeybee/driver/software"
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/common"
-	model "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/software"
+	_ "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/software" // Need for swag
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
 
-type GetSoftwareResponse struct {
-	// InfraList []infra.Infra `json:"infra"`
-	model.Software
-}
-
 // GetSoftwareInfo godoc
 //
-//	@Summary		Get a list of Integrated Software information
-//	@Description	Get information of all Software.
-//	@Tags			[Sample] Software
+//	@Summary		Get a list of Integrated Infra information
+//	@Description	Get software information.
+//	@Tags			[Software] Get software info
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	GetSoftwareResponse	"Successfully get information of software."
-//	@Failure		404	{object}	GetSoftwareResponse	"Failed to get information of software."
+//	@Success		200	{object}	software.Software	"Successfully get information of software."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of software."
 //	@Router			/software [get]
 func GetSoftwareInfo(c echo.Context) error {
 	softwareInfo, err := software.GetSoftwareInfo()

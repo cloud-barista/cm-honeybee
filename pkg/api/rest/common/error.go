@@ -6,10 +6,12 @@ import (
 	"net/http"
 )
 
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func ReturnErrorMsg(c echo.Context, msg string) error {
-	return c.JSONPretty(http.StatusBadRequest, map[string]string{
-		"error": msg,
-	}, " ")
+	return c.JSONPretty(http.StatusBadRequest, ErrorResponse{Error: msg}, " ")
 }
 
 func ReturnInternalError(c echo.Context, err error, reason string) error {
