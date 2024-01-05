@@ -94,8 +94,7 @@ Run CM-Honeybee server
 
 ```bash
 cd ${HOME}/cm-honeybee
-make build
-./cm-honeybee
+make run
 ```
 
 #### Health-check CM-Honeybee
