@@ -68,9 +68,15 @@ build: lint swag ## Build the binary file
 	    echo $$kernel_name; \
 	    echo "Not supported Operating System. ($$kernel_name)"; \
 	  fi
+	@git diff > .diff_last_build
 	@echo Build finished!
 
 run: ## Run the built binary
+	@git diff > .diff_current
+	@STATUS=`diff .diff_last_build .diff_current 2>&1 > /dev/null; echo $$?` && \
+	  if [ "$$STATUS" != "0" ]; then \
+	    $(MAKE) build; \
+	  fi
 	@cp -RpPf conf cmd/${MODULE_NAME}/ && ./cmd/${MODULE_NAME}/${MODULE_NAME}* || echo "Trying with sudo..." && sudo ./cmd/${MODULE_NAME}/${MODULE_NAME}*
 
 clean: ## Remove previous build
