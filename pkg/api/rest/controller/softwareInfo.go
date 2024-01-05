@@ -10,7 +10,7 @@ import (
 
 // GetSoftwareInfo godoc
 //
-//	@Summary		Get a list of Integrated Infra information
+//	@Summary		Get a list of software information
 //	@Description	Get software information.
 //	@Tags			[Software] Get software info
 //	@Accept			json

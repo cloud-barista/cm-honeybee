@@ -10,9 +10,9 @@ type SimpleMsg struct {
 	Message string `json:"message"`
 }
 
-// GetHealth func is for checking Cicada server health.
-// @Summary Check Cicada is alive
-// @Description Check Cicada is alive
+// GetHealth func is for checking Honeybee server health.
+// @Summary Check Honeybee is alive
+// @Description Check Honeybee is alive
 // @Tags [Admin] System management
 // @Accept  json
 // @Produce  json
