@@ -15,7 +15,7 @@ require (
 	github.com/shirou/gopsutil/v3 v3.23.12
 	github.com/yumaojun03/dmidecode v0.1.4
 	github.com/zcalusic/sysinfo v1.0.2
-	golang.org/x/sys v0.15.0
+	golang.org/x/sys v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
