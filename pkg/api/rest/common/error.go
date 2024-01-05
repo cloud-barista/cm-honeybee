@@ -17,5 +17,7 @@ func ReturnErrorMsg(c echo.Context, msg string) error {
 func ReturnInternalError(c echo.Context, err error, reason string) error {
 	logger.Println(logger.ERROR, true, err.Error())
 
-	return ReturnErrorMsg(c, "Internal error occurred. (Reason: "+reason+", Error: "+err.Error()+")")
+	msg := "Internal error occurred. (Reason: " + reason + ", Error: " + err.Error() + ")"
+
+	return c.JSONPretty(http.StatusInternalServerError, ErrorResponse{Error: msg}, " ")
 }
