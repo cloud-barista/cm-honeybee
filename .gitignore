@@ -4,5 +4,6 @@ vendor
 .vscode/
 
 .diff_*
+.git_*
 
 *.log

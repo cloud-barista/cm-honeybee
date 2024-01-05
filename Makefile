@@ -69,12 +69,15 @@ build: lint swag ## Build the binary file
 	    echo "Not supported Operating System. ($$kernel_name)"; \
 	  fi
 	@git diff > .diff_last_build
+	@git rev-parse HEAD > .git_hash_last_build
 	@echo Build finished!
 
 run: ## Run the built binary
 	@git diff > .diff_current
 	@STATUS=`diff .diff_last_build .diff_current 2>&1 > /dev/null; echo $$?` && \
-	  if [ "$$STATUS" != "0" ]; then \
+	  GIT_HASH_MINE=`git rev-parse HEAD` && \
+	  GIT_HASH_LAST_BUILD=`cat .git_hash_last_build 2>&1 > /dev/null | true` && \
+	  if [ "$$STATUS" != "0" ] || [ "$$GIT_HASH_MINE" != "$$GIT_HASH_LAST_BUILD" ]; then \
 	    $(MAKE) build; \
 	  fi
 	@cp -RpPf conf cmd/${MODULE_NAME}/ && ./cmd/${MODULE_NAME}/${MODULE_NAME}* || echo "Trying with sudo..." && sudo ./cmd/${MODULE_NAME}/${MODULE_NAME}*
