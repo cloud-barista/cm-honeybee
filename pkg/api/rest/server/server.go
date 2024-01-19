@@ -39,7 +39,7 @@ func Init() {
 	route.RegisterUtility(e)
 
 	// Display API Docs Dashboard when server starts
-	endpoint := "localhost:8082" // To be set from config file
+	endpoint := "localhost:" + config.CMHoneybeeConfig.CMHoneybee.Listen.Port
 	apiDocsDashboard := " http://" + endpoint + "/" + strings.ToLower(common.ShortModuleName) + "/swagger/index.html"
 
 	fmt.Println("\n ")
