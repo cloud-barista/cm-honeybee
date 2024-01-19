@@ -1,0 +1,15 @@
+[Unit]
+Description=Cloud-Migrator Honeybee Service
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/bin/cm-honeybee
+ExecStop=/usr/bin/killall cm-honeybee
+Restart=on-failure
+RestartPreventExitStatus=100
+
+[Install]
+WantedBy=multi-user.target
+Alias=Harp.service
