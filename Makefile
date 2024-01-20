@@ -18,10 +18,10 @@ dependency: ## Get dependencies
 
 lint: dependency ## Lint the files
 	@echo "Running linter..."
-	@if [ ! -f "${GOPATH}/bin/golangci-lint" ] && [ ! -f "$(GOROOT)/bin/golangci-lint" ]; then \
+	@if [ ! -f "${GOPATH}/bin/golangci-lint" ]; then \
 	  ${GO_COMMAND} install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
 	fi
-	@golangci-lint run -E contextcheck -E revive
+	@${GOPATH}/bin/golangci-lint run -E contextcheck -E revive
 
 test: dependency ## Run unittests
 	@echo "Running tests..."
@@ -52,10 +52,10 @@ update: ## Update all of module dependencies
 
 swag swagger: ## Generate Swagger Documentation
 	@echo "Running swag..."
-	@if [ ! -f "${GOPATH}/bin/swag" ] && [ ! -f "$(GOROOT)/bin/swag" ]; then \
+	@if [ ! -f "${GOPATH}/bin/swag" ]; then \
 	  ${GO_COMMAND} install github.com/swaggo/swag/cmd/swag@latest; \
 	fi
-	@swag init -g ./pkg/api/rest/server/server.go --pd -o ./pkg/api/rest/docs/ > /dev/null
+	@${GOPATH}/bin/swag init -g ./pkg/api/rest/server/server.go --pd -o ./pkg/api/rest/docs/ > /dev/null
 
 build: lint swag ## Build the binary file
 	@echo Building...
