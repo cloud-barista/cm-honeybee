@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/logger"
@@ -110,7 +111,7 @@ func GetPodmanContainers() ([]types.Container, error) {
 		return []types.Container{}, err
 	}
 
-	containers, err := cli.ContainerList(context.Background(), types.ContainerListOptions{All: true})
+	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
 		return []types.Container{}, err
 	}
