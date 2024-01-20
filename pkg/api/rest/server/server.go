@@ -43,7 +43,7 @@ func Init() {
 	apiDocsDashboard := " http://" + endpoint + "/" + strings.ToLower(common.ShortModuleName) + "/swagger/index.html"
 
 	fmt.Println("\n ")
-	fmt.Println(" CM-Beeble repository:")
+	fmt.Println(" CM-Honeybee repository:")
 	fmt.Printf(infoColor, website)
 	fmt.Println("\n ")
 	fmt.Println(" API Docs Dashboard:")
