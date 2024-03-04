@@ -7,14 +7,13 @@ import (
 	"strings"
 )
 
-type DeviceAttributes struct {
+type DeviceAttribute struct {
 	GPUUUID             string `json:"gpu_uuid"`
 	DriverVersion       string `json:"driver_version"`
 	CUDAVersion         string `json:"cuda_version"`
 	ProductName         string `json:"product_name"`
 	ProductBrand        string `json:"product_brand"`
 	ProductArchitecture string `json:"product_architecture"`
-	SerialNumber        string `json:"serial_number"`
 }
 
 type Performance struct {
@@ -28,8 +27,8 @@ type Performance struct {
 }
 
 type NVIDIA struct {
-	DeviceAttributes DeviceAttributes `json:"device_attributes"`
-	Performance      Performance      `json:"performance"`
+	DeviceAttribute DeviceAttribute `json:"device_attribute"`
+	Performance     Performance     `json:"performance"`
 }
 
 func QueryGPU() ([]NVIDIA, error) {
@@ -71,14 +70,13 @@ func QueryGPU() ([]NVIDIA, error) {
 		bar1MemoryUsage := float32(bar1MemoryUsed) / float32(bar1MemoryTotal) * 100
 
 		nv := NVIDIA{
-			DeviceAttributes: DeviceAttributes{
+			DeviceAttribute: DeviceAttribute{
 				GPUUUID:             gpu.UUID,
 				DriverVersion:       nvidiaSMILog.DriverVersion,
 				CUDAVersion:         nvidiaSMILog.CudaVersion,
 				ProductName:         gpu.ProductName,
 				ProductBrand:        gpu.ProductBrand,
 				ProductArchitecture: gpu.ProductArchitecture,
-				SerialNumber:        gpu.Serial,
 			},
 			Performance: Performance{
 				GPUUsage:        uint32(gpuUsage),

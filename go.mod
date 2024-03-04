@@ -8,23 +8,16 @@ require (
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/google/uuid v1.5.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/jaypipes/ghw v0.12.0
 	github.com/jollaman999/utils v1.0.10 // Original codes from https://github.com/hcloud-classic/hcc-harp
 	github.com/knqyf263/go-rpmdb v0.0.0-20231206071317-a8af76a6220f
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/shirou/gopsutil/v3 v3.23.12
 	github.com/yumaojun03/dmidecode v0.1.4
-	github.com/zcalusic/sysinfo v1.0.2
 	golang.org/x/sys v0.16.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/coreos/go-iptables v0.7.0
-	github.com/digitalocean/go-libvirt v0.0.0-20221205150000-2939327a8519
-	github.com/digitalocean/go-openvswitch v0.0.0-20230210190010-977d98586f70
-	github.com/libvirt/libvirt-go-xml v7.4.0+incompatible
-	github.com/ovn-org/libovsdb v0.6.0
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.2
 )
@@ -33,7 +26,6 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/StackExchange/wmi v1.2.1 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/digitalocean/go-smbios v0.0.0-20180907143718-390a4f403a8e // indirect
 	github.com/distribution/reference v0.5.0 // indirect
@@ -53,14 +45,12 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/google/pprof v0.0.0-20230323073829-e72429f035bd // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/jaypipes/pcidb v1.0.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/lufia/plan9stats v0.0.0-20231016141302-07b5767bb0ed // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -91,7 +81,6 @@ require (
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
-	howett.net/plist v1.0.1 // indirect
 	modernc.org/libc v1.40.5 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.7.2 // indirect

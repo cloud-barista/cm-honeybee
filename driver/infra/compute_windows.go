@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/infra"
-	"github.com/jaypipes/ghw"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/host"
@@ -344,23 +343,31 @@ func GetComputeInfo() (infra.Compute, error) {
 		}
 	}
 
+	// TODO
 	// storage information
-	var storage []infra.Storage
 
-	block, err := ghw.Block()
-	if err != nil {
-		return infra.Compute{}, err
+	//block, err := ghw.Block()
+	//if err != nil {
+	//	return infra.Compute{}, err
+	//}
+
+	rootDisk := infra.Disk{
+		Label: "Windows 11 (TODO: DUMMY DATA)",
+		Type:  "SSD",
+		Size:  50,
 	}
 
-	for _, disk := range block.Disks {
-		storage = append(storage, infra.Storage{
-			Name:   disk.Name,
-			Driver: disk.StorageController.String(),
-			Vendor: disk.Vendor,
-			Model:  disk.Model,
-			Serial: disk.SerialNumber,
-			Size:   uint(disk.SizeBytes / 1024 / 1024 / 1024),
-		})
+	dataDisk := []infra.Disk{
+		{
+			Label: "Storage 1 (TODO: DUMMY DATA)",
+			Type:  "HDD",
+			Size:  100,
+		},
+		{
+			Label: "Storage 2 (TODO: DUMMY DATA)",
+			Type:  "HDD",
+			Size:  200,
+		},
 	}
 
 	// All of compute information
@@ -387,20 +394,21 @@ func GetComputeInfo() (infra.Compute, error) {
 		},
 		ComputeResource: infra.ComputeResource{
 			CPU: infra.CPU{
-				Vendor:  c[0].VendorID,
-				Model:   c[0].ModelName,
-				Speed:   uint(c[0].Mhz),
-				Cache:   uint(c[0].CacheSize),
-				Cpus:    cpus,
-				Cores:   cores,
-				Threads: threads,
+				Vendor:   c[0].VendorID,
+				Model:    c[0].ModelName,
+				MaxSpeed: uint(c[0].Mhz),
+				Cache:    uint(c[0].CacheSize),
+				Cpus:     cpus,
+				Cores:    cores,
+				Threads:  threads,
 			},
 			Memory: infra.Memory{
 				Type:  memType.String(),
 				Speed: uint(memSpeed),
 				Size:  uint(memSize),
 			},
-			Storage: storage,
+			RootDisk: rootDisk,
+			DataDisk: dataDisk,
 		},
 	}
 

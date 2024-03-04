@@ -19,14 +19,8 @@ func GetNICs() ([]network2.NIC, error) {
 	}
 
 	var defaultRoutes []routes.RouteStruct
-	var allRoutes []routes.RouteStruct
 
 	defaultRoutes, err = routes.GetLinuxRoutes(true)
-	if err != nil {
-		return nics, err
-	}
-
-	allRoutes, err = routes.GetLinuxRoutes(false)
 	if err != nil {
 		return nics, err
 	}
@@ -34,7 +28,6 @@ func GetNICs() ([]network2.NIC, error) {
 	for _, i := range interfaces {
 		var addresses []string
 		var gateways []string
-		var ros []network2.Route
 
 		for _, a := range i.Addrs {
 			addresses = append(addresses, a.Addr)
@@ -46,23 +39,12 @@ func GetNICs() ([]network2.NIC, error) {
 			}
 		}
 
-		for _, route := range allRoutes {
-			if route.Interface == i.Name {
-				ros = append(ros, network2.Route{
-					Destination: route.Destination,
-					Netmask:     route.Netmask,
-					NextHop:     route.NextHop,
-				})
-			}
-		}
-
 		nics = append(nics, network2.NIC{
-			Interface: i.Name,
-			Address:   addresses,
-			Gateway:   gateways,
-			Route:     ros,
-			MAC:       i.HardwareAddr,
-			MTU:       i.MTU,
+			Interface:  i.Name,
+			Address:    addresses,
+			Gateway:    gateways,
+			MACAddress: i.HardwareAddr,
+			MTU:        i.MTU,
 		})
 	}
 

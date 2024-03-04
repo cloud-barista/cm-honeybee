@@ -14,7 +14,6 @@ import (
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/yumaojun03/dmidecode"
 	"github.com/yumaojun03/dmidecode/parser/memory"
-	"github.com/zcalusic/sysinfo"
 	"strings"
 	"time"
 )
@@ -127,20 +126,28 @@ func GetComputeInfo() (infra.Compute, error) {
 		}
 	}
 
+	// TODO
 	// storage information
-	var si sysinfo.SysInfo
-	si.GetSysInfo()
+	//var si sysinfo.SysInfo
+	//si.GetSysInfo()
 
-	var storage []infra.Storage
-	for _, s := range si.Storage {
-		storage = append(storage, infra.Storage{
-			Name:   s.Name,
-			Driver: s.Driver,
-			Vendor: s.Vendor,
-			Model:  s.Model,
-			Serial: s.Serial,
-			Size:   s.Size,
-		})
+	rootDisk := infra.Disk{
+		Label: "Windows 11 (TODO: DUMMY DATA)",
+		Type:  "SSD",
+		Size:  50,
+	}
+
+	dataDisk := []infra.Disk{
+		{
+			Label: "Storage 1 (TODO: DUMMY DATA)",
+			Type:  "HDD",
+			Size:  100,
+		},
+		{
+			Label: "Storage 2 (TODO: DUMMY DATA)",
+			Type:  "HDD",
+			Size:  200,
+		},
 	}
 
 	// All of compute information
@@ -167,20 +174,21 @@ func GetComputeInfo() (infra.Compute, error) {
 		},
 		ComputeResource: infra.ComputeResource{
 			CPU: infra.CPU{
-				Vendor:  c[0].VendorID,
-				Model:   c[0].ModelName,
-				Speed:   uint(c[0].Mhz),
-				Cache:   uint(c[0].CacheSize),
-				Cpus:    cpus,
-				Cores:   cores,
-				Threads: threads,
+				Vendor:   c[0].VendorID,
+				Model:    c[0].ModelName,
+				MaxSpeed: uint(c[0].Mhz),
+				Cache:    uint(c[0].CacheSize),
+				Cpus:     cpus,
+				Cores:    cores,
+				Threads:  threads,
 			},
 			Memory: infra.Memory{
 				Type:  memType.String(),
 				Speed: uint(memSpeed),
 				Size:  uint(memSize),
 			},
-			Storage: storage,
+			RootDisk: rootDisk,
+			DataDisk: dataDisk,
 		},
 	}
 
