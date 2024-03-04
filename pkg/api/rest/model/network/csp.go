@@ -3,8 +3,8 @@ package network
 // Subnet TODO
 type Subnet struct {
 	Name     string `json:"name"`
-	IPv4CIDR string `json:"IPv4CIDR"` // IPv4 Network Address with CIDR Prefix Length
-	IPv6CIDR string `json:"IPv6CIDR"` // IPv6 Network Address with CIDR Prefix Length
+	IPv4CIDR string `json:"ipv4_cidr"` // IPv4 Network Address with CIDR Prefix Length
+	IPv6CIDR string `json:"ipv6_cidr"` // IPv6 Network Address with CIDR Prefix Length
 }
 
 // VPC TODO

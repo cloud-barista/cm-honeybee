@@ -9,5 +9,5 @@ type Host struct {
 
 type Network struct {
 	Host Host `json:"host"`
-	CSP  CSP  `json:"CSP"`
+	CSP  CSP  `json:"csp"`
 }
