@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/NeowayLabs/drm v0.0.0-20190824133025-4939fc0ad345
-	github.com/docker/docker v25.0.3+incompatible
+	github.com/docker/docker v25.0.5+incompatible
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
@@ -17,10 +17,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require (
-	github.com/swaggo/echo-swagger v1.4.1
-	github.com/swaggo/swag v1.16.3
-)
+require github.com/swaggo/echo-swagger v1.4.1
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
@@ -62,6 +59,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/swaggo/files/v2 v2.0.0 // indirect
+	github.com/swaggo/swag v1.16.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
