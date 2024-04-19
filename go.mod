@@ -13,14 +13,11 @@ require (
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/shirou/gopsutil/v3 v3.24.2
 	github.com/yumaojun03/dmidecode v0.1.4
-	golang.org/x/sys v0.17.0
+	golang.org/x/sys v0.18.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
-require (
-	github.com/swaggo/echo-swagger v1.4.1
-	github.com/swaggo/swag v1.16.3
-)
+require github.com/swaggo/echo-swagger v1.4.1
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
@@ -62,6 +59,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/swaggo/files/v2 v2.0.0 // indirect
+	github.com/swaggo/swag v1.16.3 // indirect
 	github.com/tklauser/go-sysconf v0.3.13 // indirect
 	github.com/tklauser/numcpus v0.7.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
@@ -73,9 +71,9 @@ require (
 	go.opentelemetry.io/otel/metric v1.24.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.22.0 // indirect
 	go.opentelemetry.io/otel/trace v1.24.0 // indirect
-	golang.org/x/crypto v0.20.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
 	golang.org/x/mod v0.15.0 // indirect
-	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.18.0 // indirect
