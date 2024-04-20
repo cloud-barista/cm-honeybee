@@ -35,6 +35,7 @@ func GetRPMs() ([]software.RPM, error) {
 	if err != nil {
 		return []software.RPM{}, err
 	}
+	defer db.Close()
 	pkgList, err := db.ListPackages()
 	if err != nil {
 		return []software.RPM{}, err
