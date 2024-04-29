@@ -113,16 +113,16 @@ func GetComputeInfo() (infra.Compute, error) {
 	}
 
 	var memType = memory.MemoryDeviceTypeUnknown
-	var memSpeed = uint16(0)
-	var memSize = uint16(0)
+	var memSpeed = uint(0)
+	var memSize = uint(0)
 
 	for _, m := range mem {
-		memSize += m.Size
+		memSize += uint(m.Size)
 		if m.Type != memory.MemoryDeviceTypeUnknown {
 			memType = m.Type
 		}
 		if m.Speed > 0 {
-			memSpeed = m.Speed
+			memSpeed = uint(m.Speed)
 		}
 	}
 
@@ -184,8 +184,8 @@ func GetComputeInfo() (infra.Compute, error) {
 			},
 			Memory: infra.Memory{
 				Type:  memType.String(),
-				Speed: uint(memSpeed),
-				Size:  uint(memSize),
+				Speed: memSpeed,
+				Size:  memSize,
 			},
 			RootDisk: rootDisk,
 			DataDisk: dataDisk,
