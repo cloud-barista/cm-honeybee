@@ -12,4 +12,4 @@ RestartPreventExitStatus=100
 
 [Install]
 WantedBy=multi-user.target
-Alias=Harp.service
+Alias=honeybee.service
