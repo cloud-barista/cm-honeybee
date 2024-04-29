@@ -3,6 +3,7 @@ Description=Cloud-Migrator Honeybee Service
 After=network.target
 
 [Service]
+Environment="CMHONEYBEE_ROOT=/etc/cloud-migrator/cm-honeybee/"
 Type=simple
 User=root
 ExecStart=/usr/bin/cm-honeybee
