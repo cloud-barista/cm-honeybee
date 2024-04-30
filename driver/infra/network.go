@@ -3,7 +3,7 @@ package infra
 import (
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/driver/network"
-	modelNet "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/network"
+	modelNet "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem/network"
 	"github.com/jollaman999/utils/logger"
 )
 

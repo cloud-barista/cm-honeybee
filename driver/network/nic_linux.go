@@ -6,7 +6,7 @@ package network
 
 import (
 	"github.com/cloud-barista/cm-honeybee/lib/routes"
-	network2 "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/network"
+	network2 "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem/network"
 	"github.com/shirou/gopsutil/v3/net"
 )
 

@@ -3,7 +3,7 @@ package controller
 import (
 	"github.com/cloud-barista/cm-honeybee/driver/software"
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/common"
-	_ "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/software" // Need for swag
+	_ "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem/software" // Need for swag
 	"github.com/labstack/echo/v4"
 	"net/http"
 )

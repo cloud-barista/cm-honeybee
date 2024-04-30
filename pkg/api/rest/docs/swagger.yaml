@@ -61,7 +61,7 @@ definitions:
       error:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.CPU:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.CPU:
     properties:
       cache:
         description: KB
@@ -83,36 +83,36 @@ definitions:
       vendor:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Compute:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Compute:
     properties:
       compute_resource:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.ComputeResource'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.ComputeResource'
       connection:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Connection'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Connection'
         type: array
       os:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.System'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.System'
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.ComputeResource:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.ComputeResource:
     properties:
       cpu:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.CPU'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.CPU'
       data_disk:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Disk'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Disk'
         type: array
       memory:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Memory'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Memory'
       root_disk:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Disk'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Disk'
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Connection:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Connection:
     properties:
       keypair:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Keypair'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Keypair'
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Disk:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Disk:
     properties:
       label:
         type: string
@@ -122,7 +122,7 @@ definitions:
       type:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.GPU:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.GPU:
     properties:
       drm:
         items:
@@ -133,18 +133,18 @@ definitions:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_gpu_nvidia.NVIDIA'
         type: array
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Infra:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Infra:
     properties:
       compute:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Compute'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Compute'
       gpu:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.GPU'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.GPU'
       network:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Network'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Network'
       storage:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Storage'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Storage'
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Kernel:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Kernel:
     properties:
       architecture:
         type: string
@@ -153,7 +153,7 @@ definitions:
       version:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Keypair:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Keypair:
     properties:
       name:
         type: string
@@ -162,7 +162,7 @@ definitions:
       public_key:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Memory:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Memory:
     properties:
       size:
         description: MB
@@ -173,14 +173,14 @@ definitions:
       type:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountPoint:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.MountPoint:
     properties:
       mounted_information:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountedInformation'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.MountedInformation'
         type: array
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountedInformation:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.MountedInformation:
     properties:
       destination:
         type: string
@@ -191,7 +191,7 @@ definitions:
       source:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Node:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Node:
     properties:
       hostname:
         type: string
@@ -202,7 +202,7 @@ definitions:
       timezone:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.OS:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.OS:
     properties:
       architecture:
         type: string
@@ -215,38 +215,38 @@ definitions:
       version:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Storage:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Storage:
     properties:
       mount_point:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountPoint'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.MountPoint'
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.System:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.System:
     properties:
       kernel:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Kernel'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Kernel'
       node:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Node'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Node'
       os:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.OS'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.OS'
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.CSP:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.CSP:
     properties:
       name:
         type: string
       nlb:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NLB'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.NLB'
         type: array
       security_group:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.SecurityGroup'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.SecurityGroup'
         type: array
       vpc:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.VPC'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.VPC'
         type: array
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.DNS:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.DNS:
     properties:
       dns_server:
         description: IPv4 or IPv6 DNS Server Addresses
@@ -254,7 +254,7 @@ definitions:
           type: string
         type: array
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.FirewallRule:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.FirewallRule:
     properties:
       action:
         description: allow, deny
@@ -277,24 +277,24 @@ definitions:
       src_port:
         type: integer
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Host:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Host:
     properties:
       dns:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.DNS'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.DNS'
       firewall_rule:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.FirewallRule'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.FirewallRule'
         type: array
       network_interface:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NIC'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.NIC'
         type: array
       route:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Route'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Route'
         type: array
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NIC:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.NIC:
     properties:
       address:
         items:
@@ -311,7 +311,7 @@ definitions:
       mtu:
         type: integer
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NLB:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.NLB:
     properties:
       description:
         type: string
@@ -326,14 +326,14 @@ definitions:
       target_group:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Network:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Network:
     properties:
       csp:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.CSP'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.CSP'
       host:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Host'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Host'
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Route:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Route:
     properties:
       destination:
         type: string
@@ -342,13 +342,13 @@ definitions:
       next_hop:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.SecurityGroup:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.SecurityGroup:
     properties:
       description:
         type: string
       firewall_rule:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.FirewallRule'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.FirewallRule'
         type: array
       id:
         type: string
@@ -357,7 +357,7 @@ definitions:
       vnet_id:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Subnet:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Subnet:
     properties:
       ipv4_cidr:
         description: IPv4 Network Address with CIDR Prefix Length
@@ -368,7 +368,7 @@ definitions:
       name:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.VPC:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.VPC:
     properties:
       address_space:
         description: IPv4 CIDR or IPv6 CIDR
@@ -377,7 +377,7 @@ definitions:
         type: array
       dns_server:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.DNS'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.DNS'
         type: array
       id:
         type: string
@@ -385,10 +385,10 @@ definitions:
         type: string
       subnet:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Subnet'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Subnet'
         type: array
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.DEB:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.DEB:
     properties:
       architecture:
         type: string
@@ -423,21 +423,21 @@ definitions:
       version:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Docker:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Docker:
     properties:
       containers:
         items:
           $ref: '#/definitions/types.Container'
         type: array
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Podman:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Podman:
     properties:
       containers:
         items:
           $ref: '#/definitions/types.Container'
         type: array
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.RPM:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.RPM:
     properties:
       arch:
         type: string
@@ -462,19 +462,19 @@ definitions:
       version:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Software:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Software:
     properties:
       deb:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.DEB'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.DEB'
         type: array
       docker:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Docker'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Docker'
       podman:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Podman'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Podman'
       rpm:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.RPM'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.RPM'
         type: array
     type: object
   mount.Propagation:
@@ -710,7 +710,7 @@ paths:
         "200":
           description: Successfully get information of the infra.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Infra'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Infra'
         "400":
           description: Sent bad request.
           schema:
@@ -733,7 +733,7 @@ paths:
         "200":
           description: Successfully get information of software.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Software'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Software'
         "400":
           description: Sent bad request.
           schema:

@@ -1,7 +1,7 @@
 package software
 
 import (
-	software2 "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/software"
+	software2 "github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem/software"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/host"
 )

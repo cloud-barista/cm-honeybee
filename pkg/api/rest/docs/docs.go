@@ -32,7 +32,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully get information of the infra.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Infra"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Infra"
                         }
                     },
                     "400": {
@@ -67,7 +67,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully get information of software.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Software"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Software"
                         }
                     },
                     "400": {
@@ -179,7 +179,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.CPU": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.CPU": {
             "type": "object",
             "properties": {
                 "cache": {
@@ -210,52 +210,52 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Compute": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Compute": {
             "type": "object",
             "properties": {
                 "compute_resource": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.ComputeResource"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.ComputeResource"
                 },
                 "connection": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Connection"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Connection"
                     }
                 },
                 "os": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.System"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.System"
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.ComputeResource": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.ComputeResource": {
             "type": "object",
             "properties": {
                 "cpu": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.CPU"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.CPU"
                 },
                 "data_disk": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Disk"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Disk"
                     }
                 },
                 "memory": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Memory"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Memory"
                 },
                 "root_disk": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Disk"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Disk"
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Connection": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Connection": {
             "type": "object",
             "properties": {
                 "keypair": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Keypair"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Keypair"
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Disk": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Disk": {
             "type": "object",
             "properties": {
                 "label": {
@@ -270,7 +270,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.GPU": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.GPU": {
             "type": "object",
             "properties": {
                 "drm": {
@@ -287,24 +287,24 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Infra": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Infra": {
             "type": "object",
             "properties": {
                 "compute": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Compute"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Compute"
                 },
                 "gpu": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.GPU"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.GPU"
                 },
                 "network": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Network"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Network"
                 },
                 "storage": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Storage"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Storage"
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Kernel": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Kernel": {
             "type": "object",
             "properties": {
                 "architecture": {
@@ -318,7 +318,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Keypair": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Keypair": {
             "type": "object",
             "properties": {
                 "name": {
@@ -332,7 +332,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Memory": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Memory": {
             "type": "object",
             "properties": {
                 "size": {
@@ -348,18 +348,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountPoint": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.MountPoint": {
             "type": "object",
             "properties": {
                 "mounted_information": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountedInformation"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.MountedInformation"
                     }
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountedInformation": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.MountedInformation": {
             "type": "object",
             "properties": {
                 "destination": {
@@ -376,7 +376,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Node": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Node": {
             "type": "object",
             "properties": {
                 "hostname": {
@@ -393,7 +393,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.OS": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.OS": {
             "type": "object",
             "properties": {
                 "architecture": {
@@ -413,29 +413,29 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Storage": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Storage": {
             "type": "object",
             "properties": {
                 "mount_point": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountPoint"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.MountPoint"
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.System": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.System": {
             "type": "object",
             "properties": {
                 "kernel": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Kernel"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Kernel"
                 },
                 "node": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Node"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.Node"
                 },
                 "os": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.OS"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.OS"
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.CSP": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.CSP": {
             "type": "object",
             "properties": {
                 "name": {
@@ -444,24 +444,24 @@ const docTemplate = `{
                 "nlb": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NLB"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.NLB"
                     }
                 },
                 "security_group": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.SecurityGroup"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.SecurityGroup"
                     }
                 },
                 "vpc": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.VPC"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.VPC"
                     }
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.DNS": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.DNS": {
             "type": "object",
             "properties": {
                 "dns_server": {
@@ -473,7 +473,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.FirewallRule": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.FirewallRule": {
             "type": "object",
             "properties": {
                 "action": {
@@ -506,33 +506,33 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Host": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Host": {
             "type": "object",
             "properties": {
                 "dns": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.DNS"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.DNS"
                 },
                 "firewall_rule": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.FirewallRule"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.FirewallRule"
                     }
                 },
                 "network_interface": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NIC"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.NIC"
                     }
                 },
                 "route": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Route"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Route"
                     }
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NIC": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.NIC": {
             "type": "object",
             "properties": {
                 "address": {
@@ -558,7 +558,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NLB": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.NLB": {
             "type": "object",
             "properties": {
                 "description": {
@@ -581,18 +581,18 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Network": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Network": {
             "type": "object",
             "properties": {
                 "csp": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.CSP"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.CSP"
                 },
                 "host": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Host"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Host"
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Route": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Route": {
             "type": "object",
             "properties": {
                 "destination": {
@@ -606,7 +606,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.SecurityGroup": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.SecurityGroup": {
             "type": "object",
             "properties": {
                 "description": {
@@ -615,7 +615,7 @@ const docTemplate = `{
                 "firewall_rule": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.FirewallRule"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.FirewallRule"
                     }
                 },
                 "id": {
@@ -629,7 +629,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Subnet": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Subnet": {
             "type": "object",
             "properties": {
                 "ipv4_cidr": {
@@ -645,7 +645,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.VPC": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.VPC": {
             "type": "object",
             "properties": {
                 "address_space": {
@@ -658,7 +658,7 @@ const docTemplate = `{
                 "dns_server": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.DNS"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.DNS"
                     }
                 },
                 "id": {
@@ -670,12 +670,12 @@ const docTemplate = `{
                 "subnet": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Subnet"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Subnet"
                     }
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.DEB": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.DEB": {
             "type": "object",
             "properties": {
                 "architecture": {
@@ -728,7 +728,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Docker": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Docker": {
             "type": "object",
             "properties": {
                 "containers": {
@@ -739,7 +739,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Podman": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Podman": {
             "type": "object",
             "properties": {
                 "containers": {
@@ -750,7 +750,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.RPM": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.RPM": {
             "type": "object",
             "properties": {
                 "arch": {
@@ -788,25 +788,25 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Software": {
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Software": {
             "type": "object",
             "properties": {
                 "deb": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.DEB"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.DEB"
                     }
                 },
                 "docker": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Docker"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Docker"
                 },
                 "podman": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Podman"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.Podman"
                 },
                 "rpm": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.RPM"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_software.RPM"
                     }
                 }
             }

@@ -1,7 +1,7 @@
 package software
 
 import (
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/software"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem/software"
 	_ "github.com/glebarez/go-sqlite" // sqlite
 	"github.com/hashicorp/go-multierror"
 	rpmdb "github.com/knqyf263/go-rpmdb/pkg"

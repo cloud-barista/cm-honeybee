@@ -7,7 +7,7 @@ package infra
 import (
 	"errors"
 	"fmt"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/infra"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem/infra"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/host"

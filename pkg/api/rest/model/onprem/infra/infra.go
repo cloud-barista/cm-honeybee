@@ -1,7 +1,7 @@
 package infra
 
 import (
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/network"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem/network"
 )
 
 type Infra struct {
