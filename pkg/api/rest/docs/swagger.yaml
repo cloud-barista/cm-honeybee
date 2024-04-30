@@ -1,0 +1,748 @@
+definitions:
+  github_com_cloud-barista_cm-honeybee_gpu_drm.DRM:
+    properties:
+      driver_date:
+        type: string
+      driver_description:
+        type: string
+      driver_name:
+        type: string
+      driver_version:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_gpu_nvidia.DeviceAttribute:
+    properties:
+      cuda_version:
+        type: string
+      driver_version:
+        type: string
+      gpu_uuid:
+        type: string
+      product_architecture:
+        type: string
+      product_brand:
+        type: string
+      product_name:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_gpu_nvidia.NVIDIA:
+    properties:
+      device_attribute:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_gpu_nvidia.DeviceAttribute'
+      performance:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_gpu_nvidia.Performance'
+    type: object
+  github_com_cloud-barista_cm-honeybee_gpu_nvidia.Performance:
+    properties:
+      bar1_memory_total:
+        description: mb
+        type: integer
+      bar1_memory_usage:
+        description: percent
+        type: integer
+      bar1_memory_used:
+        description: mb
+        type: integer
+      fb_memory_total:
+        description: mb
+        type: integer
+      fb_memory_usage:
+        description: percent
+        type: integer
+      fb_memory_used:
+        description: mb
+        type: integer
+      gpu_usage:
+        description: percent
+        type: integer
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.CPU:
+    properties:
+      cache:
+        description: KB
+        type: integer
+      cores:
+        description: ea
+        type: integer
+      cpus:
+        description: ea
+        type: integer
+      max_speed:
+        description: MHz
+        type: integer
+      model:
+        type: string
+      threads:
+        description: ea
+        type: integer
+      vendor:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Compute:
+    properties:
+      compute_resource:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.ComputeResource'
+      connection:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Connection'
+        type: array
+      os:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.System'
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.ComputeResource:
+    properties:
+      cpu:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.CPU'
+      data_disk:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Disk'
+        type: array
+      memory:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Memory'
+      root_disk:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Disk'
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Connection:
+    properties:
+      keypair:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Keypair'
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Disk:
+    properties:
+      label:
+        type: string
+      size:
+        description: GB
+        type: integer
+      type:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.GPU:
+    properties:
+      drm:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_gpu_drm.DRM'
+        type: array
+      nvidia:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_gpu_nvidia.NVIDIA'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Infra:
+    properties:
+      compute:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Compute'
+      gpu:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.GPU'
+      network:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Network'
+      storage:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Storage'
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Kernel:
+    properties:
+      architecture:
+        type: string
+      release:
+        type: string
+      version:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Keypair:
+    properties:
+      name:
+        type: string
+      private_key:
+        type: string
+      public_key:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Memory:
+    properties:
+      size:
+        description: MB
+        type: integer
+      speed:
+        description: MHz
+        type: integer
+      type:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountPoint:
+    properties:
+      mounted_information:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountedInformation'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountedInformation:
+    properties:
+      destination:
+        type: string
+      filesystem:
+        type: string
+      option:
+        type: string
+      source:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Node:
+    properties:
+      hostname:
+        type: string
+      hypervisor:
+        type: string
+      machineid:
+        type: string
+      timezone:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.OS:
+    properties:
+      architecture:
+        type: string
+      name:
+        type: string
+      release:
+        type: string
+      vendor:
+        type: string
+      version:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Storage:
+    properties:
+      mount_point:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.MountPoint'
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.System:
+    properties:
+      kernel:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Kernel'
+      node:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Node'
+      os:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.OS'
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.CSP:
+    properties:
+      name:
+        type: string
+      nlb:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NLB'
+        type: array
+      security_group:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.SecurityGroup'
+        type: array
+      vpc:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.VPC'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.DNS:
+    properties:
+      dns_server:
+        description: IPv4 or IPv6 DNS Server Addresses
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.FirewallRule:
+    properties:
+      action:
+        description: allow, deny
+        type: string
+      direction:
+        description: inbound, outbound
+        type: string
+      dst:
+        type: string
+      dst_port:
+        type: integer
+      priority:
+        description: Lower has higher priority
+        type: integer
+      protocol:
+        description: TCP, UDP, ICMP
+        type: string
+      src:
+        type: string
+      src_port:
+        type: integer
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Host:
+    properties:
+      dns:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.DNS'
+      firewall_rule:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.FirewallRule'
+        type: array
+      network_interface:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NIC'
+        type: array
+      route:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Route'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NIC:
+    properties:
+      address:
+        items:
+          type: string
+        type: array
+      gateway:
+        items:
+          type: string
+        type: array
+      interface:
+        type: string
+      mac_address:
+        type: string
+      mtu:
+        type: integer
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.NLB:
+    properties:
+      description:
+        type: string
+      health_checker:
+        type: string
+      id:
+        type: string
+      listener:
+        type: string
+      name:
+        type: string
+      target_group:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Network:
+    properties:
+      csp:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.CSP'
+      host:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Host'
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Route:
+    properties:
+      destination:
+        type: string
+      netmask:
+        type: string
+      next_hop:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.SecurityGroup:
+    properties:
+      description:
+        type: string
+      firewall_rule:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.FirewallRule'
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+      vnet_id:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Subnet:
+    properties:
+      ipv4_cidr:
+        description: IPv4 Network Address with CIDR Prefix Length
+        type: string
+      ipv6_cidr:
+        description: IPv6 Network Address with CIDR Prefix Length
+        type: string
+      name:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.VPC:
+    properties:
+      address_space:
+        description: IPv4 CIDR or IPv6 CIDR
+        items:
+          type: string
+        type: array
+      dns_server:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.DNS'
+        type: array
+      id:
+        type: string
+      region:
+        type: string
+      subnet:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_network.Subnet'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.DEB:
+    properties:
+      architecture:
+        type: string
+      conffiles:
+        items:
+          type: string
+        type: array
+      depends:
+        type: string
+      description:
+        type: string
+      homepage:
+        type: string
+      installed_size:
+        type: integer
+      maintainer:
+        type: string
+      multi_arch:
+        type: string
+      package:
+        type: string
+      pre_depends:
+        type: string
+      priority:
+        type: string
+      section:
+        type: string
+      source:
+        type: string
+      status:
+        type: string
+      version:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Docker:
+    properties:
+      containers:
+        items:
+          $ref: '#/definitions/types.Container'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Podman:
+    properties:
+      containers:
+        items:
+          $ref: '#/definitions/types.Container'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.RPM:
+    properties:
+      arch:
+        type: string
+      license:
+        type: string
+      name:
+        type: string
+      release:
+        type: string
+      requires:
+        items:
+          type: string
+        type: array
+      size:
+        type: integer
+      sourceRpm:
+        type: string
+      summary:
+        type: string
+      vendor:
+        type: string
+      version:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Software:
+    properties:
+      deb:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.DEB'
+        type: array
+      docker:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Docker'
+      podman:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Podman'
+      rpm:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.RPM'
+        type: array
+    type: object
+  mount.Propagation:
+    enum:
+    - rprivate
+    - private
+    - rshared
+    - shared
+    - rslave
+    - slave
+    type: string
+    x-enum-varnames:
+    - PropagationRPrivate
+    - PropagationPrivate
+    - PropagationRShared
+    - PropagationShared
+    - PropagationRSlave
+    - PropagationSlave
+  mount.Type:
+    enum:
+    - bind
+    - volume
+    - tmpfs
+    - npipe
+    - cluster
+    type: string
+    x-enum-varnames:
+    - TypeBind
+    - TypeVolume
+    - TypeTmpfs
+    - TypeNamedPipe
+    - TypeCluster
+  network.EndpointIPAMConfig:
+    properties:
+      ipv4Address:
+        type: string
+      ipv6Address:
+        type: string
+      linkLocalIPs:
+        items:
+          type: string
+        type: array
+    type: object
+  network.EndpointSettings:
+    properties:
+      aliases:
+        description: Aliases holds the list of extra, user-specified DNS names for
+          this endpoint.
+        items:
+          type: string
+        type: array
+      dnsnames:
+        description: |-
+          DNSNames holds all the (non fully qualified) DNS names associated to this endpoint. First entry is used to
+          generate PTR records.
+        items:
+          type: string
+        type: array
+      driverOpts:
+        additionalProperties:
+          type: string
+        type: object
+      endpointID:
+        type: string
+      gateway:
+        type: string
+      globalIPv6Address:
+        type: string
+      globalIPv6PrefixLen:
+        type: integer
+      ipaddress:
+        type: string
+      ipamconfig:
+        allOf:
+        - $ref: '#/definitions/network.EndpointIPAMConfig'
+        description: Configurations
+      ipprefixLen:
+        type: integer
+      ipv6Gateway:
+        type: string
+      links:
+        items:
+          type: string
+        type: array
+      macAddress:
+        description: |-
+          MacAddress may be used to specify a MAC address when the container is created.
+          Once the container is running, it becomes operational data (it may contain a
+          generated address).
+        type: string
+      networkID:
+        description: Operational data
+        type: string
+    type: object
+  pkg_api_rest_controller.SimpleMsg:
+    properties:
+      message:
+        type: string
+    type: object
+  types.Container:
+    properties:
+      Id:
+        type: string
+      command:
+        type: string
+      created:
+        type: integer
+      hostConfig:
+        properties:
+          networkMode:
+            type: string
+        type: object
+      image:
+        type: string
+      imageID:
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      mounts:
+        items:
+          $ref: '#/definitions/types.MountPoint'
+        type: array
+      names:
+        items:
+          type: string
+        type: array
+      networkSettings:
+        $ref: '#/definitions/types.SummaryNetworkSettings'
+      ports:
+        items:
+          $ref: '#/definitions/types.Port'
+        type: array
+      sizeRootFs:
+        type: integer
+      sizeRw:
+        type: integer
+      state:
+        type: string
+      status:
+        type: string
+    type: object
+  types.MountPoint:
+    properties:
+      destination:
+        description: |-
+          Destination is the path relative to the container root (`/`) where the
+          Source is mounted inside the container.
+        type: string
+      driver:
+        description: Driver is the volume driver used to create the volume (if it
+          is a volume).
+        type: string
+      mode:
+        description: |-
+          Mode is a comma separated list of options supplied by the user when
+          creating the bind/volume mount.
+
+          The default is platform-specific (`"z"` on Linux, empty on Windows).
+        type: string
+      name:
+        description: |-
+          Name is the name reference to the underlying data defined by `Source`
+          e.g., the volume name.
+        type: string
+      propagation:
+        allOf:
+        - $ref: '#/definitions/mount.Propagation'
+        description: |-
+          Propagation describes how mounts are propagated from the host into the
+          mount point, and vice-versa. Refer to the Linux kernel documentation
+          for details:
+          https://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt
+
+          This field is not used on Windows.
+      rw:
+        description: RW indicates whether the mount is mounted writable (read-write).
+        type: boolean
+      source:
+        description: |-
+          Source is the source location of the mount.
+
+          For volumes, this contains the storage location of the volume (within
+          `/var/lib/docker/volumes/`). For bind-mounts, and `npipe`, this contains
+          the source (host) part of the bind-mount. For `tmpfs` mount points, this
+          field is empty.
+        type: string
+      type:
+        allOf:
+        - $ref: '#/definitions/mount.Type'
+        description: |-
+          Type is the type of mount, see `Type<foo>` definitions in
+          github.com/docker/docker/api/types/mount.Type
+    type: object
+  types.Port:
+    properties:
+      IP:
+        description: Host IP address that the container's port is mapped to
+        type: string
+      PrivatePort:
+        description: |-
+          Port on the container
+          Required: true
+        type: integer
+      PublicPort:
+        description: Port exposed on the host
+        type: integer
+      Type:
+        description: |-
+          type
+          Required: true
+        type: string
+    type: object
+  types.SummaryNetworkSettings:
+    properties:
+      networks:
+        additionalProperties:
+          $ref: '#/definitions/network.EndpointSettings'
+        type: object
+    type: object
+info:
+  contact: {}
+paths:
+  /infra:
+    get:
+      consumes:
+      - application/json
+      description: Get infra information.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the infra.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_infra.Infra'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the infra.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Get a list of integrated infra information
+      tags:
+      - '[Infra] Get infra info'
+  /software:
+    get:
+      consumes:
+      - application/json
+      description: Get software information.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of software.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_software.Software'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of software.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Get a list of software information
+      tags:
+      - '[Software] Get software info'
+swagger: "2.0"
