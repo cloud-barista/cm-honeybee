@@ -1,6 +1,6 @@
 package network
 
-// FirewallRule TODO
+// FirewallRule
 type FirewallRule struct {
 	Priority  uint   `json:"priority"` // Lower has higher priority
 	Src       string `json:"src"`

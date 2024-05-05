@@ -18,6 +18,7 @@ require (
 )
 
 require (
+	github.com/coreos/go-iptables v0.7.0
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.3
 )
