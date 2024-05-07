@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/cloud-barista/cm-honeybee/common"
@@ -14,16 +15,32 @@ import (
 )
 
 const (
-	infoColor    = "\033[1;34m%s\033[0m"
-	noticeColor  = "\033[1;36m%s\033[0m"
-	warningColor = "\033[1;33m%s\033[0m"
-	errorColor   = "\033[1;31m%s\033[0m"
-	debugColor   = "\033[0;36m%s\033[0m"
+	infoColor   = "\033[1;34m%s\033[0m"
+	noticeColor = "\033[1;36m%s\033[0m"
 )
 
 const (
 	website = " https://github.com/cloud-barista/cm-honeybee"
 )
+
+func getLocalIP() string {
+	conn, err := net.Dial("udp", "8.8.8.8:80")
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+		return ""
+	}
+	defer func() {
+		_ = conn.Close()
+	}()
+	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	localIP := strings.Split(localAddr.String(), ":")
+	if len(localIP) == 0 {
+		logger.Println(logger.ERROR, true, "Failed to get local IP.")
+		return ""
+	}
+
+	return localIP[0]
+}
 
 func Init() {
 	e := echo.New()
@@ -39,7 +56,7 @@ func Init() {
 	route.RegisterUtility(e)
 
 	// Display API Docs Dashboard when server starts
-	endpoint := "localhost:" + config.CMHoneybeeConfig.CMHoneybee.Listen.Port
+	endpoint := getLocalIP() + ":" + config.CMHoneybeeConfig.CMHoneybee.Listen.Port
 	apiDocsDashboard := " http://" + endpoint + "/" + strings.ToLower(common.ShortModuleName) + "/swagger/index.html"
 
 	fmt.Println("\n ")
