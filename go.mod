@@ -22,6 +22,7 @@ require (
 	github.com/glebarez/sqlite v1.11.0
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.3
+	github.com/taigrr/systemctl v1.0.6
 	gorm.io/gorm v1.25.10
 )
 
