@@ -4,7 +4,7 @@ MODULE_NAME := "cm-honeybee"
 PROJECT_NAME := "github.com/cloud-barista/${MODULE_NAME}"
 PKG_LIST := $(shell go list ${PROJECT_NAME}/... 2>&1)
 
-GOPROXY_OPTION := GOPROXY=direct GOSUMDB=off
+GOPROXY_OPTION := GOPROXY=direct
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
