@@ -90,7 +90,7 @@ build: lint swag ## Build the binary file
 
 linux: lint swag ## Build the binary file for Linux
 	@echo Building...
-	@cd cmd/${MODULE_NAME} && GOOS=linux CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go
+	@cd cmd/${MODULE_NAME} && GOOS=linux CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
 	@git diff > .diff_last_build
 	@git rev-parse HEAD > .git_hash_last_build
 	@echo Build finished!
