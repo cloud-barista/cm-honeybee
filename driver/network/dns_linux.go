@@ -7,6 +7,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem/network"
 	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/fileutil"
+	"github.com/jollaman999/utils/logger"
 	"github.com/taigrr/systemctl"
 	"net/netip"
 	"strings"
@@ -75,6 +76,11 @@ func GetDNS() (network.DNS, error) {
 
 	if isSystemdResolvedActive() {
 		nameservers, err = getDNSFromSystemdResolved()
+		if err != nil {
+			logger.Println(logger.WARN, false, "DNS: Failed to get nameservers while systemd-resolved is running.")
+			logger.Println(logger.WARN, false, "DNS: Fallback to get nameservers from /etc/resolv.conf.")
+			nameservers, err = getDNSFromResolvedConf()
+		}
 	} else {
 		nameservers, err = getDNSFromResolvedConf()
 	}
