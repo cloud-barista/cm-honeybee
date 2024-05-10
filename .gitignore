@@ -7,3 +7,5 @@ vendor
 .git_*
 
 *.log
+
+CM-HONEYBEE.db

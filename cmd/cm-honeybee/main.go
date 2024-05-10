@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/cloud-barista/cm-honeybee/common"
+	"github.com/cloud-barista/cm-honeybee/db"
 	"github.com/cloud-barista/cm-honeybee/lib/config"
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/server"
 	"github.com/jollaman999/utils/logger"
@@ -32,6 +33,11 @@ func init() {
 	err = logger.InitLogFile(common.RootPath+"/log", strings.ToLower(common.ModuleName))
 	if err != nil {
 		log.Panicln(err)
+	}
+
+	err = db.Open()
+	if err != nil {
+		logger.Panicln(logger.ERROR, true, err.Error())
 	}
 
 	logger.Println(logger.INFO, false, "Agent UUID: "+common.AgentUUID)

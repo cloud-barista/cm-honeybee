@@ -61,6 +61,43 @@ definitions:
       error:
         type: string
     type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo:
+    properties:
+      group_uuid:
+        type: string
+      ip_address:
+        type: string
+      password:
+        type: string
+      private_key:
+        type: string
+      public_key:
+        type: string
+      ssh_port:
+        type: integer
+      type:
+        type: string
+      user:
+        type: string
+      uuid:
+        type: string
+    required:
+    - group_uuid
+    - ip_address
+    - ssh_port
+    - user
+    - uuid
+    type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup:
+    properties:
+      name:
+        type: string
+      uuid:
+        type: string
+    required:
+    - name
+    - uuid
+    type: object
   github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_infra.CPU:
     properties:
       cache:
@@ -699,6 +736,173 @@ definitions:
 info:
   contact: {}
 paths:
+  /connection_info:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of connection information.
+      parameters:
+      - description: Page of the connection information list.
+        in: query
+        name: page
+        type: string
+      - description: Row of the connection information list.
+        in: query
+        name: row
+        type: string
+      - description: UUID of the connection information.
+        in: query
+        name: uuid
+        type: string
+      - description: Migration group UUID.
+        in: query
+        name: group_uuid
+        type: string
+      - description: IP address of the connection information.
+        in: query
+        name: ip_address
+        type: string
+      - description: SSH port of the connection information.
+        in: query
+        name: ssh_port
+        type: string
+      - description: User of the connection information.
+        in: query
+        name: user
+        type: string
+      - description: Type of the connection information.
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get a list of connection information.
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get a list of connection information.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: List ConnectionInfo
+      tags:
+      - '[On-premise] ConnectionInfo'
+    post:
+      consumes:
+      - application/json
+      description: Register the connection information.
+      parameters:
+      - description: Connection information of the node.
+        in: body
+        name: ConnectionInfo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully register the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to register the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Register ConnectionInfo
+      tags:
+      - '[On-premise] ConnectionInfo'
+  /connection_info/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete the connection information.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully delete the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to delete the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Delete ConnectionInfo
+      tags:
+      - '[On-premise] ConnectionInfo'
+    get:
+      consumes:
+      - application/json
+      description: Get the connection information.
+      parameters:
+      - description: UUID of the connectionInfo
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Get ConnectionInfo
+      tags:
+      - '[On-premise] ConnectionInfo'
+    put:
+      consumes:
+      - application/json
+      description: Update the connection information.
+      parameters:
+      - description: Connection information to modify.
+        in: body
+        name: ConnectionInfo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully update the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to update the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Update ConnectionInfo
+      tags:
+      - '[On-premise] ConnectionInfo'
   /infra:
     get:
       consumes:
@@ -722,6 +926,157 @@ paths:
       summary: Get a list of integrated infra information
       tags:
       - '[Infra] Get infra info'
+  /migration_group:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of migration group.
+      parameters:
+      - description: Page of the migration group list.
+        in: query
+        name: page
+        type: string
+      - description: Row of the migration group list.
+        in: query
+        name: row
+        type: string
+      - description: UUID of the migration group.
+        in: query
+        name: uuid
+        type: string
+      - description: Migration group name.
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get a list of migration group.
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get a list of migration group.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: List MigrationGroup
+      tags:
+      - '[On-premise] MigrationGroup'
+    post:
+      consumes:
+      - application/json
+      description: Register the migration group.
+      parameters:
+      - description: migration group of the node.
+        in: body
+        name: MigrationGroup
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully register the migration group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to register the migration group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Register MigrationGroup
+      tags:
+      - '[On-premise] MigrationGroup'
+  /migration_group/{uuid}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete the migration group.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully delete the migration group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to delete the migration group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Delete MigrationGroup
+      tags:
+      - '[On-premise] MigrationGroup'
+    get:
+      consumes:
+      - application/json
+      description: Get the migration group.
+      parameters:
+      - description: UUID of the MigrationGroup
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get the migration group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get the migration group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Get MigrationGroup
+      tags:
+      - '[On-premise] MigrationGroup'
+    put:
+      consumes:
+      - application/json
+      description: Update the migration group.
+      parameters:
+      - description: migration group to modify.
+        in: body
+        name: MigrationGroup
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully update the migration group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to update the migration group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Update MigrationGroup
+      tags:
+      - '[On-premise] MigrationGroup'
   /software:
     get:
       consumes:

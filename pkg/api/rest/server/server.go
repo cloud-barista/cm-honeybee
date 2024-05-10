@@ -50,6 +50,8 @@ func Init() {
 	// Hide Echo Banner
 	e.HideBanner = true
 
+	route.RegisterConnectionInfo(e)
+	route.RegisterMigrationGroup(e)
 	route.RegisterInfra(e)
 	route.RegisterSoftware(e)
 	route.RegisterSwagger(e)
