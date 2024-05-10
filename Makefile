@@ -8,7 +8,7 @@ GOPROXY_OPTION := GOPROXY=direct GOSUMDB=off
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build run clean help
+.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build linux windows run clean help
 
 all: build
 
@@ -84,6 +84,20 @@ build: lint swag ## Build the binary file
 	    echo $$kernel_name; \
 	    echo "Not supported Operating System. ($$kernel_name)"; \
 	  fi
+	@git diff > .diff_last_build
+	@git rev-parse HEAD > .git_hash_last_build
+	@echo Build finished!
+
+linux: lint swag ## Build the binary file for Linux
+	@echo Building...
+	@cd cmd/${MODULE_NAME} && GOOS=linux CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go
+	@git diff > .diff_last_build
+	@git rev-parse HEAD > .git_hash_last_build
+	@echo Build finished!
+
+windows: lint swag ## Build the binary file for Windows
+	@echo Building...
+	@cd cmd/${MODULE_NAME} && GOOS=windows CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go
 	@git diff > .diff_last_build
 	@git rev-parse HEAD > .git_hash_last_build
 	@echo Build finished!
