@@ -266,21 +266,6 @@ func getVirtualMachineType(dmidecode *dmidecode.Decoder) (string, error) {
 	return checkVirtualMachineRegistry(), nil
 }
 
-func ddr5MemoryFix(memoryType memory.MemoryDeviceType) string {
-	// Reference: https://www.dmtf.org/sites/default/files/standards/documents/DSP0134_3.4.0a.pdf
-	const DDR5 = 34
-	const LPDDR5 = 35
-
-	switch memoryType {
-	case DDR5:
-		return "DDR5"
-	case LPDDR5:
-		return "LPDDR5"
-	default:
-		return memory.MemoryDeviceTypeUnknown.String()
-	}
-}
-
 func GetComputeInfo() (infra.Compute, error) {
 	var compute infra.Compute
 
@@ -345,7 +330,6 @@ func GetComputeInfo() (infra.Compute, error) {
 	}
 
 	var memType = memory.MemoryDeviceTypeUnknown
-	var memTypeString string
 	var memSpeed = uint(0)
 	var memSize = uint(0)
 
@@ -357,12 +341,6 @@ func GetComputeInfo() (infra.Compute, error) {
 		if m.Speed > 0 {
 			memSpeed = uint(m.Speed)
 		}
-	}
-
-	if memType > memory.MemoryDeviceTypeLPDDR4 {
-		memTypeString = ddr5MemoryFix(memType)
-	} else {
-		memTypeString = memType.String()
 	}
 
 	// TODO
@@ -425,7 +403,7 @@ func GetComputeInfo() (infra.Compute, error) {
 				Threads:  threads,
 			},
 			Memory: infra.Memory{
-				Type:  memTypeString,
+				Type:  memType.String(),
 				Speed: memSpeed,
 				Size:  memSize,
 			},
