@@ -64,9 +64,9 @@ swag swagger: ## Generate Swagger Documentation
 	  kernel_name=`uname -s` && \
 	  if [[ $$kernel_name == "CYGWIN"* ]] || [[ $$kernel_name == "MINGW"* ]]; then \
 	    drive=`go env GOPATH | cut -f1 -d':' | tr '[:upper:]' '[:lower:]'`; \
-	    path=`go env GOPATH | cut -f2 -d':' | sed 's@\\\\@\/@g'`; \
+	    path=`go env GOPATH | cut -f2 -d':' | sed 's@\\\\\\@\/@g'`; \
 	    cygdrive_prefix=`mount -p | tail -n1 | awk '{print $$1}'`; \
-	    go_path="$$cygdrive_prefix/$$drive/$$path"; \
+	    go_path=`echo $$cygdrive_prefix/$$drive/$$path | sed 's@\/\/@\/@g'`; \
 	  fi; \
 	  if [ ! -f "$$go_path/bin/swag" ]; then \
 	    ${GO_COMMAND} install github.com/swaggo/swag/cmd/swag@latest; \
