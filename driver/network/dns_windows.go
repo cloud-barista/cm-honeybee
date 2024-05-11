@@ -21,14 +21,14 @@ var (
 func runProcGetAdaptersAddresses(adapterAddresses *ipAdapterAddresses,
 	sizePointer *uint32) (errcode error) {
 	const family = syscall.AF_UNSPEC
-	const GAA_FLAG_SKIP_UNICAST = 0x0001
-	const GAA_FLAG_SKIP_ANYCAST = 0x0002
-	const GAA_FLAG_SKIP_MULTICAST = 0x0004
-	const GAA_FLAG_SKIP_FRIENDLY_NAME = 0x0020
-	const GAA_FLAG_INCLUDE_GATEWAYS = 0x0080
-	const flags = GAA_FLAG_SKIP_UNICAST | GAA_FLAG_SKIP_ANYCAST |
-		GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME |
-		GAA_FLAG_INCLUDE_GATEWAYS
+	const GaaFlagSkipUnicast = 0x0001
+	const GaaFlagSkipAnycast = 0x0002
+	const GaaFlagSkipMulticast = 0x0004
+	const GaaFlagSkipFriendlyName = 0x0020
+	const GaaFlagIncludeGateways = 0x0080
+	const flags = GaaFlagSkipUnicast | GaaFlagSkipAnycast |
+		GaaFlagSkipMulticast | GaaFlagSkipFriendlyName |
+		GaaFlagIncludeGateways
 	const reserved = 0
 	// See https://learn.microsoft.com/en-us/windows/win32/api/iphlpapi/nf-iphlpapi-getadaptersaddresses
 	r1, _, err := syscall.SyscallN(procGetAdaptersAddresses.Addr(),
@@ -95,7 +95,7 @@ type ipAdapterAddresses struct {
 	_                     *ipAdapterUnicastAddress
 	_                     *ipAdapterAnycastAddress
 	_                     *ipAdapterMulticastAddress
-	firstDnsServerAddress *ipAdapterDnsServerAdapter
+	firstDNSServerAddress *ipAdapterDNSServerAdapter
 	_                     *uint16
 	_                     *uint16
 	_                     *uint16
@@ -152,13 +152,13 @@ type ipAdapterMulticastAddress struct {
 	_ ipAdapterSocketAddress
 }
 
-type ipAdapterDnsServerAdapter struct {
+type ipAdapterDNSServerAdapter struct {
 	// The order of fields DOES matter since they are read raw
 	// from a bytes buffer. However, we are only interested in
 	// a few select fields, so unneeded fields are named as "_".
 	_       uint32
 	_       uint32
-	next    *ipAdapterDnsServerAdapter
+	next    *ipAdapterDNSServerAdapter
 	address ipAdapterSocketAddress
 }
 
@@ -250,7 +250,7 @@ func getDNSServers() ([]string, error) {
 			continue
 		}
 
-		dnsServerAddress := adapterAddress.firstDnsServerAddress
+		dnsServerAddress := adapterAddress.firstDNSServerAddress
 		for dnsServerAddress != nil {
 			ip, ok := sockAddressToIP(dnsServerAddress.address.rawSockAddrAny)
 			if !ok || ipIsSiteLocalAnycast(ip) {
