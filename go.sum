@@ -171,8 +171,6 @@ github.com/valyala/fasttemplate v1.2.2 h1:lxLXG0uE3Qnshl9QyaK6XJxMXlQZELvChBOCmQ
 github.com/valyala/fasttemplate v1.2.2/go.mod h1:KHLXt3tVN2HBp8eijSv/kGJopbvo7S+qRAEEKiv+SiQ=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
-github.com/yumaojun03/dmidecode v0.1.4 h1:ZmHBHs5sE5z1clgpry9tmuWeo2FBFi018MiSAWr+5n8=
-github.com/yumaojun03/dmidecode v0.1.4/go.mod h1:34bbsMNMNjDbijDpRuqd+2ZapDKxvhO+FlgGgOgS6G8=
 github.com/yumaojun03/dmidecode v0.1.5-0.20231113021359-c053d91d9679 h1:opdH1OwBGrL9Uil6akkXqtHFYe3hYtugPGMUCC+jAiQ=
 github.com/yumaojun03/dmidecode v0.1.5-0.20231113021359-c053d91d9679/go.mod h1:7iFa4NvM+dLZjKVs/prwGUXvXCBtaoPz6E0joTS7TXQ=
 github.com/yusufpapurcu/wmi v1.2.4 h1:zFUKzehAFReQwLys1b/iSMl+JQGSCSjtVqQn9bBrPo0=
