@@ -110,7 +110,13 @@ run: ## Run the built binary
 	  if [ "$$STATUS" != "0" ] || [ "$$GIT_HASH_MINE" != "$$GIT_HASH_LAST_BUILD" ]; then \
 	    "$(MAKE)" build; \
 	  fi
-	@cp -RpPf conf cmd/${MODULE_NAME}/ && ./cmd/${MODULE_NAME}/${MODULE_NAME}* || echo "Trying with sudo..." && sudo ./cmd/${MODULE_NAME}/${MODULE_NAME}*
+	@@kernel_name=`uname -s` && \
+	  cp -RpPf conf cmd/${MODULE_NAME}/ && \
+	  if [[ $$kernel_name == "CYGWIN"* ]] || [[ $$kernel_name == "MINGW"* ]]; then \
+	    ./cmd/${MODULE_NAME}/${MODULE_NAME}.exe; \
+	  else \
+        ./cmd/${MODULE_NAME}/${MODULE_NAME} || echo "Trying with sudo..." && sudo ./cmd/${MODULE_NAME}/${MODULE_NAME}; \
+	  fi
 
 stop: ## Stop the built binary
 	@sudo killall ${MODULE_NAME} | true
