@@ -21,7 +21,6 @@ lint: dependency ## Lint the files
 	@go_path=${GOPATH}; \
 	  kernel_name=`uname -s` && \
 	  if [[ $$kernel_name == "CYGWIN"* ]] || [[ $$kernel_name == "MINGW"* ]]; then \
-	    set -x ; \
 	    drive=`go env GOPATH | cut -f1 -d':' | tr '[:upper:]' '[:lower:]'`; \
 	    path=`go env GOPATH | cut -f2 -d':' | sed 's@\\\\\\@\/@g'`; \
 	    cygdrive_prefix=`mount -p | tail -n1 | awk '{print $$1}'`; \

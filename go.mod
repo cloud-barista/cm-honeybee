@@ -12,7 +12,7 @@ require (
 	github.com/knqyf263/go-rpmdb v0.1.0
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/shirou/gopsutil/v3 v3.24.4
-	github.com/yumaojun03/dmidecode v0.1.4
+	github.com/yumaojun03/dmidecode v0.1.5-0.20231113021359-c053d91d9679
 	golang.org/x/sys v0.20.0
 	gopkg.in/yaml.v3 v3.0.1
 )
