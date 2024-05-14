@@ -1012,8 +1012,8 @@
                 "dst": {
                     "type": "string"
                 },
-                "dst_port": {
-                    "type": "integer"
+                "dst_ports": {
+                    "type": "string"
                 },
                 "priority": {
                     "description": "Lower has higher priority",
@@ -1026,8 +1026,8 @@
                 "src": {
                     "type": "string"
                 },
-                "src_port": {
-                    "type": "integer"
+                "src_ports": {
+                    "type": "string"
                 }
             }
         },

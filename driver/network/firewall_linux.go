@@ -6,7 +6,6 @@ import (
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem/network"
 	"github.com/coreos/go-iptables/iptables"
 	"github.com/jollaman999/utils/logger"
-	"strconv"
 	"strings"
 )
 
@@ -50,22 +49,27 @@ func parseIptablesRules(ipt *iptables.IPTables, rules []string, prevPriority *ui
 					fwRule.Dst = ruleSplited[i+1]
 				case "-p":
 					protocol := strings.ToLower(ruleSplited[i+1])
+					fwRule.Protocol = protocol
 					if protocol == "tcp" || protocol == "udp" {
-						fwRule.Protocol = protocol
 						for j, str := range ruleSplited {
 							if strings.HasPrefix(str, "--") && ruleSplitedLen > j+1 {
 								switch str {
 								case "--sport":
-									sport, _ := strconv.Atoi(ruleSplited[j+1])
-									fwRule.SrcPort = uint(sport)
+									fallthrough
+								case "--sports":
+									fwRule.SrcPorts = ruleSplited[j+1]
 								case "--dport":
-									dport, _ := strconv.Atoi(ruleSplited[j+1])
-									fwRule.DstPort = uint(dport)
+									fallthrough
+								case "--dports":
+									fwRule.DstPorts = ruleSplited[j+1]
 								}
 							}
 						}
+						fwRule.SrcPorts = strings.ReplaceAll(fwRule.SrcPorts, ":", "-")
+						fwRule.DstPorts = strings.ReplaceAll(fwRule.DstPorts, ":", "-")
+					} else if protocol == "ipv6-icmp" {
+						fwRule.Protocol = "icmpv6"
 					}
-					fwRule.Protocol = protocol
 				}
 			}
 		}
@@ -77,6 +81,15 @@ func parseIptablesRules(ipt *iptables.IPTables, rules []string, prevPriority *ui
 
 		fwRule.Direction = direction
 		fwRule.Priority = *prevPriority
+		if len(fwRule.Protocol) == 0 {
+			fwRule.Protocol = "*"
+		}
+		if len(fwRule.SrcPorts) == 0 {
+			fwRule.SrcPorts = "*"
+		}
+		if len(fwRule.DstPorts) == 0 {
+			fwRule.DstPorts = "*"
+		}
 
 		fwRules = append(fwRules, fwRule)
 	}
@@ -105,7 +118,6 @@ func iptablesToModelFirewallRule(ipt *iptables.IPTables) ([]network.FirewallRule
 	return fw, nil
 }
 
-// GetFirewallRules
 func GetFirewallRules() ([]network.FirewallRule, error) {
 	var fw = make([]network.FirewallRule, 0)
 

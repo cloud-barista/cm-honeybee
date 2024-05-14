@@ -301,8 +301,8 @@ definitions:
         type: string
       dst:
         type: string
-      dst_port:
-        type: integer
+      dst_ports:
+        type: string
       priority:
         description: Lower has higher priority
         type: integer
@@ -311,8 +311,8 @@ definitions:
         type: string
       src:
         type: string
-      src_port:
-        type: integer
+      src_ports:
+        type: string
     type: object
   github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem_network.Host:
     properties:

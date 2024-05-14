@@ -1023,8 +1023,8 @@ const docTemplate = `{
                 "dst": {
                     "type": "string"
                 },
-                "dst_port": {
-                    "type": "integer"
+                "dst_ports": {
+                    "type": "string"
                 },
                 "priority": {
                     "description": "Lower has higher priority",
@@ -1037,8 +1037,8 @@ const docTemplate = `{
                 "src": {
                     "type": "string"
                 },
-                "src_port": {
-                    "type": "integer"
+                "src_ports": {
+                    "type": "string"
                 }
             }
         },
