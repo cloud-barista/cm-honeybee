@@ -20,32 +20,29 @@ Collecting and Aggregating Information From Source Computing framework (codename
 
 ## Execution and development environment
 * Tested operating systems (OSs):
-  * Ubuntu 23.10, Ubuntu 22.04, Ubuntu 18.04, Rocky Linux 9, Windows 11
+  * Ubuntu 24.04, Ubuntu 22.04, Ubuntu 18.04, Rocky Linux 9, Windows 11
 * Language:
-  * Go: 1.21.5
+  * Go: 1.22.3
 
 ## How to run
 
-1. Build the binary
-    ```shell
-    make
-    ```
+### 1. Build and run agent
 
-2. Write the configuration file.
-  - Configuration file name is 'cm-honeybee.yaml'
+1.1. Write the configuration file.
+  - Configuration file name is 'cm-honeybee-agent.yaml'
   - The configuration file must be placed in one of the following directories.
-    - .cm-honeybee/conf directory under user's home directory
+    - .cm-honeybee-agent/conf directory under user's home directory
     - 'conf' directory where running the binary
-    - 'conf' directory where placed in the path of 'CMHONEYBEE_ROOT' environment variable
+    - 'conf' directory where placed in the path of 'CMHONEYBEE_AGENT_ROOT' environment variable
   - Configuration options
-    - server (Need to implementation.)
+    - server
       - address : Specify collection server's address ({IP or Domain}:{Port})
       - timeout : HTTP timeout value as seconds.
     - listen
-      - port : Listen port of the API.
+      - port : Listen port of the agent's API.
   - Configuration file example
     ```yaml
-    cm-honeybee:
+    cm-honeybee-agent:
         server:
             address: 172.16.0.10:8081
             timeout: 10
@@ -53,56 +50,55 @@ Collecting and Aggregating Information From Source Computing framework (codename
             port: 8082
     ```
 
-3. Run with privileges
-  - Linux
+1.2. Build and run the agent binary
     ```shell
-    sudo ./cm-honeybee
+    cd agent
+    make run
     ```
-  - Windows
-    - Run cm-honeybee.exe
-    - Click Yes when UAC window is appears.
 
-#### Download source code
+### 2. Build and run server
 
-Clone CM-Honeybee repository
+2.1. Write the configuration file.
+- Configuration file name is 'cm-honeybee.yaml'
+- The configuration file must be placed in one of the following directories.
+    - .cm-honeybee/conf directory under user's home directory
+    - 'conf' directory where running the binary
+    - 'conf' directory where placed in the path of 'CMHONEYBEE_ROOT' environment variable
+- Configuration options
+    - listen
+        - port : Listen port of the agent's API.
+- Configuration file example
+  ```yaml
+  cm-honeybee:
+      listen:
+          port: 8081
+  ```
 
-```bash
-git clone https://github.com/cloud-barista/cm-honeybee.git ${HOME}/cm-honeybee
-```
-
-#### Build CM-Honeybee
-
-Build CM-Honeybee source code
-
-```bash
-cd ${HOME}/cm-honeybee
-make build
-```
-
-(Optional) Update Swagger API document
-```bash
-cd ${HOME}/cm-honeybee
-make swag
-```
-
-Access to Swagger UI
-(Default link) http://localhost:8082/honeybee/swagger/index.html
-
-#### Run CM-Honeybee binary
-
-Run CM-Honeybee server
-
-```bash
-cd ${HOME}/cm-honeybee
+2.2. Build and run the agent binary
+```shell
+cd server
 make run
 ```
 
-#### Health-check CM-Honeybee
+## Health-check
 
-Check if CM-Honeybee is running
+### Agent
+
+Check if CM-Honeybee agent is running
 
 ```bash
-curl http://localhost:8082/honeybee/health
+curl http://localhost:8082/honeybee-agent/health
+
+# Output if it's running successfully
+# {"message":"CM-Honeybee Agent API server is running"}
+```
+
+### Server
+
+Check if CM-Honeybee server is running
+
+```bash
+curl http://localhost:8081/honeybee/health
 
 # Output if it's running successfully
 # {"message":"CM-Honeybee API server is running"}
