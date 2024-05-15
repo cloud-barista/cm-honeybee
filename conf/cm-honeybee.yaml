@@ -1,6 +1,0 @@
-cm-honeybee:
-    server:
-        address: 192.168.110.14:8081
-        timeout: 10
-    listen:
-        port: 8082

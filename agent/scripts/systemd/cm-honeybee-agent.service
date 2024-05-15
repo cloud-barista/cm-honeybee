@@ -1,0 +1,16 @@
+[Unit]
+Description=Cloud-Migrator Honeybee Agent Service
+After=network.target
+
+[Service]
+Environment="CMHONEYBEE_AGENT_ROOT=/etc/cloud-migrator/cm-honeybee-agent/"
+Type=simple
+User=root
+ExecStart=/usr/bin/cm-honeybee-agent
+ExecStop=/usr/bin/killall cm-honeybee-agent
+Restart=on-failure
+RestartPreventExitStatus=100
+
+[Install]
+WantedBy=multi-user.target
+Alias=honeybee-agent.service

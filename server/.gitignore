@@ -1,9 +1,11 @@
 coverage.out
-vendor/
-.idea/
+vendor
+../.idea/
 .vscode/
 
 .diff_*
 .git_*
 
 *.log
+
+CM-HONEYBEE.db
