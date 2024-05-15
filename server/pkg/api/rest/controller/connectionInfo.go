@@ -208,12 +208,12 @@ func ConnectionInfoUpdate(c echo.Context) error {
 		oldConnectionInfo.Type = connectionInfo.Type
 	}
 
-	err = dao.ConnectionInfoUpdate(connectionInfo)
+	err = dao.ConnectionInfoUpdate(oldConnectionInfo)
 	if err != nil {
 		return common.ReturnInternalError(c, err, "Error occurred while updating the connection information.")
 	}
 
-	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
+	return c.JSONPretty(http.StatusOK, oldConnectionInfo, " ")
 }
 
 // ConnectionInfoDelete godoc

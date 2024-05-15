@@ -8,21 +8,21 @@ import (
 	"gorm.io/gorm"
 )
 
-func MigrationGroupRegister(MigrationGroup *onprem.MigrationGroup) (*onprem.MigrationGroup, error) {
+func MigrationGroupRegister(migrationGroup *onprem.MigrationGroup) (*onprem.MigrationGroup, error) {
 	UUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
 	}
 
-	MigrationGroup.UUID = UUID.String()
+	migrationGroup.UUID = UUID.String()
 
-	result := db.DB.Create(MigrationGroup)
+	result := db.DB.Create(migrationGroup)
 	err = result.Error
 	if err != nil {
 		return nil, err
 	}
 
-	return MigrationGroup, nil
+	return migrationGroup, nil
 }
 
 func MigrationGroupGet(UUID string) (*onprem.MigrationGroup, error) {
@@ -40,18 +40,18 @@ func MigrationGroupGet(UUID string) (*onprem.MigrationGroup, error) {
 	return migrationGroup, nil
 }
 
-func MigrationGroupGetList(MigrationGroup *onprem.MigrationGroup, page int, row int) (*[]onprem.MigrationGroup, error) {
+func MigrationGroupGetList(migrationGroup *onprem.MigrationGroup, page int, row int) (*[]onprem.MigrationGroup, error) {
 	migrationGroups := &[]onprem.MigrationGroup{}
 
 	result := db.DB.Scopes(func(d *gorm.DB) *gorm.DB {
 		var filtered = d
 
-		if len(MigrationGroup.UUID) != 0 {
-			filtered = filtered.Where("uuid LIKE ?", "%"+MigrationGroup.UUID+"%")
+		if len(migrationGroup.UUID) != 0 {
+			filtered = filtered.Where("uuid LIKE ?", "%"+migrationGroup.UUID+"%")
 		}
 
-		if len(MigrationGroup.Name) != 0 {
-			filtered = filtered.Where("group_uuid LIKE ?", "%"+MigrationGroup.Name+"%")
+		if len(migrationGroup.Name) != 0 {
+			filtered = filtered.Where("group_uuid LIKE ?", "%"+migrationGroup.Name+"%")
 		}
 
 		if page != 0 && row != 0 {
@@ -79,8 +79,8 @@ func MigrationGroupGetList(MigrationGroup *onprem.MigrationGroup, page int, row 
 	return migrationGroups, nil
 }
 
-func MigrationGroupUpdate(MigrationGroup *onprem.MigrationGroup) error {
-	result := db.DB.Model(&onprem.MigrationGroup{}).Where("uuid = ?", MigrationGroup.UUID).Updates(MigrationGroup)
+func MigrationGroupUpdate(migrationGroup *onprem.MigrationGroup) error {
+	result := db.DB.Model(&onprem.MigrationGroup{}).Where("uuid = ?", migrationGroup.UUID).Updates(migrationGroup)
 	err := result.Error
 	if err != nil {
 		return err
@@ -89,8 +89,8 @@ func MigrationGroupUpdate(MigrationGroup *onprem.MigrationGroup) error {
 	return nil
 }
 
-func MigrationGroupDelete(MigrationGroup *onprem.MigrationGroup) error {
-	result := db.DB.Delete(MigrationGroup)
+func MigrationGroupDelete(migrationGroup *onprem.MigrationGroup) error {
+	result := db.DB.Delete(migrationGroup)
 	err := result.Error
 	if err != nil {
 		return err

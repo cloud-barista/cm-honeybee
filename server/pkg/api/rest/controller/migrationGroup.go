@@ -129,12 +129,12 @@ func MigrationGroupUpdate(c echo.Context) error {
 		oldMigrationGroup.Name = migrationGroup.Name
 	}
 
-	err = dao.MigrationGroupUpdate(migrationGroup)
+	err = dao.MigrationGroupUpdate(oldMigrationGroup)
 	if err != nil {
 		return common.ReturnInternalError(c, err, "Error occurred while updating the migration group.")
 	}
 
-	return c.JSONPretty(http.StatusOK, migrationGroup, " ")
+	return c.JSONPretty(http.StatusOK, oldMigrationGroup, " ")
 }
 
 // MigrationGroupDelete godoc
