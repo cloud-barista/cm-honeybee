@@ -506,6 +506,9 @@
                 "uuid"
             ],
             "properties": {
+                "failed_message": {
+                    "type": "string"
+                },
                 "group_uuid": {
                     "type": "string"
                 },
@@ -523,6 +526,9 @@
                 },
                 "ssh_port": {
                     "type": "integer"
+                },
+                "status": {
+                    "type": "string"
                 },
                 "type": {
                     "type": "string"

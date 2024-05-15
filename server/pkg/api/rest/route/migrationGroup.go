@@ -11,4 +11,5 @@ func RegisterMigrationGroup(e *echo.Echo) {
 	e.GET("/migration_group", controller.MigrationGroupGetList)
 	e.PUT("/migration_group/:uuid", controller.MigrationGroupUpdate)
 	e.DELETE("/migration_group/:uuid", controller.MigrationGroupDelete)
+	e.GET("/migration_group/check/:uuid", controller.MigrationGroupCheckConnection)
 }

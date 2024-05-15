@@ -517,6 +517,9 @@ const docTemplate = `{
                 "uuid"
             ],
             "properties": {
+                "failed_message": {
+                    "type": "string"
+                },
                 "group_uuid": {
                     "type": "string"
                 },
@@ -534,6 +537,9 @@ const docTemplate = `{
                 },
                 "ssh_port": {
                     "type": "integer"
+                },
+                "status": {
+                    "type": "string"
                 },
                 "type": {
                     "type": "string"

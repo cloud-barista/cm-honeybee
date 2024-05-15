@@ -34,7 +34,7 @@ func MigrationGroupRegister(c echo.Context) error {
 
 	migrationGroup, err = dao.MigrationGroupRegister(migrationGroup)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while registering the migration group.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, migrationGroup, " ")
@@ -60,7 +60,7 @@ func MigrationGroupGet(c echo.Context) error {
 
 	migrationGroup, err := dao.MigrationGroupGet(uuid)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while getting the migration group.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, migrationGroup, " ")
@@ -94,7 +94,7 @@ func MigrationGroupGetList(c echo.Context) error {
 
 	MigrationGroups, err := dao.MigrationGroupGetList(migrationGroup, page, row)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while getting the migration group list.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, MigrationGroups, " ")
@@ -116,13 +116,13 @@ func MigrationGroupUpdate(c echo.Context) error {
 	migrationGroup := new(onprem.MigrationGroup)
 	err := c.Bind(migrationGroup)
 	if err != nil {
-		return err
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	migrationGroup.UUID = c.Param("uuid")
 	oldMigrationGroup, err := dao.MigrationGroupGet(migrationGroup.UUID)
 	if err != nil {
-		return err
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	if migrationGroup.Name != "" {
@@ -131,7 +131,7 @@ func MigrationGroupUpdate(c echo.Context) error {
 
 	err = dao.MigrationGroupUpdate(oldMigrationGroup)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while updating the migration group.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, oldMigrationGroup, " ")
@@ -156,13 +156,33 @@ func MigrationGroupDelete(c echo.Context) error {
 
 	migrationGroup, err := dao.MigrationGroupGet(uuid)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while getting the migration group.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	err = dao.MigrationGroupDelete(migrationGroup)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while deleting the migration group.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, migrationGroup, " ")
+}
+
+// MigrationGroupCheckConnection TODO ADD COMMENTS
+func MigrationGroupCheckConnection(c echo.Context) error {
+	uuid := c.Param("uuid")
+	if uuid == "" {
+		return common.ReturnErrorMsg(c, "uuid is empty")
+	}
+
+	migrationGroup, err := dao.MigrationGroupGet(uuid)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	connectionInfoList, err := dao.MigrationGroupCheckConnection(migrationGroup)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, connectionInfoList, " ")
 }

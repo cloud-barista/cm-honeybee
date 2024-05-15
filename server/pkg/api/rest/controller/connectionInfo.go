@@ -51,34 +51,34 @@ func ConnectionInfoRegister(c echo.Context) error {
 	}
 
 	if connectionInfo.GroupUUID == "" {
-		return errors.New("group_uuid is empty")
+		return common.ReturnErrorMsg(c, "group_uuid is empty")
 	}
 	err = checkIPAddress(connectionInfo.IPAddress)
 	if err != nil {
-		return err
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 	err = checkPort(connectionInfo.SSHPort)
 	if err != nil {
-		return err
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 	if connectionInfo.User == "" {
-		return errors.New("user is empty")
+		return common.ReturnErrorMsg(c, "user is empty")
 	}
-	if connectionInfo.Password == "" || connectionInfo.PrivateKey == "" {
-		return errors.New("password or private_key must be provided")
+	if connectionInfo.Password == "" && connectionInfo.PrivateKey == "" {
+		return common.ReturnErrorMsg(c, "password or private_key must be provided")
 	}
 	if connectionInfo.Type == "" {
-		return errors.New("type is empty")
+		return common.ReturnErrorMsg(c, "type is empty")
 	}
 
 	_, err = dao.MigrationGroupGet(connectionInfo.GroupUUID)
 	if err != nil {
-		return err
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	connectionInfo, err = dao.ConnectionInfoRegister(connectionInfo)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while registering the connection information.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
@@ -104,7 +104,7 @@ func ConnectionInfoGet(c echo.Context) error {
 
 	connectionInfo, err := dao.ConnectionInfoGet(uuid)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while getting the connection information.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
@@ -148,7 +148,7 @@ func ConnectionInfoGetList(c echo.Context) error {
 
 	connectionInfos, err := dao.ConnectionInfoGetList(connectionInfo, page, row)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while getting the connectionInfo list.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, connectionInfos, " ")
@@ -176,15 +176,14 @@ func ConnectionInfoUpdate(c echo.Context) error {
 	connectionInfo.UUID = c.Param("uuid")
 	oldConnectionInfo, err := dao.ConnectionInfoGet(connectionInfo.UUID)
 	if err != nil {
-		return err
-	}
-
-	_, err = dao.MigrationGroupGet(connectionInfo.GroupUUID)
-	if err != nil {
-		return err
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	if connectionInfo.GroupUUID != "" {
+		_, err = dao.MigrationGroupGet(connectionInfo.GroupUUID)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
 		oldConnectionInfo.GroupUUID = connectionInfo.GroupUUID
 	}
 	err = checkIPAddress(connectionInfo.IPAddress)
@@ -210,7 +209,7 @@ func ConnectionInfoUpdate(c echo.Context) error {
 
 	err = dao.ConnectionInfoUpdate(oldConnectionInfo)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while updating the connection information.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, oldConnectionInfo, " ")
@@ -235,12 +234,12 @@ func ConnectionInfoDelete(c echo.Context) error {
 
 	connectionInfo, err := dao.ConnectionInfoGet(uuid)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while getting the connection information.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	err = dao.ConnectionInfoDelete(connectionInfo)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while deleting the connection information.")
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")

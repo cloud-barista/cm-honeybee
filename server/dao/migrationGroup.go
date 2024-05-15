@@ -3,6 +3,7 @@ package dao
 import (
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/db"
+	"github.com/cloud-barista/cm-honeybee/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -97,4 +98,41 @@ func MigrationGroupDelete(migrationGroup *onprem.MigrationGroup) error {
 	}
 
 	return nil
+}
+
+func MigrationGroupCheckConnection(migrationGroup *onprem.MigrationGroup) (*[]onprem.ConnectionInfo, error) {
+	connectionInfoList, err := ConnectionInfoGetList(&onprem.ConnectionInfo{GroupUUID: migrationGroup.UUID}, 0, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, connectionInfo := range *connectionInfoList {
+		oldConnectionInfo, err := ConnectionInfoGet(connectionInfo.UUID)
+		if err != nil {
+			return nil, err
+		}
+
+		c := &ssh.SSH{
+			Options: ssh.DefaultSSHOptions(),
+		}
+
+		err = c.NewClientConn(connectionInfo)
+		if err != nil {
+			oldConnectionInfo.Status = "Failed"
+			oldConnectionInfo.FailedMessage = err.Error()
+		}
+
+		if err == nil {
+			oldConnectionInfo.Status = "Success"
+			oldConnectionInfo.FailedMessage = " " // Can't set empty string.
+		}
+
+		err = ConnectionInfoUpdate(oldConnectionInfo)
+		if err != nil {
+			return nil, errors.New("Error occurred while updating the connection information. " +
+				"(UUID: " + oldConnectionInfo.UUID + ", Error: " + err.Error() + ")")
+		}
+	}
+
+	return ConnectionInfoGetList(&onprem.ConnectionInfo{GroupUUID: migrationGroup.UUID}, 0, 0)
 }

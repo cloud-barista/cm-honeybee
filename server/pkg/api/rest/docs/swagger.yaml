@@ -6,6 +6,8 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo:
     properties:
+      failed_message:
+        type: string
       group_uuid:
         type: string
       ip_address:
@@ -18,6 +20,8 @@ definitions:
         type: string
       ssh_port:
         type: integer
+      status:
+        type: string
       type:
         type: string
       user:
