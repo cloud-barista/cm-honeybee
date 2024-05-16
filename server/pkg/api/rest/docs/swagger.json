@@ -365,6 +365,52 @@
                 }
             }
         },
+        "/migration_group/check/{uuid}": {
+            "get": {
+                "description": "Check if SSH connection is available for each connection info in migration group. Show each status by returning connection info list.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] MigrationGroup"
+                ],
+                "summary": "Check Connection MigrationGroup",
+                "parameters": [
+                    {
+                        "description": "migration group to check SSH connection for each connection info in migration group",
+                        "name": "MigrationGroup",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully checked SSH connection for the migration group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to check SSH connection for the migration group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/migration_group/{uuid}": {
             "get": {
                 "description": "Get the migration group.",

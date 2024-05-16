@@ -371,4 +371,36 @@ paths:
       summary: Update MigrationGroup
       tags:
       - '[On-premise] MigrationGroup'
+  /migration_group/check/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Check if SSH connection is available for each connection info in
+        migration group. Show each status by returning connection info list.
+      parameters:
+      - description: migration group to check SSH connection for each connection info
+          in migration group
+        in: body
+        name: MigrationGroup
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully checked SSH connection for the migration group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to check SSH connection for the migration group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Check Connection MigrationGroup
+      tags:
+      - '[On-premise] MigrationGroup'
 swagger: "2.0"

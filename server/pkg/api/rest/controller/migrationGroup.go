@@ -167,7 +167,18 @@ func DeleteMigrationGroup(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, migrationGroup, " ")
 }
 
-// CheckConnectionMigrationGroup TODO ADD COMMENTS
+// CheckConnectionMigrationGroup godoc
+//
+// @Summary		Check Connection MigrationGroup
+// @Description	Check if SSH connection is available for each connection info in migration group. Show each status by returning connection info list.
+// @Tags		[On-premise] MigrationGroup
+// @Accept		json
+// @Produce		json
+// @Param		MigrationGroup body model.MigrationGroup true "migration group to check SSH connection for each connection info in migration group"
+// @Success		200	{object}	model.ConnectionInfo		"Successfully checked SSH connection for the migration group"
+// @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
+// @Failure		500	{object}	common.ErrorResponse		"Failed to check SSH connection for the migration group"
+// @Router		/migration_group/check/{uuid} [get]
 func CheckConnectionMigrationGroup(c echo.Context) error {
 	uuid := c.Param("uuid")
 	if uuid == "" {
