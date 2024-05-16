@@ -39,6 +39,7 @@ func init() {
 }
 
 func end() {
+	db.Close()
 	logger.CloseLogFile()
 }
 
