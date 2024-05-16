@@ -101,6 +101,9 @@ func newPodmanClient() (*client.Client, error) {
 		logger.Println(logger.ERROR, true, "PODMAN: "+err.Error())
 		return nil, err
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	cli.NegotiateAPIVersion(ctx)
 
 	return cli, nil
 }
