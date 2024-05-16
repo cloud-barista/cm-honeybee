@@ -3,13 +3,13 @@ package dao
 import (
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/db"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"strconv"
 )
 
-func ConnectionInfoRegister(connectionInfo *onprem.ConnectionInfo) (*onprem.ConnectionInfo, error) {
+func ConnectionInfoRegister(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
 	UUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -26,8 +26,8 @@ func ConnectionInfoRegister(connectionInfo *onprem.ConnectionInfo) (*onprem.Conn
 	return connectionInfo, nil
 }
 
-func ConnectionInfoGet(UUID string) (*onprem.ConnectionInfo, error) {
-	connectionInfo := &onprem.ConnectionInfo{}
+func ConnectionInfoGet(UUID string) (*model.ConnectionInfo, error) {
+	connectionInfo := &model.ConnectionInfo{}
 
 	result := db.DB.Where("uuid = ?", UUID).First(connectionInfo)
 	err := result.Error
@@ -41,8 +41,8 @@ func ConnectionInfoGet(UUID string) (*onprem.ConnectionInfo, error) {
 	return connectionInfo, nil
 }
 
-func ConnectionInfoGetList(connectionInfo *onprem.ConnectionInfo, page int, row int) (*[]onprem.ConnectionInfo, error) {
-	connectionInfos := &[]onprem.ConnectionInfo{}
+func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row int) (*[]model.ConnectionInfo, error) {
+	connectionInfos := &[]model.ConnectionInfo{}
 
 	result := db.DB.Scopes(func(d *gorm.DB) *gorm.DB {
 		var filtered = d
@@ -96,8 +96,8 @@ func ConnectionInfoGetList(connectionInfo *onprem.ConnectionInfo, page int, row 
 	return connectionInfos, nil
 }
 
-func ConnectionInfoUpdate(connectionInfo *onprem.ConnectionInfo) error {
-	result := db.DB.Model(&onprem.ConnectionInfo{}).Where("uuid = ?", connectionInfo.UUID).Updates(connectionInfo)
+func ConnectionInfoUpdate(connectionInfo *model.ConnectionInfo) error {
+	result := db.DB.Model(&model.ConnectionInfo{}).Where("uuid = ?", connectionInfo.UUID).Updates(connectionInfo)
 	err := result.Error
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func ConnectionInfoUpdate(connectionInfo *onprem.ConnectionInfo) error {
 	return nil
 }
 
-func ConnectionInfoDelete(connectionInfo *onprem.ConnectionInfo) error {
+func ConnectionInfoDelete(connectionInfo *model.ConnectionInfo) error {
 	result := db.DB.Delete(connectionInfo)
 	err := result.Error
 	if err != nil {

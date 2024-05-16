@@ -4,12 +4,12 @@ import (
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/db"
 	"github.com/cloud-barista/cm-honeybee/lib/ssh"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
-func MigrationGroupRegister(migrationGroup *onprem.MigrationGroup) (*onprem.MigrationGroup, error) {
+func MigrationGroupRegister(migrationGroup *model.MigrationGroup) (*model.MigrationGroup, error) {
 	UUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
@@ -26,8 +26,8 @@ func MigrationGroupRegister(migrationGroup *onprem.MigrationGroup) (*onprem.Migr
 	return migrationGroup, nil
 }
 
-func MigrationGroupGet(UUID string) (*onprem.MigrationGroup, error) {
-	migrationGroup := &onprem.MigrationGroup{}
+func MigrationGroupGet(UUID string) (*model.MigrationGroup, error) {
+	migrationGroup := &model.MigrationGroup{}
 
 	result := db.DB.Where("uuid = ?", UUID).First(migrationGroup)
 	err := result.Error
@@ -41,8 +41,8 @@ func MigrationGroupGet(UUID string) (*onprem.MigrationGroup, error) {
 	return migrationGroup, nil
 }
 
-func MigrationGroupGetList(migrationGroup *onprem.MigrationGroup, page int, row int) (*[]onprem.MigrationGroup, error) {
-	migrationGroups := &[]onprem.MigrationGroup{}
+func MigrationGroupGetList(migrationGroup *model.MigrationGroup, page int, row int) (*[]model.MigrationGroup, error) {
+	migrationGroups := &[]model.MigrationGroup{}
 
 	result := db.DB.Scopes(func(d *gorm.DB) *gorm.DB {
 		var filtered = d
@@ -80,8 +80,8 @@ func MigrationGroupGetList(migrationGroup *onprem.MigrationGroup, page int, row 
 	return migrationGroups, nil
 }
 
-func MigrationGroupUpdate(migrationGroup *onprem.MigrationGroup) error {
-	result := db.DB.Model(&onprem.MigrationGroup{}).Where("uuid = ?", migrationGroup.UUID).Updates(migrationGroup)
+func MigrationGroupUpdate(migrationGroup *model.MigrationGroup) error {
+	result := db.DB.Model(&model.MigrationGroup{}).Where("uuid = ?", migrationGroup.UUID).Updates(migrationGroup)
 	err := result.Error
 	if err != nil {
 		return err
@@ -90,7 +90,7 @@ func MigrationGroupUpdate(migrationGroup *onprem.MigrationGroup) error {
 	return nil
 }
 
-func MigrationGroupDelete(migrationGroup *onprem.MigrationGroup) error {
+func MigrationGroupDelete(migrationGroup *model.MigrationGroup) error {
 	result := db.DB.Delete(migrationGroup)
 	err := result.Error
 	if err != nil {
@@ -100,8 +100,8 @@ func MigrationGroupDelete(migrationGroup *onprem.MigrationGroup) error {
 	return nil
 }
 
-func MigrationGroupCheckConnection(migrationGroup *onprem.MigrationGroup) (*[]onprem.ConnectionInfo, error) {
-	connectionInfoList, err := ConnectionInfoGetList(&onprem.ConnectionInfo{GroupUUID: migrationGroup.UUID}, 0, 0)
+func MigrationGroupCheckConnection(migrationGroup *model.MigrationGroup) (*[]model.ConnectionInfo, error) {
+	connectionInfoList, err := ConnectionInfoGetList(&model.ConnectionInfo{GroupUUID: migrationGroup.UUID}, 0, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -134,5 +134,5 @@ func MigrationGroupCheckConnection(migrationGroup *onprem.MigrationGroup) (*[]on
 		}
 	}
 
-	return ConnectionInfoGetList(&onprem.ConnectionInfo{GroupUUID: migrationGroup.UUID}, 0, 0)
+	return ConnectionInfoGetList(&model.ConnectionInfo{GroupUUID: migrationGroup.UUID}, 0, 0)
 }

@@ -4,7 +4,7 @@ definitions:
       error:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo:
     properties:
       failed_message:
         type: string
@@ -35,7 +35,7 @@ definitions:
     - user
     - uuid
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup:
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup:
     properties:
       name:
         type: string
@@ -98,7 +98,7 @@ paths:
           description: Successfully get a list of connection information.
           schema:
             items:
-              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
             type: array
         "400":
           description: Sent bad request.
@@ -121,14 +121,14 @@ paths:
         name: ConnectionInfo
         required: true
         schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
       produces:
       - application/json
       responses:
         "200":
           description: Successfully register the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
         "400":
           description: Sent bad request.
           schema:
@@ -151,7 +151,7 @@ paths:
         "200":
           description: Successfully delete the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
         "400":
           description: Sent bad request.
           schema:
@@ -179,7 +179,7 @@ paths:
         "200":
           description: Successfully get the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
         "400":
           description: Sent bad request.
           schema:
@@ -201,14 +201,14 @@ paths:
         name: ConnectionInfo
         required: true
         schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
       produces:
       - application/json
       responses:
         "200":
           description: Successfully update the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.ConnectionInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
         "400":
           description: Sent bad request.
           schema:
@@ -249,7 +249,7 @@ paths:
           description: Successfully get a list of migration group.
           schema:
             items:
-              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
             type: array
         "400":
           description: Sent bad request.
@@ -272,14 +272,14 @@ paths:
         name: MigrationGroup
         required: true
         schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
       produces:
       - application/json
       responses:
         "200":
           description: Successfully register the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
         "400":
           description: Sent bad request.
           schema:
@@ -302,7 +302,7 @@ paths:
         "200":
           description: Successfully delete the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
         "400":
           description: Sent bad request.
           schema:
@@ -330,7 +330,7 @@ paths:
         "200":
           description: Successfully get the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
         "400":
           description: Sent bad request.
           schema:
@@ -352,14 +352,14 @@ paths:
         name: MigrationGroup
         required: true
         schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
       produces:
       - application/json
       responses:
         "200":
           description: Successfully update the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model_onprem.MigrationGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
         "400":
           description: Sent bad request.
           schema:

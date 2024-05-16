@@ -3,7 +3,7 @@ package ssh
 import (
 	"errors"
 	"fmt"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
 	_ssh "golang.org/x/crypto/ssh"
 	"os"
 	"path/filepath"
@@ -40,7 +40,7 @@ func DefaultSSHOptions() Options {
 	return options
 }
 
-func (o *SSH) NewClientConn(connectionInfo onprem.ConnectionInfo) error {
+func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) error {
 	addr := fmt.Sprintf("%s:%d", connectionInfo.IPAddress, connectionInfo.SSHPort)
 
 	sshConfig := &_ssh.ClientConfig{
@@ -75,7 +75,7 @@ func (o *SSH) NewClientConn(connectionInfo onprem.ConnectionInfo) error {
 	return nil
 }
 
-func (o *SSH) getAuthMethods(connectionInfo onprem.ConnectionInfo) []_ssh.AuthMethod {
+func (o *SSH) getAuthMethods(connectionInfo model.ConnectionInfo) []_ssh.AuthMethod {
 	var methods []_ssh.AuthMethod
 
 	methods = o.tryPrivateKey(methods)

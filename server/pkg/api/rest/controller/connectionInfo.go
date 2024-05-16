@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/dao"
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/common"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
 	"github.com/jollaman999/utils/iputil"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -38,13 +38,13 @@ func checkPort(port int) error {
 // @Tags		[On-premise] ConnectionInfo
 // @Accept		json
 // @Produce		json
-// @Param		ConnectionInfo body onprem.ConnectionInfo true "Connection information of the node."
-// @Success		200	{object}	onprem.ConnectionInfo	"Successfully register the connection information"
+// @Param		ConnectionInfo body model.ConnectionInfo true "Connection information of the node."
+// @Success		200	{object}	model.ConnectionInfo	"Successfully register the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to register the connection information"
 // @Router			/connection_info [post]
 func ConnectionInfoRegister(c echo.Context) error {
-	connectionInfo := new(onprem.ConnectionInfo)
+	connectionInfo := new(model.ConnectionInfo)
 	err := c.Bind(connectionInfo)
 	if err != nil {
 		return err
@@ -92,7 +92,7 @@ func ConnectionInfoRegister(c echo.Context) error {
 // @Accept		json
 // @Produce		json
 // @Param		uuid path string true "UUID of the connectionInfo"
-// @Success		200	{object}	onprem.ConnectionInfo	"Successfully get the connection information"
+// @Success		200	{object}	model.ConnectionInfo	"Successfully get the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get the connection information"
 // @Router		/connection_info/{uuid} [get]
@@ -125,7 +125,7 @@ func ConnectionInfoGet(c echo.Context) error {
 // @Param		ssh_port query string false "SSH port of the connection information."
 // @Param		user query string false "User of the connection information."
 // @Param		type query string false "Type of the connection information."
-// @Success		200	{object}	[]onprem.ConnectionInfo	"Successfully get a list of connection information."
+// @Success		200	{object}	[]model.ConnectionInfo	"Successfully get a list of connection information."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get a list of connection information."
 // @Router			/connection_info [get]
@@ -137,7 +137,7 @@ func ConnectionInfoGetList(c echo.Context) error {
 
 	sshPort, _ := strconv.Atoi(c.QueryParam("ssh_port"))
 
-	connectionInfo := &onprem.ConnectionInfo{
+	connectionInfo := &model.ConnectionInfo{
 		UUID:      c.QueryParam("uuid"),
 		GroupUUID: c.QueryParam("group_uuid"),
 		IPAddress: c.QueryParam("ip_address"),
@@ -161,13 +161,13 @@ func ConnectionInfoGetList(c echo.Context) error {
 // @Tags		[On-premise] ConnectionInfo
 // @Accept		json
 // @Produce		json
-// @Param		ConnectionInfo body onprem.ConnectionInfo true "Connection information to modify."
-// @Success		200	{object}	onprem.ConnectionInfo	"Successfully update the connection information"
+// @Param		ConnectionInfo body model.ConnectionInfo true "Connection information to modify."
+// @Success		200	{object}	model.ConnectionInfo	"Successfully update the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to update the connection information"
 // @Router		/connection_info/{uuid} [put]
 func ConnectionInfoUpdate(c echo.Context) error {
-	connectionInfo := new(onprem.ConnectionInfo)
+	connectionInfo := new(model.ConnectionInfo)
 	err := c.Bind(connectionInfo)
 	if err != nil {
 		return err
@@ -222,7 +222,7 @@ func ConnectionInfoUpdate(c echo.Context) error {
 // @Tags		[On-premise] ConnectionInfo
 // @Accept		json
 // @Produce		json
-// @Success		200	{object}	onprem.ConnectionInfo	"Successfully delete the connection information"
+// @Success		200	{object}	model.ConnectionInfo	"Successfully delete the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to delete the connection information"
 // @Router		/connection_info/{uuid} [delete]

@@ -2,7 +2,7 @@ package db
 
 import (
 	"github.com/cloud-barista/cm-honeybee/common"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model/onprem"
+	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
 	"github.com/glebarez/sqlite"
 	"github.com/jollaman999/utils/logger"
 	"gorm.io/gorm"
@@ -18,12 +18,12 @@ func Open() error {
 		logger.Panicln(logger.ERROR, true, err)
 	}
 
-	err = DB.AutoMigrate(&onprem.ConnectionInfo{})
+	err = DB.AutoMigrate(&model.ConnectionInfo{})
 	if err != nil {
 		logger.Panicln(logger.ERROR, true, err)
 	}
 
-	err = DB.AutoMigrate(&onprem.MigrationGroup{})
+	err = DB.AutoMigrate(&model.MigrationGroup{})
 	if err != nil {
 		logger.Panicln(logger.ERROR, true, err)
 	}

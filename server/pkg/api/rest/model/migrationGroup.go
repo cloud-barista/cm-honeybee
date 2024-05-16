@@ -1,4 +1,4 @@
-package onprem
+package model
 
 type MigrationGroup struct {
 	UUID string `gorm:"primaryKey" json:"uuid" validate:"required"`
