@@ -17,6 +17,9 @@ type cmHoneybeeConfig struct {
 		Listen struct {
 			Port string `yaml:"port"`
 		} `yaml:"listen"`
+		Agent struct {
+			Port string `yaml:"port"`
+		}
 	} `yaml:"cm-honeybee"`
 }
 
@@ -30,6 +33,14 @@ func checkCMHoneybeeConfigFile() error {
 	port, err := strconv.Atoi(CMHoneybeeConfig.CMHoneybee.Listen.Port)
 	if err != nil || port < 1 || port > 65535 {
 		return errors.New("config error: cm-honeybee.listen.port has invalid value")
+	}
+
+	if CMHoneybeeConfig.CMHoneybee.Agent.Port == "" {
+		return errors.New("config error: cm-honeybee.agent.port is empty")
+	}
+	port, err = strconv.Atoi(CMHoneybeeConfig.CMHoneybee.Agent.Port)
+	if err != nil || port < 1 || port > 65535 {
+		return errors.New("config error: cm-honeybee.agent.port has invalid value")
 	}
 
 	return nil

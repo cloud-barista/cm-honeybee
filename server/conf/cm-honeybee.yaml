@@ -1,3 +1,5 @@
 cm-honeybee:
     listen:
         port: 8081
+    agent:
+        port: 8082
