@@ -1,10 +1,21 @@
 package infra
 
 import (
+	"errors"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
+	"sync"
 )
 
+var infraInfoLock sync.Mutex
+
 func GetInfraInfo() (*infra.Infra, error) {
+	if !infraInfoLock.TryLock() {
+		return nil, errors.New("infra info collection is in progress")
+	}
+	defer func() {
+		infraInfoLock.Unlock()
+	}()
+
 	var i infra.Infra
 	var err error
 

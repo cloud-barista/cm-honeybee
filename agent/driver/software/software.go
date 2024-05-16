@@ -1,12 +1,23 @@
 package software
 
 import (
+	"errors"
 	software2 "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/host"
+	"sync"
 )
 
+var softwareInfoLock sync.Mutex
+
 func GetSoftwareInfo() (*software2.Software, error) {
+	if !softwareInfoLock.TryLock() {
+		return nil, errors.New("software info collection is in progress")
+	}
+	defer func() {
+		softwareInfoLock.Unlock()
+	}()
+
 	deb := make([]software2.DEB, 0)
 	rpm := make([]software2.RPM, 0)
 	var err error
