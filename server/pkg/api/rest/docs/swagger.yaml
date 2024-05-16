@@ -114,7 +114,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Register the connection information.
+      description: Create the connection information.
       parameters:
       - description: Connection information of the node.
         in: body
@@ -137,7 +137,7 @@ paths:
           description: Failed to register the connection information
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
-      summary: Register ConnectionInfo
+      summary: Create ConnectionInfo
       tags:
       - '[On-premise] ConnectionInfo'
   /connection_info/{uuid}:

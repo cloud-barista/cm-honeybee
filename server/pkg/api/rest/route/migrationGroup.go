@@ -6,10 +6,10 @@ import (
 )
 
 func RegisterMigrationGroup(e *echo.Echo) {
-	e.POST("/migration_group", controller.MigrationGroupRegister)
-	e.GET("/migration_group/:uuid", controller.MigrationGroupGet)
-	e.GET("/migration_group", controller.MigrationGroupGetList)
-	e.PUT("/migration_group/:uuid", controller.MigrationGroupUpdate)
-	e.DELETE("/migration_group/:uuid", controller.MigrationGroupDelete)
-	e.GET("/migration_group/check/:uuid", controller.MigrationGroupCheckConnection)
+	e.POST("/migration_group", controller.CreateMigrationGroup)
+	e.GET("/migration_group/:uuid", controller.GetMigrationGroup)
+	e.GET("/migration_group", controller.ListMigrationGroup)
+	e.PUT("/migration_group/:uuid", controller.UpdateMigrationGroup)
+	e.DELETE("/migration_group/:uuid", controller.DeleteMigrationGroup)
+	e.GET("/migration_group/check/:uuid", controller.CheckConnectionMigrationGroup)
 }

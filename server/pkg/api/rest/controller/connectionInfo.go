@@ -31,10 +31,10 @@ func checkPort(port int) error {
 	return nil
 }
 
-// ConnectionInfoRegister godoc
+// CreateConnectionInfo godoc
 //
-// @Summary		Register ConnectionInfo
-// @Description	Register the connection information.
+// @Summary		Create ConnectionInfo
+// @Description	Create the connection information.
 // @Tags		[On-premise] ConnectionInfo
 // @Accept		json
 // @Produce		json
@@ -43,7 +43,7 @@ func checkPort(port int) error {
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to register the connection information"
 // @Router			/connection_info [post]
-func ConnectionInfoRegister(c echo.Context) error {
+func CreateConnectionInfo(c echo.Context) error {
 	connectionInfo := new(model.ConnectionInfo)
 	err := c.Bind(connectionInfo)
 	if err != nil {
@@ -84,7 +84,7 @@ func ConnectionInfoRegister(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
 }
 
-// ConnectionInfoGet godoc
+// GetConnectionInfo godoc
 //
 // @Summary		Get ConnectionInfo
 // @Description	Get the connection information.
@@ -96,7 +96,7 @@ func ConnectionInfoRegister(c echo.Context) error {
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get the connection information"
 // @Router		/connection_info/{uuid} [get]
-func ConnectionInfoGet(c echo.Context) error {
+func GetConnectionInfo(c echo.Context) error {
 	uuid := c.Param("uuid")
 	if uuid == "" {
 		return common.ReturnErrorMsg(c, "uuid is empty")
@@ -110,7 +110,7 @@ func ConnectionInfoGet(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
 }
 
-// ConnectionInfoGetList godoc
+// ListConnectionInfo godoc
 //
 // @Summary		List ConnectionInfo
 // @Description	Get a list of connection information.
@@ -129,7 +129,7 @@ func ConnectionInfoGet(c echo.Context) error {
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get a list of connection information."
 // @Router			/connection_info [get]
-func ConnectionInfoGetList(c echo.Context) error {
+func ListConnectionInfo(c echo.Context) error {
 	page, row, err := common.CheckPageRow(c)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
@@ -154,7 +154,7 @@ func ConnectionInfoGetList(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, connectionInfos, " ")
 }
 
-// ConnectionInfoUpdate godoc
+// UpdateConnectionInfo godoc
 //
 // @Summary		Update ConnectionInfo
 // @Description	Update the connection information.
@@ -166,7 +166,7 @@ func ConnectionInfoGetList(c echo.Context) error {
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to update the connection information"
 // @Router		/connection_info/{uuid} [put]
-func ConnectionInfoUpdate(c echo.Context) error {
+func UpdateConnectionInfo(c echo.Context) error {
 	connectionInfo := new(model.ConnectionInfo)
 	err := c.Bind(connectionInfo)
 	if err != nil {
@@ -215,7 +215,7 @@ func ConnectionInfoUpdate(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, oldConnectionInfo, " ")
 }
 
-// ConnectionInfoDelete godoc
+// DeleteConnectionInfo godoc
 //
 // @Summary		Delete ConnectionInfo
 // @Description	Delete the connection information.
@@ -226,7 +226,7 @@ func ConnectionInfoUpdate(c echo.Context) error {
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to delete the connection information"
 // @Router		/connection_info/{uuid} [delete]
-func ConnectionInfoDelete(c echo.Context) error {
+func DeleteConnectionInfo(c echo.Context) error {
 	uuid := c.Param("uuid")
 	if uuid == "" {
 		return common.ReturnErrorMsg(c, "uuid is empty")

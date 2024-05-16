@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-// MigrationGroupRegister godoc
+// CreateMigrationGroup godoc
 //
 // @Summary		Register MigrationGroup
 // @Description	Register the migration group.
@@ -21,7 +21,7 @@ import (
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to register the migration group"
 // @Router			/migration_group [post]
-func MigrationGroupRegister(c echo.Context) error {
+func CreateMigrationGroup(c echo.Context) error {
 	migrationGroup := new(model.MigrationGroup)
 	err := c.Bind(migrationGroup)
 	if err != nil {
@@ -40,7 +40,7 @@ func MigrationGroupRegister(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, migrationGroup, " ")
 }
 
-// MigrationGroupGet godoc
+// GetMigrationGroup godoc
 //
 // @Summary		Get MigrationGroup
 // @Description	Get the migration group.
@@ -52,7 +52,7 @@ func MigrationGroupRegister(c echo.Context) error {
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get the migration group"
 // @Router		/migration_group/{uuid} [get]
-func MigrationGroupGet(c echo.Context) error {
+func GetMigrationGroup(c echo.Context) error {
 	uuid := c.Param("uuid")
 	if uuid == "" {
 		return common.ReturnErrorMsg(c, "uuid is empty")
@@ -66,7 +66,7 @@ func MigrationGroupGet(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, migrationGroup, " ")
 }
 
-// MigrationGroupGetList godoc
+// ListMigrationGroup godoc
 //
 // @Summary		List MigrationGroup
 // @Description	Get a list of migration group.
@@ -81,7 +81,7 @@ func MigrationGroupGet(c echo.Context) error {
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get a list of migration group."
 // @Router			/migration_group [get]
-func MigrationGroupGetList(c echo.Context) error {
+func ListMigrationGroup(c echo.Context) error {
 	page, row, err := common.CheckPageRow(c)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
@@ -100,7 +100,7 @@ func MigrationGroupGetList(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, MigrationGroups, " ")
 }
 
-// MigrationGroupUpdate godoc
+// UpdateMigrationGroup godoc
 //
 // @Summary		Update MigrationGroup
 // @Description	Update the migration group.
@@ -112,7 +112,7 @@ func MigrationGroupGetList(c echo.Context) error {
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to update the migration group"
 // @Router		/migration_group/{uuid} [put]
-func MigrationGroupUpdate(c echo.Context) error {
+func UpdateMigrationGroup(c echo.Context) error {
 	migrationGroup := new(model.MigrationGroup)
 	err := c.Bind(migrationGroup)
 	if err != nil {
@@ -137,7 +137,7 @@ func MigrationGroupUpdate(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, oldMigrationGroup, " ")
 }
 
-// MigrationGroupDelete godoc
+// DeleteMigrationGroup godoc
 //
 // @Summary		Delete MigrationGroup
 // @Description	Delete the migration group.
@@ -148,7 +148,7 @@ func MigrationGroupUpdate(c echo.Context) error {
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to delete the migration group"
 // @Router		/migration_group/{uuid} [delete]
-func MigrationGroupDelete(c echo.Context) error {
+func DeleteMigrationGroup(c echo.Context) error {
 	uuid := c.Param("uuid")
 	if uuid == "" {
 		return common.ReturnErrorMsg(c, "uuid is empty")
@@ -167,8 +167,8 @@ func MigrationGroupDelete(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, migrationGroup, " ")
 }
 
-// MigrationGroupCheckConnection TODO ADD COMMENTS
-func MigrationGroupCheckConnection(c echo.Context) error {
+// CheckConnectionMigrationGroup TODO ADD COMMENTS
+func CheckConnectionMigrationGroup(c echo.Context) error {
 	uuid := c.Param("uuid")
 	if uuid == "" {
 		return common.ReturnErrorMsg(c, "uuid is empty")

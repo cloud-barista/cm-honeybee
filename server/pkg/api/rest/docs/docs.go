@@ -103,7 +103,7 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Register the connection information.",
+                "description": "Create the connection information.",
                 "consumes": [
                     "application/json"
                 ],
@@ -113,7 +113,7 @@ const docTemplate = `{
                 "tags": [
                     "[On-premise] ConnectionInfo"
                 ],
-                "summary": "Register ConnectionInfo",
+                "summary": "Create ConnectionInfo",
                 "parameters": [
                     {
                         "description": "Connection information of the node.",
