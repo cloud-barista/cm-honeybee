@@ -25,11 +25,15 @@ func isRealDocker(cli *client.Client) (bool, error) {
 }
 
 func GetDockerContainers() ([]types.Container, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		logger.Println(logger.DEBUG, true, "DOCKER: "+err.Error())
 		return []types.Container{}, err
 	}
+	cli.NegotiateAPIVersion(ctx)
 
 	yes, err := isRealDocker(cli)
 	if err != nil {
@@ -41,7 +45,7 @@ func GetDockerContainers() ([]types.Container, error) {
 		return []types.Container{}, nil
 	}
 
-	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
+	containers, err := cli.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
 		logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
 		return []types.Container{}, err
