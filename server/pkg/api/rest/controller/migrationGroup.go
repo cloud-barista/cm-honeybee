@@ -5,6 +5,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/dao"
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
+	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
@@ -137,6 +138,28 @@ func UpdateMigrationGroup(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, oldMigrationGroup, " ")
 }
 
+func deleteSavedInfraInfo(connectionInfo *model.ConnectionInfo) {
+	savedInfraInfo, _ := dao.SavedInfraInfoGet(connectionInfo.UUID)
+	if savedInfraInfo == nil {
+		return
+	}
+	err := dao.SavedInfraInfoDelete(savedInfraInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+}
+
+func deleteSavedSoftwareInfo(connectionInfo *model.ConnectionInfo) {
+	savedSoftwareInfo, _ := dao.SavedSoftwareInfoGet(connectionInfo.UUID)
+	if savedSoftwareInfo == nil {
+		return
+	}
+	err := dao.SavedSoftwareInfoDelete(savedSoftwareInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+}
+
 // DeleteMigrationGroup godoc
 //
 // @Summary		Delete MigrationGroup
@@ -157,6 +180,21 @@ func DeleteMigrationGroup(c echo.Context) error {
 	migrationGroup, err := dao.MigrationGroupGet(uuid)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	connectionInfoList, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{
+		GroupUUID: uuid,
+	}, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, "Failed to get connection info list to delete.")
+	}
+	for _, connectionInfo := range *connectionInfoList {
+		deleteSavedInfraInfo(&connectionInfo)
+		deleteSavedSoftwareInfo(&connectionInfo)
+		err = dao.ConnectionInfoDelete(&connectionInfo)
+		if err != nil {
+			logger.Println(logger.ERROR, true, err)
+		}
 	}
 
 	err = dao.MigrationGroupDelete(migrationGroup)

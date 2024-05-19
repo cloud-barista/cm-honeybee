@@ -52,5 +52,3 @@ require (
 	modernc.org/memory v1.8.0 // indirect
 	modernc.org/sqlite v1.29.9 // indirect
 )
-
-replace github.com/cloud-barista/cm-honeybee/agent => ../agent

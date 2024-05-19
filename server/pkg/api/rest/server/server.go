@@ -52,6 +52,7 @@ func Init() {
 
 	route.RegisterConnectionInfo(e)
 	route.RegisterMigrationGroup(e)
+	route.RegisterImport(e)
 	route.RegisterSwagger(e)
 	route.RegisterUtility(e)
 

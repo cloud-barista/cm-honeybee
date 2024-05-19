@@ -45,6 +45,20 @@ definitions:
     - name
     - uuid
     type: object
+  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedInfraInfo:
+    properties:
+      connection_uuid:
+        type: string
+      infra_data:
+        type: string
+      saved_time:
+        type: string
+      status:
+        type: string
+    required:
+    - connection_uuid
+    - infra_data
+    type: object
   pkg_api_rest_controller.SimpleMsg:
     properties:
       message:
@@ -220,6 +234,52 @@ paths:
       summary: Update ConnectionInfo
       tags:
       - '[On-premise] ConnectionInfo'
+  /import/infra/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Import the infra information.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the infra information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedInfraInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the infra information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Import Infra
+      tags:
+      - '[Import] ImportInfra'
+  /import/software/{uuid}:
+    get:
+      consumes:
+      - application/json
+      description: Import the software information.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the software information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedInfraInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the software information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+      summary: Import software
+      tags:
+      - '[Import] ImportSoftware'
   /migration_group:
     get:
       consumes:
