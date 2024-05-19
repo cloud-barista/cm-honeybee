@@ -309,7 +309,7 @@
                     "200": {
                         "description": "Successfully saved the software information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedInfraInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedSoftwareInfo"
                         }
                     },
                     "400": {
@@ -320,6 +320,50 @@
                     },
                     "500": {
                         "description": "Failed to save the software information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/infra/{uuid}": {
+            "get": {
+                "description": "Get the infra information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Infra] Get infra info"
+                ],
+                "summary": "Get Infra Information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID of the connectionInfo",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the infra.",
+                        "schema": {
+                            "$ref": "#/definitions/infra.Infra"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the infra.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
                         }
@@ -601,9 +645,70 @@
                     }
                 }
             }
+        },
+        "/software/{uuid}": {
+            "get": {
+                "description": "Get the software information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Software] Get Software info"
+                ],
+                "summary": "Get Software Information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID of the connectionInfo",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the software.",
+                        "schema": {
+                            "$ref": "#/definitions/software.Software"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the software.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "drm.DRM": {
+            "type": "object",
+            "properties": {
+                "driver_date": {
+                    "type": "string"
+                },
+                "driver_description": {
+                    "type": "string"
+                },
+                "driver_name": {
+                    "type": "string"
+                },
+                "driver_version": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -693,11 +798,996 @@
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedSoftwareInfo": {
+            "type": "object",
+            "required": [
+                "connection_uuid",
+                "software_data"
+            ],
+            "properties": {
+                "connection_uuid": {
+                    "type": "string"
+                },
+                "saved_time": {
+                    "type": "string"
+                },
+                "software_data": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.CPU": {
+            "type": "object",
+            "properties": {
+                "cache": {
+                    "description": "KB",
+                    "type": "integer"
+                },
+                "cores": {
+                    "description": "ea",
+                    "type": "integer"
+                },
+                "cpus": {
+                    "description": "ea",
+                    "type": "integer"
+                },
+                "max_speed": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "threads": {
+                    "description": "ea",
+                    "type": "integer"
+                },
+                "vendor": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.Compute": {
+            "type": "object",
+            "properties": {
+                "compute_resource": {
+                    "$ref": "#/definitions/infra.ComputeResource"
+                },
+                "connection": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.Connection"
+                    }
+                },
+                "os": {
+                    "$ref": "#/definitions/infra.System"
+                }
+            }
+        },
+        "infra.ComputeResource": {
+            "type": "object",
+            "properties": {
+                "cpu": {
+                    "$ref": "#/definitions/infra.CPU"
+                },
+                "data_disk": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.Disk"
+                    }
+                },
+                "memory": {
+                    "$ref": "#/definitions/infra.Memory"
+                },
+                "root_disk": {
+                    "$ref": "#/definitions/infra.Disk"
+                }
+            }
+        },
+        "infra.Connection": {
+            "type": "object",
+            "properties": {
+                "keypair": {
+                    "$ref": "#/definitions/infra.Keypair"
+                }
+            }
+        },
+        "infra.Disk": {
+            "type": "object",
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "size": {
+                    "description": "GB",
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.GPU": {
+            "type": "object",
+            "properties": {
+                "drm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/drm.DRM"
+                    }
+                },
+                "nvidia": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/nvidia.NVIDIA"
+                    }
+                }
+            }
+        },
+        "infra.Infra": {
+            "type": "object",
+            "properties": {
+                "compute": {
+                    "$ref": "#/definitions/infra.Compute"
+                },
+                "gpu": {
+                    "$ref": "#/definitions/infra.GPU"
+                },
+                "network": {
+                    "$ref": "#/definitions/network.Network"
+                },
+                "storage": {
+                    "$ref": "#/definitions/infra.Storage"
+                }
+            }
+        },
+        "infra.Kernel": {
+            "type": "object",
+            "properties": {
+                "architecture": {
+                    "type": "string"
+                },
+                "release": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.Keypair": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "private_key": {
+                    "type": "string"
+                },
+                "public_key": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.Memory": {
+            "type": "object",
+            "properties": {
+                "size": {
+                    "description": "MB",
+                    "type": "integer"
+                },
+                "speed": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.MountPoint": {
+            "type": "object",
+            "properties": {
+                "mounted_information": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.MountedInformation"
+                    }
+                }
+            }
+        },
+        "infra.MountedInformation": {
+            "type": "object",
+            "properties": {
+                "destination": {
+                    "type": "string"
+                },
+                "filesystem": {
+                    "type": "string"
+                },
+                "option": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.Node": {
+            "type": "object",
+            "properties": {
+                "hostname": {
+                    "type": "string"
+                },
+                "hypervisor": {
+                    "type": "string"
+                },
+                "machineid": {
+                    "type": "string"
+                },
+                "timezone": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.OS": {
+            "type": "object",
+            "properties": {
+                "architecture": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "release": {
+                    "type": "string"
+                },
+                "vendor": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.Storage": {
+            "type": "object",
+            "properties": {
+                "mount_point": {
+                    "$ref": "#/definitions/infra.MountPoint"
+                }
+            }
+        },
+        "infra.System": {
+            "type": "object",
+            "properties": {
+                "kernel": {
+                    "$ref": "#/definitions/infra.Kernel"
+                },
+                "node": {
+                    "$ref": "#/definitions/infra.Node"
+                },
+                "os": {
+                    "$ref": "#/definitions/infra.OS"
+                }
+            }
+        },
+        "mount.Propagation": {
+            "type": "string",
+            "enum": [
+                "rprivate",
+                "private",
+                "rshared",
+                "shared",
+                "rslave",
+                "slave"
+            ],
+            "x-enum-varnames": [
+                "PropagationRPrivate",
+                "PropagationPrivate",
+                "PropagationRShared",
+                "PropagationShared",
+                "PropagationRSlave",
+                "PropagationSlave"
+            ]
+        },
+        "mount.Type": {
+            "type": "string",
+            "enum": [
+                "bind",
+                "volume",
+                "tmpfs",
+                "npipe",
+                "cluster"
+            ],
+            "x-enum-varnames": [
+                "TypeBind",
+                "TypeVolume",
+                "TypeTmpfs",
+                "TypeNamedPipe",
+                "TypeCluster"
+            ]
+        },
+        "network.CSP": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "nlb": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.NLB"
+                    }
+                },
+                "security_group": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.SecurityGroup"
+                    }
+                },
+                "vpc": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.VPC"
+                    }
+                }
+            }
+        },
+        "network.DNS": {
+            "type": "object",
+            "properties": {
+                "dns_server": {
+                    "description": "IPv4 or IPv6 DNS Server Addresses",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "network.EndpointIPAMConfig": {
+            "type": "object",
+            "properties": {
+                "ipv4Address": {
+                    "type": "string"
+                },
+                "ipv6Address": {
+                    "type": "string"
+                },
+                "linkLocalIPs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "network.EndpointSettings": {
+            "type": "object",
+            "properties": {
+                "aliases": {
+                    "description": "Aliases holds the list of extra, user-specified DNS names for this endpoint.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "dnsnames": {
+                    "description": "DNSNames holds all the (non fully qualified) DNS names associated to this endpoint. First entry is used to\ngenerate PTR records.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "driverOpts": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "endpointID": {
+                    "type": "string"
+                },
+                "gateway": {
+                    "type": "string"
+                },
+                "globalIPv6Address": {
+                    "type": "string"
+                },
+                "globalIPv6PrefixLen": {
+                    "type": "integer"
+                },
+                "ipaddress": {
+                    "type": "string"
+                },
+                "ipamconfig": {
+                    "description": "Configurations",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/network.EndpointIPAMConfig"
+                        }
+                    ]
+                },
+                "ipprefixLen": {
+                    "type": "integer"
+                },
+                "ipv6Gateway": {
+                    "type": "string"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "macAddress": {
+                    "description": "MacAddress may be used to specify a MAC address when the container is created.\nOnce the container is running, it becomes operational data (it may contain a\ngenerated address).",
+                    "type": "string"
+                },
+                "networkID": {
+                    "description": "Operational data",
+                    "type": "string"
+                }
+            }
+        },
+        "network.FirewallRule": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "allow, deny",
+                    "type": "string"
+                },
+                "direction": {
+                    "description": "inbound, outbound",
+                    "type": "string"
+                },
+                "dst": {
+                    "type": "string"
+                },
+                "dst_ports": {
+                    "type": "string"
+                },
+                "priority": {
+                    "description": "Lower has higher priority",
+                    "type": "integer"
+                },
+                "protocol": {
+                    "description": "TCP, UDP, ICMP",
+                    "type": "string"
+                },
+                "src": {
+                    "type": "string"
+                },
+                "src_ports": {
+                    "type": "string"
+                }
+            }
+        },
+        "network.Host": {
+            "type": "object",
+            "properties": {
+                "dns": {
+                    "$ref": "#/definitions/network.DNS"
+                },
+                "firewall_rule": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.FirewallRule"
+                    }
+                },
+                "network_interface": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.NIC"
+                    }
+                },
+                "route": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.Route"
+                    }
+                }
+            }
+        },
+        "network.NIC": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "gateway": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "interface": {
+                    "type": "string"
+                },
+                "mac_address": {
+                    "type": "string"
+                },
+                "mtu": {
+                    "type": "integer"
+                }
+            }
+        },
+        "network.NLB": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "health_checker": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "listener": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "target_group": {
+                    "type": "string"
+                }
+            }
+        },
+        "network.Network": {
+            "type": "object",
+            "properties": {
+                "csp": {
+                    "$ref": "#/definitions/network.CSP"
+                },
+                "host": {
+                    "$ref": "#/definitions/network.Host"
+                }
+            }
+        },
+        "network.Route": {
+            "type": "object",
+            "properties": {
+                "destination": {
+                    "type": "string"
+                },
+                "netmask": {
+                    "type": "string"
+                },
+                "next_hop": {
+                    "type": "string"
+                }
+            }
+        },
+        "network.SecurityGroup": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "firewall_rule": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.FirewallRule"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "vnet_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "network.Subnet": {
+            "type": "object",
+            "properties": {
+                "ipv4_cidr": {
+                    "description": "IPv4 Network Address with CIDR Prefix Length",
+                    "type": "string"
+                },
+                "ipv6_cidr": {
+                    "description": "IPv6 Network Address with CIDR Prefix Length",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "network.VPC": {
+            "type": "object",
+            "properties": {
+                "address_space": {
+                    "description": "IPv4 CIDR or IPv6 CIDR",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "dns_server": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.DNS"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "subnet": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.Subnet"
+                    }
+                }
+            }
+        },
+        "nvidia.DeviceAttribute": {
+            "type": "object",
+            "properties": {
+                "cuda_version": {
+                    "type": "string"
+                },
+                "driver_version": {
+                    "type": "string"
+                },
+                "gpu_uuid": {
+                    "type": "string"
+                },
+                "product_architecture": {
+                    "type": "string"
+                },
+                "product_brand": {
+                    "type": "string"
+                },
+                "product_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "nvidia.NVIDIA": {
+            "type": "object",
+            "properties": {
+                "device_attribute": {
+                    "$ref": "#/definitions/nvidia.DeviceAttribute"
+                },
+                "performance": {
+                    "$ref": "#/definitions/nvidia.Performance"
+                }
+            }
+        },
+        "nvidia.Performance": {
+            "type": "object",
+            "properties": {
+                "bar1_memory_total": {
+                    "description": "mb",
+                    "type": "integer"
+                },
+                "bar1_memory_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "bar1_memory_used": {
+                    "description": "mb",
+                    "type": "integer"
+                },
+                "fb_memory_total": {
+                    "description": "mb",
+                    "type": "integer"
+                },
+                "fb_memory_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "fb_memory_used": {
+                    "description": "mb",
+                    "type": "integer"
+                },
+                "gpu_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                }
+            }
+        },
         "pkg_api_rest_controller.SimpleMsg": {
             "type": "object",
             "properties": {
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "software.DEB": {
+            "type": "object",
+            "properties": {
+                "architecture": {
+                    "type": "string"
+                },
+                "conffiles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "depends": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "homepage": {
+                    "type": "string"
+                },
+                "installed_size": {
+                    "type": "integer"
+                },
+                "maintainer": {
+                    "type": "string"
+                },
+                "multi_arch": {
+                    "type": "string"
+                },
+                "package": {
+                    "type": "string"
+                },
+                "pre_depends": {
+                    "type": "string"
+                },
+                "priority": {
+                    "type": "string"
+                },
+                "section": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "software.Docker": {
+            "type": "object",
+            "properties": {
+                "containers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.Container"
+                    }
+                }
+            }
+        },
+        "software.Podman": {
+            "type": "object",
+            "properties": {
+                "containers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.Container"
+                    }
+                }
+            }
+        },
+        "software.RPM": {
+            "type": "object",
+            "properties": {
+                "arch": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "release": {
+                    "type": "string"
+                },
+                "requires": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "sourceRpm": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "vendor": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "software.Software": {
+            "type": "object",
+            "properties": {
+                "deb": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/software.DEB"
+                    }
+                },
+                "docker": {
+                    "$ref": "#/definitions/software.Docker"
+                },
+                "podman": {
+                    "$ref": "#/definitions/software.Podman"
+                },
+                "rpm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/software.RPM"
+                    }
+                }
+            }
+        },
+        "types.Container": {
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "string"
+                },
+                "command": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "integer"
+                },
+                "hostConfig": {
+                    "type": "object",
+                    "properties": {
+                        "networkMode": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "image": {
+                    "type": "string"
+                },
+                "imageID": {
+                    "type": "string"
+                },
+                "labels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "mounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.MountPoint"
+                    }
+                },
+                "names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "networkSettings": {
+                    "$ref": "#/definitions/types.SummaryNetworkSettings"
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/types.Port"
+                    }
+                },
+                "sizeRootFs": {
+                    "type": "integer"
+                },
+                "sizeRw": {
+                    "type": "integer"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "types.MountPoint": {
+            "type": "object",
+            "properties": {
+                "destination": {
+                    "description": "Destination is the path relative to the container root (`/`) where the\nSource is mounted inside the container.",
+                    "type": "string"
+                },
+                "driver": {
+                    "description": "Driver is the volume driver used to create the volume (if it is a volume).",
+                    "type": "string"
+                },
+                "mode": {
+                    "description": "Mode is a comma separated list of options supplied by the user when\ncreating the bind/volume mount.\n\nThe default is platform-specific (`\"z\"` on Linux, empty on Windows).",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the name reference to the underlying data defined by `Source`\ne.g., the volume name.",
+                    "type": "string"
+                },
+                "propagation": {
+                    "description": "Propagation describes how mounts are propagated from the host into the\nmount point, and vice-versa. Refer to the Linux kernel documentation\nfor details:\nhttps://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt\n\nThis field is not used on Windows.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mount.Propagation"
+                        }
+                    ]
+                },
+                "rw": {
+                    "description": "RW indicates whether the mount is mounted writable (read-write).",
+                    "type": "boolean"
+                },
+                "source": {
+                    "description": "Source is the source location of the mount.\n\nFor volumes, this contains the storage location of the volume (within\n`/var/lib/docker/volumes/`). For bind-mounts, and `npipe`, this contains\nthe source (host) part of the bind-mount. For `tmpfs` mount points, this\nfield is empty.",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type is the type of mount, see `Type\u003cfoo\u003e` definitions in\ngithub.com/docker/docker/api/types/mount.Type",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mount.Type"
+                        }
+                    ]
+                }
+            }
+        },
+        "types.Port": {
+            "type": "object",
+            "properties": {
+                "IP": {
+                    "description": "Host IP address that the container's port is mapped to",
+                    "type": "string"
+                },
+                "PrivatePort": {
+                    "description": "Port on the container\nRequired: true",
+                    "type": "integer"
+                },
+                "PublicPort": {
+                    "description": "Port exposed on the host",
+                    "type": "integer"
+                },
+                "Type": {
+                    "description": "type\nRequired: true",
+                    "type": "string"
+                }
+            }
+        },
+        "types.SummaryNetworkSettings": {
+            "type": "object",
+            "properties": {
+                "networks": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/network.EndpointSettings"
+                    }
                 }
             }
         }
