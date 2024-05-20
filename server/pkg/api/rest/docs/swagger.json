@@ -507,7 +507,10 @@
                     "200": {
                         "description": "Successfully checked SSH connection for the migration group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                            }
                         }
                     },
                     "400": {

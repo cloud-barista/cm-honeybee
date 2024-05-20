@@ -213,7 +213,7 @@ func DeleteMigrationGroup(c echo.Context) error {
 // @Accept		json
 // @Produce		json
 // @Param		MigrationGroup body model.MigrationGroup true "migration group to check SSH connection for each connection info in migration group"
-// @Success		200	{object}	model.ConnectionInfo		"Successfully checked SSH connection for the migration group"
+// @Success		200	{object}	[]model.ConnectionInfo		"Successfully checked SSH connection for the migration group"
 // @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse		"Failed to check SSH connection for the migration group"
 // @Router		/migration_group/check/{uuid} [get]
