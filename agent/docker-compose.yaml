@@ -1,0 +1,18 @@
+services:
+  cm-honeybee-agent:
+    container_name: cm-honeybee-agent
+    restart: always
+    privileged: true
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: cm-honeybee-agent:${TAG:-latest}
+    entrypoint: /docker-entrypoint.sh
+    volumes:
+      - ./docker-entrypoint.sh:/docker-entrypoint.sh:ro
+      - ./conf/:/conf/:ro
+      - /etc/:/etc/:ro
+      - /usr/lib/os-release:/usr/lib/os-release:ro
+      - /var/:/var/:rw
+      - /run/:/run/:rw
+    network_mode: "host"
