@@ -2,8 +2,8 @@ package dao
 
 import (
 	"errors"
-	"github.com/cloud-barista/cm-honeybee/db"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
+	"github.com/cloud-barista/cm-honeybee/server/db"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"strconv"

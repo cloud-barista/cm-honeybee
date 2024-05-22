@@ -1,4 +1,4 @@
-module github.com/cloud-barista/cm-honeybee
+module github.com/cloud-barista/cm-honeybee/server
 
 go 1.22.3
 

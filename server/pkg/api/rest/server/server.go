@@ -5,11 +5,11 @@ import (
 	"net"
 	"strings"
 
-	"github.com/cloud-barista/cm-honeybee/common"
-	"github.com/cloud-barista/cm-honeybee/lib/config"
-	_ "github.com/cloud-barista/cm-honeybee/pkg/api/rest/docs" // Honeybee Documentation
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/middlewares"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/route"
+	"github.com/cloud-barista/cm-honeybee/server/common"
+	"github.com/cloud-barista/cm-honeybee/server/lib/config"
+	_ "github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/docs" // Honeybee Documentation
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/middlewares"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/route"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 )

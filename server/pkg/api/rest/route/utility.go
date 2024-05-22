@@ -1,8 +1,8 @@
 package route
 
 import (
-	"github.com/cloud-barista/cm-honeybee/common"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/controller"
+	"github.com/cloud-barista/cm-honeybee/server/common"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/controller"
 	"strings"
 
 	"github.com/labstack/echo/v4"

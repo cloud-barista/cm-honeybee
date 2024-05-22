@@ -3,7 +3,7 @@ package ssh
 import (
 	"errors"
 	"fmt"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	_ssh "golang.org/x/crypto/ssh"
 	"os"
 	"path/filepath"

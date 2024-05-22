@@ -1,7 +1,7 @@
 package controller
 
 import (
-	_ "github.com/cloud-barista/cm-honeybee/pkg/api/rest/common" // Need for swag
+	_ "github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common" // Need for swag
 	"github.com/labstack/echo/v4"
 	"net/http"
 )

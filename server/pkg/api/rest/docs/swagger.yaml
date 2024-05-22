@@ -10,12 +10,12 @@ definitions:
       driver_version:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse:
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse:
     properties:
       error:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo:
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo:
     properties:
       failed_message:
         type: string
@@ -46,7 +46,7 @@ definitions:
     - user
     - uuid
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup:
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup:
     properties:
       name:
         type: string
@@ -56,7 +56,7 @@ definitions:
     - name
     - uuid
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedInfraInfo:
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo:
     properties:
       connection_uuid:
         type: string
@@ -70,7 +70,7 @@ definitions:
     - connection_uuid
     - infra_data
     type: object
-  github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedSoftwareInfo:
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo:
     properties:
       connection_uuid:
         type: string
@@ -813,16 +813,16 @@ paths:
           description: Successfully get a list of connection information.
           schema:
             items:
-              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
             type: array
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to get a list of connection information.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: List ConnectionInfo
       tags:
       - '[On-premise] ConnectionInfo'
@@ -836,22 +836,22 @@ paths:
         name: ConnectionInfo
         required: true
         schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
       produces:
       - application/json
       responses:
         "200":
           description: Successfully register the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to register the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Create ConnectionInfo
       tags:
       - '[On-premise] ConnectionInfo'
@@ -866,15 +866,15 @@ paths:
         "200":
           description: Successfully delete the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to delete the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Delete ConnectionInfo
       tags:
       - '[On-premise] ConnectionInfo'
@@ -894,15 +894,15 @@ paths:
         "200":
           description: Successfully get the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to get the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Get ConnectionInfo
       tags:
       - '[On-premise] ConnectionInfo'
@@ -916,22 +916,22 @@ paths:
         name: ConnectionInfo
         required: true
         schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
       produces:
       - application/json
       responses:
         "200":
           description: Successfully update the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to update the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Update ConnectionInfo
       tags:
       - '[On-premise] ConnectionInfo'
@@ -946,15 +946,15 @@ paths:
         "200":
           description: Successfully saved the infra information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedInfraInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo'
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to save the infra information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Import Infra
       tags:
       - '[Import] ImportInfra'
@@ -969,15 +969,15 @@ paths:
         "200":
           description: Successfully saved the software information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedSoftwareInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo'
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to save the software information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Import software
       tags:
       - '[Import] ImportSoftware'
@@ -1002,11 +1002,11 @@ paths:
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to get information of the infra.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Get Infra Information
       tags:
       - '[Infra] Get infra info'
@@ -1039,16 +1039,16 @@ paths:
           description: Successfully get a list of migration group.
           schema:
             items:
-              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup'
             type: array
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to get a list of migration group.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: List MigrationGroup
       tags:
       - '[On-premise] MigrationGroup'
@@ -1062,22 +1062,22 @@ paths:
         name: MigrationGroup
         required: true
         schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup'
       produces:
       - application/json
       responses:
         "200":
           description: Successfully register the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup'
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to register the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Register MigrationGroup
       tags:
       - '[On-premise] MigrationGroup'
@@ -1092,15 +1092,15 @@ paths:
         "200":
           description: Successfully delete the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup'
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to delete the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Delete MigrationGroup
       tags:
       - '[On-premise] MigrationGroup'
@@ -1120,15 +1120,15 @@ paths:
         "200":
           description: Successfully get the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup'
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to get the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Get MigrationGroup
       tags:
       - '[On-premise] MigrationGroup'
@@ -1142,22 +1142,22 @@ paths:
         name: MigrationGroup
         required: true
         schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup'
       produces:
       - application/json
       responses:
         "200":
           description: Successfully update the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup'
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to update the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Update MigrationGroup
       tags:
       - '[On-premise] MigrationGroup'
@@ -1174,7 +1174,7 @@ paths:
         name: MigrationGroup
         required: true
         schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup'
       produces:
       - application/json
       responses:
@@ -1182,16 +1182,16 @@ paths:
           description: Successfully checked SSH connection for the migration group
           schema:
             items:
-              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo'
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
             type: array
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to check SSH connection for the migration group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Check Connection MigrationGroup
       tags:
       - '[On-premise] MigrationGroup'
@@ -1216,11 +1216,11 @@ paths:
         "400":
           description: Sent bad request.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
           description: Failed to get information of the software.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Get Software Information
       tags:
       - '[Software] Get Software info'

@@ -1,7 +1,7 @@
 package route
 
 import (
-	"github.com/cloud-barista/cm-honeybee/common"
+	"github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/labstack/echo/v4"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"strings"

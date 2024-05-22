@@ -1,8 +1,8 @@
 package db
 
 import (
-	"github.com/cloud-barista/cm-honeybee/common"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
+	"github.com/cloud-barista/cm-honeybee/server/common"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/glebarez/sqlite"
 	"github.com/jollaman999/utils/logger"
 	"gorm.io/gorm"

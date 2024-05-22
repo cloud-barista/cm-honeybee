@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	_ "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra" // Need for swag
-	"github.com/cloud-barista/cm-honeybee/dao"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/common"
+	"github.com/cloud-barista/cm-honeybee/server/dao"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )

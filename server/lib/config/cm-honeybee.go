@@ -3,7 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/cloud-barista/cm-honeybee/common"
+	"github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/jollaman999/utils/fileutil"
 	"gopkg.in/yaml.v3"
 	"os"

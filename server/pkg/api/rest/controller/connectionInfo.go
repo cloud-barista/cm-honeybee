@@ -2,9 +2,9 @@ package controller
 
 import (
 	"errors"
-	"github.com/cloud-barista/cm-honeybee/dao"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/common"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
+	"github.com/cloud-barista/cm-honeybee/server/dao"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/jollaman999/utils/iputil"
 	"github.com/labstack/echo/v4"
 	"net/http"

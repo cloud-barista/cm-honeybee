@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/cloud-barista/cm-honeybee/common"
-	"github.com/cloud-barista/cm-honeybee/db"
-	"github.com/cloud-barista/cm-honeybee/lib/config"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/server"
+	"github.com/cloud-barista/cm-honeybee/server/common"
+	"github.com/cloud-barista/cm-honeybee/server/db"
+	"github.com/cloud-barista/cm-honeybee/server/lib/config"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/server"
 	"github.com/jollaman999/utils/logger"
 	"github.com/jollaman999/utils/syscheck"
 	"log"

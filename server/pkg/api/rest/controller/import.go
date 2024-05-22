@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"github.com/cloud-barista/cm-honeybee/dao"
-	"github.com/cloud-barista/cm-honeybee/lib/config"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/common"
-	"github.com/cloud-barista/cm-honeybee/pkg/api/rest/model"
+	"github.com/cloud-barista/cm-honeybee/server/dao"
+	"github.com/cloud-barista/cm-honeybee/server/lib/config"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"time"

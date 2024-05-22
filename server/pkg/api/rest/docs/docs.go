@@ -84,20 +84,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                             }
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to get a list of connection information.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -121,7 +121,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                         }
                     }
                 ],
@@ -129,19 +129,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully register the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to register the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -173,19 +173,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully get the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to get the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -209,7 +209,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                         }
                     }
                 ],
@@ -217,19 +217,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully update the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to update the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -250,19 +250,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully delete the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to delete the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -285,19 +285,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully saved the infra information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedInfraInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo"
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to save the infra information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -320,19 +320,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully saved the software information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedSoftwareInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo"
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to save the software information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -370,13 +370,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to get information of the infra.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -427,20 +427,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup"
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
                             }
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to get a list of migration group.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -464,7 +464,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
                         }
                     }
                 ],
@@ -472,19 +472,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully register the migration group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to register the migration group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -510,7 +510,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
                         }
                     }
                 ],
@@ -520,20 +520,20 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo"
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                             }
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to check SSH connection for the migration group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -565,19 +565,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully get the migration group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to get the migration group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -601,7 +601,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
                         }
                     }
                 ],
@@ -609,19 +609,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully update the migration group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to update the migration group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -642,19 +642,19 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully delete the migration group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
                         }
                     },
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to delete the migration group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -692,13 +692,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Sent bad request.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Failed to get information of the software.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
@@ -723,7 +723,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_common.ErrorResponse": {
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse": {
             "type": "object",
             "properties": {
                 "error": {
@@ -731,7 +731,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.ConnectionInfo": {
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo": {
             "type": "object",
             "required": [
                 "group_uuid",
@@ -776,7 +776,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.MigrationGroup": {
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup": {
             "type": "object",
             "required": [
                 "name",
@@ -791,7 +791,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedInfraInfo": {
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo": {
             "type": "object",
             "required": [
                 "connection_uuid",
@@ -812,7 +812,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_pkg_api_rest_model.SavedSoftwareInfo": {
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo": {
             "type": "object",
             "required": [
                 "connection_uuid",
