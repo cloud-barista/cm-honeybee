@@ -935,6 +935,25 @@ paths:
       summary: Update ConnectionInfo
       tags:
       - '[On-premise] ConnectionInfo'
+  /honeybee/readyz:
+    get:
+      consumes:
+      - application/json
+      description: Check Honeybee is ready
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get ready state.
+          schema:
+            $ref: '#/definitions/pkg_api_rest_controller.SimpleMsg'
+        "500":
+          description: Failed to check ready state.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Check Ready
+      tags:
+      - '[Admin] System management'
   /import/infra/{uuid}:
     get:
       consumes:

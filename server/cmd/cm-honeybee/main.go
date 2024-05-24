@@ -4,6 +4,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/lib/config"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/controller"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/server"
 	"github.com/jollaman999/utils/logger"
 	"github.com/jollaman999/utils/syscheck"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -30,12 +32,26 @@ func init() {
 		log.Panicln(err)
 	}
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer func() {
+			wg.Done()
+		}()
+		controller.OkMessage.Message = "API server is not ready"
+		server.Init()
+	}()
+
+	controller.OkMessage.Message = "Database is not ready"
 	err = db.Open()
 	if err != nil {
 		logger.Panicln(logger.ERROR, true, err.Error())
 	}
 
-	server.Init()
+	controller.OkMessage.Message = "CM-Honeybee API server is ready"
+	controller.IsReady = true
+
+	wg.Wait()
 }
 
 func end() {

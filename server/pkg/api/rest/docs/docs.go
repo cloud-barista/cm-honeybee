@@ -268,6 +268,35 @@ const docTemplate = `{
                 }
             }
         },
+        "/honeybee/readyz": {
+            "get": {
+                "description": "Check Honeybee is ready",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Check Ready",
+                "responses": {
+                    "200": {
+                        "description": "Successfully get ready state.",
+                        "schema": {
+                            "$ref": "#/definitions/pkg_api_rest_controller.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to check ready state.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/import/infra/{uuid}": {
             "get": {
                 "description": "Import the infra information.",
