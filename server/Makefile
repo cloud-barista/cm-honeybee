@@ -8,7 +8,7 @@ GOPROXY_OPTION := GOPROXY=direct
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build linux windows run clean help
+.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build linux windows run run_docker stop stop_docker clean help
 
 all: build
 
@@ -118,8 +118,22 @@ run: ## Run the built binary
         ./cmd/${MODULE_NAME}/${MODULE_NAME} || echo "Trying with sudo..." && sudo ./cmd/${MODULE_NAME}/${MODULE_NAME}; \
 	  fi
 
+run_docker: ## Run the built binary within Docker
+	@git diff > .diff_current
+	@STATUS=`diff .diff_last_build .diff_current 2>&1 > /dev/null; echo $$?` && \
+	  GIT_HASH_MINE=`git rev-parse HEAD` && \
+	  GIT_HASH_LAST_BUILD=`cat .git_hash_last_build 2>&1 > /dev/null | true` && \
+	  if [ "$$STATUS" != "0" ] || [ "$$GIT_HASH_MINE" != "$$GIT_HASH_LAST_BUILD" ]; then \
+	    docker rmi -f cm-honeybee-agent:latest; \
+	    "$(MAKE)" linux; \
+	  fi
+	@docker compose up -d
+
 stop: ## Stop the built binary
 	@sudo killall ${MODULE_NAME} | true
+
+stop_docker: ## Stop the Docker container
+	@docker compose down
 
 clean: ## Remove previous build
 	@echo Cleaning build...
