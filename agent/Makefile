@@ -103,6 +103,7 @@ windows: lint swag ## Build the binary file for Windows
 	@echo Build finished!
 
 run: ## Run the built binary
+	@sudo killall ${MODULE_NAME} | true
 	@git diff > .diff_current
 	@STATUS=`diff .diff_last_build .diff_current 2>&1 > /dev/null; echo $$?` && \
 	  GIT_HASH_MINE=`git rev-parse HEAD` && \
@@ -113,9 +114,9 @@ run: ## Run the built binary
 	@@kernel_name=`uname -s` && \
 	  cp -RpPf conf cmd/${MODULE_NAME}/ && \
 	  if [[ $$kernel_name == "CYGWIN"* ]] || [[ $$kernel_name == "MINGW"* ]]; then \
-	    ./cmd/${MODULE_NAME}/${MODULE_NAME}.exe; \
+	    ./cmd/${MODULE_NAME}/${MODULE_NAME}.exe & \
 	  else \
-        ./cmd/${MODULE_NAME}/${MODULE_NAME} || echo "Trying with sudo..." && sudo ./cmd/${MODULE_NAME}/${MODULE_NAME}; \
+        ./cmd/${MODULE_NAME}/${MODULE_NAME} || echo "Trying with sudo..." && sudo ./cmd/${MODULE_NAME}/${MODULE_NAME} & \
 	  fi
 
 run_docker: ## Run the built binary within Docker

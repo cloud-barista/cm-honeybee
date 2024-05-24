@@ -10,16 +10,25 @@ type SimpleMsg struct {
 	Message string `json:"message"`
 }
 
-// GetHealth func is for checking Honeybee Agent health.
-// @Summary Check Honeybee Agent is alive
-// @Description Check Honeybee Agent is alive
+var OkMessage = SimpleMsg{}
+var IsReady = false
+
+// CheckReady func is for checking Honeybee Agent health.
+// @Summary Check Ready
+// @Description Check Honeybee Agent is ready
 // @Tags [Admin] System management
-// @Accept  json
-// @Produce  json
-// @Success		200 {object}	SimpleMsg	"Successfully get heath state."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to check health."
-func GetHealth(c echo.Context) error {
-	okMessage := SimpleMsg{}
-	okMessage.Message = "CM-Honeybee Agent is running"
-	return c.JSONPretty(http.StatusOK, &okMessage, " ")
+// @Accept		json
+// @Produce		json
+// @Success		200 {object}	SimpleMsg				"Successfully get ready state."
+// @Failure		500	{object}	common.ErrorResponse	"Failed to check ready state."
+//
+// @Router /honeybee-agent/readyz [get]
+func CheckReady(c echo.Context) error {
+	status := http.StatusOK
+
+	if !IsReady {
+		status = http.StatusServiceUnavailable
+	}
+
+	return c.JSONPretty(status, &OkMessage, " ")
 }

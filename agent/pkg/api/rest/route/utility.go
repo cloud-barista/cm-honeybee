@@ -9,5 +9,5 @@ import (
 )
 
 func RegisterUtility(e *echo.Echo) {
-	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/health", controller.GetHealth)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/readyz", controller.CheckReady)
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/cloud-barista/cm-honeybee/agent/lib/config"
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/controller"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/server"
 	"github.com/jollaman999/utils/logger"
 	"github.com/jollaman999/utils/syscheck"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -36,7 +38,20 @@ func init() {
 
 	logger.Println(logger.INFO, false, "Agent UUID: "+common.AgentUUID)
 
-	server.Init()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer func() {
+			wg.Done()
+		}()
+		controller.OkMessage.Message = "API server is not ready"
+		server.Init()
+	}()
+
+	controller.OkMessage.Message = "CM-Honeybee Agent is ready"
+	controller.IsReady = true
+
+	wg.Wait()
 }
 
 func end() {
