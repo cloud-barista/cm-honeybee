@@ -204,6 +204,13 @@ const docTemplate = `{
                 "summary": "Update ConnectionInfo",
                 "parameters": [
                     {
+                        "type": "string",
+                        "description": "UUID of the connectionInfo",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Connection information to modify.",
                         "name": "ConnectionInfo",
                         "in": "body",

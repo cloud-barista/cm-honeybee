@@ -911,6 +911,11 @@ paths:
       - application/json
       description: Update the connection information.
       parameters:
+      - description: UUID of the connectionInfo
+        in: path
+        name: uuid
+        required: true
+        type: string
       - description: Connection information to modify.
         in: body
         name: ConnectionInfo

@@ -161,6 +161,7 @@ func ListConnectionInfo(c echo.Context) error {
 // @Tags		[On-premise] ConnectionInfo
 // @Accept		json
 // @Produce		json
+// @Param		uuid path string true "UUID of the connectionInfo"
 // @Param		ConnectionInfo body model.ConnectionInfo true "Connection information to modify."
 // @Success		200	{object}	model.ConnectionInfo	"Successfully update the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
@@ -197,13 +198,13 @@ func UpdateConnectionInfo(c echo.Context) error {
 	if connectionInfo.User != "" {
 		oldConnectionInfo.User = connectionInfo.User
 	}
-	if connectionInfo.Password == "" {
+	if connectionInfo.Password != "" {
 		oldConnectionInfo.Password = connectionInfo.Password
 	}
-	if connectionInfo.PrivateKey == "" {
+	if connectionInfo.PrivateKey != "" {
 		oldConnectionInfo.PrivateKey = connectionInfo.PrivateKey
 	}
-	if connectionInfo.Type == "" {
+	if connectionInfo.Type != "" {
 		oldConnectionInfo.Type = connectionInfo.Type
 	}
 
