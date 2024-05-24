@@ -87,10 +87,10 @@ make run
 Check if CM-Honeybee agent is running
 
 ```bash
-curl http://localhost:8082/honeybee-agent/health
+curl http://localhost:8082/honeybee-agent/readyz
 
 # Output if it's running successfully
-# {"message":"CM-Honeybee Agent API server is running"}
+# {"message":"CM-Honeybee Agent API server is ready"}
 ```
 
 ### Server
@@ -98,8 +98,8 @@ curl http://localhost:8082/honeybee-agent/health
 Check if CM-Honeybee server is running
 
 ```bash
-curl http://localhost:8081/honeybee/health
+curl http://localhost:8081/honeybee/readyz
 
 # Output if it's running successfully
-# {"message":"CM-Honeybee API server is running"}
+# {"message":"CM-Honeybee API server is ready"}
 ```
