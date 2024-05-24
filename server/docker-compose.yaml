@@ -6,7 +6,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    image: cm-honeybee-agent:${TAG:-latest}
+    image: cm-honeybee:${TAG:-latest}
     entrypoint: /docker-entrypoint.sh
     volumes:
       - ./docker-entrypoint.sh:/docker-entrypoint.sh:ro
