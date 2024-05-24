@@ -1,61 +1,4 @@
 definitions:
-  github_com_cloud-barista_cm-honeybee_agent_gpu_drm.DRM:
-    properties:
-      driver_date:
-        type: string
-      driver_description:
-        type: string
-      driver_name:
-        type: string
-      driver_version:
-        type: string
-    type: object
-  github_com_cloud-barista_cm-honeybee_agent_gpu_nvidia.DeviceAttribute:
-    properties:
-      cuda_version:
-        type: string
-      driver_version:
-        type: string
-      gpu_uuid:
-        type: string
-      product_architecture:
-        type: string
-      product_brand:
-        type: string
-      product_name:
-        type: string
-    type: object
-  github_com_cloud-barista_cm-honeybee_agent_gpu_nvidia.NVIDIA:
-    properties:
-      device_attribute:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_gpu_nvidia.DeviceAttribute'
-      performance:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_gpu_nvidia.Performance'
-    type: object
-  github_com_cloud-barista_cm-honeybee_agent_gpu_nvidia.Performance:
-    properties:
-      bar1_memory_total:
-        description: mb
-        type: integer
-      bar1_memory_usage:
-        description: percent
-        type: integer
-      bar1_memory_used:
-        description: mb
-        type: integer
-      fb_memory_total:
-        description: mb
-        type: integer
-      fb_memory_usage:
-        description: percent
-        type: integer
-      fb_memory_used:
-        description: mb
-        type: integer
-      gpu_usage:
-        description: percent
-        type: integer
-    type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse:
     properties:
       error:
@@ -112,6 +55,17 @@ definitions:
       keypair:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Keypair'
     type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.DRM:
+    properties:
+      driver_date:
+        type: string
+      driver_description:
+        type: string
+      driver_name:
+        type: string
+      driver_version:
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Disk:
     properties:
       label:
@@ -126,11 +80,11 @@ definitions:
     properties:
       drm:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_gpu_drm.DRM'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.DRM'
         type: array
       nvidia:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_gpu_nvidia.NVIDIA'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIA'
         type: array
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Infra:
@@ -190,6 +144,52 @@ definitions:
         type: string
       source:
         type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIA:
+    properties:
+      device_attribute:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIADeviceAttribute'
+      performance:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAPerformance'
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIADeviceAttribute:
+    properties:
+      cuda_version:
+        type: string
+      driver_version:
+        type: string
+      gpu_uuid:
+        type: string
+      product_architecture:
+        type: string
+      product_brand:
+        type: string
+      product_name:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAPerformance:
+    properties:
+      bar1_memory_total:
+        description: mb
+        type: integer
+      bar1_memory_usage:
+        description: percent
+        type: integer
+      bar1_memory_used:
+        description: mb
+        type: integer
+      fb_memory_total:
+        description: mb
+        type: integer
+      fb_memory_usage:
+        description: percent
+        type: integer
+      fb_memory_used:
+        description: mb
+        type: integer
+      gpu_usage:
+        description: percent
+        type: integer
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Node:
     properties:

@@ -6,27 +6,21 @@ package drm
 
 import (
 	"github.com/NeowayLabs/drm"
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/jollaman999/utils/logger"
 	"strconv"
 )
 
-type DRM struct {
-	DriverName        string `json:"driver_name"`
-	DriverVersion     string `json:"driver_version"`
-	DriverDate        string `json:"driver_date"`
-	DriverDescription string `json:"driver_description"`
-}
-
-func GetDRMInfo() ([]DRM, error) {
+func GetDRMInfo() ([]infra.DRM, error) {
 	versions := drm.ListDevices()
 	if len(versions) == 0 {
 		logger.Println(logger.DEBUG, true, "DRM: DRM is not available.")
-		return []DRM{}, nil
+		return []infra.DRM{}, nil
 	}
 
-	var d []DRM
+	var d []infra.DRM
 	for _, v := range versions {
-		d = append(d, DRM{
+		d = append(d, infra.DRM{
 			DriverName: v.Name,
 			DriverVersion: strconv.Itoa(int(v.Major)) + "." +
 				strconv.Itoa(int(v.Minor)) + "." + strconv.Itoa(int(v.Patch)),

@@ -2,56 +2,33 @@ package nvidia
 
 import (
 	"encoding/xml"
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/jollaman999/utils/logger"
 	"strconv"
 	"strings"
 )
 
-type DeviceAttribute struct {
-	GPUUUID             string `json:"gpu_uuid"`
-	DriverVersion       string `json:"driver_version"`
-	CUDAVersion         string `json:"cuda_version"`
-	ProductName         string `json:"product_name"`
-	ProductBrand        string `json:"product_brand"`
-	ProductArchitecture string `json:"product_architecture"`
-}
-
-type Performance struct {
-	GPUUsage        uint32 `json:"gpu_usage"`         // percent
-	FBMemoryUsed    uint64 `json:"fb_memory_used"`    // mb
-	FBMemoryTotal   uint64 `json:"fb_memory_total"`   // mb
-	FBMemoryUsage   uint32 `json:"fb_memory_usage"`   // percent
-	Bar1MemoryUsed  uint64 `json:"bar1_memory_used"`  // mb
-	Bar1MemoryTotal uint64 `json:"bar1_memory_total"` // mb
-	Bar1MemoryUsage uint32 `json:"bar1_memory_usage"` // percent
-}
-
-type NVIDIA struct {
-	DeviceAttribute DeviceAttribute `json:"device_attribute"`
-	Performance     Performance     `json:"performance"`
-}
-
-func QueryGPU() ([]NVIDIA, error) {
+func QueryGPU() ([]infra.NVIDIA, error) {
 	if !isNVIDIASmiAvailable() {
 		errMsg := "NVIDIA: nvidia-smi command is not available"
 		logger.Println(logger.DEBUG, false, errMsg)
 
-		return []NVIDIA{}, nil
+		return []infra.NVIDIA{}, nil
 	}
 
 	output, err := runNVIDIASmi("-q -x")
 	if err != nil {
-		return []NVIDIA{}, err
+		return []infra.NVIDIA{}, err
 	}
 
 	var nvidiaSMILog SmiLog
 
 	err = xml.Unmarshal([]byte(output), &nvidiaSMILog)
 	if err != nil {
-		return []NVIDIA{}, err
+		return []infra.NVIDIA{}, err
 	}
 
-	var nvidia []NVIDIA
+	var nvidia []infra.NVIDIA
 
 	for _, gpu := range nvidiaSMILog.Gpu {
 		gpuUsage, _ := strconv.Atoi(strings.Replace(strings.Replace(strings.ToLower(gpu.Utilization.GpuUtil),
@@ -69,8 +46,8 @@ func QueryGPU() ([]NVIDIA, error) {
 			"mib", "", -1), " ", "", -1))
 		bar1MemoryUsage := float32(bar1MemoryUsed) / float32(bar1MemoryTotal) * 100
 
-		nv := NVIDIA{
-			DeviceAttribute: DeviceAttribute{
+		nv := infra.NVIDIA{
+			DeviceAttribute: infra.NVIDIADeviceAttribute{
 				GPUUUID:             gpu.UUID,
 				DriverVersion:       nvidiaSMILog.DriverVersion,
 				CUDAVersion:         nvidiaSMILog.CudaVersion,
@@ -78,7 +55,7 @@ func QueryGPU() ([]NVIDIA, error) {
 				ProductBrand:        gpu.ProductBrand,
 				ProductArchitecture: gpu.ProductArchitecture,
 			},
-			Performance: Performance{
+			Performance: infra.NVIDIAPerformance{
 				GPUUsage:        uint32(gpuUsage),
 				FBMemoryUsed:    uint64(fbMemoryUsed),
 				FBMemoryTotal:   uint64(fbMemoryTotal),
