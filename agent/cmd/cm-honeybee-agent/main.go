@@ -38,13 +38,14 @@ func init() {
 
 	logger.Println(logger.INFO, false, "Agent UUID: "+common.AgentUUID)
 
+	controller.OkMessage.Message = "API server is not ready"
+
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer func() {
 			wg.Done()
 		}()
-		controller.OkMessage.Message = "API server is not ready"
 		server.Init()
 	}()
 
