@@ -61,12 +61,10 @@ func MigrationGroupGetList(migrationGroup *model.MigrationGroup, page int, row i
 			return filtered.Offset(offset).Limit(row)
 		} else if row != 0 && page == 0 {
 			filtered.Error = errors.New("row is not 0 but page is 0")
-
-			return nil
+			return filtered
 		} else if page != 0 && row == 0 {
 			filtered.Error = errors.New("page is not 0 but row is 0")
-
-			return nil
+			return filtered
 		}
 
 		return filtered
