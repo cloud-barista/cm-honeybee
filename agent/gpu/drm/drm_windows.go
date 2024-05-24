@@ -4,13 +4,8 @@
 
 package drm
 
-type DRM struct {
-	DriverName        string `json:"driver_name"`
-	DriverVersion     string `json:"driver_version"`
-	DriverDate        string `json:"driver_date"`
-	DriverDescription string `json:"driver_description"`
-}
+import "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 
-func GetDRMInfo() ([]DRM, error) {
-	return []DRM{}, nil
+func GetDRMInfo() ([]infra.DRM, error) {
+	return []infra.DRM{}, nil
 }
