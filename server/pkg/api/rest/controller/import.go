@@ -17,6 +17,7 @@ import (
 // @Tags		[Import] ImportInfra
 // @Accept		json
 // @Produce		json
+// @Param		uuid path string true "UUID of the connectionInfo"
 // @Success		200	{object}	model.SavedInfraInfo	"Successfully saved the infra information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
@@ -72,6 +73,7 @@ func ImportInfra(c echo.Context) error {
 // @Tags		[Import] ImportSoftware
 // @Accept		json
 // @Produce		json
+// @Param		uuid path string true "UUID of the connectionInfo"
 // @Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the software information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"

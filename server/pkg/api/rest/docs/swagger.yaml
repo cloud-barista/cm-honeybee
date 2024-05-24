@@ -959,6 +959,12 @@ paths:
       consumes:
       - application/json
       description: Import the infra information.
+      parameters:
+      - description: UUID of the connectionInfo
+        in: path
+        name: uuid
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -982,6 +988,12 @@ paths:
       consumes:
       - application/json
       description: Import the software information.
+      parameters:
+      - description: UUID of the connectionInfo
+        in: path
+        name: uuid
+        required: true
+        type: string
       produces:
       - application/json
       responses:

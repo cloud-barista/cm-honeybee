@@ -310,6 +310,15 @@ const docTemplate = `{
                     "[Import] ImportInfra"
                 ],
                 "summary": "Import Infra",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID of the connectionInfo",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully saved the infra information",
@@ -345,6 +354,15 @@ const docTemplate = `{
                     "[Import] ImportSoftware"
                 ],
                 "summary": "Import software",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID of the connectionInfo",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully saved the software information",
