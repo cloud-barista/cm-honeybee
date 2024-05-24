@@ -51,10 +51,10 @@ Collecting and Aggregating Information From Source Computing framework (codename
     ```
 
 1.2. Build and run the agent binary
-    ```shell
-    cd agent
-    make run
-    ```
+```shell
+cd agent
+make run
+```
 
 ### 2. Build and run server
 
@@ -74,7 +74,7 @@ Collecting and Aggregating Information From Source Computing framework (codename
           port: 8081
   ```
 
-2.2. Build and run the agent binary
+2.2. Build and run the server binary
 ```shell
 cd server
 make run
