@@ -1,15 +1,4 @@
 definitions:
-  drm.DRM:
-    properties:
-      driver_date:
-        type: string
-      driver_description:
-        type: string
-      driver_name:
-        type: string
-      driver_version:
-        type: string
-    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse:
     properties:
       error:
@@ -105,6 +94,10 @@ definitions:
         type: integer
       vendor:
         type: string
+    required:
+    - cores
+    - cpus
+    - threads
     type: object
   infra.Compute:
     properties:
@@ -116,6 +109,9 @@ definitions:
         type: array
       os:
         $ref: '#/definitions/infra.System'
+    required:
+    - compute_resource
+    - os
     type: object
   infra.ComputeResource:
     properties:
@@ -129,11 +125,25 @@ definitions:
         $ref: '#/definitions/infra.Memory'
       root_disk:
         $ref: '#/definitions/infra.Disk'
+    required:
+    - cpu
+    - memory
     type: object
   infra.Connection:
     properties:
       keypair:
         $ref: '#/definitions/infra.Keypair'
+    type: object
+  infra.DRM:
+    properties:
+      driver_date:
+        type: string
+      driver_description:
+        type: string
+      driver_name:
+        type: string
+      driver_version:
+        type: string
     type: object
   infra.Disk:
     properties:
@@ -149,11 +159,11 @@ definitions:
     properties:
       drm:
         items:
-          $ref: '#/definitions/drm.DRM'
+          $ref: '#/definitions/infra.DRM'
         type: array
       nvidia:
         items:
-          $ref: '#/definitions/nvidia.NVIDIA'
+          $ref: '#/definitions/infra.NVIDIA'
         type: array
     type: object
   infra.Infra:
@@ -195,6 +205,8 @@ definitions:
         type: integer
       type:
         type: string
+    required:
+    - size
     type: object
   infra.MountPoint:
     properties:
@@ -213,6 +225,52 @@ definitions:
         type: string
       source:
         type: string
+    type: object
+  infra.NVIDIA:
+    properties:
+      device_attribute:
+        $ref: '#/definitions/infra.NVIDIADeviceAttribute'
+      performance:
+        $ref: '#/definitions/infra.NVIDIAPerformance'
+    type: object
+  infra.NVIDIADeviceAttribute:
+    properties:
+      cuda_version:
+        type: string
+      driver_version:
+        type: string
+      gpu_uuid:
+        type: string
+      product_architecture:
+        type: string
+      product_brand:
+        type: string
+      product_name:
+        type: string
+    type: object
+  infra.NVIDIAPerformance:
+    properties:
+      bar1_memory_total:
+        description: mb
+        type: integer
+      bar1_memory_usage:
+        description: percent
+        type: integer
+      bar1_memory_used:
+        description: mb
+        type: integer
+      fb_memory_total:
+        description: mb
+        type: integer
+      fb_memory_usage:
+        description: percent
+        type: integer
+      fb_memory_used:
+        description: mb
+        type: integer
+      gpu_usage:
+        description: percent
+        type: integer
     type: object
   infra.Node:
     properties:
@@ -237,6 +295,9 @@ definitions:
         type: string
       version:
         type: string
+    required:
+    - release
+    - vendor
     type: object
   infra.Storage:
     properties:
@@ -251,6 +312,8 @@ definitions:
         $ref: '#/definitions/infra.Node'
       os:
         $ref: '#/definitions/infra.OS'
+    required:
+    - os
     type: object
   mount.Propagation:
     enum:
@@ -502,52 +565,6 @@ definitions:
         items:
           $ref: '#/definitions/network.Subnet'
         type: array
-    type: object
-  nvidia.DeviceAttribute:
-    properties:
-      cuda_version:
-        type: string
-      driver_version:
-        type: string
-      gpu_uuid:
-        type: string
-      product_architecture:
-        type: string
-      product_brand:
-        type: string
-      product_name:
-        type: string
-    type: object
-  nvidia.NVIDIA:
-    properties:
-      device_attribute:
-        $ref: '#/definitions/nvidia.DeviceAttribute'
-      performance:
-        $ref: '#/definitions/nvidia.Performance'
-    type: object
-  nvidia.Performance:
-    properties:
-      bar1_memory_total:
-        description: mb
-        type: integer
-      bar1_memory_usage:
-        description: percent
-        type: integer
-      bar1_memory_used:
-        description: mb
-        type: integer
-      fb_memory_total:
-        description: mb
-        type: integer
-      fb_memory_usage:
-        description: percent
-        type: integer
-      fb_memory_used:
-        description: mb
-        type: integer
-      gpu_usage:
-        description: percent
-        type: integer
     type: object
   pkg_api_rest_controller.SimpleMsg:
     properties:

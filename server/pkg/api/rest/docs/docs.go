@@ -760,23 +760,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "drm.DRM": {
-            "type": "object",
-            "properties": {
-                "driver_date": {
-                    "type": "string"
-                },
-                "driver_description": {
-                    "type": "string"
-                },
-                "driver_name": {
-                    "type": "string"
-                },
-                "driver_version": {
-                    "type": "string"
-                }
-            }
-        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -889,6 +872,11 @@ const docTemplate = `{
         },
         "infra.CPU": {
             "type": "object",
+            "required": [
+                "cores",
+                "cpus",
+                "threads"
+            ],
             "properties": {
                 "cache": {
                     "description": "KB",
@@ -920,6 +908,10 @@ const docTemplate = `{
         },
         "infra.Compute": {
             "type": "object",
+            "required": [
+                "compute_resource",
+                "os"
+            ],
             "properties": {
                 "compute_resource": {
                     "$ref": "#/definitions/infra.ComputeResource"
@@ -937,6 +929,10 @@ const docTemplate = `{
         },
         "infra.ComputeResource": {
             "type": "object",
+            "required": [
+                "cpu",
+                "memory"
+            ],
             "properties": {
                 "cpu": {
                     "$ref": "#/definitions/infra.CPU"
@@ -963,6 +959,23 @@ const docTemplate = `{
                 }
             }
         },
+        "infra.DRM": {
+            "type": "object",
+            "properties": {
+                "driver_date": {
+                    "type": "string"
+                },
+                "driver_description": {
+                    "type": "string"
+                },
+                "driver_name": {
+                    "type": "string"
+                },
+                "driver_version": {
+                    "type": "string"
+                }
+            }
+        },
         "infra.Disk": {
             "type": "object",
             "properties": {
@@ -984,13 +997,13 @@ const docTemplate = `{
                 "drm": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/drm.DRM"
+                        "$ref": "#/definitions/infra.DRM"
                     }
                 },
                 "nvidia": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/nvidia.NVIDIA"
+                        "$ref": "#/definitions/infra.NVIDIA"
                     }
                 }
             }
@@ -1042,6 +1055,9 @@ const docTemplate = `{
         },
         "infra.Memory": {
             "type": "object",
+            "required": [
+                "size"
+            ],
             "properties": {
                 "size": {
                     "description": "MB",
@@ -1084,6 +1100,73 @@ const docTemplate = `{
                 }
             }
         },
+        "infra.NVIDIA": {
+            "type": "object",
+            "properties": {
+                "device_attribute": {
+                    "$ref": "#/definitions/infra.NVIDIADeviceAttribute"
+                },
+                "performance": {
+                    "$ref": "#/definitions/infra.NVIDIAPerformance"
+                }
+            }
+        },
+        "infra.NVIDIADeviceAttribute": {
+            "type": "object",
+            "properties": {
+                "cuda_version": {
+                    "type": "string"
+                },
+                "driver_version": {
+                    "type": "string"
+                },
+                "gpu_uuid": {
+                    "type": "string"
+                },
+                "product_architecture": {
+                    "type": "string"
+                },
+                "product_brand": {
+                    "type": "string"
+                },
+                "product_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.NVIDIAPerformance": {
+            "type": "object",
+            "properties": {
+                "bar1_memory_total": {
+                    "description": "mb",
+                    "type": "integer"
+                },
+                "bar1_memory_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "bar1_memory_used": {
+                    "description": "mb",
+                    "type": "integer"
+                },
+                "fb_memory_total": {
+                    "description": "mb",
+                    "type": "integer"
+                },
+                "fb_memory_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "fb_memory_used": {
+                    "description": "mb",
+                    "type": "integer"
+                },
+                "gpu_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                }
+            }
+        },
         "infra.Node": {
             "type": "object",
             "properties": {
@@ -1103,6 +1186,10 @@ const docTemplate = `{
         },
         "infra.OS": {
             "type": "object",
+            "required": [
+                "release",
+                "vendor"
+            ],
             "properties": {
                 "architecture": {
                     "type": "string"
@@ -1131,6 +1218,9 @@ const docTemplate = `{
         },
         "infra.System": {
             "type": "object",
+            "required": [
+                "os"
+            ],
             "properties": {
                 "kernel": {
                     "$ref": "#/definitions/infra.Kernel"
@@ -1501,73 +1591,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/network.Subnet"
                     }
-                }
-            }
-        },
-        "nvidia.DeviceAttribute": {
-            "type": "object",
-            "properties": {
-                "cuda_version": {
-                    "type": "string"
-                },
-                "driver_version": {
-                    "type": "string"
-                },
-                "gpu_uuid": {
-                    "type": "string"
-                },
-                "product_architecture": {
-                    "type": "string"
-                },
-                "product_brand": {
-                    "type": "string"
-                },
-                "product_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "nvidia.NVIDIA": {
-            "type": "object",
-            "properties": {
-                "device_attribute": {
-                    "$ref": "#/definitions/nvidia.DeviceAttribute"
-                },
-                "performance": {
-                    "$ref": "#/definitions/nvidia.Performance"
-                }
-            }
-        },
-        "nvidia.Performance": {
-            "type": "object",
-            "properties": {
-                "bar1_memory_total": {
-                    "description": "mb",
-                    "type": "integer"
-                },
-                "bar1_memory_usage": {
-                    "description": "percent",
-                    "type": "integer"
-                },
-                "bar1_memory_used": {
-                    "description": "mb",
-                    "type": "integer"
-                },
-                "fb_memory_total": {
-                    "description": "mb",
-                    "type": "integer"
-                },
-                "fb_memory_usage": {
-                    "description": "percent",
-                    "type": "integer"
-                },
-                "fb_memory_used": {
-                    "description": "mb",
-                    "type": "integer"
-                },
-                "gpu_usage": {
-                    "description": "percent",
-                    "type": "integer"
                 }
             }
         },
