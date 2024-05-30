@@ -51,7 +51,7 @@ func Init() {
 	e.HideBanner = true
 
 	route.RegisterConnectionInfo(e)
-	route.RegisterMigrationGroup(e)
+	route.RegisterSourceGroup(e)
 	route.RegisterImport(e)
 	route.RegisterInfra(e)
 	route.RegisterSoftware(e)

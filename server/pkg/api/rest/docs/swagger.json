@@ -38,7 +38,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Migration group UUID.",
+                        "description": "Source group UUID.",
                         "name": "group_uuid",
                         "in": "query"
                     },
@@ -425,284 +425,6 @@
                 }
             }
         },
-        "/migration_group": {
-            "get": {
-                "description": "Get a list of migration group.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[On-premise] MigrationGroup"
-                ],
-                "summary": "List MigrationGroup",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Page of the migration group list.",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Row of the migration group list.",
-                        "name": "row",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "UUID of the migration group.",
-                        "name": "uuid",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Migration group name.",
-                        "name": "name",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully get a list of migration group.",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to get a list of migration group.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Register the migration group.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[On-premise] MigrationGroup"
-                ],
-                "summary": "Register MigrationGroup",
-                "parameters": [
-                    {
-                        "description": "migration group of the node.",
-                        "name": "MigrationGroup",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully register the migration group",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to register the migration group",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/migration_group/check/{uuid}": {
-            "get": {
-                "description": "Check if SSH connection is available for each connection info in migration group. Show each status by returning connection info list.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[On-premise] MigrationGroup"
-                ],
-                "summary": "Check Connection MigrationGroup",
-                "parameters": [
-                    {
-                        "description": "migration group to check SSH connection for each connection info in migration group",
-                        "name": "MigrationGroup",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully checked SSH connection for the migration group",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to check SSH connection for the migration group",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/migration_group/{uuid}": {
-            "get": {
-                "description": "Get the migration group.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[On-premise] MigrationGroup"
-                ],
-                "summary": "Get MigrationGroup",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "UUID of the MigrationGroup",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully get the migration group",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to get the migration group",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "Update the migration group.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[On-premise] MigrationGroup"
-                ],
-                "summary": "Update MigrationGroup",
-                "parameters": [
-                    {
-                        "description": "migration group to modify.",
-                        "name": "MigrationGroup",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully update the migration group",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to update the migration group",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete the migration group.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[On-premise] MigrationGroup"
-                ],
-                "summary": "Delete MigrationGroup",
-                "responses": {
-                    "200": {
-                        "description": "Successfully delete the migration group",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to delete the migration group",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/software/{uuid}": {
             "get": {
                 "description": "Get the software information of the connection information.",
@@ -740,6 +462,284 @@
                     },
                     "500": {
                         "description": "Failed to get information of the software.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group": {
+            "get": {
+                "description": "Get a list of source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "List SourceGroup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Page of the source group list.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Row of the source group list.",
+                        "name": "row",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "UUID of the source group.",
+                        "name": "uuid",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Migration group name.",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get a list of source group.",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get a list of source group.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Register the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Register SourceGroup",
+                "parameters": [
+                    {
+                        "description": "source group of the node.",
+                        "name": "SourceGroup",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully register the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to register the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/check/{uuid}": {
+            "get": {
+                "description": "Check if SSH connection is available for each connection info in source group. Show each status by returning connection info list.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Check Connection SourceGroup",
+                "parameters": [
+                    {
+                        "description": "source group to check SSH connection for each connection info in source group",
+                        "name": "SourceGroup",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully checked SSH connection for the source group",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to check SSH connection for the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{uuid}": {
+            "get": {
+                "description": "Get the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Get SourceGroup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "UUID of the SourceGroup",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Update SourceGroup",
+                "parameters": [
+                    {
+                        "description": "source group to modify.",
+                        "name": "SourceGroup",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully update the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Delete SourceGroup",
+                "responses": {
+                    "200": {
+                        "description": "Successfully delete the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete the source group",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -802,21 +802,6 @@
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.MigrationGroup": {
-            "type": "object",
-            "required": [
-                "name",
-                "uuid"
-            ],
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "uuid": {
-                    "type": "string"
-                }
-            }
-        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo": {
             "type": "object",
             "required": [
@@ -855,6 +840,21 @@
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup": {
+            "type": "object",
+            "required": [
+                "name",
+                "uuid"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "uuid": {
                     "type": "string"
                 }
             }

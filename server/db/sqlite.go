@@ -23,7 +23,7 @@ func Open() error {
 		logger.Panicln(logger.ERROR, true, err)
 	}
 
-	err = DB.AutoMigrate(&model.MigrationGroup{})
+	err = DB.AutoMigrate(&model.SourceGroup{})
 	if err != nil {
 		logger.Panicln(logger.ERROR, true, err)
 	}

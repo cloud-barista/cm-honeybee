@@ -71,7 +71,7 @@ func CreateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "type is empty")
 	}
 
-	_, err = dao.MigrationGroupGet(connectionInfo.GroupUUID)
+	_, err = dao.SourceGroupGet(connectionInfo.GroupUUID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -120,7 +120,7 @@ func GetConnectionInfo(c echo.Context) error {
 // @Param		page query string false "Page of the connection information list."
 // @Param		row query string false "Row of the connection information list."
 // @Param		uuid query string false "UUID of the connection information."
-// @Param		group_uuid query string false "Migration group UUID."
+// @Param		group_uuid query string false "Source group UUID."
 // @Param		ip_address query string false "IP address of the connection information."
 // @Param		ssh_port query string false "SSH port of the connection information."
 // @Param		user query string false "User of the connection information."
@@ -181,7 +181,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 	}
 
 	if connectionInfo.GroupUUID != "" {
-		_, err = dao.MigrationGroupGet(connectionInfo.GroupUUID)
+		_, err = dao.SourceGroupGet(connectionInfo.GroupUUID)
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}

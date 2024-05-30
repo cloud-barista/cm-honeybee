@@ -9,50 +9,50 @@ import (
 	"gorm.io/gorm"
 )
 
-func MigrationGroupRegister(migrationGroup *model.MigrationGroup) (*model.MigrationGroup, error) {
+func SourceGroupRegister(sourceGroup *model.SourceGroup) (*model.SourceGroup, error) {
 	UUID, err := uuid.NewRandom()
 	if err != nil {
 		return nil, err
 	}
 
-	migrationGroup.UUID = UUID.String()
+	sourceGroup.UUID = UUID.String()
 
-	result := db.DB.Create(migrationGroup)
+	result := db.DB.Create(sourceGroup)
 	err = result.Error
 	if err != nil {
 		return nil, err
 	}
 
-	return migrationGroup, nil
+	return sourceGroup, nil
 }
 
-func MigrationGroupGet(UUID string) (*model.MigrationGroup, error) {
-	migrationGroup := &model.MigrationGroup{}
+func SourceGroupGet(UUID string) (*model.SourceGroup, error) {
+	sourceGroup := &model.SourceGroup{}
 
-	result := db.DB.Where("uuid = ?", UUID).First(migrationGroup)
+	result := db.DB.Where("uuid = ?", UUID).First(sourceGroup)
 	err := result.Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("MigrationGroup not found with the provided UUID")
+			return nil, errors.New("SourceGroup not found with the provided UUID")
 		}
 		return nil, err
 	}
 
-	return migrationGroup, nil
+	return sourceGroup, nil
 }
 
-func MigrationGroupGetList(migrationGroup *model.MigrationGroup, page int, row int) (*[]model.MigrationGroup, error) {
-	migrationGroups := &[]model.MigrationGroup{}
+func SourceGroupGetList(sourceGroup *model.SourceGroup, page int, row int) (*[]model.SourceGroup, error) {
+	sourceGroups := &[]model.SourceGroup{}
 
 	result := db.DB.Scopes(func(d *gorm.DB) *gorm.DB {
 		var filtered = d
 
-		if len(migrationGroup.UUID) != 0 {
-			filtered = filtered.Where("uuid LIKE ?", "%"+migrationGroup.UUID+"%")
+		if len(sourceGroup.UUID) != 0 {
+			filtered = filtered.Where("uuid LIKE ?", "%"+sourceGroup.UUID+"%")
 		}
 
-		if len(migrationGroup.Name) != 0 {
-			filtered = filtered.Where("group_uuid LIKE ?", "%"+migrationGroup.Name+"%")
+		if len(sourceGroup.Name) != 0 {
+			filtered = filtered.Where("group_uuid LIKE ?", "%"+sourceGroup.Name+"%")
 		}
 
 		if page != 0 && row != 0 {
@@ -68,18 +68,18 @@ func MigrationGroupGetList(migrationGroup *model.MigrationGroup, page int, row i
 		}
 
 		return filtered
-	}).Find(migrationGroups)
+	}).Find(sourceGroups)
 
 	err := result.Error
 	if err != nil {
 		return nil, err
 	}
 
-	return migrationGroups, nil
+	return sourceGroups, nil
 }
 
-func MigrationGroupUpdate(migrationGroup *model.MigrationGroup) error {
-	result := db.DB.Model(&model.MigrationGroup{}).Where("uuid = ?", migrationGroup.UUID).Updates(migrationGroup)
+func SourceGroupUpdate(sourceGroup *model.SourceGroup) error {
+	result := db.DB.Model(&model.SourceGroup{}).Where("uuid = ?", sourceGroup.UUID).Updates(sourceGroup)
 	err := result.Error
 	if err != nil {
 		return err
@@ -88,8 +88,8 @@ func MigrationGroupUpdate(migrationGroup *model.MigrationGroup) error {
 	return nil
 }
 
-func MigrationGroupDelete(migrationGroup *model.MigrationGroup) error {
-	result := db.DB.Delete(migrationGroup)
+func SourceGroupDelete(sourceGroup *model.SourceGroup) error {
+	result := db.DB.Delete(sourceGroup)
 	err := result.Error
 	if err != nil {
 		return err
@@ -98,8 +98,8 @@ func MigrationGroupDelete(migrationGroup *model.MigrationGroup) error {
 	return nil
 }
 
-func MigrationGroupCheckConnection(migrationGroup *model.MigrationGroup) (*[]model.ConnectionInfo, error) {
-	connectionInfoList, err := ConnectionInfoGetList(&model.ConnectionInfo{GroupUUID: migrationGroup.UUID}, 0, 0)
+func SourceGroupCheckConnection(sourceGroup *model.SourceGroup) (*[]model.ConnectionInfo, error) {
+	connectionInfoList, err := ConnectionInfoGetList(&model.ConnectionInfo{GroupUUID: sourceGroup.UUID}, 0, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -132,5 +132,5 @@ func MigrationGroupCheckConnection(migrationGroup *model.MigrationGroup) (*[]mod
 		}
 	}
 
-	return ConnectionInfoGetList(&model.ConnectionInfo{GroupUUID: migrationGroup.UUID}, 0, 0)
+	return ConnectionInfoGetList(&model.ConnectionInfo{GroupUUID: sourceGroup.UUID}, 0, 0)
 }
