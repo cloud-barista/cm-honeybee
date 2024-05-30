@@ -126,6 +126,11 @@ const docTemplate = `{
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CPU": {
             "type": "object",
+            "required": [
+                "cores",
+                "cpus",
+                "threads"
+            ],
             "properties": {
                 "cache": {
                     "description": "KB",
@@ -157,6 +162,10 @@ const docTemplate = `{
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Compute": {
             "type": "object",
+            "required": [
+                "compute_resource",
+                "os"
+            ],
             "properties": {
                 "compute_resource": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.ComputeResource"
@@ -174,6 +183,10 @@ const docTemplate = `{
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.ComputeResource": {
             "type": "object",
+            "required": [
+                "cpu",
+                "memory"
+            ],
             "properties": {
                 "cpu": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CPU"
@@ -296,6 +309,9 @@ const docTemplate = `{
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Memory": {
             "type": "object",
+            "required": [
+                "size"
+            ],
             "properties": {
                 "size": {
                     "description": "MB",
@@ -424,6 +440,10 @@ const docTemplate = `{
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.OS": {
             "type": "object",
+            "required": [
+                "release",
+                "vendor"
+            ],
             "properties": {
                 "architecture": {
                     "type": "string"
@@ -452,6 +472,9 @@ const docTemplate = `{
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.System": {
             "type": "object",
+            "required": [
+                "os"
+            ],
             "properties": {
                 "kernel": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Kernel"
