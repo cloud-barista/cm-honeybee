@@ -15,9 +15,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/connection_info": {
+        "/honeybee/import/infra/{uuid}": {
             "get": {
-                "description": "Get a list of connection information.",
+                "description": "Import the infra information.",
                 "consumes": [
                     "application/json"
                 ],
@@ -25,67 +25,23 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[On-premise] ConnectionInfo"
+                    "[Import] ImportSource"
                 ],
-                "summary": "List ConnectionInfo",
+                "summary": "Import Infra",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Page of the connection information list.",
-                        "name": "page",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Row of the connection information list.",
-                        "name": "row",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "UUID of the connection information.",
+                        "description": "ID of the connectionInfo",
                         "name": "uuid",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Source group UUID.",
-                        "name": "group_uuid",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "IP address of the connection information.",
-                        "name": "ip_address",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "SSH port of the connection information.",
-                        "name": "ssh_port",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "User of the connection information.",
-                        "name": "user",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Type of the connection information.",
-                        "name": "type",
-                        "in": "query"
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successfully get a list of connection information.",
+                        "description": "Successfully saved the infra information",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
-                            }
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo"
                         }
                     },
                     "400": {
@@ -95,51 +51,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to get a list of connection information.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Create the connection information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[On-premise] ConnectionInfo"
-                ],
-                "summary": "Create ConnectionInfo",
-                "parameters": [
-                    {
-                        "description": "Connection information of the node.",
-                        "name": "ConnectionInfo",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully register the connection information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to register the connection information",
+                        "description": "Failed to save the infra information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -147,9 +59,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/connection_info/{uuid}": {
+        "/honeybee/import/software/{uuid}": {
             "get": {
-                "description": "Get the connection information.",
+                "description": "Import the software information.",
                 "consumes": [
                     "application/json"
                 ],
@@ -157,13 +69,13 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[On-premise] ConnectionInfo"
+                    "[Import] ImportSource"
                 ],
-                "summary": "Get ConnectionInfo",
+                "summary": "Import software",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID of the connectionInfo",
+                        "description": "ID of the connectionInfo",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -171,9 +83,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successfully get the connection information",
+                        "description": "Successfully saved the software information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo"
                         }
                     },
                     "400": {
@@ -183,15 +95,17 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to get the connection information",
+                        "description": "Failed to save the software information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
                     }
                 }
-            },
-            "put": {
-                "description": "Update the connection information.",
+            }
+        },
+        "/honeybee/infra/{connId}": {
+            "get": {
+                "description": "Get the infra information of the connection information.",
                 "consumes": [
                     "application/json"
                 ],
@@ -199,32 +113,23 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[On-premise] ConnectionInfo"
+                    "[Infra] Get infra info"
                 ],
-                "summary": "Update ConnectionInfo",
+                "summary": "Get Infra Information",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID of the connectionInfo",
+                        "description": "ID of the connectionInfo",
                         "name": "uuid",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "description": "Connection information to modify.",
-                        "name": "ConnectionInfo",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
-                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successfully update the connection information",
+                        "description": "Successfully get information of the infra.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/infra.Infra"
                         }
                     },
                     "400": {
@@ -234,40 +139,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to update the connection information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "description": "Delete the connection information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[On-premise] ConnectionInfo"
-                ],
-                "summary": "Delete ConnectionInfo",
-                "responses": {
-                    "200": {
-                        "description": "Successfully delete the connection information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to delete the connection information",
+                        "description": "Failed to get information of the infra.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -304,139 +176,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/import/infra/{uuid}": {
-            "get": {
-                "description": "Import the infra information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Import] ImportInfra"
-                ],
-                "summary": "Import Infra",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "UUID of the connectionInfo",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully saved the infra information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to save the infra information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/import/software/{uuid}": {
-            "get": {
-                "description": "Import the software information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Import] ImportSoftware"
-                ],
-                "summary": "Import software",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "UUID of the connectionInfo",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully saved the software information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to save the software information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/infra/{uuid}": {
-            "get": {
-                "description": "Get the infra information of the connection information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra] Get infra info"
-                ],
-                "summary": "Get Infra Information",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "UUID of the connectionInfo",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully get information of the infra.",
-                        "schema": {
-                            "$ref": "#/definitions/infra.Infra"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to get information of the infra.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/software/{uuid}": {
+        "/honeybee/software/{connId}": {
             "get": {
                 "description": "Get the software information of the connection information.",
                 "consumes": [
@@ -452,7 +192,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID of the connectionInfo",
+                        "description": "ID of the connectionInfo",
                         "name": "uuid",
                         "in": "path",
                         "required": true
@@ -480,7 +220,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/source_group": {
+        "/honeybee/source_group": {
             "get": {
                 "description": "Get a list of source group.",
                 "consumes": [
@@ -508,14 +248,14 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "UUID of the source group.",
-                        "name": "uuid",
+                        "description": "ID of the source group.",
+                        "name": "id",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Migration group name.",
-                        "name": "name",
+                        "description": "Description of the source group.",
+                        "name": "description",
                         "in": "query"
                     }
                 ],
@@ -588,7 +328,144 @@ const docTemplate = `{
                 }
             }
         },
-        "/source_group/check/{uuid}": {
+        "/honeybee/source_group/{sgId}": {
+            "get": {
+                "description": "Get the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Get SourceGroup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Update the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Update SourceGroup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "source group to modify.",
+                        "name": "SourceGroup",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully update the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Delete SourceGroup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully delete the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/honeybee/source_group/{sgId}/connection_check": {
             "get": {
                 "description": "Check if SSH connection is available for each connection info in source group. Show each status by returning connection info list.",
                 "consumes": [
@@ -637,9 +514,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/source_group/{uuid}": {
+        "/honeybee/source_group/{sgId}/connection_info": {
             "get": {
-                "description": "Get the source group.",
+                "description": "Get a list of connection information.",
                 "consumes": [
                     "application/json"
                 ],
@@ -647,23 +524,74 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[On-premise] SourceGroup"
+                    "[On-premise] ConnectionInfo"
                 ],
-                "summary": "Get SourceGroup",
+                "summary": "List ConnectionInfo",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "UUID of the SourceGroup",
-                        "name": "uuid",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Page of the connection information list.",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Row of the connection information list.",
+                        "name": "row",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection information.",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Description of the connection information.",
+                        "name": "description",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Source group ID.",
+                        "name": "source_group_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "IP address of the connection information.",
+                        "name": "ip_address",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "SSH port of the connection information.",
+                        "name": "ssh_port",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "User of the connection information.",
+                        "name": "user",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successfully get the source group",
+                        "description": "Successfully get a list of connection information.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                            }
                         }
                     },
                     "400": {
@@ -673,7 +601,109 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to get the source group",
+                        "description": "Failed to get a list of connection information.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] ConnectionInfo"
+                ],
+                "summary": "Create ConnectionInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Connection information of the node.",
+                        "name": "ConnectionInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully register the connection information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to register the connection information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/honeybee/source_group/{sgId}/connection_info/{connId}": {
+            "get": {
+                "description": "Get the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] ConnectionInfo"
+                ],
+                "summary": "Get ConnectionInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connectionInfo",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get the connection information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get the connection information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -681,7 +711,7 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Update the source group.",
+                "description": "Update the connection information.",
                 "consumes": [
                     "application/json"
                 ],
@@ -689,25 +719,39 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[On-premise] SourceGroup"
+                    "[On-premise] ConnectionInfo"
                 ],
-                "summary": "Update SourceGroup",
+                "summary": "Update ConnectionInfo",
                 "parameters": [
                     {
-                        "description": "source group to modify.",
-                        "name": "SourceGroup",
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connectionInfo",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Connection information to modify.",
+                        "name": "ConnectionInfo",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successfully update the source group",
+                        "description": "Successfully update the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                         }
                     },
                     "400": {
@@ -717,7 +761,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to update the source group",
+                        "description": "Failed to update the connection information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -725,7 +769,7 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Delete the source group.",
+                "description": "Delete the connection information.",
                 "consumes": [
                     "application/json"
                 ],
@@ -733,14 +777,30 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[On-premise] SourceGroup"
+                    "[On-premise] ConnectionInfo"
                 ],
-                "summary": "Delete SourceGroup",
+                "summary": "Delete ConnectionInfo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connectionInfo",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Successfully delete the source group",
+                        "description": "Successfully delete the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
                         }
                     },
                     "400": {
@@ -750,7 +810,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to delete the source group",
+                        "description": "Failed to delete the connection information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -771,17 +831,20 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo": {
             "type": "object",
             "required": [
-                "group_uuid",
+                "id",
                 "ip_address",
+                "source_group_id",
                 "ssh_port",
-                "user",
-                "uuid"
+                "user"
             ],
             "properties": {
+                "description": {
+                    "type": "string"
+                },
                 "failed_message": {
                     "type": "string"
                 },
-                "group_uuid": {
+                "id": {
                     "type": "string"
                 },
                 "ip_address": {
@@ -796,19 +859,16 @@ const docTemplate = `{
                 "public_key": {
                     "type": "string"
                 },
+                "source_group_id": {
+                    "type": "string"
+                },
                 "ssh_port": {
                     "type": "integer"
                 },
                 "status": {
                     "type": "string"
                 },
-                "type": {
-                    "type": "string"
-                },
                 "user": {
-                    "type": "string"
-                },
-                "uuid": {
                     "type": "string"
                 }
             }
@@ -858,14 +918,13 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup": {
             "type": "object",
             "required": [
-                "name",
-                "uuid"
+                "id"
             ],
             "properties": {
-                "name": {
+                "description": {
                     "type": "string"
                 },
-                "uuid": {
+                "id": {
                     "type": "string"
                 }
             }

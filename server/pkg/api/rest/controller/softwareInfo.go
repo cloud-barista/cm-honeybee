@@ -17,23 +17,23 @@ import (
 //	@Tags			[Software] Get Software info
 //	@Accept			json
 //	@Produce		json
-//	@Param			uuid path string true "UUID of the connectionInfo"
+//	@Param			uuid path string true "ID of the connectionInfo"
 //	@Success		200	{object}	software.Software		"Successfully get information of the software."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the software."
-//	@Router			/software/{uuid} [get]
+//	@Router			/honeybee/software/{connId} [get]
 func GetSoftwareInfo(c echo.Context) error {
-	uuid := c.Param("uuid")
-	if uuid == "" {
-		return common.ReturnErrorMsg(c, "uuid is empty")
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
 	}
 
-	connectionInfo, err := dao.ConnectionInfoGet(uuid)
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	savedSoftwareInfo, err := dao.SavedSoftwareInfoGet(connectionInfo.UUID)
+	savedSoftwareInfo, err := dao.SavedSoftwareInfoGet(connectionInfo.ID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, "Failed to get information of the infra.")
 	}

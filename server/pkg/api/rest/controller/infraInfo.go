@@ -17,23 +17,23 @@ import (
 //	@Tags			[Infra] Get infra info
 //	@Accept			json
 //	@Produce		json
-//	@Param			uuid path string true "UUID of the connectionInfo"
+//	@Param			uuid path string true "ID of the connectionInfo"
 //	@Success		200	{object}	infra.Infra				"Successfully get information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
-//	@Router			/infra/{uuid} [get]
+//	@Router			/honeybee/infra/{connId} [get]
 func GetInfraInfo(c echo.Context) error {
-	uuid := c.Param("uuid")
-	if uuid == "" {
-		return common.ReturnErrorMsg(c, "uuid is empty")
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
 	}
 
-	connectionInfo, err := dao.ConnectionInfoGet(uuid)
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	savedInfraInfo, err := dao.SavedInfraInfoGet(connectionInfo.UUID)
+	savedInfraInfo, err := dao.SavedInfraInfoGet(connectionInfo.ID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, "Failed to get information of the infra.")
 	}

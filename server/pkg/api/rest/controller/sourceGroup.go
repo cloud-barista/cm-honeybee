@@ -10,6 +10,15 @@ import (
 	"net/http"
 )
 
+type CreateSourceGroupReq struct {
+	ID          string `gorm:"primaryKey" json:"id" validate:"required"`
+	Description string `gorm:"column:description" json:"description"`
+}
+
+type UpdateSourceGroupReq struct {
+	Description string `gorm:"column:description" json:"description"`
+}
+
 // CreateSourceGroup godoc
 //
 // @Summary		Register SourceGroup
@@ -21,16 +30,21 @@ import (
 // @Success		200	{object}	model.SourceGroup	"Successfully register the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to register the source group"
-// @Router			/source_group [post]
+// @Router		/honeybee/source_group [post]
 func CreateSourceGroup(c echo.Context) error {
-	sourceGroup := new(model.SourceGroup)
-	err := c.Bind(sourceGroup)
+	createSourceGroupReq := new(CreateSourceGroupReq)
+	err := c.Bind(createSourceGroupReq)
 	if err != nil {
 		return err
 	}
 
-	if sourceGroup.Name == "" {
-		return errors.New("name is empty")
+	if createSourceGroupReq.ID == "" {
+		return errors.New("id is empty")
+	}
+
+	sourceGroup := &model.SourceGroup{
+		ID:          createSourceGroupReq.ID,
+		Description: createSourceGroupReq.Description,
 	}
 
 	sourceGroup, err = dao.SourceGroupRegister(sourceGroup)
@@ -48,18 +62,18 @@ func CreateSourceGroup(c echo.Context) error {
 // @Tags		[On-premise] SourceGroup
 // @Accept		json
 // @Produce		json
-// @Param		uuid path string true "UUID of the SourceGroup"
+// @Param		sgId path string true "ID of the SourceGroup"
 // @Success		200	{object}	model.SourceGroup	"Successfully get the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get the source group"
-// @Router		/source_group/{uuid} [get]
+// @Router		/honeybee/source_group/{sgId} [get]
 func GetSourceGroup(c echo.Context) error {
-	uuid := c.Param("uuid")
-	if uuid == "" {
-		return common.ReturnErrorMsg(c, "uuid is empty")
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	sourceGroup, err := dao.SourceGroupGet(uuid)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -76,12 +90,12 @@ func GetSourceGroup(c echo.Context) error {
 // @Produce		json
 // @Param		page query string false "Page of the source group list."
 // @Param		row query string false "Row of the source group list."
-// @Param		uuid query string false "UUID of the source group."
-// @Param		name query string false "Migration group name."
+// @Param		id query string false "ID of the source group."
+// @Param		description query string false "Description of the source group."
 // @Success		200	{object}	[]model.SourceGroup	"Successfully get a list of source group."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get a list of source group."
-// @Router			/source_group [get]
+// @Router		/honeybee/source_group [get]
 func ListSourceGroup(c echo.Context) error {
 	page, row, err := common.CheckPageRow(c)
 	if err != nil {
@@ -89,8 +103,8 @@ func ListSourceGroup(c echo.Context) error {
 	}
 
 	sourceGroup := &model.SourceGroup{
-		UUID: c.QueryParam("uuid"),
-		Name: c.QueryParam("name"),
+		ID:          c.QueryParam("id"),
+		Description: c.QueryParam("description"),
 	}
 
 	SourceGroups, err := dao.SourceGroupGetList(sourceGroup, page, row)
@@ -108,26 +122,31 @@ func ListSourceGroup(c echo.Context) error {
 // @Tags		[On-premise] SourceGroup
 // @Accept		json
 // @Produce		json
+// @Param		sgId path string true "ID of the SourceGroup"
 // @Param		SourceGroup body model.SourceGroup true "source group to modify."
 // @Success		200	{object}	model.SourceGroup	"Successfully update the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to update the source group"
-// @Router		/source_group/{uuid} [put]
+// @Router		/honeybee/source_group/{sgId} [put]
 func UpdateSourceGroup(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
 	sourceGroup := new(model.SourceGroup)
 	err := c.Bind(sourceGroup)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	sourceGroup.UUID = c.Param("uuid")
-	oldSourceGroup, err := dao.SourceGroupGet(sourceGroup.UUID)
+	oldSourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	if sourceGroup.Name != "" {
-		oldSourceGroup.Name = sourceGroup.Name
+	if sourceGroup.Description != "" {
+		oldSourceGroup.Description = sourceGroup.Description
 	}
 
 	err = dao.SourceGroupUpdate(oldSourceGroup)
@@ -139,7 +158,7 @@ func UpdateSourceGroup(c echo.Context) error {
 }
 
 func deleteSavedInfraInfo(connectionInfo *model.ConnectionInfo) {
-	savedInfraInfo, _ := dao.SavedInfraInfoGet(connectionInfo.UUID)
+	savedInfraInfo, _ := dao.SavedInfraInfoGet(connectionInfo.ID)
 	if savedInfraInfo == nil {
 		return
 	}
@@ -150,7 +169,7 @@ func deleteSavedInfraInfo(connectionInfo *model.ConnectionInfo) {
 }
 
 func deleteSavedSoftwareInfo(connectionInfo *model.ConnectionInfo) {
-	savedSoftwareInfo, _ := dao.SavedSoftwareInfoGet(connectionInfo.UUID)
+	savedSoftwareInfo, _ := dao.SavedSoftwareInfoGet(connectionInfo.ID)
 	if savedSoftwareInfo == nil {
 		return
 	}
@@ -167,23 +186,24 @@ func deleteSavedSoftwareInfo(connectionInfo *model.ConnectionInfo) {
 // @Tags		[On-premise] SourceGroup
 // @Accept		json
 // @Produce		json
+// @Param		sgId path string true "ID of the SourceGroup"
 // @Success		200	{object}	model.SourceGroup	"Successfully delete the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to delete the source group"
-// @Router		/source_group/{uuid} [delete]
+// @Router		/honeybee/source_group/{sgId} [delete]
 func DeleteSourceGroup(c echo.Context) error {
-	uuid := c.Param("uuid")
-	if uuid == "" {
-		return common.ReturnErrorMsg(c, "uuid is empty")
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	sourceGroup, err := dao.SourceGroupGet(uuid)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	connectionInfoList, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{
-		GroupUUID: uuid,
+		SourceGroupID: sgID,
 	}, 0, 0)
 	if err != nil {
 		return common.ReturnErrorMsg(c, "Failed to get connection info list to delete.")
@@ -216,14 +236,14 @@ func DeleteSourceGroup(c echo.Context) error {
 // @Success		200	{object}	[]model.ConnectionInfo		"Successfully checked SSH connection for the source group"
 // @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse		"Failed to check SSH connection for the source group"
-// @Router		/source_group/check/{uuid} [get]
+// @Router		/honeybee/source_group/{sgId}/connection_check [get]
 func CheckConnectionSourceGroup(c echo.Context) error {
-	uuid := c.Param("uuid")
-	if uuid == "" {
-		return common.ReturnErrorMsg(c, "uuid is empty")
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	sourceGroup, err := dao.SourceGroupGet(uuid)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}

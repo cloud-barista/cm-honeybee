@@ -4,21 +4,13 @@ import (
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"strconv"
 )
 
 func ConnectionInfoRegister(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
-	UUID, err := uuid.NewRandom()
-	if err != nil {
-		return nil, err
-	}
-
-	connectionInfo.UUID = UUID.String()
-
 	result := db.DB.Create(connectionInfo)
-	err = result.Error
+	err := result.Error
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +25,7 @@ func ConnectionInfoGet(UUID string) (*model.ConnectionInfo, error) {
 	err := result.Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("ConnectionInfo not found with the provided UUID")
+			return nil, errors.New("ConnectionInfo not found with the provided ID")
 		}
 		return nil, err
 	}
@@ -47,12 +39,16 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 	result := db.DB.Scopes(func(d *gorm.DB) *gorm.DB {
 		var filtered = d
 
-		if len(connectionInfo.UUID) != 0 {
-			filtered = filtered.Where("uuid LIKE ?", "%"+connectionInfo.UUID+"%")
+		if len(connectionInfo.ID) != 0 {
+			filtered = filtered.Where("id LIKE ?", "%"+connectionInfo.ID+"%")
 		}
 
-		if len(connectionInfo.GroupUUID) != 0 {
-			filtered = filtered.Where("group_uuid LIKE ?", "%"+connectionInfo.GroupUUID+"%")
+		if len(connectionInfo.Description) != 0 {
+			filtered = filtered.Where("description LIKE ?", "%"+connectionInfo.Description+"%")
+		}
+
+		if len(connectionInfo.SourceGroupID) != 0 {
+			filtered = filtered.Where("source_group_id LIKE ?", "%"+connectionInfo.SourceGroupID+"%")
 		}
 
 		if len(connectionInfo.IPAddress) != 0 {
@@ -65,10 +61,6 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 
 		if len(connectionInfo.User) != 0 {
 			filtered = filtered.Where("user LIKE ?", "%"+connectionInfo.User+"%")
-		}
-
-		if len(connectionInfo.Type) != 0 {
-			filtered = filtered.Where("type LIKE ?", "%"+connectionInfo.Type+"%")
 		}
 
 		if page != 0 && row != 0 {
@@ -95,7 +87,7 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 }
 
 func ConnectionInfoUpdate(connectionInfo *model.ConnectionInfo) error {
-	result := db.DB.Model(&model.ConnectionInfo{}).Where("uuid = ?", connectionInfo.UUID).Updates(connectionInfo)
+	result := db.DB.Model(&model.ConnectionInfo{}).Where("uuid = ?", connectionInfo.ID).Updates(connectionInfo)
 	err := result.Error
 	if err != nil {
 		return err

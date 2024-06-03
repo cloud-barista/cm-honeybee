@@ -13,14 +13,14 @@ import (
 //
 // @Summary		Import Infra
 // @Description	Import the infra information.
-// @Tags		[Import] ImportInfra
+// @Tags		[Import] ImportSource
 // @Accept		json
 // @Produce		json
-// @Param		uuid path string true "UUID of the connectionInfo"
+// @Param		uuid path string true "ID of the connectionInfo"
 // @Success		200	{object}	model.SavedInfraInfo	"Successfully saved the infra information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
-// @Router			/import/infra/{uuid} [get]
+// @Router		/honeybee/import/infra/{uuid} [get]
 func ImportInfra(c echo.Context) error {
 	uuid := c.Param("uuid")
 	if uuid == "" {
@@ -32,11 +32,11 @@ func ImportInfra(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	oldSavedInfraInfo, _ := dao.SavedInfraInfoGet(connectionInfo.UUID)
+	oldSavedInfraInfo, _ := dao.SavedInfraInfoGet(connectionInfo.ID)
 
 	if oldSavedInfraInfo == nil {
 		savedInfraInfo := new(model.SavedInfraInfo)
-		savedInfraInfo.ConnectionUUID = connectionInfo.UUID
+		savedInfraInfo.ConnectionUUID = connectionInfo.ID
 		savedInfraInfo.InfraData = ""
 		savedInfraInfo.Status = "importing"
 		savedInfraInfo.SavedTime = time.Now()
@@ -69,14 +69,14 @@ func ImportInfra(c echo.Context) error {
 //
 // @Summary		Import software
 // @Description	Import the software information.
-// @Tags		[Import] ImportSoftware
+// @Tags		[Import] ImportSource
 // @Accept		json
 // @Produce		json
-// @Param		uuid path string true "UUID of the connectionInfo"
+// @Param		uuid path string true "ID of the connectionInfo"
 // @Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the software information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
-// @Router			/import/software/{uuid} [get]
+// @Router		/honeybee/import/software/{uuid} [get]
 func ImportSoftware(c echo.Context) error {
 	uuid := c.Param("uuid")
 	if uuid == "" {
@@ -88,11 +88,11 @@ func ImportSoftware(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	oldSavedSoftwareInfo, _ := dao.SavedSoftwareInfoGet(connectionInfo.UUID)
+	oldSavedSoftwareInfo, _ := dao.SavedSoftwareInfoGet(connectionInfo.ID)
 
 	if oldSavedSoftwareInfo == nil {
 		savedSoftwareInfo := new(model.SavedSoftwareInfo)
-		savedSoftwareInfo.ConnectionUUID = connectionInfo.UUID
+		savedSoftwareInfo.ConnectionUUID = connectionInfo.ID
 		savedSoftwareInfo.SoftwareData = ""
 		savedSoftwareInfo.Status = "importing"
 		savedSoftwareInfo.SavedTime = time.Now()

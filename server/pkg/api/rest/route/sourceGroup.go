@@ -9,9 +9,10 @@ import (
 
 func RegisterSourceGroup(e *echo.Echo) {
 	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/source_group", controller.CreateSourceGroup)
-	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:uuid", controller.GetSourceGroup)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId", controller.GetSourceGroup)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group", controller.ListSourceGroup)
-	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:uuid", controller.UpdateSourceGroup)
-	e.DELETE("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:uuid", controller.DeleteSourceGroup)
-	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/check/:uuid", controller.CheckConnectionSourceGroup)
+	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId", controller.UpdateSourceGroup)
+	e.DELETE("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId", controller.DeleteSourceGroup)
+
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_check", controller.CheckConnectionSourceGroup)
 }

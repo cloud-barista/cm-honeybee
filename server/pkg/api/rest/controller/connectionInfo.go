@@ -11,6 +11,25 @@ import (
 	"strconv"
 )
 
+type CreateConnectionInfoReq struct {
+	ID          string `gorm:"primaryKey" json:"id" validate:"required"`
+	Description string `gorm:"column:description" json:"description"`
+	IPAddress   string `gorm:"column:ip_address" json:"ip_address" validate:"required"`
+	SSHPort     int    `gorm:"column:ssh_port" json:"ssh_port" validate:"required"`
+	User        string `gorm:"column:user" json:"user" validate:"required"`
+	Password    string `gorm:"column:password" json:"password"`
+	PrivateKey  string `gorm:"column:private_key" json:"private_key"`
+}
+
+type UpdateConnectionInfoReq struct {
+	Description string `gorm:"column:description" json:"description"`
+	IPAddress   string `gorm:"column:ip_address" json:"ip_address" validate:"required"`
+	SSHPort     int    `gorm:"column:ssh_port" json:"ssh_port" validate:"required"`
+	User        string `gorm:"column:user" json:"user" validate:"required"`
+	Password    string `gorm:"column:password" json:"password"`
+	PrivateKey  string `gorm:"column:private_key" json:"private_key"`
+}
+
 func checkIPAddress(ipAddress string) error {
 	if ipAddress == "" {
 		return errors.New("ip_address is empty")
@@ -38,20 +57,41 @@ func checkPort(port int) error {
 // @Tags		[On-premise] ConnectionInfo
 // @Accept		json
 // @Produce		json
+// @Param		sgId path string true "ID of the SourceGroup"
 // @Param		ConnectionInfo body model.ConnectionInfo true "Connection information of the node."
 // @Success		200	{object}	model.ConnectionInfo	"Successfully register the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to register the connection information"
-// @Router			/connection_info [post]
+// @Router		/honeybee/source_group/{sgId}/connection_info [post]
 func CreateConnectionInfo(c echo.Context) error {
-	connectionInfo := new(model.ConnectionInfo)
-	err := c.Bind(connectionInfo)
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	sourceGroup, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	createConnectionInfoReq := new(CreateConnectionInfoReq)
+	err = c.Bind(createConnectionInfoReq)
 	if err != nil {
 		return err
 	}
 
-	if connectionInfo.GroupUUID == "" {
-		return common.ReturnErrorMsg(c, "group_uuid is empty")
+	connectionInfo := &model.ConnectionInfo{
+		ID:            createConnectionInfoReq.ID,
+		SourceGroupID: sourceGroup.ID,
+		IPAddress:     createConnectionInfoReq.IPAddress,
+		SSHPort:       createConnectionInfoReq.SSHPort,
+		User:          createConnectionInfoReq.User,
+		Password:      createConnectionInfoReq.Password,
+		PrivateKey:    createConnectionInfoReq.PrivateKey,
+	}
+
+	if connectionInfo.ID == "" {
+		return common.ReturnErrorMsg(c, "id is empty")
 	}
 	err = checkIPAddress(connectionInfo.IPAddress)
 	if err != nil {
@@ -67,11 +107,8 @@ func CreateConnectionInfo(c echo.Context) error {
 	if connectionInfo.Password == "" && connectionInfo.PrivateKey == "" {
 		return common.ReturnErrorMsg(c, "password or private_key must be provided")
 	}
-	if connectionInfo.Type == "" {
-		return common.ReturnErrorMsg(c, "type is empty")
-	}
 
-	_, err = dao.SourceGroupGet(connectionInfo.GroupUUID)
+	_, err = dao.SourceGroupGet(connectionInfo.SourceGroupID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -91,18 +128,19 @@ func CreateConnectionInfo(c echo.Context) error {
 // @Tags		[On-premise] ConnectionInfo
 // @Accept		json
 // @Produce		json
-// @Param		uuid path string true "UUID of the connectionInfo"
+// @Param		sgId path string true "ID of the SourceGroup"
+// @Param		connId path string true "ID of the connectionInfo"
 // @Success		200	{object}	model.ConnectionInfo	"Successfully get the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get the connection information"
-// @Router		/connection_info/{uuid} [get]
+// @Router		/honeybee/source_group/{sgId}/connection_info/{connId} [get]
 func GetConnectionInfo(c echo.Context) error {
-	uuid := c.Param("uuid")
-	if uuid == "" {
-		return common.ReturnErrorMsg(c, "uuid is empty")
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
 	}
 
-	connectionInfo, err := dao.ConnectionInfoGet(uuid)
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -117,18 +155,19 @@ func GetConnectionInfo(c echo.Context) error {
 // @Tags		[On-premise] ConnectionInfo
 // @Accept		json
 // @Produce		json
+// @Param		sgId path string true "ID of the SourceGroup"
 // @Param		page query string false "Page of the connection information list."
 // @Param		row query string false "Row of the connection information list."
-// @Param		uuid query string false "UUID of the connection information."
-// @Param		group_uuid query string false "Source group UUID."
+// @Param		id query string false "ID of the connection information."
+// @Param		description query string false "Description of the connection information."
+// @Param		source_group_id query string false "Source group ID."
 // @Param		ip_address query string false "IP address of the connection information."
 // @Param		ssh_port query string false "SSH port of the connection information."
 // @Param		user query string false "User of the connection information."
-// @Param		type query string false "Type of the connection information."
 // @Success		200	{object}	[]model.ConnectionInfo	"Successfully get a list of connection information."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get a list of connection information."
-// @Router			/connection_info [get]
+// @Router		/honeybee/source_group/{sgId}/connection_info [get]
 func ListConnectionInfo(c echo.Context) error {
 	page, row, err := common.CheckPageRow(c)
 	if err != nil {
@@ -138,12 +177,12 @@ func ListConnectionInfo(c echo.Context) error {
 	sshPort, _ := strconv.Atoi(c.QueryParam("ssh_port"))
 
 	connectionInfo := &model.ConnectionInfo{
-		UUID:      c.QueryParam("uuid"),
-		GroupUUID: c.QueryParam("group_uuid"),
-		IPAddress: c.QueryParam("ip_address"),
-		SSHPort:   sshPort,
-		User:      c.QueryParam("user"),
-		Type:      c.QueryParam("type"),
+		ID:            c.QueryParam("id"),
+		Description:   c.QueryParam("description"),
+		SourceGroupID: c.QueryParam("source_group_id"),
+		IPAddress:     c.QueryParam("ip_address"),
+		SSHPort:       sshPort,
+		User:          c.QueryParam("user"),
 	}
 
 	connectionInfos, err := dao.ConnectionInfoGetList(connectionInfo, page, row)
@@ -161,51 +200,56 @@ func ListConnectionInfo(c echo.Context) error {
 // @Tags		[On-premise] ConnectionInfo
 // @Accept		json
 // @Produce		json
-// @Param		uuid path string true "UUID of the connectionInfo"
+// @Param		sgId path string true "ID of the SourceGroup"
+// @Param		connId path string true "ID of the connectionInfo"
 // @Param		ConnectionInfo body model.ConnectionInfo true "Connection information to modify."
 // @Success		200	{object}	model.ConnectionInfo	"Successfully update the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to update the connection information"
-// @Router		/connection_info/{uuid} [put]
+// @Router		/honeybee/source_group/{sgId}/connection_info/{connId} [put]
 func UpdateConnectionInfo(c echo.Context) error {
-	connectionInfo := new(model.ConnectionInfo)
-	err := c.Bind(connectionInfo)
-	if err != nil {
-		return err
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	connectionInfo.UUID = c.Param("uuid")
-	oldConnectionInfo, err := dao.ConnectionInfoGet(connectionInfo.UUID)
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	if connectionInfo.GroupUUID != "" {
-		_, err = dao.SourceGroupGet(connectionInfo.GroupUUID)
-		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
-		}
-		oldConnectionInfo.GroupUUID = connectionInfo.GroupUUID
+	oldConnectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
 	}
-	err = checkIPAddress(connectionInfo.IPAddress)
+
+	updateConnectionInfoReq := new(UpdateConnectionInfoReq)
+	err = c.Bind(updateConnectionInfoReq)
+	if err != nil {
+		return err
+	}
+
+	err = checkIPAddress(updateConnectionInfoReq.IPAddress)
 	if err == nil {
-		oldConnectionInfo.IPAddress = connectionInfo.IPAddress
+		oldConnectionInfo.IPAddress = updateConnectionInfoReq.IPAddress
 	}
-	err = checkPort(connectionInfo.SSHPort)
+	err = checkPort(updateConnectionInfoReq.SSHPort)
 	if err == nil {
-		oldConnectionInfo.SSHPort = connectionInfo.SSHPort
+		oldConnectionInfo.SSHPort = updateConnectionInfoReq.SSHPort
 	}
-	if connectionInfo.User != "" {
-		oldConnectionInfo.User = connectionInfo.User
+	if updateConnectionInfoReq.User != "" {
+		oldConnectionInfo.User = updateConnectionInfoReq.User
 	}
-	if connectionInfo.Password != "" {
-		oldConnectionInfo.Password = connectionInfo.Password
+	if updateConnectionInfoReq.Password != "" {
+		oldConnectionInfo.Password = updateConnectionInfoReq.Password
 	}
-	if connectionInfo.PrivateKey != "" {
-		oldConnectionInfo.PrivateKey = connectionInfo.PrivateKey
-	}
-	if connectionInfo.Type != "" {
-		oldConnectionInfo.Type = connectionInfo.Type
+	if updateConnectionInfoReq.PrivateKey != "" {
+		oldConnectionInfo.PrivateKey = updateConnectionInfoReq.PrivateKey
 	}
 
 	err = dao.ConnectionInfoUpdate(oldConnectionInfo)
@@ -223,17 +267,29 @@ func UpdateConnectionInfo(c echo.Context) error {
 // @Tags		[On-premise] ConnectionInfo
 // @Accept		json
 // @Produce		json
+// @Param		sgId path string true "ID of the SourceGroup"
+// @Param		connId path string true "ID of the connectionInfo"
 // @Success		200	{object}	model.ConnectionInfo	"Successfully delete the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to delete the connection information"
-// @Router		/connection_info/{uuid} [delete]
+// @Router		/honeybee/source_group/{sgId}/connection_info/{connId} [delete]
 func DeleteConnectionInfo(c echo.Context) error {
-	uuid := c.Param("uuid")
-	if uuid == "" {
-		return common.ReturnErrorMsg(c, "uuid is empty")
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	connectionInfo, err := dao.ConnectionInfoGet(uuid)
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}

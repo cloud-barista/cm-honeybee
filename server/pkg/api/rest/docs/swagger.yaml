@@ -6,9 +6,11 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo:
     properties:
+      description:
+        type: string
       failed_message:
         type: string
-      group_uuid:
+      id:
         type: string
       ip_address:
         type: string
@@ -18,22 +20,20 @@ definitions:
         type: string
       public_key:
         type: string
+      source_group_id:
+        type: string
       ssh_port:
         type: integer
       status:
         type: string
-      type:
-        type: string
       user:
         type: string
-      uuid:
-        type: string
     required:
-    - group_uuid
+    - id
     - ip_address
+    - source_group_id
     - ssh_port
     - user
-    - uuid
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo:
     properties:
@@ -65,13 +65,12 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup:
     properties:
-      name:
+      description:
         type: string
-      uuid:
+      id:
         type: string
     required:
-    - name
-    - uuid
+    - id
     type: object
   infra.CPU:
     properties:
@@ -785,204 +784,13 @@ definitions:
 info:
   contact: {}
 paths:
-  /connection_info:
-    get:
-      consumes:
-      - application/json
-      description: Get a list of connection information.
-      parameters:
-      - description: Page of the connection information list.
-        in: query
-        name: page
-        type: string
-      - description: Row of the connection information list.
-        in: query
-        name: row
-        type: string
-      - description: UUID of the connection information.
-        in: query
-        name: uuid
-        type: string
-      - description: Source group UUID.
-        in: query
-        name: group_uuid
-        type: string
-      - description: IP address of the connection information.
-        in: query
-        name: ip_address
-        type: string
-      - description: SSH port of the connection information.
-        in: query
-        name: ssh_port
-        type: string
-      - description: User of the connection information.
-        in: query
-        name: user
-        type: string
-      - description: Type of the connection information.
-        in: query
-        name: type
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully get a list of connection information.
-          schema:
-            items:
-              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
-            type: array
-        "400":
-          description: Sent bad request.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-        "500":
-          description: Failed to get a list of connection information.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-      summary: List ConnectionInfo
-      tags:
-      - '[On-premise] ConnectionInfo'
-    post:
-      consumes:
-      - application/json
-      description: Create the connection information.
-      parameters:
-      - description: Connection information of the node.
-        in: body
-        name: ConnectionInfo
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully register the connection information
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
-        "400":
-          description: Sent bad request.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-        "500":
-          description: Failed to register the connection information
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-      summary: Create ConnectionInfo
-      tags:
-      - '[On-premise] ConnectionInfo'
-  /connection_info/{uuid}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete the connection information.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully delete the connection information
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
-        "400":
-          description: Sent bad request.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-        "500":
-          description: Failed to delete the connection information
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-      summary: Delete ConnectionInfo
-      tags:
-      - '[On-premise] ConnectionInfo'
-    get:
-      consumes:
-      - application/json
-      description: Get the connection information.
-      parameters:
-      - description: UUID of the connectionInfo
-        in: path
-        name: uuid
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully get the connection information
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
-        "400":
-          description: Sent bad request.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-        "500":
-          description: Failed to get the connection information
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-      summary: Get ConnectionInfo
-      tags:
-      - '[On-premise] ConnectionInfo'
-    put:
-      consumes:
-      - application/json
-      description: Update the connection information.
-      parameters:
-      - description: UUID of the connectionInfo
-        in: path
-        name: uuid
-        required: true
-        type: string
-      - description: Connection information to modify.
-        in: body
-        name: ConnectionInfo
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully update the connection information
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
-        "400":
-          description: Sent bad request.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-        "500":
-          description: Failed to update the connection information
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-      summary: Update ConnectionInfo
-      tags:
-      - '[On-premise] ConnectionInfo'
-  /honeybee/readyz:
-    get:
-      consumes:
-      - application/json
-      description: Check Honeybee is ready
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully get ready state.
-          schema:
-            $ref: '#/definitions/pkg_api_rest_controller.SimpleMsg'
-        "500":
-          description: Failed to check ready state.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-      summary: Check Ready
-      tags:
-      - '[Admin] System management'
-  /import/infra/{uuid}:
+  /honeybee/import/infra/{uuid}:
     get:
       consumes:
       - application/json
       description: Import the infra information.
       parameters:
-      - description: UUID of the connectionInfo
+      - description: ID of the connectionInfo
         in: path
         name: uuid
         required: true
@@ -1004,14 +812,14 @@ paths:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Import Infra
       tags:
-      - '[Import] ImportInfra'
-  /import/software/{uuid}:
+      - '[Import] ImportSource'
+  /honeybee/import/software/{uuid}:
     get:
       consumes:
       - application/json
       description: Import the software information.
       parameters:
-      - description: UUID of the connectionInfo
+      - description: ID of the connectionInfo
         in: path
         name: uuid
         required: true
@@ -1033,14 +841,14 @@ paths:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Import software
       tags:
-      - '[Import] ImportSoftware'
-  /infra/{uuid}:
+      - '[Import] ImportSource'
+  /honeybee/infra/{connId}:
     get:
       consumes:
       - application/json
       description: Get the infra information of the connection information.
       parameters:
-      - description: UUID of the connectionInfo
+      - description: ID of the connectionInfo
         in: path
         name: uuid
         required: true
@@ -1063,13 +871,32 @@ paths:
       summary: Get Infra Information
       tags:
       - '[Infra] Get infra info'
-  /software/{uuid}:
+  /honeybee/readyz:
+    get:
+      consumes:
+      - application/json
+      description: Check Honeybee is ready
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get ready state.
+          schema:
+            $ref: '#/definitions/pkg_api_rest_controller.SimpleMsg'
+        "500":
+          description: Failed to check ready state.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Check Ready
+      tags:
+      - '[Admin] System management'
+  /honeybee/software/{connId}:
     get:
       consumes:
       - application/json
       description: Get the software information of the connection information.
       parameters:
-      - description: UUID of the connectionInfo
+      - description: ID of the connectionInfo
         in: path
         name: uuid
         required: true
@@ -1092,7 +919,7 @@ paths:
       summary: Get Software Information
       tags:
       - '[Software] Get Software info'
-  /source_group:
+  /honeybee/source_group:
     get:
       consumes:
       - application/json
@@ -1106,13 +933,13 @@ paths:
         in: query
         name: row
         type: string
-      - description: UUID of the source group.
+      - description: ID of the source group.
         in: query
-        name: uuid
+        name: id
         type: string
-      - description: Migration group name.
+      - description: Description of the source group.
         in: query
-        name: name
+        name: description
         type: string
       produces:
       - application/json
@@ -1163,11 +990,17 @@ paths:
       summary: Register SourceGroup
       tags:
       - '[On-premise] SourceGroup'
-  /source_group/{uuid}:
+  /honeybee/source_group/{sgId}:
     delete:
       consumes:
       - application/json
       description: Delete the source group.
+      parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1191,9 +1024,9 @@ paths:
       - application/json
       description: Get the source group.
       parameters:
-      - description: UUID of the SourceGroup
+      - description: ID of the SourceGroup
         in: path
-        name: uuid
+        name: sgId
         required: true
         type: string
       produces:
@@ -1219,6 +1052,11 @@ paths:
       - application/json
       description: Update the source group.
       parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
       - description: source group to modify.
         in: body
         name: SourceGroup
@@ -1243,7 +1081,7 @@ paths:
       summary: Update SourceGroup
       tags:
       - '[On-premise] SourceGroup'
-  /source_group/check/{uuid}:
+  /honeybee/source_group/{sgId}/connection_check:
     get:
       consumes:
       - application/json
@@ -1277,4 +1115,207 @@ paths:
       summary: Check Connection SourceGroup
       tags:
       - '[On-premise] SourceGroup'
+  /honeybee/source_group/{sgId}/connection_info:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of connection information.
+      parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: Page of the connection information list.
+        in: query
+        name: page
+        type: string
+      - description: Row of the connection information list.
+        in: query
+        name: row
+        type: string
+      - description: ID of the connection information.
+        in: query
+        name: id
+        type: string
+      - description: Description of the connection information.
+        in: query
+        name: description
+        type: string
+      - description: Source group ID.
+        in: query
+        name: source_group_id
+        type: string
+      - description: IP address of the connection information.
+        in: query
+        name: ip_address
+        type: string
+      - description: SSH port of the connection information.
+        in: query
+        name: ssh_port
+        type: string
+      - description: User of the connection information.
+        in: query
+        name: user
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get a list of connection information.
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get a list of connection information.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: List ConnectionInfo
+      tags:
+      - '[On-premise] ConnectionInfo'
+    post:
+      consumes:
+      - application/json
+      description: Create the connection information.
+      parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: Connection information of the node.
+        in: body
+        name: ConnectionInfo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully register the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to register the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Create ConnectionInfo
+      tags:
+      - '[On-premise] ConnectionInfo'
+  /honeybee/source_group/{sgId}/connection_info/{connId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete the connection information.
+      parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connectionInfo
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully delete the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to delete the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Delete ConnectionInfo
+      tags:
+      - '[On-premise] ConnectionInfo'
+    get:
+      consumes:
+      - application/json
+      description: Get the connection information.
+      parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connectionInfo
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get ConnectionInfo
+      tags:
+      - '[On-premise] ConnectionInfo'
+    put:
+      consumes:
+      - application/json
+      description: Update the connection information.
+      parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connectionInfo
+        in: path
+        name: connId
+        required: true
+        type: string
+      - description: Connection information to modify.
+        in: body
+        name: ConnectionInfo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully update the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to update the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Update ConnectionInfo
+      tags:
+      - '[On-premise] ConnectionInfo'
 swagger: "2.0"

@@ -8,9 +8,9 @@ import (
 )
 
 func RegisterConnectionInfo(e *echo.Echo) {
-	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/connection_info", controller.CreateConnectionInfo)
-	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/connection_info/:uuid", controller.GetConnectionInfo)
-	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/connection_info", controller.ListConnectionInfo)
-	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/connection_info/:uuid", controller.UpdateConnectionInfo)
-	e.DELETE("/"+strings.ToLower(common.ShortModuleName)+"/connection_info/:uuid", controller.DeleteConnectionInfo)
+	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info", controller.CreateConnectionInfo)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId", controller.GetConnectionInfo)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info", controller.ListConnectionInfo)
+	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId", controller.UpdateConnectionInfo)
+	e.DELETE("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId", controller.DeleteConnectionInfo)
 }

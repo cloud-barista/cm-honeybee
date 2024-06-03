@@ -5,20 +5,12 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 func SourceGroupRegister(sourceGroup *model.SourceGroup) (*model.SourceGroup, error) {
-	UUID, err := uuid.NewRandom()
-	if err != nil {
-		return nil, err
-	}
-
-	sourceGroup.UUID = UUID.String()
-
 	result := db.DB.Create(sourceGroup)
-	err = result.Error
+	err := result.Error
 	if err != nil {
 		return nil, err
 	}
@@ -26,14 +18,14 @@ func SourceGroupRegister(sourceGroup *model.SourceGroup) (*model.SourceGroup, er
 	return sourceGroup, nil
 }
 
-func SourceGroupGet(UUID string) (*model.SourceGroup, error) {
+func SourceGroupGet(ID string) (*model.SourceGroup, error) {
 	sourceGroup := &model.SourceGroup{}
 
-	result := db.DB.Where("uuid = ?", UUID).First(sourceGroup)
+	result := db.DB.Where("id = ?", ID).First(sourceGroup)
 	err := result.Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("SourceGroup not found with the provided UUID")
+			return nil, errors.New("SourceGroup not found with the provided ID")
 		}
 		return nil, err
 	}
@@ -47,12 +39,12 @@ func SourceGroupGetList(sourceGroup *model.SourceGroup, page int, row int) (*[]m
 	result := db.DB.Scopes(func(d *gorm.DB) *gorm.DB {
 		var filtered = d
 
-		if len(sourceGroup.UUID) != 0 {
-			filtered = filtered.Where("uuid LIKE ?", "%"+sourceGroup.UUID+"%")
+		if len(sourceGroup.ID) != 0 {
+			filtered = filtered.Where("id LIKE ?", "%"+sourceGroup.ID+"%")
 		}
 
-		if len(sourceGroup.Name) != 0 {
-			filtered = filtered.Where("group_uuid LIKE ?", "%"+sourceGroup.Name+"%")
+		if len(sourceGroup.Description) != 0 {
+			filtered = filtered.Where("description LIKE ?", "%"+sourceGroup.Description+"%")
 		}
 
 		if page != 0 && row != 0 {
@@ -79,7 +71,7 @@ func SourceGroupGetList(sourceGroup *model.SourceGroup, page int, row int) (*[]m
 }
 
 func SourceGroupUpdate(sourceGroup *model.SourceGroup) error {
-	result := db.DB.Model(&model.SourceGroup{}).Where("uuid = ?", sourceGroup.UUID).Updates(sourceGroup)
+	result := db.DB.Model(&model.SourceGroup{}).Where("id = ?", sourceGroup.ID).Updates(sourceGroup)
 	err := result.Error
 	if err != nil {
 		return err
@@ -99,13 +91,13 @@ func SourceGroupDelete(sourceGroup *model.SourceGroup) error {
 }
 
 func SourceGroupCheckConnection(sourceGroup *model.SourceGroup) (*[]model.ConnectionInfo, error) {
-	connectionInfoList, err := ConnectionInfoGetList(&model.ConnectionInfo{GroupUUID: sourceGroup.UUID}, 0, 0)
+	connectionInfoList, err := ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sourceGroup.ID}, 0, 0)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, connectionInfo := range *connectionInfoList {
-		oldConnectionInfo, err := ConnectionInfoGet(connectionInfo.UUID)
+		oldConnectionInfo, err := ConnectionInfoGet(connectionInfo.ID)
 		if err != nil {
 			return nil, err
 		}
@@ -128,9 +120,9 @@ func SourceGroupCheckConnection(sourceGroup *model.SourceGroup) (*[]model.Connec
 		err = ConnectionInfoUpdate(oldConnectionInfo)
 		if err != nil {
 			return nil, errors.New("Error occurred while updating the connection information. " +
-				"(UUID: " + oldConnectionInfo.UUID + ", Error: " + err.Error() + ")")
+				"(ID: " + oldConnectionInfo.ID + ", Error: " + err.Error() + ")")
 		}
 	}
 
-	return ConnectionInfoGetList(&model.ConnectionInfo{GroupUUID: sourceGroup.UUID}, 0, 0)
+	return ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sourceGroup.ID}, 0, 0)
 }

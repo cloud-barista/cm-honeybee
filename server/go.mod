@@ -4,7 +4,7 @@ go 1.21.6
 
 require (
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
-	github.com/google/uuid v1.6.0
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/jollaman999/utils v1.0.10 // Original codes from https://github.com/hcloud-classic/hcc-harp
 	github.com/labstack/echo/v4 v4.12.0
 	golang.org/x/sys v0.20.0 // indirect
