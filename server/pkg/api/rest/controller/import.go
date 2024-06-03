@@ -13,21 +13,31 @@ import (
 //
 // @Summary		Import Infra
 // @Description	Import the infra information.
-// @Tags		[Import] ImportSource
+// @Tags		[Import] Import source info
 // @Accept		json
 // @Produce		json
 // @Param		uuid path string true "ID of the connectionInfo"
 // @Success		200	{object}	model.SavedInfraInfo	"Successfully saved the infra information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
-// @Router		/honeybee/import/infra/{uuid} [get]
+// @Router		/honeybee/source_group/{sgId}/connection_info/{connId}/import/infra [get]
 func ImportInfra(c echo.Context) error {
-	uuid := c.Param("uuid")
-	if uuid == "" {
-		return common.ReturnErrorMsg(c, "uuid is empty")
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	connectionInfo, err := dao.ConnectionInfoGet(uuid)
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -69,21 +79,31 @@ func ImportInfra(c echo.Context) error {
 //
 // @Summary		Import software
 // @Description	Import the software information.
-// @Tags		[Import] ImportSource
+// @Tags		[Import] Import source info
 // @Accept		json
 // @Produce		json
 // @Param		uuid path string true "ID of the connectionInfo"
 // @Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the software information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
-// @Router		/honeybee/import/software/{uuid} [get]
+// @Router		/honeybee/source_group/{sgId}/connection_info/{connId}/import/software [get]
 func ImportSoftware(c echo.Context) error {
-	uuid := c.Param("uuid")
-	if uuid == "" {
-		return common.ReturnErrorMsg(c, "uuid is empty")
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	connectionInfo, err := dao.ConnectionInfoGet(uuid)
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}

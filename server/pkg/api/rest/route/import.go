@@ -8,6 +8,6 @@ import (
 )
 
 func RegisterImport(e *echo.Echo) {
-	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/import/infra/:uuid", controller.ImportInfra)
-	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/import/software/:uuid", controller.ImportSoftware)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/import/infra", controller.ImportInfra)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/import/software", controller.ImportSoftware)
 }

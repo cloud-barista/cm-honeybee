@@ -26,7 +26,7 @@ type UpdateSourceGroupReq struct {
 // @Tags		[On-premise] SourceGroup
 // @Accept		json
 // @Produce		json
-// @Param		SourceGroup body model.SourceGroup true "source group of the node."
+// @Param		SourceGroup body CreateSourceGroupReq true "source group of the node."
 // @Success		200	{object}	model.SourceGroup	"Successfully register the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to register the source group"
@@ -123,7 +123,7 @@ func ListSourceGroup(c echo.Context) error {
 // @Accept		json
 // @Produce		json
 // @Param		sgId path string true "ID of the SourceGroup"
-// @Param		SourceGroup body model.SourceGroup true "source group to modify."
+// @Param		SourceGroup body UpdateSourceGroupReq true "source group to modify."
 // @Success		200	{object}	model.SourceGroup	"Successfully update the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to update the source group"
@@ -232,7 +232,7 @@ func DeleteSourceGroup(c echo.Context) error {
 // @Tags		[On-premise] SourceGroup
 // @Accept		json
 // @Produce		json
-// @Param		SourceGroup body model.SourceGroup true "source group to check SSH connection for each connection info in source group"
+// @Param		sgId path string true "ID of the SourceGroup"
 // @Success		200	{object}	[]model.ConnectionInfo		"Successfully checked SSH connection for the source group"
 // @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse		"Failed to check SSH connection for the source group"

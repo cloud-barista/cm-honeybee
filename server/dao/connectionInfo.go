@@ -18,10 +18,10 @@ func ConnectionInfoRegister(connectionInfo *model.ConnectionInfo) (*model.Connec
 	return connectionInfo, nil
 }
 
-func ConnectionInfoGet(UUID string) (*model.ConnectionInfo, error) {
+func ConnectionInfoGet(ID string) (*model.ConnectionInfo, error) {
 	connectionInfo := &model.ConnectionInfo{}
 
-	result := db.DB.Where("uuid = ?", UUID).First(connectionInfo)
+	result := db.DB.Where("id = ?", ID).First(connectionInfo)
 	err := result.Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -47,9 +47,7 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 			filtered = filtered.Where("description LIKE ?", "%"+connectionInfo.Description+"%")
 		}
 
-		if len(connectionInfo.SourceGroupID) != 0 {
-			filtered = filtered.Where("source_group_id LIKE ?", "%"+connectionInfo.SourceGroupID+"%")
-		}
+		filtered = filtered.Where("source_group_id LIKE ?", "%"+connectionInfo.SourceGroupID+"%")
 
 		if len(connectionInfo.IPAddress) != 0 {
 			filtered = filtered.Where("ip_address LIKE ?", "%"+connectionInfo.IPAddress+"%")
@@ -87,7 +85,7 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 }
 
 func ConnectionInfoUpdate(connectionInfo *model.ConnectionInfo) error {
-	result := db.DB.Model(&model.ConnectionInfo{}).Where("uuid = ?", connectionInfo.ID).Updates(connectionInfo)
+	result := db.DB.Model(&model.ConnectionInfo{}).Where("id = ?", connectionInfo.ID).Updates(connectionInfo)
 	err := result.Error
 	if err != nil {
 		return err

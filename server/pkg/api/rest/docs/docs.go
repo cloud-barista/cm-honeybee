@@ -15,138 +15,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/honeybee/import/infra/{uuid}": {
-            "get": {
-                "description": "Import the infra information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Import] ImportSource"
-                ],
-                "summary": "Import Infra",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID of the connectionInfo",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully saved the infra information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to save the infra information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/honeybee/import/software/{uuid}": {
-            "get": {
-                "description": "Import the software information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Import] ImportSource"
-                ],
-                "summary": "Import software",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID of the connectionInfo",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully saved the software information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to save the software information",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/honeybee/infra/{connId}": {
-            "get": {
-                "description": "Get the infra information of the connection information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Infra] Get infra info"
-                ],
-                "summary": "Get Infra Information",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID of the connectionInfo",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully get information of the infra.",
-                        "schema": {
-                            "$ref": "#/definitions/infra.Infra"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to get information of the infra.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/honeybee/readyz": {
             "get": {
                 "description": "Check Honeybee is ready",
@@ -169,50 +37,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to check ready state.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/honeybee/software/{connId}": {
-            "get": {
-                "description": "Get the software information of the connection information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Software] Get Software info"
-                ],
-                "summary": "Get Software Information",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID of the connectionInfo",
-                        "name": "uuid",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully get information of the software.",
-                        "schema": {
-                            "$ref": "#/definitions/software.Software"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to get information of the software.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -302,7 +126,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                            "$ref": "#/definitions/pkg_api_rest_controller.CreateSourceGroupReq"
                         }
                     }
                 ],
@@ -397,7 +221,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                            "$ref": "#/definitions/pkg_api_rest_controller.UpdateSourceGroupReq"
                         }
                     }
                 ],
@@ -480,13 +304,11 @@ const docTemplate = `{
                 "summary": "Check Connection SourceGroup",
                 "parameters": [
                     {
-                        "description": "source group to check SSH connection for each connection info in source group",
-                        "name": "SourceGroup",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
-                        }
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -561,12 +383,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Source group ID.",
-                        "name": "source_group_id",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
                         "description": "IP address of the connection information.",
                         "name": "ip_address",
                         "in": "query"
@@ -634,7 +450,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/pkg_api_rest_controller.CreateConnectionInfoReq"
                         }
                     }
                 ],
@@ -743,7 +559,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/pkg_api_rest_controller.UpdateConnectionInfoReq"
                         }
                     }
                 ],
@@ -811,6 +627,189 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to delete the connection information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/honeybee/source_group/{sgId}/connection_info/{connId}/import/infra": {
+            "get": {
+                "description": "Import the infra information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import Infra",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the connectionInfo",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the infra information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the infra information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/honeybee/source_group/{sgId}/connection_info/{connId}/import/software": {
+            "get": {
+                "description": "Import the software information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import software",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the connectionInfo",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the software information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the software information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/honeybee/source_group/{sgId}/connection_info/{connId}/infra": {
+            "get": {
+                "description": "Get the infra information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Infra Information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connectionInfo",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the infra.",
+                        "schema": {
+                            "$ref": "#/definitions/infra.Infra"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the infra.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/honeybee/source_group/{sgId}/connection_info/{connId}/software": {
+            "get": {
+                "description": "Get the software information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Software Information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the connectionInfo",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the software.",
+                        "schema": {
+                            "$ref": "#/definitions/software.Software"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the software.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1653,10 +1652,92 @@ const docTemplate = `{
                 }
             }
         },
+        "pkg_api_rest_controller.CreateConnectionInfoReq": {
+            "type": "object",
+            "required": [
+                "id",
+                "ip_address",
+                "ssh_port",
+                "user"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "private_key": {
+                    "type": "string"
+                },
+                "ssh_port": {
+                    "type": "integer"
+                },
+                "user": {
+                    "type": "string"
+                }
+            }
+        },
+        "pkg_api_rest_controller.CreateSourceGroupReq": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
         "pkg_api_rest_controller.SimpleMsg": {
             "type": "object",
             "properties": {
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "pkg_api_rest_controller.UpdateConnectionInfoReq": {
+            "type": "object",
+            "required": [
+                "ip_address",
+                "ssh_port",
+                "user"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "private_key": {
+                    "type": "string"
+                },
+                "ssh_port": {
+                    "type": "integer"
+                },
+                "user": {
+                    "type": "string"
+                }
+            }
+        },
+        "pkg_api_rest_controller.UpdateSourceGroupReq": {
+            "type": "object",
+            "properties": {
+                "description": {
                     "type": "string"
                 }
             }

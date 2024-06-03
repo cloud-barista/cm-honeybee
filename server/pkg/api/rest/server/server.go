@@ -53,8 +53,7 @@ func Init() {
 	route.RegisterConnectionInfo(e)
 	route.RegisterSourceGroup(e)
 	route.RegisterImport(e)
-	route.RegisterInfra(e)
-	route.RegisterSoftware(e)
+	route.RegisterGet(e)
 	route.RegisterSwagger(e)
 	route.RegisterUtility(e)
 
