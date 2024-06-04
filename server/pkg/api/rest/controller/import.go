@@ -1,11 +1,14 @@
 package controller
 
 import (
+	agent "github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
+	"github.com/cloud-barista/cm-honeybee/server/lib/config"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -58,7 +61,7 @@ func ImportInfra(c echo.Context) error {
 		oldSavedInfraInfo = savedInfraInfo
 	}
 
-	data, err := common.GetHTTPRequest(common.AgentURL.Infra)
+	data, err := common.GetHTTPRequest("http://" + connectionInfo.IPAddress + ":" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/" + strings.ToLower(agent.ShortModuleName) + "/infra")
 	if err != nil {
 		oldSavedInfraInfo.Status = "failed"
 		_ = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
@@ -125,7 +128,7 @@ func ImportSoftware(c echo.Context) error {
 		}
 	}
 
-	data, err := common.GetHTTPRequest(common.AgentURL.Software)
+	data, err := common.GetHTTPRequest("http://" + connectionInfo.IPAddress + ":" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/" + strings.ToLower(agent.ShortModuleName) + "/software")
 	if err != nil {
 		oldSavedSoftwareInfo.Status = "failed"
 		_ = dao.SavedSoftwareInfoUpdate(oldSavedSoftwareInfo)

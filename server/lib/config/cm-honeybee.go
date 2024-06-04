@@ -19,7 +19,7 @@ type cmHoneybeeConfig struct {
 		} `yaml:"listen"`
 		Agent struct {
 			Port string `yaml:"port"`
-		}
+		} `yaml:"agent"`
 	} `yaml:"cm-honeybee"`
 }
 
