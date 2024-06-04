@@ -72,8 +72,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "ID of the source group.",
-                        "name": "id",
+                        "description": "Name of the source group.",
+                        "name": "name",
                         "in": "query"
                     },
                     {
@@ -371,8 +371,8 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "ID of the connection information.",
-                        "name": "id",
+                        "description": "Name of the connection information.",
+                        "name": "name",
                         "in": "query"
                     },
                     {

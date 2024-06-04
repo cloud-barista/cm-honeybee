@@ -39,8 +39,8 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 	result := db.DB.Scopes(func(d *gorm.DB) *gorm.DB {
 		var filtered = d
 
-		if len(connectionInfo.ID) != 0 {
-			filtered = filtered.Where("id LIKE ?", "%"+connectionInfo.ID+"%")
+		if len(connectionInfo.Name) != 0 {
+			filtered = filtered.Where("name LIKE ?", "%"+connectionInfo.Name+"%")
 		}
 
 		if len(connectionInfo.Description) != 0 {

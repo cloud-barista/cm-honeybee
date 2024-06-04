@@ -82,7 +82,7 @@ func GetSourceGroup(c echo.Context) error {
 // @Produce		json
 // @Param		page query string false "Page of the source group list."
 // @Param		row query string false "Row of the source group list."
-// @Param		id query string false "ID of the source group."
+// @Param		name query string false "Name of the source group."
 // @Param		description query string false "Description of the source group."
 // @Success		200	{object}	[]model.SourceGroup	"Successfully get a list of source group."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."

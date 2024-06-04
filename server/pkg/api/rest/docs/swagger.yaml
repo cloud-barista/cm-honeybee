@@ -854,9 +854,9 @@ paths:
         in: query
         name: row
         type: string
-      - description: ID of the source group.
+      - description: Name of the source group.
         in: query
-        name: id
+        name: name
         type: string
       - description: Description of the source group.
         in: query
@@ -1053,9 +1053,9 @@ paths:
         in: query
         name: row
         type: string
-      - description: ID of the connection information.
+      - description: Name of the connection information.
         in: query
-        name: id
+        name: name
         type: string
       - description: Description of the connection information.
         in: query

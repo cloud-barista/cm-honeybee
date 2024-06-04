@@ -152,7 +152,7 @@ func GetConnectionInfo(c echo.Context) error {
 // @Param		sgId path string true "ID of the SourceGroup"
 // @Param		page query string false "Page of the connection information list."
 // @Param		row query string false "Row of the connection information list."
-// @Param		id query string false "ID of the connection information."
+// @Param		name query string false "Name of the connection information."
 // @Param		description query string false "Description of the connection information."
 // @Param		ip_address query string false "IP address of the connection information."
 // @Param		ssh_port query string false "SSH port of the connection information."
@@ -180,7 +180,7 @@ func ListConnectionInfo(c echo.Context) error {
 	sshPort, _ := strconv.Atoi(c.QueryParam("ssh_port"))
 
 	connectionInfo := &model.ConnectionInfo{
-		ID:            c.QueryParam("id"),
+		Name:          c.QueryParam("name"),
 		Description:   c.QueryParam("description"),
 		SourceGroupID: sourceGroup.ID,
 		IPAddress:     c.QueryParam("ip_address"),
