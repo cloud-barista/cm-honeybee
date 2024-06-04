@@ -13,7 +13,7 @@ var DB *gorm.DB
 func Open() error {
 	var err error
 
-	DB, err = gorm.Open(sqlite.Open(common.ModuleName+".db"), &gorm.Config{})
+	DB, err = gorm.Open(sqlite.Open(common.RootPath+"/"+common.ModuleName+".db"), &gorm.Config{})
 	if err != nil {
 		logger.Panicln(logger.ERROR, true, err)
 	}
