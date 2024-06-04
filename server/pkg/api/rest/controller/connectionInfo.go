@@ -275,7 +275,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 // @Produce		json
 // @Param		sgId path string true "ID of the SourceGroup"
 // @Param		connId path string true "ID of the connectionInfo"
-// @Success		200	{object}	model.ConnectionInfo	"Successfully delete the connection information"
+// @Success		200	{object}	model.SimpleMsg			"Successfully delete the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to delete the connection information"
 // @Router		/honeybee/source_group/{sgId}/connection_info/{connId} [delete]
@@ -305,5 +305,5 @@ func DeleteConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
+	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "success"}, " ")
 }

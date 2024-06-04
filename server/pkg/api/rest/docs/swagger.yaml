@@ -97,6 +97,11 @@ definitions:
     - connection_id
     - software_data
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg:
+    properties:
+      message:
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup:
     properties:
       description:
@@ -602,11 +607,6 @@ definitions:
           $ref: '#/definitions/network.Subnet'
         type: array
     type: object
-  pkg_api_rest_controller.SimpleMsg:
-    properties:
-      message:
-        type: string
-    type: object
   software.DEB:
     properties:
       architecture:
@@ -832,7 +832,7 @@ paths:
         "200":
           description: Successfully get ready state.
           schema:
-            $ref: '#/definitions/pkg_api_rest_controller.SimpleMsg'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg'
         "500":
           description: Failed to check ready state.
           schema:
@@ -928,7 +928,7 @@ paths:
         "200":
           description: Successfully delete the source group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg'
         "400":
           description: Sent bad request.
           schema:
@@ -1149,7 +1149,7 @@ paths:
         "200":
           description: Successfully delete the connection information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg'
         "400":
           description: Sent bad request.
           schema:

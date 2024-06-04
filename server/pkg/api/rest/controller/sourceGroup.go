@@ -183,7 +183,7 @@ func deleteSavedSoftwareInfo(connectionInfo *model.ConnectionInfo) {
 // @Accept		json
 // @Produce		json
 // @Param		sgId path string true "ID of the SourceGroup"
-// @Success		200	{object}	model.SourceGroup	"Successfully delete the source group"
+// @Success		200	{object}	model.SimpleMsg			"Successfully delete the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to delete the source group"
 // @Router		/honeybee/source_group/{sgId} [delete]
@@ -218,7 +218,7 @@ func DeleteSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	return c.JSONPretty(http.StatusOK, sourceGroup, " ")
+	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "success"}, " ")
 }
 
 // CheckConnectionSourceGroup godoc

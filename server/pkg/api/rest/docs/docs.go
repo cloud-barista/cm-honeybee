@@ -32,7 +32,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully get ready state.",
                         "schema": {
-                            "$ref": "#/definitions/pkg_api_rest_controller.SimpleMsg"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg"
                         }
                     },
                     "500": {
@@ -271,7 +271,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully delete the source group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg"
                         }
                     },
                     "400": {
@@ -616,7 +616,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully delete the connection information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg"
                         }
                     },
                     "400": {
@@ -981,6 +981,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg": {
+            "type": "object",
+            "properties": {
+                "message": {
                     "type": "string"
                 }
             }
@@ -1724,14 +1732,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/network.Subnet"
                     }
-                }
-            }
-        },
-        "pkg_api_rest_controller.SimpleMsg": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
                 }
             }
         },
