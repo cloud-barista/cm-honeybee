@@ -821,6 +821,35 @@ definitions:
 info:
   contact: {}
 paths:
+  /honeybee/connection_info/{connId}:
+    get:
+      consumes:
+      - application/json
+      description: Get the connection information directly.
+      parameters:
+      - description: ID of the connectionInfo
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get the connection information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get ConnectionInfo Directly
+      tags:
+      - '[On-premise] ConnectionInfo'
   /honeybee/readyz:
     get:
       consumes:

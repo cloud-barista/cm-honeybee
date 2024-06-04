@@ -142,6 +142,32 @@ func GetConnectionInfo(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
 }
 
+// GetConnectionInfoDirectly godoc
+//
+// @Summary		Get ConnectionInfo Directly
+// @Description	Get the connection information directly.
+// @Tags		[On-premise] ConnectionInfo
+// @Accept		json
+// @Produce		json
+// @Param		connId path string true "ID of the connectionInfo"
+// @Success		200	{object}	model.ConnectionInfo	"Successfully get the connection information"
+// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+// @Failure		500	{object}	common.ErrorResponse	"Failed to get the connection information"
+// @Router		/honeybee/connection_info/{connId} [get]
+func GetConnectionInfoDirectly(c echo.Context) error {
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
+}
+
 // ListConnectionInfo godoc
 //
 // @Summary		List ConnectionInfo
