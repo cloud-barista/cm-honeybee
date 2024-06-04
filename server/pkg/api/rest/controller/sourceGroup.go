@@ -1,23 +1,14 @@
 package controller
 
 import (
-	"errors"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
+	"github.com/google/uuid"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
-
-type CreateSourceGroupReq struct {
-	ID          string `gorm:"primaryKey" json:"id" validate:"required"`
-	Description string `gorm:"column:description" json:"description"`
-}
-
-type UpdateSourceGroupReq struct {
-	Description string `gorm:"column:description" json:"description"`
-}
 
 // CreateSourceGroup godoc
 //
@@ -26,24 +17,25 @@ type UpdateSourceGroupReq struct {
 // @Tags		[On-premise] SourceGroup
 // @Accept		json
 // @Produce		json
-// @Param		SourceGroup body CreateSourceGroupReq true "source group of the node."
-// @Success		200	{object}	model.SourceGroup	"Successfully register the source group"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to register the source group"
+// @Param		SourceGroup body model.CreateSourceGroupReq true "source group of the node."
+// @Success		200	{object}	model.CreateSourceGroupReq	"Successfully register the source group"
+// @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
+// @Failure		500	{object}	common.ErrorResponse		"Failed to register the source group"
 // @Router		/honeybee/source_group [post]
 func CreateSourceGroup(c echo.Context) error {
-	createSourceGroupReq := new(CreateSourceGroupReq)
+	createSourceGroupReq := new(model.CreateSourceGroupReq)
 	err := c.Bind(createSourceGroupReq)
 	if err != nil {
 		return err
 	}
 
-	if createSourceGroupReq.ID == "" {
-		return errors.New("id is empty")
+	if createSourceGroupReq.Name == "" {
+		return common.ReturnErrorMsg(c, "Please provide the name.")
 	}
 
 	sourceGroup := &model.SourceGroup{
-		ID:          createSourceGroupReq.ID,
+		ID:          uuid.New().String(),
+		Name:        createSourceGroupReq.Name,
 		Description: createSourceGroupReq.Description,
 	}
 
@@ -103,7 +95,7 @@ func ListSourceGroup(c echo.Context) error {
 	}
 
 	sourceGroup := &model.SourceGroup{
-		ID:          c.QueryParam("id"),
+		Name:        c.QueryParam("name"),
 		Description: c.QueryParam("description"),
 	}
 
@@ -123,7 +115,7 @@ func ListSourceGroup(c echo.Context) error {
 // @Accept		json
 // @Produce		json
 // @Param		sgId path string true "ID of the SourceGroup"
-// @Param		SourceGroup body UpdateSourceGroupReq true "source group to modify."
+// @Param		SourceGroup body model.CreateSourceGroupReq true "source group to modify."
 // @Success		200	{object}	model.SourceGroup	"Successfully update the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to update the source group"
@@ -134,8 +126,8 @@ func UpdateSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	sourceGroup := new(model.SourceGroup)
-	err := c.Bind(sourceGroup)
+	updateSourceGroupReq := new(model.CreateSourceGroupReq)
+	err := c.Bind(updateSourceGroupReq)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -145,8 +137,12 @@ func UpdateSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	if sourceGroup.Description != "" {
-		oldSourceGroup.Description = sourceGroup.Description
+	if updateSourceGroupReq.Name != "" {
+		oldSourceGroup.Name = updateSourceGroupReq.Name
+	}
+
+	if updateSourceGroupReq.Description != "" {
+		oldSourceGroup.Description = updateSourceGroupReq.Description
 	}
 
 	err = dao.SourceGroupUpdate(oldSourceGroup)

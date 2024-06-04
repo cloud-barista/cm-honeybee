@@ -39,8 +39,8 @@ func SourceGroupGetList(sourceGroup *model.SourceGroup, page int, row int) (*[]m
 	result := db.DB.Scopes(func(d *gorm.DB) *gorm.DB {
 		var filtered = d
 
-		if len(sourceGroup.ID) != 0 {
-			filtered = filtered.Where("id LIKE ?", "%"+sourceGroup.ID+"%")
+		if len(sourceGroup.Name) != 0 {
+			filtered = filtered.Where("name LIKE ?", "%"+sourceGroup.Name+"%")
 		}
 
 		if len(sourceGroup.Description) != 0 {

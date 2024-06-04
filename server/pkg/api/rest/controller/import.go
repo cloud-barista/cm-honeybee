@@ -16,7 +16,8 @@ import (
 // @Tags		[Import] Import source info
 // @Accept		json
 // @Produce		json
-// @Param		uuid path string true "ID of the connectionInfo"
+// @Param		sgId path string true "ID of the source group."
+// @Param		connId path string true "ID of the connection info."
 // @Success		200	{object}	model.SavedInfraInfo	"Successfully saved the infra information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
@@ -46,7 +47,7 @@ func ImportInfra(c echo.Context) error {
 
 	if oldSavedInfraInfo == nil {
 		savedInfraInfo := new(model.SavedInfraInfo)
-		savedInfraInfo.ConnectionUUID = connectionInfo.ID
+		savedInfraInfo.ConnectionID = connectionInfo.ID
 		savedInfraInfo.InfraData = ""
 		savedInfraInfo.Status = "importing"
 		savedInfraInfo.SavedTime = time.Now()
@@ -82,7 +83,8 @@ func ImportInfra(c echo.Context) error {
 // @Tags		[Import] Import source info
 // @Accept		json
 // @Produce		json
-// @Param		uuid path string true "ID of the connectionInfo"
+// @Param		sgId path string true "ID of the source group."
+// @Param		connId path string true "ID of the connection info."
 // @Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the software information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
@@ -112,7 +114,7 @@ func ImportSoftware(c echo.Context) error {
 
 	if oldSavedSoftwareInfo == nil {
 		savedSoftwareInfo := new(model.SavedSoftwareInfo)
-		savedSoftwareInfo.ConnectionUUID = connectionInfo.ID
+		savedSoftwareInfo.ConnectionID = connectionInfo.ID
 		savedSoftwareInfo.SoftwareData = ""
 		savedSoftwareInfo.Status = "importing"
 		savedSoftwareInfo.SavedTime = time.Now()

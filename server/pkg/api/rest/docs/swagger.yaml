@@ -14,6 +14,8 @@ definitions:
         type: string
       ip_address:
         type: string
+      name:
+        type: string
       password:
         type: string
       private_key:
@@ -31,13 +33,45 @@ definitions:
     required:
     - id
     - ip_address
+    - name
     - source_group_id
     - ssh_port
     - user
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq:
+    properties:
+      description:
+        type: string
+      ip_address:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      private_key:
+        type: string
+      ssh_port:
+        type: integer
+      user:
+        type: string
+    required:
+    - ip_address
+    - name
+    - ssh_port
+    - user
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo:
     properties:
-      connection_uuid:
+      connection_id:
         type: string
       infra_data:
         type: string
@@ -46,12 +80,12 @@ definitions:
       status:
         type: string
     required:
-    - connection_uuid
+    - connection_id
     - infra_data
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo:
     properties:
-      connection_uuid:
+      connection_id:
         type: string
       saved_time:
         type: string
@@ -60,7 +94,7 @@ definitions:
       status:
         type: string
     required:
-    - connection_uuid
+    - connection_id
     - software_data
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup:
@@ -69,8 +103,11 @@ definitions:
         type: string
       id:
         type: string
+      name:
+        type: string
     required:
     - id
+    - name
     type: object
   infra.CPU:
     properties:
@@ -565,64 +602,9 @@ definitions:
           $ref: '#/definitions/network.Subnet'
         type: array
     type: object
-  pkg_api_rest_controller.CreateConnectionInfoReq:
-    properties:
-      description:
-        type: string
-      id:
-        type: string
-      ip_address:
-        type: string
-      password:
-        type: string
-      private_key:
-        type: string
-      ssh_port:
-        type: integer
-      user:
-        type: string
-    required:
-    - id
-    - ip_address
-    - ssh_port
-    - user
-    type: object
-  pkg_api_rest_controller.CreateSourceGroupReq:
-    properties:
-      description:
-        type: string
-      id:
-        type: string
-    required:
-    - id
-    type: object
   pkg_api_rest_controller.SimpleMsg:
     properties:
       message:
-        type: string
-    type: object
-  pkg_api_rest_controller.UpdateConnectionInfoReq:
-    properties:
-      description:
-        type: string
-      ip_address:
-        type: string
-      password:
-        type: string
-      private_key:
-        type: string
-      ssh_port:
-        type: integer
-      user:
-        type: string
-    required:
-    - ip_address
-    - ssh_port
-    - user
-    type: object
-  pkg_api_rest_controller.UpdateSourceGroupReq:
-    properties:
-      description:
         type: string
     type: object
   software.DEB:
@@ -910,14 +892,14 @@ paths:
         name: SourceGroup
         required: true
         schema:
-          $ref: '#/definitions/pkg_api_rest_controller.CreateSourceGroupReq'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq'
       produces:
       - application/json
       responses:
         "200":
           description: Successfully register the source group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq'
         "400":
           description: Sent bad request.
           schema:
@@ -1001,7 +983,7 @@ paths:
         name: SourceGroup
         required: true
         schema:
-          $ref: '#/definitions/pkg_api_rest_controller.UpdateSourceGroupReq'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq'
       produces:
       - application/json
       responses:
@@ -1126,7 +1108,7 @@ paths:
         name: ConnectionInfo
         required: true
         schema:
-          $ref: '#/definitions/pkg_api_rest_controller.CreateConnectionInfoReq'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq'
       produces:
       - application/json
       responses:
@@ -1232,7 +1214,7 @@ paths:
         name: ConnectionInfo
         required: true
         schema:
-          $ref: '#/definitions/pkg_api_rest_controller.UpdateConnectionInfoReq'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq'
       produces:
       - application/json
       responses:
@@ -1257,9 +1239,14 @@ paths:
       - application/json
       description: Import the infra information.
       parameters:
-      - description: ID of the connectionInfo
+      - description: ID of the source group.
         in: path
-        name: uuid
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
         required: true
         type: string
       produces:
@@ -1286,9 +1273,14 @@ paths:
       - application/json
       description: Import the software information.
       parameters:
-      - description: ID of the connectionInfo
+      - description: ID of the source group.
         in: path
-        name: uuid
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
         required: true
         type: string
       produces:
@@ -1315,12 +1307,12 @@ paths:
       - application/json
       description: Get the infra information of the connection information.
       parameters:
-      - description: ID of the SourceGroup
+      - description: ID of the source group.
         in: path
         name: sgId
         required: true
         type: string
-      - description: ID of the connectionInfo
+      - description: ID of the connection info.
         in: path
         name: connId
         required: true
@@ -1349,9 +1341,14 @@ paths:
       - application/json
       description: Get the software information of the connection information.
       parameters:
-      - description: ID of the connectionInfo
+      - description: ID of the source group.
         in: path
-        name: uuid
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
         required: true
         type: string
       produces:

@@ -126,7 +126,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pkg_api_rest_controller.CreateSourceGroupReq"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq"
                         }
                     }
                 ],
@@ -134,7 +134,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully register the source group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq"
                         }
                     },
                     "400": {
@@ -221,7 +221,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pkg_api_rest_controller.UpdateSourceGroupReq"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq"
                         }
                     }
                 ],
@@ -450,7 +450,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pkg_api_rest_controller.CreateConnectionInfoReq"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq"
                         }
                     }
                 ],
@@ -559,7 +559,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/pkg_api_rest_controller.UpdateConnectionInfoReq"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq"
                         }
                     }
                 ],
@@ -650,8 +650,15 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID of the connectionInfo",
-                        "name": "uuid",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
                         "in": "path",
                         "required": true
                     }
@@ -694,8 +701,15 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID of the connectionInfo",
-                        "name": "uuid",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
                         "in": "path",
                         "required": true
                     }
@@ -738,14 +752,14 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID of the SourceGroup",
+                        "description": "ID of the source group.",
                         "name": "sgId",
                         "in": "path",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "ID of the connectionInfo",
+                        "description": "ID of the connection info.",
                         "name": "connId",
                         "in": "path",
                         "required": true
@@ -789,8 +803,15 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "ID of the connectionInfo",
-                        "name": "uuid",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
                         "in": "path",
                         "required": true
                     }
@@ -832,6 +853,7 @@ const docTemplate = `{
             "required": [
                 "id",
                 "ip_address",
+                "name",
                 "source_group_id",
                 "ssh_port",
                 "user"
@@ -847,6 +869,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ip_address": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 },
                 "password": {
@@ -872,14 +897,60 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq": {
+            "type": "object",
+            "required": [
+                "ip_address",
+                "name",
+                "ssh_port",
+                "user"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "private_key": {
+                    "type": "string"
+                },
+                "ssh_port": {
+                    "type": "integer"
+                },
+                "user": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo": {
             "type": "object",
             "required": [
-                "connection_uuid",
+                "connection_id",
                 "infra_data"
             ],
             "properties": {
-                "connection_uuid": {
+                "connection_id": {
                     "type": "string"
                 },
                 "infra_data": {
@@ -896,11 +967,11 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo": {
             "type": "object",
             "required": [
-                "connection_uuid",
+                "connection_id",
                 "software_data"
             ],
             "properties": {
-                "connection_uuid": {
+                "connection_id": {
                     "type": "string"
                 },
                 "saved_time": {
@@ -917,13 +988,17 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup": {
             "type": "object",
             "required": [
-                "id"
+                "id",
+                "name"
             ],
             "properties": {
                 "description": {
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -1652,92 +1727,10 @@ const docTemplate = `{
                 }
             }
         },
-        "pkg_api_rest_controller.CreateConnectionInfoReq": {
-            "type": "object",
-            "required": [
-                "id",
-                "ip_address",
-                "ssh_port",
-                "user"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ip_address": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "private_key": {
-                    "type": "string"
-                },
-                "ssh_port": {
-                    "type": "integer"
-                },
-                "user": {
-                    "type": "string"
-                }
-            }
-        },
-        "pkg_api_rest_controller.CreateSourceGroupReq": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                }
-            }
-        },
         "pkg_api_rest_controller.SimpleMsg": {
             "type": "object",
             "properties": {
                 "message": {
-                    "type": "string"
-                }
-            }
-        },
-        "pkg_api_rest_controller.UpdateConnectionInfoReq": {
-            "type": "object",
-            "required": [
-                "ip_address",
-                "ssh_port",
-                "user"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "ip_address": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                },
-                "private_key": {
-                    "type": "string"
-                },
-                "ssh_port": {
-                    "type": "integer"
-                },
-                "user": {
-                    "type": "string"
-                }
-            }
-        },
-        "pkg_api_rest_controller.UpdateSourceGroupReq": {
-            "type": "object",
-            "properties": {
-                "description": {
                     "type": "string"
                 }
             }

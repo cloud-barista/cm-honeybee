@@ -18,8 +18,8 @@ import (
 // @Tags		[Get] Get source info
 // @Accept		json
 // @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Param		connId path string true "ID of the connectionInfo"
+// @Param		sgId path string true "ID of the source group."
+// @Param		connId path string true "ID of the connection info."
 // @Success		200	{object}	infra.Infra				"Successfully get information of the infra."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
@@ -65,7 +65,8 @@ func GetInfraInfo(c echo.Context) error {
 // @Tags		[Get] Get source info
 // @Accept		json
 // @Produce	json
-// @Param		uuid path string true "ID of the connectionInfo"
+// @Param		sgId path string true "ID of the source group."
+// @Param		connId path string true "ID of the connection info."
 // @Success	200	{object}	software.Software		"Successfully get information of the software."
 // @Failure	400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure	500	{object}	common.ErrorResponse	"Failed to get information of the software."

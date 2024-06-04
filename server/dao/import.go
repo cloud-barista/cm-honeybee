@@ -17,14 +17,14 @@ func SavedInfraInfoRegister(savedInfraInfo *model.SavedInfraInfo) (*model.SavedI
 	return savedInfraInfo, nil
 }
 
-func SavedInfraInfoGet(ConnectionUUID string) (*model.SavedInfraInfo, error) {
+func SavedInfraInfoGet(connectionID string) (*model.SavedInfraInfo, error) {
 	savedInfraInfo := &model.SavedInfraInfo{}
 
-	result := db.DB.Where("connection_uuid = ?", ConnectionUUID).First(savedInfraInfo)
+	result := db.DB.Where("connection_id = ?", connectionID).First(savedInfraInfo)
 	err := result.Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("SavedInfraInfo not found with the provided connection_uuid")
+			return nil, errors.New("SavedInfraInfo not found with the provided connection_id")
 		}
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func SavedInfraInfoGet(ConnectionUUID string) (*model.SavedInfraInfo, error) {
 }
 
 func SavedInfraInfoUpdate(savedInfraInfo *model.SavedInfraInfo) error {
-	result := db.DB.Model(&model.SavedInfraInfo{}).Where("connection_uuid = ?", savedInfraInfo.ConnectionUUID).Updates(savedInfraInfo)
+	result := db.DB.Model(&model.SavedInfraInfo{}).Where("connection_id = ?", savedInfraInfo.ConnectionID).Updates(savedInfraInfo)
 	err := result.Error
 	if err != nil {
 		return err
@@ -62,10 +62,10 @@ func SavedSoftwareInfoRegister(savedSoftwareInfo *model.SavedSoftwareInfo) (*mod
 	return savedSoftwareInfo, nil
 }
 
-func SavedSoftwareInfoGet(ConnectionUUID string) (*model.SavedSoftwareInfo, error) {
+func SavedSoftwareInfoGet(connectionID string) (*model.SavedSoftwareInfo, error) {
 	savedSoftwareInfo := &model.SavedSoftwareInfo{}
 
-	result := db.DB.Where("connection_uuid = ?", ConnectionUUID).First(savedSoftwareInfo)
+	result := db.DB.Where("connection_id = ?", connectionID).First(savedSoftwareInfo)
 	err := result.Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -78,7 +78,7 @@ func SavedSoftwareInfoGet(ConnectionUUID string) (*model.SavedSoftwareInfo, erro
 }
 
 func SavedSoftwareInfoUpdate(savedSoftwareInfo *model.SavedSoftwareInfo) error {
-	result := db.DB.Model(&model.SavedSoftwareInfo{}).Where("connection_uuid = ?", savedSoftwareInfo.ConnectionUUID).Updates(savedSoftwareInfo)
+	result := db.DB.Model(&model.SavedSoftwareInfo{}).Where("connection_id = ?", savedSoftwareInfo.ConnectionID).Updates(savedSoftwareInfo)
 	err := result.Error
 	if err != nil {
 		return err

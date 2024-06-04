@@ -5,30 +5,12 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
+	"github.com/google/uuid"
 	"github.com/jollaman999/utils/iputil"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"strconv"
 )
-
-type CreateConnectionInfoReq struct {
-	ID          string `gorm:"primaryKey" json:"id" validate:"required"`
-	Description string `gorm:"column:description" json:"description"`
-	IPAddress   string `gorm:"column:ip_address" json:"ip_address" validate:"required"`
-	SSHPort     int    `gorm:"column:ssh_port" json:"ssh_port" validate:"required"`
-	User        string `gorm:"column:user" json:"user" validate:"required"`
-	Password    string `gorm:"column:password" json:"password"`
-	PrivateKey  string `gorm:"column:private_key" json:"private_key"`
-}
-
-type UpdateConnectionInfoReq struct {
-	Description string `gorm:"column:description" json:"description"`
-	IPAddress   string `gorm:"column:ip_address" json:"ip_address" validate:"required"`
-	SSHPort     int    `gorm:"column:ssh_port" json:"ssh_port" validate:"required"`
-	User        string `gorm:"column:user" json:"user" validate:"required"`
-	Password    string `gorm:"column:password" json:"password"`
-	PrivateKey  string `gorm:"column:private_key" json:"private_key"`
-}
 
 func checkIPAddress(ipAddress string) error {
 	if ipAddress == "" {
@@ -58,7 +40,7 @@ func checkPort(port int) error {
 // @Accept		json
 // @Produce		json
 // @Param		sgId path string true "ID of the SourceGroup"
-// @Param		ConnectionInfo body CreateConnectionInfoReq true "Connection information of the node."
+// @Param		ConnectionInfo body model.CreateConnectionInfoReq true "Connection information of the node."
 // @Success		200	{object}	model.ConnectionInfo	"Successfully register the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to register the connection information"
@@ -74,14 +56,16 @@ func CreateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	createConnectionInfoReq := new(CreateConnectionInfoReq)
+	createConnectionInfoReq := new(model.CreateConnectionInfoReq)
 	err = c.Bind(createConnectionInfoReq)
 	if err != nil {
 		return err
 	}
 
 	connectionInfo := &model.ConnectionInfo{
-		ID:            createConnectionInfoReq.ID,
+		ID:            uuid.New().String(),
+		Name:          createConnectionInfoReq.Name,
+		Description:   createConnectionInfoReq.Description,
 		SourceGroupID: sourceGroup.ID,
 		IPAddress:     createConnectionInfoReq.IPAddress,
 		SSHPort:       createConnectionInfoReq.SSHPort,
@@ -221,7 +205,7 @@ func ListConnectionInfo(c echo.Context) error {
 // @Produce		json
 // @Param		sgId path string true "ID of the SourceGroup"
 // @Param		connId path string true "ID of the connectionInfo"
-// @Param		ConnectionInfo body UpdateConnectionInfoReq true "Connection information to modify."
+// @Param		ConnectionInfo body model.CreateConnectionInfoReq true "Connection information to modify."
 // @Success		200	{object}	model.ConnectionInfo	"Successfully update the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to update the connection information"
@@ -247,7 +231,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	updateConnectionInfoReq := new(UpdateConnectionInfoReq)
+	updateConnectionInfoReq := new(model.CreateConnectionInfoReq)
 	err = c.Bind(updateConnectionInfoReq)
 	if err != nil {
 		return err
