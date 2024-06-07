@@ -89,6 +89,20 @@ definitions:
     required:
     - name
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo:
+    properties:
+      benchmark_data:
+        type: string
+      connection_id:
+        type: string
+      saved_time:
+        type: string
+      status:
+        type: string
+    required:
+    - benchmark_data
+    - connection_id
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo:
     properties:
       connection_id:
@@ -858,7 +872,7 @@ paths:
         "200":
           description: Successfully get information of the benchmark.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.Benchmark'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo'
         "400":
           description: Sent bad request.
           schema:
@@ -918,6 +932,35 @@ paths:
       summary: Check Ready
       tags:
       - '[Admin] System management'
+  /honeybee/run/bench/{connId}:
+    get:
+      consumes:
+      - application/json
+      description: Run the benchmark information of the connection information.
+      parameters:
+      - description: ID of the connection info
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the benchmark.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.Benchmark'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the benchmark.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Run Benchmark Information
+      tags:
+      - '[Import] RunBenchmark'
   /honeybee/source_group:
     get:
       consumes:

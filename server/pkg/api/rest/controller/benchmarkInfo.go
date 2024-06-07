@@ -21,10 +21,48 @@ import (
 //	@Produce		json
 //	@Param			connId path string true "ID of the connection info"
 //	@Success		200	{object}	model.Benchmark			"Successfully get information of the benchmark."
+//	@Success		200	{object}	model.SavedBenchmarkInfo		"Successfully get information of the benchmark."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the benchmark."
 //	@Router			/honeybee/bench/{connId} [get]
 func GetBenchmarkInfo(c echo.Context) error {
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	savedBenchmarkInfo, err := dao.SavedBenchmarkInfoGet(connectionInfo.ID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, "Failed to get information of the infra.")
+	}
+
+	var benchmarkList []model.Benchmark
+	err = json.Unmarshal([]byte(savedBenchmarkInfo.BenchmarkData), &benchmarkList)
+	if err != nil {
+		return common.ReturnInternalError(c, err, "Error occurred while parsing software list.")
+	}
+
+	return c.JSONPretty(http.StatusOK, benchmarkList, " ")
+}
+
+// RunBenchmarkInfo godoc
+//
+//	@Summary		Run Benchmark Information
+//	@Description	Run the benchmark information of the connection information.
+//	@Tags			[Import] RunBenchmark
+//	@Accept			json
+//	@Produce		json
+//	@Param			connId path string true "ID of the connection info"
+//	@Success		200	{object}	model.Benchmark			"Successfully get information of the benchmark."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the benchmark."
+//	@Router			/honeybee/run/bench/{connId} [get]
+func RunBenchmarkInfo(c echo.Context) error {
 	connID := c.Param("connId")
 	if connID == "" {
 		return common.ReturnErrorMsg(c, "Please provide the connId.")
