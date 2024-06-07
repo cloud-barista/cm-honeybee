@@ -56,6 +56,7 @@ func Init() {
 	route.RegisterGet(e)
 	route.RegisterSwagger(e)
 	route.RegisterUtility(e)
+	route.RegisterBenchmark(e)
 
 	// Display API Docs Dashboard when server starts
 	endpoint := getLocalIP() + ":" + config.CMHoneybeeConfig.CMHoneybee.Listen.Port

@@ -106,7 +106,7 @@ func SourceGroupCheckConnection(sourceGroup *model.SourceGroup) (*[]model.Connec
 			Options: ssh.DefaultSSHOptions(),
 		}
 
-		err = c.NewClientConn(connectionInfo)
+		_, err = c.NewClientConn(connectionInfo)
 		if err != nil {
 			oldConnectionInfo.Status = "Failed"
 			oldConnectionInfo.FailedMessage = err.Error()

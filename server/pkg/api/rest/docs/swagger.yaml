@@ -4,6 +4,26 @@ definitions:
       error:
         type: string
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.Benchmark:
+    properties:
+      data:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.BenchmarkData'
+      type:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.BenchmarkData:
+    properties:
+      desc:
+        type: string
+      elapsed:
+        type: string
+      result:
+        type: string
+      specid:
+        type: string
+      unit:
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo:
     properties:
       description:
@@ -821,6 +841,35 @@ definitions:
 info:
   contact: {}
 paths:
+  /honeybee/bench/{connId}:
+    get:
+      consumes:
+      - application/json
+      description: Get the benchmark information of the connection information.
+      parameters:
+      - description: ID of the connection info
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the benchmark.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.Benchmark'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the benchmark.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Benchmark Information
+      tags:
+      - '[Import] RunBenchmark'
   /honeybee/connection_info/{connId}:
     get:
       consumes:

@@ -1,17 +1,31 @@
 package ssh
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
-	_ssh "golang.org/x/crypto/ssh"
+
+	"io"
+	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/pkg/sftp"
+	"golang.org/x/crypto/ssh"
 )
 
 type SSH struct {
 	Options Options
 	// command string
+}
+
+type Response struct {
+	StatusCode string              `json:"status_code"`
+	Type       string              `json:"type"`
+	Data       model.BenchmarkData `json:"data"`
 }
 
 type Options struct {
@@ -21,8 +35,8 @@ type Options struct {
 	SSHPassword              string
 	IdentityFilePath         string
 	IdentityFilePathProvided bool
-	session                  *_ssh.Session
-	client                   *_ssh.Client
+	session                  *ssh.Session
+	client                   *ssh.Client
 }
 
 func DefaultSSHOptions() Options {
@@ -40,54 +54,121 @@ func DefaultSSHOptions() Options {
 	return options
 }
 
-func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) error {
+func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) ([]model.Benchmark, error) {
 	addr := fmt.Sprintf("%s:%d", connectionInfo.IPAddress, connectionInfo.SSHPort)
 
-	sshConfig := &_ssh.ClientConfig{
+	sshConfig := &ssh.ClientConfig{
 		User:            connectionInfo.User,
 		Auth:            o.getAuthMethods(connectionInfo),
-		HostKeyCallback: _ssh.InsecureIgnoreHostKey(),
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	client, err := _ssh.Dial("tcp", addr, sshConfig)
+	client, err := ssh.Dial("tcp", addr, sshConfig)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fmt.Println("SSH Connection Success. ")
 
 	o.Options.client = client
 	defer o.Close()
 
-	session, err := client.NewSession()
+	// SFTP Client 설정
+	sftp, err := sftp.NewClient(client)
 	if err != nil {
-		// client.Close()
-		return fmt.Errorf("failed to create session: %s", err)
+		log.Fatal("Failed to SFTP Connect: ", err)
+		return nil, err
 	}
-	o.Options.session = session
+	defer sftp.Close()
 
-	session.Stdin = os.Stdin
-	session.Stderr = os.Stderr
-	session.Stdout = os.Stdout
+	// 현재 작업 디렉토리 확인
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatal("Failed to get current working directory: ", err)
+	}
+	log.Println("Current working directory: ", cwd)
 
-	_ = o.RunCmd("cat $HOME/.ssh/id_rsa")
-	_ = o.RunCmd("cat $HOME/.ssh/id_ed25519")
+	srcPath := filepath.Join(cwd, "lib", "ssh")
+	dstPath := "/tmp/"
+	fileName := "milkyway.sh"
 
-	return nil
+	// log.Println(os.Getwd())
+
+	// 소스 파일 절대 경로 얻기
+	srcFilePath := filepath.Join(srcPath, fileName)
+
+	// 소스 파일 열기
+	srcFile, err := os.Open(srcFilePath)
+	if err != nil {
+		log.Fatal("Failed to open source file: ", err)
+		return nil, err
+	}
+
+	// 파일을 다시 읽습니다.
+	fileContents, err := io.ReadAll(srcFile)
+	if err != nil {
+		log.Fatal("Failed to read source file: ", err)
+	}
+
+	// 목적지 파일 절대 경로 얻기
+	dstFilePath := filepath.Join(dstPath, fileName)
+
+	// 목적지 파일 생성
+	dstFile, err := sftp.Create(dstFilePath)
+	if err != nil {
+		log.Fatal("Failed to create destination file: ", err)
+		return nil, err
+	}
+	log.Println("Current dstFile directory: ", dstFile)
+	defer dstFile.Close()
+
+	// 파일 복사
+	_, err = io.Copy(dstFile, bytes.NewReader(fileContents))
+	if err != nil {
+		log.Fatal("Failed to File Copy: ", err)
+	}
+
+	var BenchmarkList []model.Benchmark
+	commands := "/bin/bash /tmp/milkyway.sh "
+	types := []string{"cpus", "cpum", "memR", "memW", "fioR", "fioW", "dbR", "dbW"}
+
+	for i, t := range types {
+		log.Printf("[%d/%d] %s - Benchmark Progressing...", i, len(types), t)
+		output, err := o.RunCmd(commands + t)
+		if err != nil {
+			log.Fatal("Failed to run command: ", err)
+		}
+
+		var response Response
+		err = json.Unmarshal([]byte(output), &response)
+		if err != nil {
+			fmt.Println("Error parsing JSON:", err)
+		}
+
+		benchmarkInfo := model.Benchmark{
+			Type: t,
+			Data: response.Data,
+		}
+		BenchmarkList = append(BenchmarkList, benchmarkInfo)
+	}
+
+	log.Println(BenchmarkList)
+
+	return BenchmarkList, nil
 }
 
-func (o *SSH) getAuthMethods(connectionInfo model.ConnectionInfo) []_ssh.AuthMethod {
-	var methods []_ssh.AuthMethod
+func (o *SSH) getAuthMethods(connectionInfo model.ConnectionInfo) []ssh.AuthMethod {
+	var methods []ssh.AuthMethod
 
 	methods = o.tryPrivateKey(methods)
 
-	methods = append(methods, _ssh.PasswordCallback(func() (secret string, err error) {
+	methods = append(methods, ssh.PasswordCallback(func() (secret string, err error) {
 		return connectionInfo.Password, nil
 	}))
 
 	return methods
 }
 
-func (o *SSH) tryPrivateKey(methods []_ssh.AuthMethod) []_ssh.AuthMethod {
+func (o *SSH) tryPrivateKey(methods []ssh.AuthMethod) []ssh.AuthMethod {
 
 	if !o.Options.IdentityFilePathProvided {
 		if _, err := os.Stat(o.Options.IdentityFilePath); errors.Is(err, os.ErrNotExist) {
@@ -96,14 +177,14 @@ func (o *SSH) tryPrivateKey(methods []_ssh.AuthMethod) []_ssh.AuthMethod {
 		}
 	}
 
-	callback := _ssh.PublicKeysCallback(func() (signers []_ssh.Signer, err error) {
+	callback := ssh.PublicKeysCallback(func() (signers []ssh.Signer, err error) {
 		key, err := os.ReadFile(o.Options.IdentityFilePath)
 		if err != nil {
 			return nil, err
 		}
 
-		signer, err := _ssh.ParsePrivateKey(key)
-		var passphraseMissingError *_ssh.PassphraseMissingError
+		signer, err := ssh.ParsePrivateKey(key)
+		var passphraseMissingError *ssh.PassphraseMissingError
 		isPassErr := errors.As(err, &passphraseMissingError)
 		if isPassErr {
 			signer, err = o.parsePrivateKeyWithPassphrase(key)
@@ -112,39 +193,46 @@ func (o *SSH) tryPrivateKey(methods []_ssh.AuthMethod) []_ssh.AuthMethod {
 			return nil, err
 		}
 
-		return []_ssh.Signer{signer}, nil
+		return []ssh.Signer{signer}, nil
 	})
 
 	return append(methods, callback)
 }
 
-func (o *SSH) parsePrivateKeyWithPassphrase(key []byte) (_ssh.Signer, error) {
-	//password, err := readPassword(fmt.Sprintf("Key %s requires a password: ", o.Options.IdentityFilePath))
-	fmt.Println()
-	//if err != nil {
-	//	return nil, err
-	//}
-
-	return _ssh.ParsePrivateKeyWithPassphrase(key, []byte{})
+func (o *SSH) parsePrivateKeyWithPassphrase(key []byte) (ssh.Signer, error) {
+	return ssh.ParsePrivateKeyWithPassphrase(key, []byte{})
 }
 
 // RunCmd to SSH Server
-func (o *SSH) RunCmd(cmd string) error {
+func (o *SSH) RunCmd(cmd string) (string, error) {
+	session, err := o.Options.client.NewSession()
+	if err != nil {
+		return "", fmt.Errorf("failed to create session: %s", err)
+	}
+	defer session.Close()
+
+	var output bytes.Buffer
+	var stderr bytes.Buffer
+
+	session.Stdout = &output
+	session.Stderr = &stderr
 
 	if cmd != "" {
-		if err := o.Options.session.Run(cmd); err != nil {
-			return err
+		if err := session.Run(cmd); err != nil {
+			return output.String() + "\n" + stderr.String(), err
 		}
 	}
 
-	return nil
+	return output.String(), nil
 }
 
 func (o *SSH) Close() {
 	if o.Options.session != nil {
 		_ = o.Options.session.Close()
 	}
-	_ = o.Options.client.Close()
+	if o.Options.client != nil {
+		_ = o.Options.client.Close()
+	}
 }
 
 func defaultUsername() string {
@@ -166,3 +254,11 @@ func defaultUsername() string {
 //	fmt.Print(reason)
 //	return term.ReadPassword(int(os.Stdin.Fd()))
 //}
+
+func StringToInterface(i string) interface{} {
+	var x interface{}
+	if err := json.Unmarshal([]byte(i), &x); err != nil {
+		log.Printf("Error : %s\n", err)
+	}
+	return x
+}

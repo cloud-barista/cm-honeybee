@@ -14,6 +14,7 @@ require (
 require (
 	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20240530065721-2f9488db96bc
 	github.com/glebarez/sqlite v1.11.0
+	github.com/pkg/sftp v1.13.6
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.3
 	golang.org/x/crypto v0.23.0
@@ -37,6 +38,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
+	github.com/kr/fs v0.1.0 // indirect
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect

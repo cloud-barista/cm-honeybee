@@ -122,17 +122,17 @@ func ImportSoftware(c echo.Context) error {
 		savedSoftwareInfo.Status = "importing"
 		savedSoftwareInfo.SavedTime = time.Now()
 		savedSoftwareInfo, err = dao.SavedSoftwareInfoRegister(savedSoftwareInfo)
-		oldSavedSoftwareInfo = savedSoftwareInfo
 		if err != nil {
-			return common.ReturnInternalError(c, err, "Error occurred while getting infra information.")
+			return common.ReturnErrorMsg(c, "Error occurred while getting infra information.")
 		}
+		oldSavedSoftwareInfo = savedSoftwareInfo
 	}
 
 	data, err := common.GetHTTPRequest("http://" + connectionInfo.IPAddress + ":" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/" + strings.ToLower(agent.ShortModuleName) + "/software")
 	if err != nil {
 		oldSavedSoftwareInfo.Status = "failed"
 		_ = dao.SavedSoftwareInfoUpdate(oldSavedSoftwareInfo)
-		return common.ReturnInternalError(c, err, "Error occurred while getting software information.")
+		return common.ReturnErrorMsg(c, "Error occurred while getting software information.")
 	}
 
 	oldSavedSoftwareInfo.SoftwareData = string(data)
