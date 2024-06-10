@@ -8,7 +8,7 @@ GOPROXY_OPTION := GOPROXY=direct
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build linux windows run run_docker stop stop_docker clean help
+.PHONY: all milkyway dependency lint test race coverage coverhtml gofmt update swag swagger build linux windows run run_docker stop stop_docker clean help
 
 all: build
 
@@ -72,6 +72,9 @@ swag swagger: ## Generate Swagger Documentation
 	    ${GO_COMMAND} install github.com/swaggo/swag/cmd/swag@latest; \
 	  fi; \
 	  $$go_path/bin/swag init -g ./pkg/api/rest/server/server.go --pd -o ./pkg/api/rest/docs/ > /dev/null
+
+milkyway: ## Build milkyway
+	@"$(MAKE)" -C lib/ssh
 
 build: lint swag ## Build the binary file
 	@echo Building...

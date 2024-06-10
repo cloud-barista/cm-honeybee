@@ -2,11 +2,13 @@ package ssh
 
 import (
 	"bytes"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/jollaman999/utils/logger"
 	"strconv"
+	"strings"
 
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 
@@ -20,8 +22,8 @@ import (
 )
 
 type SSH struct {
-	Options Options
-	command string
+	ConnectionInfo *model.ConnectionInfo
+	Options        Options
 }
 
 type Response struct {
@@ -40,6 +42,9 @@ type Options struct {
 	session                  *ssh.Session
 	client                   *ssh.Client
 }
+
+//go:embed sourceFiles/*
+var sourceFiles embed.FS
 
 func DefaultSSHOptions() Options {
 	homeDir, err := os.UserHomeDir()
@@ -72,8 +77,8 @@ func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) error {
 	logger.Println(logger.INFO, false, "SSH Connection Success. (IP: "+connectionInfo.IPAddress+
 		" Port: "+strconv.Itoa(connectionInfo.SSHPort)+", User: "+connectionInfo.User+")")
 
+	o.ConnectionInfo = &connectionInfo
 	o.Options.client = client
-	defer o.Close()
 
 	return nil
 }
@@ -83,6 +88,9 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		o.Close()
+	}()
 
 	// SFTP Client 설정
 	client, err := sftp.NewClient(o.Options.client)
@@ -94,72 +102,59 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 		_ = client.Close()
 	}()
 
-	// 현재 작업 디렉토리 확인
-	cwd, err := os.Getwd()
-	if err != nil {
-		logger.Println(logger.ERROR, true, "Failed to get current working directory: "+err.Error())
-		return nil, err
-	}
-	logger.Println(logger.INFO, false, "Current working directory: ", cwd)
-
-	srcPath := filepath.Join(cwd, "lib", "ssh")
 	dstPath := "/tmp/"
-	fileName := "milkyway.sh"
 
-	// log.Println(os.Getwd())
+	files := []string{"sourceFiles/milkyway", "sourceFiles/milkyway.sh"}
 
-	// 소스 파일 절대 경로 얻기
-	srcFilePath := filepath.Join(srcPath, fileName)
+	for _, file := range files {
+		fileContents, err := sourceFiles.ReadFile(file)
+		if err != nil {
+			logger.Println(logger.ERROR, true, "SSH: Failed to read source file: "+err.Error())
+			return nil, err
+		}
 
-	// 소스 파일 열기
-	srcFile, err := os.Open(srcFilePath)
-	if err != nil {
-		logger.Println(logger.ERROR, true, "Failed to open source file: "+err.Error())
-		return nil, err
-	}
+		dstFilePath := filepath.Join(dstPath, strings.Split(file, "/")[1])
+		dstFile, err := client.Create(dstFilePath)
+		if err != nil {
+			logger.Println(logger.ERROR, true, "SSH: Failed to create destination file: "+err.Error())
+			return nil, err
+		}
 
-	// 파일을 다시 읽습니다.
-	fileContents, err := io.ReadAll(srcFile)
-	if err != nil {
-		logger.Println(logger.ERROR, true, "Failed to read source file: "+err.Error())
-		return nil, err
-	}
+		logger.Println(logger.DEBUG, true, "SSH: Copying "+file+" to "+dstFilePath)
+		_, err = io.Copy(dstFile, bytes.NewReader(fileContents))
+		if err != nil {
+			log.Fatal("SSH: Failed to File Copy: ", err)
+		}
 
-	// 목적지 파일 절대 경로 얻기
-	dstFilePath := filepath.Join(dstPath, fileName)
+		output, err := o.RunCmd("chmod +x " + dstFilePath)
+		if err != nil {
+			logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
+				output+" (Error: "+err.Error())
+			return nil, err
+		}
 
-	// 목적지 파일 생성
-	dstFile, err := client.Create(dstFilePath)
-	if err != nil {
-		logger.Println(logger.ERROR, true, "Failed to create destination file: "+err.Error())
-		return nil, err
-	}
-	logger.Println(logger.INFO, false, "Current dstFile directory: "+dstFile.Name())
-	defer func() {
 		_ = dstFile.Close()
-	}()
-
-	// 파일 복사
-	_, err = io.Copy(dstFile, bytes.NewReader(fileContents))
-	if err != nil {
-		log.Fatal("Failed to File Copy: ", err)
 	}
 
 	var BenchmarkList []model.Benchmark
-	commands := "/bin/bash /tmp/milkyway.sh "
+	commands := "/tmp/milkyway.sh "
 	types := []string{"cpus", "cpum", "memR", "memW", "fioR", "fioW", "dbR", "dbW"}
 
 	for i, t := range types {
-		log.Printf("[%d/%d] %s - Benchmark Progressing...", i, len(types), t)
+		logger.Printf(logger.DEBUG, true, "SSH: Benchmark Progressing - [%d/%d] %s...\n", i+1, len(types), t)
 		output, err := o.RunCmd(commands + t)
 		if err != nil {
-			log.Fatal("Failed to run command: ", err)
+			logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
+				output+" (Error: "+err.Error())
+			return nil, err
 		}
+		logger.Println(logger.DEBUG, true, "SSH: Benchmark Output: "+output)
 
 		var response Response
 		err = json.Unmarshal([]byte(output), &response)
 		if err != nil {
-			fmt.Println("Error parsing JSON:", err)
+			logger.Println(logger.ERROR, true, "SSH: Failed to unmarshal output: "+err.Error())
+			return nil, err
 		}
 
 		benchmarkInfo := model.Benchmark{
@@ -169,7 +164,7 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 		BenchmarkList = append(BenchmarkList, benchmarkInfo)
 	}
 
-	log.Println(BenchmarkList)
+	logger.Println(logger.DEBUG, true, BenchmarkList)
 
 	return BenchmarkList, nil
 }
@@ -238,6 +233,7 @@ func (o *SSH) RunCmd(cmd string) (string, error) {
 	session.Stderr = &stderr
 
 	if cmd != "" {
+		logger.Println(logger.DEBUG, false, "SSH: ("+o.ConnectionInfo.IPAddress+") Running command: "+cmd)
 		if err := session.Run(cmd); err != nil {
 			return output.String() + "\n" + stderr.String(), err
 		}

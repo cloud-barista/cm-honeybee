@@ -38,7 +38,7 @@ func GetBenchmarkInfo(c echo.Context) error {
 
 	savedBenchmarkInfo, err := dao.SavedBenchmarkInfoGet(connectionInfo.ID)
 	if err != nil {
-		return common.ReturnErrorMsg(c, "Failed to get information of the infra.")
+		return common.ReturnErrorMsg(c, "Failed to get information of the benchmark.")
 	}
 
 	var benchmarkList []model.Benchmark
@@ -92,7 +92,7 @@ func RunBenchmarkInfo(c echo.Context) error {
 		Options: ssh.DefaultSSHOptions(),
 	}
 
-	data, err := s.NewClientConn(*connectionInfo)
+	data, err := s.RunBenchmark(*connectionInfo)
 	if err != nil {
 		oldSavedBenchmarkInfo.Status = "failed"
 		_ = dao.SavedBenchmarkInfoUpdate(oldSavedBenchmarkInfo)

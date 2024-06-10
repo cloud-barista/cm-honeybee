@@ -1,0 +1,183 @@
+diff --git a/milkyway/.gitignore b/milkyway/.gitignore
+index 5775f1d..9359203 100644
+--- a/milkyway/.gitignore
++++ b/milkyway/.gitignore
+@@ -14,8 +14,8 @@
+ # Binaries
+ src/src
+ src/mcism
+-src/cb-milkyway
+-src/cb-milkyway-arm
++#src/cb-milkyway
++#src/cb-milkyway-arm
+ src/cli/tbctl
+ src/cli/cli
+ 
+@@ -26,4 +26,4 @@ meta_db/
+ conf/
+ 
+ # Sysbench files
+-test_file.*
+\ No newline at end of file
++test_file.*
+diff --git a/milkyway/src/Makefile b/milkyway/src/Makefile
+index 9bfde1d..10bb65b 100644
+--- a/milkyway/src/Makefile
++++ b/milkyway/src/Makefile
+@@ -1,7 +1,7 @@
+ default:
+-	go build -o cb-milkyway
++	CGO_ENABLED=0 go build -o cb-milkyway
+ cc:
+-	GOOS=linux GOARCH=arm go build -o cb-milkyway-arm
++	CGO_ENABLED=0 GOOS=linux GOARCH=arm go build -o cb-milkyway-arm
+ run:
+ 	./cb-milkyway
+ clean:
+diff --git a/milkyway/src/cb-milkyway b/milkyway/src/cb-milkyway
+new file mode 100755
+index 0000000..e475dea
+Binary files /dev/null and b/milkyway/src/cb-milkyway differ
+diff --git a/milkyway/src/cb-milkyway-arm b/milkyway/src/cb-milkyway-arm
+new file mode 100755
+index 0000000..6b65b78
+Binary files /dev/null and b/milkyway/src/cb-milkyway-arm differ
+diff --git a/milkyway/src/common/resource.go b/milkyway/src/common/resource.go
+index 4f95689..c00a214 100644
+--- a/milkyway/src/common/resource.go
++++ b/milkyway/src/common/resource.go
+@@ -45,7 +45,7 @@ func RestGetInstall(c echo.Context) error {
+ 	fmt.Println("===============================================")
+ 
+ 	// wget install script from github install.sh
+-	cmdStr := "wget https://github.com/cloud-barista/cb-milkyway/raw/master/src/script/install.sh -P ~/script/"
++	cmdStr := "wget https://github.com/ish-hcc/cb-milkyway/raw/master/src/script/install.sh -P ~/script/"
+ 	result, err := SysCall(cmdStr)
+ 	if err != nil {
+ 		mapA := map[string]string{"message": "Error in installation: wget script " + err.Error()}
+@@ -116,27 +116,27 @@ func RestGetInit(c echo.Context) error {
+ 	}
+ 
+ 	// Init DB
+-	cmdStr = "sysbench /usr/share/sysbench/oltp_read_write.lua --db-driver=mysql --table-size=100000 --mysql-db=sysbench --mysql-user=sysbench --mysql-password=psetri1234ak prepare"
+-	outputStr2, err := SysCall(cmdStr)
+-	if err != nil {
+-		mapA := map[string]string{"message": "Error in excuting the benchmark: Init DB " + err.Error()}
+-		return c.JSON(http.StatusNotFound, &mapA)
+-	}
+-
+-	grepStr = regexp.MustCompile(` ([0-9]+) records into .([a-zA-Z]+).`)
+-	parseStr = grepStr.FindStringSubmatch(outputStr2)
+-	if len(parseStr) > 0 {
+-		parseStr1 := strings.TrimSpace(parseStr[0])
+-		fmt.Printf("Table creation result: %s\n", parseStr1)
+-
+-		outputStr2 = parseStr1
+-	}
++	//cmdStr = "sysbench /usr/share/sysbench/oltp_read_write.lua --db-driver=mysql --table-size=100000 --mysql-db=sysbench --mysql-user=sysbench --mysql-password=psetri1234ak prepare"
++	//outputStr2, err := SysCall(cmdStr)
++	//if err != nil {
++	//	mapA := map[string]string{"message": "Error in excuting the benchmark: Init DB " + err.Error()}
++	//	return c.JSON(http.StatusNotFound, &mapA)
++	//}
++
++	//grepStr = regexp.MustCompile(` ([0-9]+) records into .([a-zA-Z]+).`)
++	//parseStr = grepStr.FindStringSubmatch(outputStr2)
++	//if len(parseStr) > 0 {
++	//	parseStr1 := strings.TrimSpace(parseStr[0])
++	//	fmt.Printf("Table creation result: %s\n", parseStr1)
++	//
++	//	outputStr2 = parseStr1
++	//}
+ 
+ 	elapsed := time.Since(start)
+ 	elapsedStr := strconv.FormatFloat(elapsed.Seconds(), 'f', 6, 64)
+ 
+-	outputStr += ", "
+-	outputStr += outputStr2
++	//outputStr += ", "
++	//outputStr += outputStr2
+ 
+ 	//result = "The init is complete: "
+ 
+@@ -173,17 +173,17 @@ func RestGetClean(c echo.Context) error {
+ 	}
+ 
+ 	// Clean DB
+-	cmdStr = "sysbench /usr/share/sysbench/oltp_read_write.lua --db-driver=mysql --table-size=100000 --mysql-db=sysbench --mysql-user=sysbench --mysql-password=psetri1234ak cleanup"
+-	result2, err := SysCall(cmdStr)
+-	if err != nil {
+-		mapA := map[string]string{"message": "Error in excuting the benchmark: Clean DB " + err.Error()}
+-		return c.JSON(http.StatusNotFound, &mapA)
+-	}
++	//cmdStr = "sysbench /usr/share/sysbench/oltp_read_write.lua --db-driver=mysql --table-size=100000 --mysql-db=sysbench --mysql-user=sysbench --mysql-password=psetri1234ak cleanup"
++	//result2, err := SysCall(cmdStr)
++	//if err != nil {
++	//	mapA := map[string]string{"message": "Error in excuting the benchmark: Clean DB " + err.Error()}
++	//	return c.JSON(http.StatusNotFound, &mapA)
++	//}
+ 
+ 	elapsed := time.Since(start)
+ 	elapsedStr := strconv.FormatFloat(elapsed.Seconds(), 'f', 6, 64)
+ 
+-	result += result2
++	//result += result2
+ 
+ 	result = "The cleaning is complete"
+ 
+diff --git a/milkyway/src/script/install.sh b/milkyway/src/script/install.sh
+index 84dd140..e58f090 100644
+--- a/milkyway/src/script/install.sh
++++ b/milkyway/src/script/install.sh
+@@ -10,19 +10,19 @@ sudo apt-get -y install sysbench
+ echo "[CB-Milkyway: Install Ping]"
+ sudo apt-get -y install iputils-ping
+ 
+-echo "[CB-Milkyway: Install debconf-utils]"
+-sudo apt-get -y install debconf-utils
+-sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password password psetri1234ak'
+-sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password psetri1234ak'
+-
+-echo "[CB-Milkyway: Install MySQL]"
+-sudo DEBIAN_FRONTEND=noninteractive apt-get -y install mysql-server
+-
+-echo "[CB-Milkyway: Generate dump tables for evaluation]"
+-
+-mysql -u root -ppsetri1234ak -e "CREATE DATABASE sysbench;"
+-mysql -u root -ppsetri1234ak -e "CREATE USER 'sysbench'@'localhost' IDENTIFIED BY 'psetri1234ak';"
+-mysql -u root -ppsetri1234ak -e "GRANT ALL PRIVILEGES ON *.* TO 'sysbench'@'localhost' IDENTIFIED  BY 'psetri1234ak';"
++#echo "[CB-Milkyway: Install debconf-utils]"
++#sudo apt-get -y install debconf-utils
++#sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password password psetri1234ak'
++#sudo debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password psetri1234ak'
++#
++#echo "[CB-Milkyway: Install MySQL]"
++#sudo DEBIAN_FRONTEND=noninteractive apt-get -y install mysql-server
++#
++#echo "[CB-Milkyway: Generate dump tables for evaluation]"
++#
++#mysql -u root -ppsetri1234ak -e "CREATE DATABASE sysbench;"
++#mysql -u root -ppsetri1234ak -e "CREATE USER 'sysbench'@'localhost' IDENTIFIED BY 'psetri1234ak';"
++#mysql -u root -ppsetri1234ak -e "GRANT ALL PRIVILEGES ON *.* TO 'sysbench'@'localhost' IDENTIFIED  BY 'psetri1234ak';"
+ 
+ echo "[CB-Milkyway: Preparation is done]"
+ 
+diff --git a/milkyway/test/full_test.sh b/milkyway/test/full_test.sh
+index eed5f59..29a5aae 100755
+--- a/milkyway/test/full_test.sh
++++ b/milkyway/test/full_test.sh
+@@ -31,10 +31,10 @@ CMD=${2-""}
+ 	echo "#-----------------------------"
+ 	curl -sX GET http://${HOST}:1324/milkyway/fioW | json_pp || return 1
+ 	echo "#-----------------------------"
+-	curl -sX GET http://${HOST}:1324/milkyway/dbR | json_pp || return 1
+-	echo "#-----------------------------"
+-	curl -sX GET http://${HOST}:1324/milkyway/dbW | json_pp || return 1
+-	echo "#-----------------------------"
++#	curl -sX GET http://${HOST}:1324/milkyway/dbR | json_pp || return 1
++#	echo "#-----------------------------"
++#	curl -sX GET http://${HOST}:1324/milkyway/dbW | json_pp || return 1
++#	echo "#-----------------------------"
+ 
+ 	curl -sX GET http://${HOST}:1324/milkyway/rtt -H 'Content-Type: application/json' -d '{ "host": "localhost"}' |json_pp || return 1
+ 	echo "#-----------------------------"
