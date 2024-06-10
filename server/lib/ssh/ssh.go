@@ -138,7 +138,7 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 
 	var BenchmarkList []model.Benchmark
 	commands := "/tmp/milkyway.sh "
-	types := []string{"cpus", "cpum", "memR", "memW", "fioR", "fioW", "dbR", "dbW"}
+	types := []string{"cpus", "cpum", "memR", "memW", "fioR", "fioW" /*, "dbR", "dbW"*/}
 
 	for i, t := range types {
 		logger.Printf(logger.DEBUG, true, "SSH: Benchmark Progressing - [%d/%d] %s...\n", i+1, len(types), t)

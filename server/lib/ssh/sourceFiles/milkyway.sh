@@ -34,6 +34,9 @@ Initializer() {
         # 첫 실행이 아닐 경우
         # echo "[Install] --PASS"
         echo ""
+        Process_Start
+
+        sleep 1
     else
         # 첫 실행인 경우
         touch /tmp/benchFirst
@@ -46,9 +49,13 @@ Initializer() {
         fi
 
         chmod a+x /tmp/milkyway
-    fi
 
-    Process_Start
+        Process_Start
+
+        sleep 1
+
+        curl -X GET http://localhost:1324/milkyway/init > /tmp/milkyway-install.log 2>&1
+    fi
 }
 
 Process_Start() {
