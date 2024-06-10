@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jollaman999/utils/logger"
+	"strconv"
 
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 
@@ -19,7 +21,7 @@ import (
 
 type SSH struct {
 	Options Options
-	// command string
+	command string
 }
 
 type Response struct {
@@ -54,7 +56,7 @@ func DefaultSSHOptions() Options {
 	return options
 }
 
-func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) ([]model.Benchmark, error) {
+func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) error {
 	addr := fmt.Sprintf("%s:%d", connectionInfo.IPAddress, connectionInfo.SSHPort)
 
 	sshConfig := &ssh.ClientConfig{
@@ -65,27 +67,40 @@ func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) ([]model.Benchm
 
 	client, err := ssh.Dial("tcp", addr, sshConfig)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	fmt.Println("SSH Connection Success. ")
+	logger.Println(logger.INFO, false, "SSH Connection Success. (IP: "+connectionInfo.IPAddress+
+		" Port: "+strconv.Itoa(connectionInfo.SSHPort)+", User: "+connectionInfo.User+")")
 
 	o.Options.client = client
 	defer o.Close()
 
-	// SFTP Client 설정
-	sftp, err := sftp.NewClient(client)
+	return nil
+}
+
+func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchmark, error) {
+	err := o.NewClientConn(connectionInfo)
 	if err != nil {
-		log.Fatal("Failed to SFTP Connect: ", err)
 		return nil, err
 	}
-	defer sftp.Close()
+
+	// SFTP Client 설정
+	client, err := sftp.NewClient(o.Options.client)
+	if err != nil {
+		logger.Println(logger.ERROR, true, "Failed to SFTP Connect: "+err.Error())
+		return nil, err
+	}
+	defer func() {
+		_ = client.Close()
+	}()
 
 	// 현재 작업 디렉토리 확인
 	cwd, err := os.Getwd()
 	if err != nil {
-		log.Fatal("Failed to get current working directory: ", err)
+		logger.Println(logger.ERROR, true, "Failed to get current working directory: "+err.Error())
+		return nil, err
 	}
-	log.Println("Current working directory: ", cwd)
+	logger.Println(logger.INFO, false, "Current working directory: ", cwd)
 
 	srcPath := filepath.Join(cwd, "lib", "ssh")
 	dstPath := "/tmp/"
@@ -99,27 +114,30 @@ func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) ([]model.Benchm
 	// 소스 파일 열기
 	srcFile, err := os.Open(srcFilePath)
 	if err != nil {
-		log.Fatal("Failed to open source file: ", err)
+		logger.Println(logger.ERROR, true, "Failed to open source file: "+err.Error())
 		return nil, err
 	}
 
 	// 파일을 다시 읽습니다.
 	fileContents, err := io.ReadAll(srcFile)
 	if err != nil {
-		log.Fatal("Failed to read source file: ", err)
+		logger.Println(logger.ERROR, true, "Failed to read source file: "+err.Error())
+		return nil, err
 	}
 
 	// 목적지 파일 절대 경로 얻기
 	dstFilePath := filepath.Join(dstPath, fileName)
 
 	// 목적지 파일 생성
-	dstFile, err := sftp.Create(dstFilePath)
+	dstFile, err := client.Create(dstFilePath)
 	if err != nil {
-		log.Fatal("Failed to create destination file: ", err)
+		logger.Println(logger.ERROR, true, "Failed to create destination file: "+err.Error())
 		return nil, err
 	}
-	log.Println("Current dstFile directory: ", dstFile)
-	defer dstFile.Close()
+	logger.Println(logger.INFO, false, "Current dstFile directory: "+dstFile.Name())
+	defer func() {
+		_ = dstFile.Close()
+	}()
 
 	// 파일 복사
 	_, err = io.Copy(dstFile, bytes.NewReader(fileContents))
@@ -209,7 +227,9 @@ func (o *SSH) RunCmd(cmd string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create session: %s", err)
 	}
-	defer session.Close()
+	defer func() {
+		_ = session.Close()
+	}()
 
 	var output bytes.Buffer
 	var stderr bytes.Buffer
