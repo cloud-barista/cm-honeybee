@@ -7,15 +7,17 @@ package infra
 import (
 	"bufio"
 	"errors"
+	"strings"
+	"time"
+
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
+	"github.com/jaypipes/ghw"
 	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/fileutil"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/yumaojun03/dmidecode"
 	"github.com/yumaojun03/dmidecode/parser/memory"
-	"strings"
-	"time"
 )
 
 func getOSVersion() (string, error) {
@@ -126,28 +128,33 @@ func GetComputeInfo() (infra.Compute, error) {
 		}
 	}
 
-	// TODO
 	// storage information
-	//var si sysinfo.SysInfo
-	//si.GetSysInfo()
-
-	rootDisk := infra.Disk{
-		Label: "Windows 11 (TODO: DUMMY DATA)",
-		Type:  "SSD",
-		Size:  50,
+	block, err := ghw.Block()
+	if err != nil {
+		return compute, err
 	}
 
-	dataDisk := []infra.Disk{
-		{
-			Label: "Storage 1 (TODO: DUMMY DATA)",
-			Type:  "HDD",
-			Size:  100,
-		},
-		{
-			Label: "Storage 2 (TODO: DUMMY DATA)",
-			Type:  "HDD",
-			Size:  200,
-		},
+	rootDisk := infra.Disk{}
+	dataDisk := []infra.Disk{}
+	for _, disk := range block.Disks {
+		if !strings.Contains(disk.Name, "loop") {
+			for _, part := range disk.Partitions {
+				if strings.EqualFold(part.MountPoint, "/") {
+					rootDisk = infra.Disk{
+						Label: part.Name,
+						Type:  disk.DriveType.String(),
+						Size:  uint(float64(part.SizeBytes) / float64(1000*1000*1000))}
+				} else {
+					if !strings.Contains(strings.ToUpper(part.MountPoint), "EFI") && !strings.Contains(strings.ToUpper(part.Label), "EFI") {
+						dataDisk = append(dataDisk, infra.Disk{
+							Label: part.Name,
+							Type:  disk.DriveType.String(),
+							Size:  uint(float64(part.SizeBytes) / float64(1000*1000*1000)),
+						})
+					}
+				}
+			}
+		}
 	}
 
 	// All of compute information
