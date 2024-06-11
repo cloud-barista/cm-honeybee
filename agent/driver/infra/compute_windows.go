@@ -7,7 +7,14 @@ package infra
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"strings"
+	"time"
+	"unsafe"
+
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
+	"github.com/jaypipes/ghw"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/host"
@@ -15,11 +22,6 @@ import (
 	"github.com/yumaojun03/dmidecode/parser/memory"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
-	"io"
-	"os"
-	"strings"
-	"time"
-	"unsafe"
 )
 
 func getWindowsReleaseVersion() (string, error) {
@@ -343,31 +345,29 @@ func GetComputeInfo() (infra.Compute, error) {
 		}
 	}
 
-	// TODO
 	// storage information
-
-	//block, err := ghw.Block()
-	//if err != nil {
-	//	return infra.Compute{}, err
-	//}
-
-	rootDisk := infra.Disk{
-		Label: "Windows 11 (TODO: DUMMY DATA)",
-		Type:  "SSD",
-		Size:  50,
+	block, err := ghw.Block()
+	if err != nil {
+		return infra.Compute{}, err
 	}
 
-	dataDisk := []infra.Disk{
-		{
-			Label: "Storage 1 (TODO: DUMMY DATA)",
-			Type:  "HDD",
-			Size:  100,
-		},
-		{
-			Label: "Storage 2 (TODO: DUMMY DATA)",
-			Type:  "HDD",
-			Size:  200,
-		},
+	rootDisk := infra.Disk{}
+	dataDisk := []infra.Disk{}
+	for _, disk := range block.Disks {
+		for _, part := range disk.Partitions {
+			if strings.EqualFold(part.Type, "Installable File System") {
+				rootDisk = infra.Disk{
+					Label: part.Name,
+					Type:  disk.DriveType.String(),
+					Size:  uint(float64(part.SizeBytes) / float64(1000*1000*1000))}
+			} else {
+				dataDisk = append(dataDisk, infra.Disk{
+					Label: part.Name,
+					Type:  disk.DriveType.String(),
+					Size:  uint(float64(part.SizeBytes) / float64(1000*1000*1000)),
+				})
+			}
+		}
 	}
 
 	// All of compute information
