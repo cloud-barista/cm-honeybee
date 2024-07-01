@@ -9,5 +9,7 @@ import (
 
 func RegisterImport(e *echo.Echo) {
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/import/infra", controller.ImportInfra)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/import/infra", controller.ImportInfraSourceGroup)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/import/software", controller.ImportSoftware)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/import/software", controller.ImportSoftwareSourceGroup)
 }

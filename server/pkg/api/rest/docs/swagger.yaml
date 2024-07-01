@@ -89,6 +89,15 @@ definitions:
     required:
     - name
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InfraInfoList:
+    properties:
+      servers:
+        items:
+          $ref: '#/definitions/infra.Infra'
+        type: array
+    required:
+    - servers
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo:
     properties:
       benchmark_data:
@@ -135,6 +144,15 @@ definitions:
     properties:
       message:
         type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SoftwareInfoList:
+    properties:
+      servers:
+        items:
+          $ref: '#/definitions/software.Software'
+        type: array
+    required:
+    - servers
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup:
     properties:
@@ -1488,6 +1506,127 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Get Software Information
+      tags:
+      - '[Get] Get source info'
+  /honeybee/source_group/{sgId}/import/infra:
+    get:
+      consumes:
+      - application/json
+      description: Import infra information for all connections in the source group.
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the infra information
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the infra information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import Infra Source Group
+      tags:
+      - '[Import] Import source info'
+  /honeybee/source_group/{sgId}/import/software:
+    get:
+      consumes:
+      - application/json
+      description: Import software information for all connections in the source group.
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the software information
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the software information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import Software Source Group
+      tags:
+      - '[Import] Import source info'
+  /honeybee/source_group/{sgId}/infra:
+    get:
+      consumes:
+      - application/json
+      description: Get the infra information for all connections in the source group.
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the infra.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InfraInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the infra.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Infra Information Source Group
+      tags:
+      - '[Get] Get source info'
+  /honeybee/source_group/{sgId}/software:
+    get:
+      consumes:
+      - application/json
+      description: Get the software information for all connections in the source
+        group.
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the software.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SoftwareInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the infra.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Software Information Source Group
       tags:
       - '[Get] Get source info'
 swagger: "2.0"

@@ -2,14 +2,67 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	_ "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra" // Need for swag
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
+	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
 )
+
+func doGetInfraInfo(connID string) (*infra.Infra, error) {
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return nil, err
+	}
+
+	savedInfraInfo, err := dao.SavedInfraInfoGet(connectionInfo.ID)
+	if err != nil {
+		errMsg := "Failed to get information of the infra." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+	var infraInfo infra.Infra
+	err = json.Unmarshal([]byte(savedInfraInfo.InfraData), &infraInfo)
+	if err != nil {
+		errMsg := "Error occurred while parsing infra information." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return &infraInfo, nil
+}
+
+func doGetSoftwareInfo(connID string) (*software.Software, error) {
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return nil, err
+	}
+
+	savedSoftwareInfo, err := dao.SavedSoftwareInfoGet(connectionInfo.ID)
+	if err != nil {
+		errMsg := "Failed to get information of the software." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+	var softwareInfo software.Software
+	err = json.Unmarshal([]byte(savedSoftwareInfo.SoftwareData), &softwareInfo)
+	if err != nil {
+		errMsg := "Error occurred while parsing software information." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return &softwareInfo, nil
+}
 
 // GetInfraInfo godoc
 //
@@ -40,22 +93,50 @@ func GetInfraInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	infraInfo, err := doGetInfraInfo(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	savedInfraInfo, err := dao.SavedInfraInfoGet(connectionInfo.ID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, "Failed to get information of the infra.")
-	}
-	var infraList infra.Infra
-	err = json.Unmarshal([]byte(savedInfraInfo.InfraData), &infraList)
-	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while parsing software list.")
+	return c.JSONPretty(http.StatusOK, *infraInfo, " ")
+}
+
+// GetInfraInfoSourceGroup godoc
+//
+// @Summary		Get Infra Information Source Group
+// @Description	Get the infra information for all connections in the source group.
+// @Tags		[Get] Get source info
+// @Accept		json
+// @Produce		json
+// @Param		sgId path string true "ID of the source group."
+// @Success		200	{object}	model.InfraInfoList		"Successfully get information of the infra."
+// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+// @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
+// @Router		/honeybee/source_group/{sgId}/infra [get]
+func GetInfraInfoSourceGroup(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	return c.JSONPretty(http.StatusOK, infraList, " ")
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	var infraInfoList model.InfraInfoList
+
+	for _, conn := range *list {
+		infraInfo, _ := doGetInfraInfo(conn.ID)
+		infraInfoList.Servers = append(infraInfoList.Servers, *infraInfo)
+	}
+
+	return c.JSONPretty(http.StatusOK, infraInfoList, " ")
 }
 
 // GetSoftwareInfo godoc
@@ -87,20 +168,48 @@ func GetSoftwareInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	softwareInfo, err := doGetSoftwareInfo(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	savedSoftwareInfo, err := dao.SavedSoftwareInfoGet(connectionInfo.ID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, "Failed to get information of the infra.")
-	}
-	var softwareList software.Software
-	err = json.Unmarshal([]byte(savedSoftwareInfo.SoftwareData), &softwareList)
-	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while parsing software list.")
+	return c.JSONPretty(http.StatusOK, softwareInfo, " ")
+}
+
+// GetSoftwareInfoSourceGroup godoc
+//
+// @Summary		Get Software Information Source Group
+// @Description	Get the software information for all connections in the source group.
+// @Tags		[Get] Get source info
+// @Accept		json
+// @Produce		json
+// @Param		sgId path string true "ID of the source group."
+// @Success		200	{object}	model.SoftwareInfoList	"Successfully get information of the software."
+// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+// @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
+// @Router		/honeybee/source_group/{sgId}/software [get]
+func GetSoftwareInfoSourceGroup(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	return c.JSONPretty(http.StatusOK, softwareList, " ")
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	var softwareInfoList model.SoftwareInfoList
+
+	for _, conn := range *list {
+		softwareInfo, _ := doGetSoftwareInfo(conn.ID)
+		softwareInfoList.Servers = append(softwareInfoList.Servers, *softwareInfo)
+	}
+
+	return c.JSONPretty(http.StatusOK, softwareInfoList, " ")
 }
