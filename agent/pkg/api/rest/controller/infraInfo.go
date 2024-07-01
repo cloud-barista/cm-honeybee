@@ -18,7 +18,7 @@ import (
 //	@Success		200	{object}	infra.Infra	"Successfully get information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
-//	@Router			/infra [get]
+//	@Router			/honeybee-agent/infra [get]
 func GetInfraInfo(c echo.Context) error {
 	infraInfo, err := infra.GetInfraInfo()
 	if err != nil {

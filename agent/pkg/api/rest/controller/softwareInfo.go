@@ -18,7 +18,7 @@ import (
 //	@Success		200	{object}	software.Software	"Successfully get information of software."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of software."
-//	@Router			/software [get]
+//	@Router			/honeybee-agent/software [get]
 func GetSoftwareInfo(c echo.Context) error {
 	softwareInfo, err := software.GetSoftwareInfo()
 	if err != nil {

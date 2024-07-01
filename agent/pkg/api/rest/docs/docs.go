@@ -15,36 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/honeybee-agent/readyz": {
-            "get": {
-                "description": "Check Honeybee Agent is ready",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Admin] System management"
-                ],
-                "summary": "Check Ready",
-                "responses": {
-                    "200": {
-                        "description": "Successfully get ready state.",
-                        "schema": {
-                            "$ref": "#/definitions/pkg_api_rest_controller.SimpleMsg"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to check ready state.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/infra": {
+        "/honeybee-agent/infra": {
             "get": {
                 "description": "Get infra information.",
                 "consumes": [
@@ -79,7 +50,36 @@ const docTemplate = `{
                 }
             }
         },
-        "/software": {
+        "/honeybee-agent/readyz": {
+            "get": {
+                "description": "Check Honeybee Agent is ready",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Admin] System management"
+                ],
+                "summary": "Check Ready",
+                "responses": {
+                    "200": {
+                        "description": "Successfully get ready state.",
+                        "schema": {
+                            "$ref": "#/definitions/pkg_api_rest_controller.SimpleMsg"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to check ready state.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/honeybee-agent/software": {
             "get": {
                 "description": "Get software information.",
                 "consumes": [
