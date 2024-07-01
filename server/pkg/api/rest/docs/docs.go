@@ -767,7 +767,7 @@ const docTemplate = `{
             }
         },
         "/honeybee/source_group/{sgId}/connection_info/{connId}/import/infra": {
-            "get": {
+            "post": {
                 "description": "Import the infra information.",
                 "consumes": [
                     "application/json"
@@ -818,7 +818,7 @@ const docTemplate = `{
             }
         },
         "/honeybee/source_group/{sgId}/connection_info/{connId}/import/software": {
-            "get": {
+            "post": {
                 "description": "Import the software information.",
                 "consumes": [
                     "application/json"
@@ -971,7 +971,7 @@ const docTemplate = `{
             }
         },
         "/honeybee/source_group/{sgId}/import/infra": {
-            "get": {
+            "post": {
                 "description": "Import infra information for all connections in the source group.",
                 "consumes": [
                     "application/json"
@@ -1018,7 +1018,7 @@ const docTemplate = `{
             }
         },
         "/honeybee/source_group/{sgId}/import/software": {
-            "get": {
+            "post": {
                 "description": "Import software information for all connections in the source group.",
                 "consumes": [
                     "application/json"

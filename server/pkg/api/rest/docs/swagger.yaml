@@ -1373,7 +1373,7 @@ paths:
       tags:
       - '[On-premise] ConnectionInfo'
   /honeybee/source_group/{sgId}/connection_info/{connId}/import/infra:
-    get:
+    post:
       consumes:
       - application/json
       description: Import the infra information.
@@ -1407,7 +1407,7 @@ paths:
       tags:
       - '[Import] Import source info'
   /honeybee/source_group/{sgId}/connection_info/{connId}/import/software:
-    get:
+    post:
       consumes:
       - application/json
       description: Import the software information.
@@ -1509,7 +1509,7 @@ paths:
       tags:
       - '[Get] Get source info'
   /honeybee/source_group/{sgId}/import/infra:
-    get:
+    post:
       consumes:
       - application/json
       description: Import infra information for all connections in the source group.
@@ -1540,7 +1540,7 @@ paths:
       tags:
       - '[Import] Import source info'
   /honeybee/source_group/{sgId}/import/software:
-    get:
+    post:
       consumes:
       - application/json
       description: Import software information for all connections in the source group.

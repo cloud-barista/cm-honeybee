@@ -122,7 +122,7 @@ func doImportSoftware(connID string) (*model.SavedSoftwareInfo, error) {
 // @Success		200	{object}	model.SavedInfraInfo	"Successfully saved the infra information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
-// @Router		/honeybee/source_group/{sgId}/connection_info/{connId}/import/infra [get]
+// @Router		/honeybee/source_group/{sgId}/connection_info/{connId}/import/infra [post]
 func ImportInfra(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -158,7 +158,7 @@ func ImportInfra(c echo.Context) error {
 // @Success		200	{object}	[]model.SavedInfraInfo	"Successfully saved the infra information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
-// @Router		/honeybee/source_group/{sgId}/import/infra [get]
+// @Router		/honeybee/source_group/{sgId}/import/infra [post]
 func ImportInfraSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -197,7 +197,7 @@ func ImportInfraSourceGroup(c echo.Context) error {
 // @Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the software information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
-// @Router		/honeybee/source_group/{sgId}/connection_info/{connId}/import/software [get]
+// @Router		/honeybee/source_group/{sgId}/connection_info/{connId}/import/software [post]
 func ImportSoftware(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -233,7 +233,7 @@ func ImportSoftware(c echo.Context) error {
 // @Success		200	{object}	[]model.SavedInfraInfo	"Successfully saved the software information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
-// @Router		/honeybee/source_group/{sgId}/import/software [get]
+// @Router		/honeybee/source_group/{sgId}/import/software [post]
 func ImportSoftwareSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
