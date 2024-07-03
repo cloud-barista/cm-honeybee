@@ -8,6 +8,9 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"gorm.io/gorm"
+	"math/rand"
+	"strconv"
+	"time"
 )
 
 func SourceGroupRegister(sourceGroup *model.SourceGroup) (*model.SourceGroup, error) {
@@ -72,21 +75,30 @@ func SourceGroupGetList(sourceGroup *model.SourceGroup, page int, row int) (*[]m
 	return sourceGroups, nil
 }
 
-func SourceGroupGetCount() (int64, error) {
+func SourceGroupGenNewID() (string, error) {
 	var count int64
 
 	result := db.DB.Model(&model.SourceGroup{}).Count(&count)
 	err := result.Error
 	if err != nil {
-		return -1, err
+		return "", err
 	}
 
 	if count >= common.TableCountMaxLimit {
-		return -1, fmt.Errorf("max connection info count exceeded."+
+		return "", fmt.Errorf("max connection info count exceeded."+
 			" (max: %d)", common.TableCountMaxLimit)
 	}
 
-	return count, nil
+	idPrefix := "group-"
+	for {
+		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+		newID := idPrefix + strconv.Itoa(rng.Intn(common.TableCountMaxLimit)+1)
+
+		exist, _ := SourceGroupGet(newID)
+		if exist == nil {
+			return newID, nil
+		}
+	}
 }
 
 func SourceGroupUpdate(sourceGroup *model.SourceGroup) error {

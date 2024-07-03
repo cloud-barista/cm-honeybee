@@ -7,7 +7,9 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"gorm.io/gorm"
+	"math/rand"
 	"strconv"
+	"time"
 )
 
 func ConnectionInfoRegister(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
@@ -86,21 +88,30 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 	return connectionInfos, nil
 }
 
-func ConnectionInfoGetCount() (int64, error) {
+func ConnectionInfoGenNewID() (string, error) {
 	var count int64
 
 	result := db.DB.Model(&model.ConnectionInfo{}).Count(&count)
 	err := result.Error
 	if err != nil {
-		return -1, err
+		return "", err
 	}
 
 	if count >= common.TableCountMaxLimit {
-		return -1, fmt.Errorf("max connection info count exceeded."+
+		return "", fmt.Errorf("max connection info count exceeded."+
 			" (max: %d)", common.TableCountMaxLimit)
 	}
 
-	return count, nil
+	idPrefix := "connection-"
+	for {
+		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+		newID := idPrefix + strconv.Itoa(rng.Intn(common.TableCountMaxLimit)+1)
+
+		exist, _ := ConnectionInfoGet(newID)
+		if exist == nil {
+			return newID, nil
+		}
+	}
 }
 
 func ConnectionInfoUpdate(connectionInfo *model.ConnectionInfo) error {

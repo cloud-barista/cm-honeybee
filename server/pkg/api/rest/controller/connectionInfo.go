@@ -2,7 +2,6 @@ package controller
 
 import (
 	"errors"
-	"fmt"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
@@ -63,13 +62,13 @@ func CreateConnectionInfo(c echo.Context) error {
 		return err
 	}
 
-	connectionInfoCount, err := dao.ConnectionInfoGetCount()
+	newID, err := dao.ConnectionInfoGenNewID()
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	connectionInfo := &model.ConnectionInfo{
-		ID:            "connection-" + fmt.Sprintf("%02d", int(connectionInfoCount)+1),
+		ID:            newID,
 		Name:          createConnectionInfoReq.Name,
 		Description:   createConnectionInfoReq.Description,
 		SourceGroupID: sourceGroup.ID,
