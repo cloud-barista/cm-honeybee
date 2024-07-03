@@ -16,7 +16,7 @@ RUN git commit --allow-empty -m "a commit for the build"
 
 RUN make
 
-FROM alpine:3.20.1
+FROM alpine:3.20.1 as prod
 
 RUN apk --no-cache add tzdata
 RUN echo "Asia/Seoul" >  /etc/timezone
