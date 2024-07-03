@@ -758,6 +758,10 @@ definitions:
         type: integer
       hostConfig:
         properties:
+          annotations:
+            additionalProperties:
+              type: string
+            type: object
           networkMode:
             type: string
         type: object
