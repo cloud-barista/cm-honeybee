@@ -2,6 +2,8 @@ package dao
 
 import (
 	"errors"
+	"fmt"
+	"github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"gorm.io/gorm"
@@ -82,6 +84,23 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 	}
 
 	return connectionInfos, nil
+}
+
+func ConnectionInfoGetCount() (int64, error) {
+	var count int64
+
+	result := db.DB.Model(&model.ConnectionInfo{}).Count(&count)
+	err := result.Error
+	if err != nil {
+		return -1, err
+	}
+
+	if count >= common.TableCountMaxLimit {
+		return -1, fmt.Errorf("max connection info count exceeded."+
+			" (max: %d)", common.TableCountMaxLimit)
+	}
+
+	return count, nil
 }
 
 func ConnectionInfoUpdate(connectionInfo *model.ConnectionInfo) error {

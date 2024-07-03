@@ -8,3 +8,5 @@ var ShortModuleName = "HONEYBEE"
 
 // ModuleROOT : Variable name of the module's root path
 var ModuleROOT = "CMHONEYBEE_ROOT"
+
+const TableCountMaxLimit = 99
