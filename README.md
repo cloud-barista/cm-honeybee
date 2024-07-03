@@ -35,17 +35,11 @@ Collecting and Aggregating Information From Source Computing framework (codename
     - 'conf' directory where running the binary
     - 'conf' directory where placed in the path of 'CMHONEYBEE_AGENT_ROOT' environment variable
   - Configuration options
-    - server
-      - address : Specify collection server's address ({IP or Domain}:{Port})
-      - timeout : HTTP timeout value as seconds.
     - listen
       - port : Listen port of the agent's API.
   - Configuration file example
     ```yaml
     cm-honeybee-agent:
-        server:
-            address: 172.16.0.10:8081
-            timeout: 10
         listen:
             port: 8082
     ```
@@ -66,12 +60,16 @@ make run
     - 'conf' directory where placed in the path of 'CMHONEYBEE_ROOT' environment variable
 - Configuration options
     - listen
-        - port : Listen port of the agent's API.
+        - port : Listen port of the server's API.
+    - agent
+        - port : Port of the agent's API.
 - Configuration file example
   ```yaml
   cm-honeybee:
       listen:
           port: 8081
+      agent:
+          port: 8082
   ```
 
 2.2. Build and run the server binary
