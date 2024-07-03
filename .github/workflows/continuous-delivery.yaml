@@ -25,6 +25,8 @@ on:
       - "CODEOWNERS"
       - "agent/docs/**"
       - "server/docs/**"
+      - "agent/scripts/**"
+      - "server/scripts/**"
       # - '.all-contributorsrc'
       # - 'assets/**'
       # - 'src/testclient/scripts/**'
