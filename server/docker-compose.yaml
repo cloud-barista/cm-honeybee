@@ -2,13 +2,8 @@ services:
   cm-honeybee:
     container_name: cm-honeybee
     restart: always
-    privileged: true
     build:
       context: ./
       dockerfile: Dockerfile
     image: cm-honeybee:${TAG:-latest}
-    entrypoint: /docker-entrypoint.sh
-    volumes:
-      - ./docker-entrypoint.sh:/docker-entrypoint.sh:ro
-      - ./conf/:/conf/:ro
     network_mode: "host"
