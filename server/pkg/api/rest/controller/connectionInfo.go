@@ -57,6 +57,7 @@ func CreateConnectionInfo(c echo.Context) error {
 	}
 
 	createConnectionInfoReq := new(model.CreateConnectionInfoReq)
+	createConnectionInfoReq.PrivateKey = "-"
 	err = c.Bind(createConnectionInfoReq)
 	if err != nil {
 		return err
