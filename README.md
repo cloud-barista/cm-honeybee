@@ -78,6 +78,71 @@ cd server
 make run
 ```
 
+### 3. Register source group
+Check your source group ID (sgID) after register.
+- Request
+```shell
+curl -X 'POST' \
+  'http://127.0.0.1:8081/honeybee/source_group' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "description": "test migration group",
+  "name": "test-group"
+}'
+```
+- Reply
+```json
+{
+ "id": "group-01",
+ "name": "test-group",
+ "description": "test migration group"
+}
+```
+### 4. Register connection info
+Register the connection information to the source group.
+- Request
+```shell
+curl -X 'POST' \
+ 'http://127.0.0.1:8081/honeybee/source_group/group-01/connection_info' \
+ -H 'accept: application/json' \
+ -H 'Content-Type: application/json' \
+ -d '{ "description": "NFS Server", "ip_address": "172.16.0.123", "name": "cm-nfs", "password": "some_pass", "private_key": "-----BEGIN RSA PRIVATE KEY-----\n******\n-----END RSA PRIVATE KEY-----", "ssh_port": 22, "user": "ubuntu" }'
+```
+- Reply
+```json
+{
+  "id": "connection-01",
+  "name": "cm-nfs",
+  "description": "NFS Server",
+  "source_group_id": "group-01",
+  "ip_address": "172.16.0.123",
+  "ssh_port": 22,
+  "user": "ubuntu",
+  "password": "some_pass",
+  "private_key": "-----BEGIN RSA PRIVATE KEY-----\n******\n-----END RSA PRIVATE KEY-----",
+  "public_key": "",
+  "status": "",
+  "failed_message": ""
+}
+```
+
+### 5. Save current source information.
+Below example is saving infrastructure information of all connection in the source group.
+```shell
+curl -X 'POST' \
+ 'http://127.0.0.1:8081/honeybee/source_group/group-01/import/infra' \
+ -H 'accept: application/json'
+```
+
+### 6. Get saved source information.
+Below example is getting saved infrastructure information of all connection in the source group.
+```shell
+curl -X 'GET' \
+ 'http://127.0.0.1:8081/honeybee/source_group/group-01/infra' \
+ -H 'accept: application/json'
+```
+
 ## Health-check
 
 ### Agent
@@ -101,3 +166,6 @@ curl http://localhost:8081/honeybee/readyz
 # Output if it's running successfully
 # {"message":"CM-Honeybee API server is ready"}
 ```
+
+## Check out all APIs
+* [Honeybee APIs (Swagger Document)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cm-honeybee/main/server/pkg/api/rest/docs/swagger.yaml)
