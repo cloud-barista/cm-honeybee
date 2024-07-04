@@ -2,8 +2,6 @@ package dao
 
 import (
 	"errors"
-	"fmt"
-	"github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
@@ -70,23 +68,6 @@ func SourceGroupGetList(sourceGroup *model.SourceGroup, page int, row int) (*[]m
 	}
 
 	return sourceGroups, nil
-}
-
-func SourceGroupGetCount() (int64, error) {
-	var count int64
-
-	result := db.DB.Model(&model.SourceGroup{}).Count(&count)
-	err := result.Error
-	if err != nil {
-		return -1, err
-	}
-
-	if count >= common.TableCountMaxLimit {
-		return -1, fmt.Errorf("max connection info count exceeded."+
-			" (max: %d)", common.TableCountMaxLimit)
-	}
-
-	return count, nil
 }
 
 func SourceGroupUpdate(sourceGroup *model.SourceGroup) error {

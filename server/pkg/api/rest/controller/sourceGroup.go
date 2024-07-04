@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"fmt"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
+	"github.com/google/uuid"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -33,13 +33,8 @@ func CreateSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the name.")
 	}
 
-	sourceGroupCount, err := dao.SourceGroupGetCount()
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
 	sourceGroup := &model.SourceGroup{
-		ID:          "group-" + fmt.Sprintf("%02d", int(sourceGroupCount)+1),
+		ID:          uuid.New().String(),
 		Name:        createSourceGroupReq.Name,
 		Description: createSourceGroupReq.Description,
 	}

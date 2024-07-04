@@ -2,10 +2,10 @@ package controller
 
 import (
 	"errors"
-	"fmt"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
+	"github.com/google/uuid"
 	"github.com/jollaman999/utils/iputil"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -63,13 +63,8 @@ func CreateConnectionInfo(c echo.Context) error {
 		return err
 	}
 
-	connectionInfoCount, err := dao.ConnectionInfoGetCount()
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
 	connectionInfo := &model.ConnectionInfo{
-		ID:            "connection-" + fmt.Sprintf("%02d", int(connectionInfoCount)+1),
+		ID:            uuid.New().String(),
 		Name:          createConnectionInfoReq.Name,
 		Description:   createConnectionInfoReq.Description,
 		SourceGroupID: sourceGroup.ID,
