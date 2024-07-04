@@ -94,7 +94,7 @@ curl -X 'POST' \
 - Reply
 ```json
 {
- "id": "group-01",
+ "id": "b9e86d53-9fbe-4a96-9e06-627f77fdd6b7",
  "name": "test-group",
  "description": "test migration group"
 }
@@ -104,7 +104,7 @@ Register the connection information to the source group.
 - Request
 ```shell
 curl -X 'POST' \
- 'http://127.0.0.1:8081/honeybee/source_group/group-01/connection_info' \
+ 'http://127.0.0.1:8081/honeybee/source_group/b9e86d53-9fbe-4a96-9e06-627f77fdd6b7/connection_info' \
  -H 'accept: application/json' \
  -H 'Content-Type: application/json' \
  -d '{ "description": "NFS Server", "ip_address": "172.16.0.123", "name": "cm-nfs", "password": "some_pass", "private_key": "-----BEGIN RSA PRIVATE KEY-----\n******\n-----END RSA PRIVATE KEY-----", "ssh_port": 22, "user": "ubuntu" }'
@@ -112,10 +112,10 @@ curl -X 'POST' \
 - Reply
 ```json
 {
-  "id": "connection-01",
+  "id": "2f678139-e6e6-43e8-9722-33b834efc563",
   "name": "cm-nfs",
   "description": "NFS Server",
-  "source_group_id": "group-01",
+  "source_group_id": "b9e86d53-9fbe-4a96-9e06-627f77fdd6b7",
   "ip_address": "172.16.0.123",
   "ssh_port": 22,
   "user": "ubuntu",
@@ -131,7 +131,7 @@ curl -X 'POST' \
 Below example is saving infrastructure information of all connection in the source group.
 ```shell
 curl -X 'POST' \
- 'http://127.0.0.1:8081/honeybee/source_group/group-01/import/infra' \
+ 'http://127.0.0.1:8081/honeybee/source_group/b9e86d53-9fbe-4a96-9e06-627f77fdd6b7/import/infra' \
  -H 'accept: application/json'
 ```
 
@@ -139,7 +139,7 @@ curl -X 'POST' \
 Below example is getting saved infrastructure information of all connection in the source group.
 ```shell
 curl -X 'GET' \
- 'http://127.0.0.1:8081/honeybee/source_group/group-01/infra' \
+ 'http://127.0.0.1:8081/honeybee/source_group/b9e86d53-9fbe-4a96-9e06-627f77fdd6b7/infra' \
  -H 'accept: application/json'
 ```
 
