@@ -1,12 +1,16 @@
 package controller
 
 import (
+	"encoding/base64"
 	"errors"
+	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
+	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/google/uuid"
 	"github.com/jollaman999/utils/iputil"
+	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"strconv"
@@ -30,6 +34,28 @@ func checkPort(port int) error {
 	}
 
 	return nil
+}
+
+func encryptPasswordAndPrivateKey(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
+	rsaEncryptedPasswordBytes, err := rsautil.EncryptWithPublicKey([]byte(connectionInfo.Password), serverCommon.PubKey)
+	if err != nil {
+		errMsg := "error occurred while encrypting the password (" + err.Error() + ")"
+		logger.Println(logger.ERROR, true, errMsg)
+		return nil, errors.New(errMsg)
+	}
+	base64EncodedEncryptedPassword := base64.StdEncoding.EncodeToString(rsaEncryptedPasswordBytes)
+	connectionInfo.Password = base64EncodedEncryptedPassword
+
+	rsaEncryptedPrivateKeyBytes, err := rsautil.EncryptWithPublicKey([]byte(connectionInfo.PrivateKey), serverCommon.PubKey)
+	if err != nil {
+		errMsg := "error occurred while encrypting the private key (" + err.Error() + ")"
+		logger.Println(logger.ERROR, true, errMsg)
+		return nil, errors.New(errMsg)
+	}
+	base64EncodedEncryptedPrivateKey := base64.StdEncoding.EncodeToString(rsaEncryptedPrivateKeyBytes)
+	connectionInfo.PrivateKey = base64EncodedEncryptedPrivateKey
+
+	return connectionInfo, nil
 }
 
 // CreateConnectionInfo godoc
@@ -103,6 +129,11 @@ func CreateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	connectionInfo, err = encryptPasswordAndPrivateKey(connectionInfo)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
 }
 
@@ -140,6 +171,11 @@ func GetConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	connectionInfo, err = encryptPasswordAndPrivateKey(connectionInfo)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
 }
 
@@ -162,6 +198,11 @@ func GetConnectionInfoDirectly(c echo.Context) error {
 	}
 
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	connectionInfo, err = encryptPasswordAndPrivateKey(connectionInfo)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -220,7 +261,17 @@ func ListConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	return c.JSONPretty(http.StatusOK, connectionInfos, " ")
+	var encryptedConnectionInfos []model.ConnectionInfo
+	for _, ci := range *connectionInfos {
+		encryptedConnectionInfo, err := encryptPasswordAndPrivateKey(&ci)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+
+		encryptedConnectionInfos = append(encryptedConnectionInfos, *encryptedConnectionInfo)
+	}
+
+	return c.JSONPretty(http.StatusOK, &encryptedConnectionInfos, " ")
 }
 
 // UpdateConnectionInfo godoc
@@ -290,7 +341,12 @@ func UpdateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	return c.JSONPretty(http.StatusOK, oldConnectionInfo, " ")
+	connectionInfo, err := encryptPasswordAndPrivateKey(oldConnectionInfo)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
 }
 
 // DeleteConnectionInfo godoc

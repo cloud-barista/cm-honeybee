@@ -249,5 +249,15 @@ func CheckConnectionSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	return c.JSONPretty(http.StatusOK, connectionInfoList, " ")
+	var encryptedConnectionInfos []model.ConnectionInfo
+	for _, ci := range *connectionInfoList {
+		encryptedConnectionInfo, err := encryptPasswordAndPrivateKey(&ci)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+
+		encryptedConnectionInfos = append(encryptedConnectionInfos, *encryptedConnectionInfo)
+	}
+
+	return c.JSONPretty(http.StatusOK, encryptedConnectionInfos, " ")
 }

@@ -1,11 +1,14 @@
 package main
 
 import (
+	"errors"
 	"github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/lib/config"
+	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/controller"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/server"
+	"github.com/jollaman999/utils/fileutil"
 	"github.com/jollaman999/utils/logger"
 	"github.com/jollaman999/utils/syscheck"
 	"log"
@@ -47,6 +50,24 @@ func init() {
 	err = db.Open()
 	if err != nil {
 		logger.Panicln(logger.ERROR, true, err.Error())
+	}
+
+	privateKeyPath := common.RootPath + "/" + common.PrivateKeyFileName
+	publicKeyPath := common.RootPath + "/" + common.PublicKeyFileName
+
+	controller.OkMessage.Message = "RSA public key is not ready"
+	if !fileutil.IsExist(privateKeyPath) && !fileutil.IsExist(publicKeyPath) {
+		err := rsautil.GeneratePrivateKeyAndPublicKey(2048, privateKeyPath, publicKeyPath)
+		if err != nil {
+			logger.Panicln(logger.ERROR, true, err.Error())
+		}
+	} else if !fileutil.IsExist(publicKeyPath) {
+		logger.Panicln(logger.ERROR, true, errors.New("public key not found ("+publicKeyPath+")"))
+	}
+
+	common.PubKey, err = rsautil.ReadPublicKey(publicKeyPath)
+	if err != nil {
+		logger.Panicln(logger.ERROR, true, "error occurred while reading public key")
 	}
 
 	controller.OkMessage.Message = "CM-Honeybee API server is ready"
