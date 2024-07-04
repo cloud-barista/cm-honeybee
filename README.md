@@ -119,8 +119,8 @@ curl -X 'POST' \
   "ip_address": "172.16.0.123",
   "ssh_port": 22,
   "user": "ubuntu",
-  "password": "some_pass",
-  "private_key": "-----BEGIN RSA PRIVATE KEY-----\n******\n-----END RSA PRIVATE KEY-----",
+  "password": "O6fiNHqV71q5cXbJ31Y7i5xefELacROcugMz8rdo42vbJVHsN3Geh+5iqQqYJlT+gFGY2DoH8EgftrI3jWFbofUIhEe0gJWQakIO+1T3mVNb458ZFg9agoqZucAf2JJlCQFw5Wddswd88KegFcE3nqTXalQX1rspV2v2M/rJ/d7DHVh7Ej2sMxn+7ZKSdtnk3tSthJ5Z6zAcLlaequ210UZHcwGk58ByP6A+2Ga08pxoqd++z+OTkXCWCLMRpd85LBo0VHc2qDLrWhkxZDv4OBqTeT3RpgCTX9PDyjNXt7/4srSBOb7Al9DNx6ITCme+rcBRUSCmeulECCBr9CZFQ==",
+  "private_key": "CNTS7NvcwUj09/ZFL43GotzE68x/l6pesSRvp6/hv85ISDe1ynCxy/V8SxRIvzji2jPjcg2AwLEViPCi5vSFT5LTFQneFAXwtgJj9MdLQB4LBJVl8Bq/8MOfUsM/zltV98BX/XErzQZHrKipYmjchl1u90/Kka2zt6Ko7MugZqmmvpSy9ILOlxMPRTDdmLreW2toaFeAIfIT6NbrsYhLq+Je2FRqeET9tsabDmooQiMFIAo+t7J3vbvYuRQeEjdj66hlGzxrde/sCV8aA7hLsupiXOoJKxLTLfiha2oGOWtF9ofvEoQulX1f8M98zMl+VXFpYgx2SSxgpWFx0iTfhA==",
   "public_key": "",
   "status": "",
   "failed_message": ""
