@@ -172,6 +172,10 @@ curl http://localhost:8081/honeybee/readyz
 * [Honeybee Server APIs (Swagger Document)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cm-honeybee/main/server/pkg/api/rest/docs/swagger.yaml)
 
 ## For who develop modules with Honeybee
+
+### About passwords and private keys
+Those encrypted values are always changes with each request by RSA algorithm.
+
 ### How to decrypt the password and the private key in the connection info?
   1. Build and run the Honeybee server.
      ```shell
