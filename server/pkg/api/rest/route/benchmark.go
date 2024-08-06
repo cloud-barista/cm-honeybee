@@ -11,5 +11,4 @@ import (
 func RegisterBenchmark(e *echo.Echo) {
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/bench/:connId", controller.GetBenchmarkInfo)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/run/bench/:connId", controller.RunBenchmarkInfo)
-	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/init/agent/:connId", controller.AgentInitInfo)
 }

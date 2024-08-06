@@ -8,8 +8,9 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+  "time"
 
-	"github.com/jollaman999/utils/logger"
+  "github.com/jollaman999/utils/logger"
 
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 
@@ -66,9 +67,10 @@ func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) error {
 	addr := fmt.Sprintf("%s:%d", connectionInfo.IPAddress, connectionInfo.SSHPort)
 
 	sshConfig := &ssh.ClientConfig{
-		User:            connectionInfo.User,
-		Auth:            o.getAuthMethods(connectionInfo),
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		User:               connectionInfo.User,
+		Auth:               o.getAuthMethods(connectionInfo),
+		HostKeyCallback:    ssh.InsecureIgnoreHostKey(),
+		Timeout:            time.Second * 5,
 	}
 
 	client, err := ssh.Dial("tcp", addr, sshConfig)
@@ -170,10 +172,10 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 	return BenchmarkList, nil
 }
 
-func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) (bool, error) {
+func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) (string, error) {
 	err := o.NewClientConn(connectionInfo)
 	if err != nil {
-		return false, err
+		return "failed", err
 	}
 	defer func() {
 		o.Close()
@@ -183,7 +185,7 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) (bool, error) {
 	client, err := sftp.NewClient(o.Options.client)
 	if err != nil {
 		logger.Println(logger.ERROR, true, "Failed to SFTP Connect: "+err.Error())
-		return false, err
+		return "failed", err
 	}
 	defer func() {
 		_ = client.Close()
@@ -191,20 +193,19 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) (bool, error) {
 
 	dstPath := "/tmp/"
 
-	files := []string{"sourceFiles/copyAgent.sh"}
+	file := "sourceFiles/copyAgent.sh"
 
-	for _, file := range files {
-		fileContents, err := sourceFiles.ReadFile(file)
+	fileContents, err := sourceFiles.ReadFile(file)
 		if err != nil {
 			logger.Println(logger.ERROR, true, "SSH: Failed to read source file: "+err.Error())
-			return false, err
+			return "failed", err
 		}
 
 		dstFilePath := filepath.Join(dstPath, strings.Split(file, "/")[1])
 		dstFile, err := client.Create(dstFilePath)
 		if err != nil {
 			logger.Println(logger.ERROR, true, "SSH: Failed to create destination file: "+err.Error())
-			return false, err
+			return "failed", err
 		}
 
 		logger.Println(logger.DEBUG, true, "SSH: Copying "+file+" to "+dstFilePath)
@@ -217,34 +218,33 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) (bool, error) {
 		if err != nil {
 			logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
 				output+" (Error: "+err.Error())
-			return false, err
+			return "failed", err
 		}
 
 		_ = dstFile.Close()
-	}
 
 	commands := "/tmp/copyAgent.sh"
 
 	logger.Printf(logger.DEBUG, true, "SSH: copyAgent Progressing...\n")
-	output, err := o.RunCmd("sudo " + commands)
+	output, err = o.RunCmd("sudo " + commands)
 	if err != nil {
 		logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
 			output+" (Error: "+err.Error())
-		return false, err
+		return "failed", err
 	}
 
 	output, err = o.RunCmd("curl -o /dev/null -w '%{http_code}' -X GET http://localhost:8082/honeybee-agent/readyz -H 'accept: application/json'")
 	if err != nil {
 		logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
 			output+" (Error: "+err.Error())
-		return false, err
+		return "failed", err
 	}
 
-	if(output == "200") {
-		return true, nil
+	if output == "200" {
+		return "success", nil
 	}
 
-	return false, nil
+	return "failed", nil
 }
 
 func (o *SSH) getAuthMethods(connectionInfo model.ConnectionInfo) []ssh.AuthMethod {

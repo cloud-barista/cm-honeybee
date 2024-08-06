@@ -114,26 +114,3 @@ func RunBenchmarkInfo(c echo.Context) error {
 
 	return c.JSONPretty(http.StatusOK, oldSavedBenchmarkInfo, " ")
 }
-
-func AgentInitInfo(c echo.Context) error {
-	connID := c.Param("connId")
-	if connID == "" {
-		return common.ReturnErrorMsg(c, "Please provide the connId.")
-	}
-
-	connectionInfo, err := dao.ConnectionInfoGet(connID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	s := &ssh.SSH{
-		Options: ssh.DefaultSSHOptions(),
-	}
-
-	data, err := s.RunAgent(*connectionInfo)
-	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while getting benchmark information.")
-	}
-
-	return c.JSONPretty(http.StatusOK, data, " ")
-}

@@ -15,4 +15,5 @@ func RegisterSourceGroup(e *echo.Echo) {
 	e.DELETE("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId", controller.DeleteSourceGroup)
 
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_check", controller.CheckConnectionSourceGroup)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/agent_check", controller.CheckAgentSourceGroup)
 }
