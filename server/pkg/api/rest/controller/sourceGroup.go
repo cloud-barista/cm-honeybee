@@ -4,6 +4,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
+	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/google/uuid"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
@@ -261,3 +262,52 @@ func CheckConnectionSourceGroup(c echo.Context) error {
 
 	return c.JSONPretty(http.StatusOK, encryptedConnectionInfos, " ")
 }
+
+// CheckAgentSourceGroup godoc
+//
+// @Summary		Check Agent SourceGroup
+// @Description	Check Agent in source group. Show each status by returning agent info list.
+// @Tags		[On-premise] SourceGroup
+// @Accept		json
+// @Produce		json
+// @Param		sgId path string true "ID of the SourceGroup"
+// @Success		200	{object}	[]model.AgentInfo		"Successfully checked Agent for the source group"
+// @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
+// @Failure		500	{object}	common.ErrorResponse		"Failed to check Agent for the source group"
+// @Router		/honeybee/source_group/{sgId}/agent_check [get]
+func CheckAgentSourceGroup(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	sourceGroup, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	connectionInfoList, err := dao.SourceGroupCheckConnection(sourceGroup)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	var agentInfos []model.AgentInfo
+	for _, ci := range *connectionInfoList {
+
+		s := &ssh.SSH{
+			Options: ssh.DefaultSSHOptions(),
+		}
+
+		data, err := s.RunAgent(ci)
+		agentInfo := model.AgentInfo{
+			Connection: ci.Name,
+			Result: data,
+			ErrorMsg:    err,
+		}
+
+		agentInfos = append(agentInfos, agentInfo)
+	}
+
+	return c.JSONPretty(http.StatusOK, agentInfos, " ")
+}
+

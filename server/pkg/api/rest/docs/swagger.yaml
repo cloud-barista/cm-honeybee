@@ -4,6 +4,14 @@ definitions:
       error:
         type: string
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.AgentInfo:
+    properties:
+      connection_name:
+        type: string
+      error_msg: {}
+      result:
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.Benchmark:
     properties:
       data:
@@ -1143,6 +1151,38 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Update SourceGroup
+      tags:
+      - '[On-premise] SourceGroup'
+  /honeybee/source_group/{sgId}/agent_check:
+    get:
+      consumes:
+      - application/json
+      description: Check Agent in source group. Show each status by returning agent
+        info list.
+      parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully checked Agent for the source group
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.AgentInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to check Agent for the source group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Check Agent SourceGroup
       tags:
       - '[On-premise] SourceGroup'
   /honeybee/source_group/{sgId}/connection_check:

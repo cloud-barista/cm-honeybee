@@ -421,6 +421,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/honeybee/source_group/{sgId}/agent_check": {
+            "get": {
+                "description": "Check Agent in source group. Show each status by returning agent info list.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Check Agent SourceGroup",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully checked Agent for the source group",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.AgentInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to check Agent for the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/honeybee/source_group/{sgId}/connection_check": {
             "get": {
                 "description": "Check if SSH connection is available for each connection info in source group. Show each status by returning connection info list.",
@@ -1158,6 +1205,18 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.AgentInfo": {
+            "type": "object",
+            "properties": {
+                "connection_name": {
+                    "type": "string"
+                },
+                "error_msg": {},
+                "result": {
                     "type": "string"
                 }
             }
