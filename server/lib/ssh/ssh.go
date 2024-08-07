@@ -86,10 +86,10 @@ func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) error {
 	return nil
 }
 
-func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchmark, error) {
+func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) (error) {
 	err := o.NewClientConn(connectionInfo)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer func() {
 		o.Close()
@@ -99,7 +99,7 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 	client, err := sftp.NewClient(o.Options.client)
 	if err != nil {
 		logger.Println(logger.ERROR, true, "Failed to SFTP Connect: "+err.Error())
-		return nil, err
+		return err
 	}
 	defer func() {
 		_ = client.Close()
@@ -113,14 +113,14 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 		fileContents, err := sourceFiles.ReadFile(file)
 		if err != nil {
 			logger.Println(logger.ERROR, true, "SSH: Failed to read source file: "+err.Error())
-			return nil, err
+			return err
 		}
 
 		dstFilePath := filepath.Join(dstPath, strings.Split(file, "/")[1])
 		dstFile, err := client.Create(dstFilePath)
 		if err != nil {
 			logger.Println(logger.ERROR, true, "SSH: Failed to create destination file: "+err.Error())
-			return nil, err
+			return err
 		}
 
 		logger.Println(logger.DEBUG, true, "SSH: Copying "+file+" to "+dstFilePath)
@@ -133,22 +133,50 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 		if err != nil {
 			logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
 				output+" (Error: "+err.Error())
-			return nil, err
+			return err
 		}
 
 		_ = dstFile.Close()
 	}
 
+
+	types := []string{
+					"cpus",
+					"cpum",
+					"memR",
+					"memW",
+					"fioR",
+					"fioW",
+					/*, "dbR", "dbW"*/
+	}
+
+	go func() {
+    _, err := o.BenchRunCmd(connectionInfo, types)
+    if err != nil {
+			logger.Printf(logger.DEBUG, true, err.Error())
+    }
+  }()
+
+	return nil
+}
+
+func (o *SSH) BenchRunCmd(connectionInfo model.ConnectionInfo, types []string) ([]model.Benchmark, error){
+	err := o.NewClientConn(connectionInfo)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		o.Close()
+	}()
+
+	commands := "/tmp/milkyway.sh --run "
 	var BenchmarkList []model.Benchmark
-	commands := "/tmp/milkyway.sh "
-	types := []string{"cpus", "cpum", "memR", "memW", "fioR", "fioW" /*, "dbR", "dbW"*/}
 
 	for i, t := range types {
 		logger.Printf(logger.DEBUG, true, "SSH: Benchmark Progressing - [%d/%d] %s...\n", i+1, len(types), t)
 		output, err := o.RunCmd(commands + t)
 		if err != nil {
-			logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
-				output+" (Error: "+err.Error())
+			logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+output+" (Error: "+err.Error()+")")
 			return nil, err
 		}
 		logger.Println(logger.DEBUG, true, "SSH: Benchmark Output: "+output)
@@ -167,9 +195,33 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 		BenchmarkList = append(BenchmarkList, benchmarkInfo)
 	}
 
-	logger.Println(logger.DEBUG, true, BenchmarkList)
+	logger.Println(logger.DEBUG, true, "SSH: Benchmark Result : ", BenchmarkList)
 
 	return BenchmarkList, nil
+}
+
+func (o *SSH) StopBenchmark(connectionInfo model.ConnectionInfo) error {
+	err := o.NewClientConn(connectionInfo)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		o.Close()
+	}()
+
+	commands := "/tmp/milkyway.sh --stop"
+
+	logger.Println(logger.DEBUG, true, "SSH: Benchmark Stopping..")
+	output, err := o.RunCmd(commands)
+	if err != nil {
+		logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
+			output+" (Error: "+err.Error())
+		return err
+	}
+	logger.Println(logger.DEBUG, true, "SSH: Benchmark Stopped")
+
+
+	return nil
 }
 
 func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) (string, error) {

@@ -10,6 +10,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/labstack/echo/v4"
+	"github.com/jollaman999/utils/logger"
 )
 
 // GetBenchmarkInfo godoc
@@ -61,7 +62,7 @@ func GetBenchmarkInfo(c echo.Context) error {
 //	@Success		200	{object}	model.Benchmark			"Successfully get information of the benchmark."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the benchmark."
-//	@Router			/honeybee/run/bench/{connId} [get]
+//	@Router			/honeybee/bench/{connId}/run [get]
 func RunBenchmarkInfo(c echo.Context) error {
 	connID := c.Param("connId")
 	if connID == "" {
@@ -75,6 +76,7 @@ func RunBenchmarkInfo(c echo.Context) error {
 
 	oldSavedBenchmarkInfo, _ := dao.SavedBenchmarkInfoGet(connectionInfo.ID)
 
+
 	if oldSavedBenchmarkInfo == nil {
 		savedBenchmarkInfo := new(model.SavedBenchmarkInfo)
 		savedBenchmarkInfo.ConnectionID = connectionInfo.ID
@@ -83,7 +85,7 @@ func RunBenchmarkInfo(c echo.Context) error {
 		savedBenchmarkInfo.SavedTime = time.Now()
 		savedBenchmarkInfo, err = dao.SavedBenchmarkInfoRegister(savedBenchmarkInfo)
 		if err != nil {
-			return common.ReturnInternalError(c, err, "Error occurred while getting infra information.")
+			return common.ReturnInternalError(c, err, "Error occurred while getting benchmark information.")
 		}
 		oldSavedBenchmarkInfo = savedBenchmarkInfo
 	}
@@ -92,20 +94,56 @@ func RunBenchmarkInfo(c echo.Context) error {
 		Options: ssh.DefaultSSHOptions(),
 	}
 
-	data, err := s.RunBenchmark(*connectionInfo)
+	_ = s.RunBenchmark(*connectionInfo)
+
+	oldSavedBenchmarkInfo.Status = "benchmarking"
+	_ = dao.SavedBenchmarkInfoUpdate(oldSavedBenchmarkInfo)
+	
+
+	return c.JSONPretty(http.StatusOK, oldSavedBenchmarkInfo, " ")
+}
+
+
+// StopBenchmarkInfo godoc
+//
+//	@Summary		Stop Benchmark
+//	@Description	Stop the benchmark
+//	@Tags			[Import] StopBenchmark
+//	@Accept			json
+//	@Produce		json
+//	@Param			connId path string true "ID of the connection info"
+//	@Success		200	{object}	model.SimpleMsg				"Benchmark Stopped."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to stop of the benchmark."
+//	@Router			/honeybee/bench/{connId}/stop [get]
+func StopBenchmarkInfo(c echo.Context) error {
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
-		oldSavedBenchmarkInfo.Status = "failed"
-		_ = dao.SavedBenchmarkInfoUpdate(oldSavedBenchmarkInfo)
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	oldSavedBenchmarkInfo, _ := dao.SavedBenchmarkInfoGet(connectionInfo.ID)
+
+	if oldSavedBenchmarkInfo == nil {
 		return common.ReturnInternalError(c, err, "Error occurred while getting benchmark information.")
 	}
 
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return common.ReturnErrorMsg(c, "Error occurred while converting benchmark data to JSON.")
+	s := &ssh.SSH{
+		Options: ssh.DefaultSSHOptions(),
 	}
 
-	oldSavedBenchmarkInfo.BenchmarkData = string(jsonData)
-	oldSavedBenchmarkInfo.Status = "success"
+	err = s.StopBenchmark(*connectionInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+
+//	oldSavedBenchmarkInfo.BenchmarkData = ""
+	oldSavedBenchmarkInfo.Status = "stopped"
 	oldSavedBenchmarkInfo.SavedTime = time.Now()
 	err = dao.SavedBenchmarkInfoUpdate(oldSavedBenchmarkInfo)
 	if err != nil {
