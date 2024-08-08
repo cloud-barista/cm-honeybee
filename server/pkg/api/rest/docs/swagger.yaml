@@ -940,7 +940,7 @@ paths:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Run Benchmark Information
       tags:
-      - '[Import] RunBenchmark'
+      - '[Import] BenchmarkInfo'
   /honeybee/bench/{connId}/stop:
     get:
       consumes:
@@ -969,7 +969,7 @@ paths:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Stop Benchmark
       tags:
-      - '[Import] StopBenchmark'
+      - '[Import] BenchmarkInfo'
   /honeybee/connection_info/{connId}:
     get:
       consumes:

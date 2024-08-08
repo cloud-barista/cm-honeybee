@@ -69,7 +69,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Import] RunBenchmark"
+                    "[Import] BenchmarkInfo"
                 ],
                 "summary": "Run Benchmark Information",
                 "parameters": [
@@ -113,7 +113,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Import] StopBenchmark"
+                    "[Import] BenchmarkInfo"
                 ],
                 "summary": "Stop Benchmark",
                 "parameters": [

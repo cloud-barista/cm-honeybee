@@ -17,7 +17,7 @@ import (
 //
 //	@Summary		Get Benchmark Information
 //	@Description	Get the benchmark information of the connection information.
-//	@Tags			[Import] RunBenchmark
+//	@Tags			[Import] BenchmarkInfo
 //	@Accept			json
 //	@Produce		json
 //	@Param			connId path string true "ID of the connection info"
