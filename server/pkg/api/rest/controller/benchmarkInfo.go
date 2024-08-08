@@ -57,7 +57,7 @@ func GetBenchmarkInfo(c echo.Context) error {
 //
 //	@Summary		Run Benchmark Information
 //	@Description	Run the benchmark information of the connection information.
-//	@Tags			[Import] RunBenchmark
+//	@Tags			[Import] BenchmarkInfo
 //	@Accept			json
 //	@Produce		json
 //	@Param			connId path string true "ID of the connection info"
@@ -125,7 +125,7 @@ func RunBenchmarkInfo(c echo.Context) error {
 //
 //	@Summary		Stop Benchmark
 //	@Description	Stop the benchmark
-//	@Tags			[Import] StopBenchmark
+//	@Tags			[Import] BenchmarkInfo
 //	@Accept			json
 //	@Produce		json
 //	@Param			connId path string true "ID of the connection info"
