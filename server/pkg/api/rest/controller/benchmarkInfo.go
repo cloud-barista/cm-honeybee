@@ -104,12 +104,9 @@ func RunBenchmarkInfo(c echo.Context) error {
 
 	go func(typeStr string, benchmarkInfo *model.SavedBenchmarkInfo) {
 		benchmarkData, _ := s.RunBenchmark(*connectionInfo, typeStr)
-    if err != nil {
-			logger.Printf(logger.DEBUG, true, err.Error())
-    }
-
-		logger.Println(logger.INFO, true, "benchmarkData is : ", benchmarkData)
-		logger.Println(logger.INFO, true, "connect id : ", benchmarkInfo.ConnectionID)
+		if err != nil {
+			logger.Println(logger.DEBUG, true, err.Error())
+		}
 
 		benchmarkInfo.Status = "success"
 		benchmarkInfo.Benchmark = benchmarkData
