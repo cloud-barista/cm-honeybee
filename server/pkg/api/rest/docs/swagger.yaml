@@ -109,7 +109,7 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo:
     properties:
-      benchmark_data:
+      benchmark:
         type: string
       connection_id:
         type: string
@@ -117,9 +117,6 @@ definitions:
         type: string
       status:
         type: string
-    required:
-    - benchmark_data
-    - connection_id
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo:
     properties:

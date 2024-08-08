@@ -1408,12 +1408,8 @@ const docTemplate = `{
         },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo": {
             "type": "object",
-            "required": [
-                "benchmark_data",
-                "connection_id"
-            ],
             "properties": {
-                "benchmark_data": {
+                "benchmark": {
                     "type": "string"
                 },
                 "connection_id": {

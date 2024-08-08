@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"encoding/json"
+//	"encoding/json"
 	"net/http"
 	"time"
 
@@ -42,13 +42,15 @@ func GetBenchmarkInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Failed to get information of the benchmark.")
 	}
 
-	var benchmarkList []model.Benchmark
-	err = json.Unmarshal([]byte(savedBenchmarkInfo.BenchmarkData), &benchmarkList)
-	if err != nil {
-		return common.ReturnInternalError(c, err, "Error occurred while parsing software list.")
-	}
+	logger.Println(logger.ERROR, true, "savedBenchmarkInfo : ", savedBenchmarkInfo)
 
-	return c.JSONPretty(http.StatusOK, benchmarkList, " ")
+//	var benchmark model.Benchmark
+//	err = json.Unmarshal([]byte(savedBenchmarkInfo.BenchmarkData), &benchmark)
+//	if err != nil {
+//		return common.ReturnInternalError(c, err, "Error occurred while parsing software list.")
+//	}
+
+	return c.JSONPretty(http.StatusOK, savedBenchmarkInfo, " ")
 }
 
 // RunBenchmarkInfo godoc
@@ -80,7 +82,7 @@ func RunBenchmarkInfo(c echo.Context) error {
 	if oldSavedBenchmarkInfo == nil {
 		savedBenchmarkInfo := new(model.SavedBenchmarkInfo)
 		savedBenchmarkInfo.ConnectionID = connectionInfo.ID
-		savedBenchmarkInfo.BenchmarkData = ""
+		savedBenchmarkInfo.Benchmark = ""
 		savedBenchmarkInfo.Status = "benchmarking"
 		savedBenchmarkInfo.SavedTime = time.Now()
 		savedBenchmarkInfo, err = dao.SavedBenchmarkInfoRegister(savedBenchmarkInfo)
@@ -94,15 +96,33 @@ func RunBenchmarkInfo(c echo.Context) error {
 		Options: ssh.DefaultSSHOptions(),
 	}
 
-	_ = s.RunBenchmark(*connectionInfo)
 
 	oldSavedBenchmarkInfo.Status = "benchmarking"
 	_ = dao.SavedBenchmarkInfoUpdate(oldSavedBenchmarkInfo)
 	
+	typeStr := c.QueryParam("types")
+
+	go func(typeStr string, benchmarkInfo *model.SavedBenchmarkInfo) {
+		benchmarkData, _ := s.RunBenchmark(*connectionInfo, typeStr)
+    if err != nil {
+			logger.Printf(logger.DEBUG, true, err.Error())
+    }
+
+		logger.Println(logger.INFO, true, "benchmarkData is : ", benchmarkData)
+		logger.Println(logger.INFO, true, "connect id : ", benchmarkInfo.ConnectionID)
+
+		benchmarkInfo.Status = "success"
+		benchmarkInfo.Benchmark = benchmarkData
+
+		err = dao.SavedBenchmarkInfoUpdate(benchmarkInfo)
+		if err != nil {
+			logger.Println(logger.ERROR, true, "err is : ", err)
+		}
+
+	}(typeStr, oldSavedBenchmarkInfo)
 
 	return c.JSONPretty(http.StatusOK, oldSavedBenchmarkInfo, " ")
 }
-
 
 // StopBenchmarkInfo godoc
 //
@@ -142,7 +162,6 @@ func StopBenchmarkInfo(c echo.Context) error {
 		logger.Println(logger.ERROR, true, err)
 	}
 
-//	oldSavedBenchmarkInfo.BenchmarkData = ""
 	oldSavedBenchmarkInfo.Status = "stopped"
 	oldSavedBenchmarkInfo.SavedTime = time.Now()
 	err = dao.SavedBenchmarkInfoUpdate(oldSavedBenchmarkInfo)

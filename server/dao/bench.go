@@ -35,6 +35,7 @@ func SavedBenchmarkInfoGet(ConnectionID string) (*model.SavedBenchmarkInfo, erro
 
 func SavedBenchmarkInfoUpdate(benchmark *model.SavedBenchmarkInfo) error {
 	result := db.DB.Model(&model.SavedBenchmarkInfo{}).Where("connection_id = ?", benchmark.ConnectionID).Updates(benchmark)
+
 	err := result.Error
 	if err != nil {
 		return err
