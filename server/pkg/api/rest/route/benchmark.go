@@ -10,5 +10,6 @@ import (
 
 func RegisterBenchmark(e *echo.Echo) {
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/bench/:connId", controller.GetBenchmarkInfo)
-	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/run/bench/:connId", controller.RunBenchmarkInfo)
+	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/bench/:connId/run", controller.RunBenchmarkInfo)
+	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/bench/:connId/stop", controller.StopBenchmarkInfo)
 }

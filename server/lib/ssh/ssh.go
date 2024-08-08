@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
+  "strconv"
 	"strings"
   "time"
 
@@ -86,10 +86,10 @@ func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) error {
 	return nil
 }
 
-func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchmark, error) {
+func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo, types string) (string, error) {
 	err := o.NewClientConn(connectionInfo)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer func() {
 		o.Close()
@@ -99,7 +99,7 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 	client, err := sftp.NewClient(o.Options.client)
 	if err != nil {
 		logger.Println(logger.ERROR, true, "Failed to SFTP Connect: "+err.Error())
-		return nil, err
+		return "", err
 	}
 	defer func() {
 		_ = client.Close()
@@ -113,14 +113,14 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 		fileContents, err := sourceFiles.ReadFile(file)
 		if err != nil {
 			logger.Println(logger.ERROR, true, "SSH: Failed to read source file: "+err.Error())
-			return nil, err
+			return "", err
 		}
 
 		dstFilePath := filepath.Join(dstPath, strings.Split(file, "/")[1])
 		dstFile, err := client.Create(dstFilePath)
 		if err != nil {
 			logger.Println(logger.ERROR, true, "SSH: Failed to create destination file: "+err.Error())
-			return nil, err
+			return "", err
 		}
 
 		logger.Println(logger.DEBUG, true, "SSH: Copying "+file+" to "+dstFilePath)
@@ -133,22 +133,50 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 		if err != nil {
 			logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
 				output+" (Error: "+err.Error())
-			return nil, err
+			return "", err
 		}
 
 		_ = dstFile.Close()
 	}
 
+	var typesArr []string
+	if types == "" {
+		typesArr = []string{
+						"cpus",
+						"cpum",
+						"memR",
+						"memW",
+						"fioR",
+						"fioW",
+						/*, "dbR", "dbW"*/
+		}
+	} else {
+		typesArr = strings.Split(types, ",")
+	}
+
+	benchmarkData, _ := o.BenchRunCmd(connectionInfo, typesArr)
+	benchmarkDataToJSON, _ := json.Marshal(benchmarkData)
+
+	return string(benchmarkDataToJSON), nil
+}
+
+func (o *SSH) BenchRunCmd(connectionInfo model.ConnectionInfo, types []string) ([]model.Benchmark, error){
+	err := o.NewClientConn(connectionInfo)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		o.Close()
+	}()
+
+	commands := "/tmp/milkyway.sh --run "
 	var BenchmarkList []model.Benchmark
-	commands := "/tmp/milkyway.sh "
-	types := []string{"cpus", "cpum", "memR", "memW", "fioR", "fioW" /*, "dbR", "dbW"*/}
 
 	for i, t := range types {
 		logger.Printf(logger.DEBUG, true, "SSH: Benchmark Progressing - [%d/%d] %s...\n", i+1, len(types), t)
 		output, err := o.RunCmd(commands + t)
 		if err != nil {
-			logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
-				output+" (Error: "+err.Error())
+			logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+output+" (Error: "+err.Error()+")")
 			return nil, err
 		}
 		logger.Println(logger.DEBUG, true, "SSH: Benchmark Output: "+output)
@@ -167,9 +195,32 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo) ([]model.Benchma
 		BenchmarkList = append(BenchmarkList, benchmarkInfo)
 	}
 
-	logger.Println(logger.DEBUG, true, BenchmarkList)
+	logger.Println(logger.DEBUG, true, "SSH: Benchmark Result : ", BenchmarkList)
 
 	return BenchmarkList, nil
+}
+
+func (o *SSH) StopBenchmark(connectionInfo model.ConnectionInfo) error {
+	err := o.NewClientConn(connectionInfo)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		o.Close()
+	}()
+
+	commands := "/tmp/milkyway.sh --stop"
+
+	logger.Println(logger.DEBUG, true, "SSH: Benchmark Stopping..")
+	output, err := o.RunCmd(commands)
+	if err != nil {
+		logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
+			output+" (Error: "+err.Error())
+		return err
+	}
+	logger.Println(logger.DEBUG, true, "SSH: Benchmark Stopped")
+
+	return nil
 }
 
 func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) (string, error) {
@@ -341,18 +392,4 @@ func defaultUsername() string {
 		}
 	}
 	return ""
-}
-
-//import "golang.org/x/term"
-//func readPassword(reason string) ([]byte, error) {
-//	fmt.Print(reason)
-//	return term.ReadPassword(int(os.Stdin.Fd()))
-//}
-
-func StringToInterface(i string) interface{} {
-	var x interface{}
-	if err := json.Unmarshal([]byte(i), &x); err != nil {
-		log.Printf("Error : %s\n", err)
-	}
-	return x
 }

@@ -300,9 +300,9 @@ func CheckAgentSourceGroup(c echo.Context) error {
 
 		data, err := s.RunAgent(ci)
 		agentInfo := model.AgentInfo{
-			Connection: ci.Name,
-			Result: data,
-			ErrorMsg:    err,
+			Connection:    ci.Name,
+			Result:        data,
+			ErrorMsg:      err,
 		}
 
 		agentInfos = append(agentInfos, agentInfo)

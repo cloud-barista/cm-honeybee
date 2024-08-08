@@ -26,7 +26,7 @@ then
 fi
 }
 Initializer() {
-    if [ -x "$(command -v curl)" ] || [ -x "$(command -v wget)" ]; then
+    if [ -x "$(command -v curl)" ] && [ -x "$(command -v wget)" ]; then
         # echo "[Initializer] --PASS"
         echo ""
 

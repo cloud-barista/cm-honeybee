@@ -85,6 +85,7 @@ definitions:
     required:
     - ip_address
     - name
+    - password
     - ssh_port
     - user
     type: object
@@ -108,7 +109,7 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo:
     properties:
-      benchmark_data:
+      benchmark:
         type: string
       connection_id:
         type: string
@@ -116,9 +117,6 @@ definitions:
         type: string
       status:
         type: string
-    required:
-    - benchmark_data
-    - connection_id
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo:
     properties:
@@ -914,6 +912,64 @@ paths:
       summary: Get Benchmark Information
       tags:
       - '[Import] RunBenchmark'
+  /honeybee/bench/{connId}/run:
+    get:
+      consumes:
+      - application/json
+      description: Run the benchmark information of the connection information.
+      parameters:
+      - description: ID of the connection info
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the benchmark.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.Benchmark'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the benchmark.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Run Benchmark Information
+      tags:
+      - '[Import] BenchmarkInfo'
+  /honeybee/bench/{connId}/stop:
+    get:
+      consumes:
+      - application/json
+      description: Stop the benchmark
+      parameters:
+      - description: ID of the connection info
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Benchmark Stopped.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to stop of the benchmark.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Stop Benchmark
+      tags:
+      - '[Import] BenchmarkInfo'
   /honeybee/connection_info/{connId}:
     get:
       consumes:
@@ -962,35 +1018,6 @@ paths:
       summary: Check Ready
       tags:
       - '[Admin] System management'
-  /honeybee/run/bench/{connId}:
-    get:
-      consumes:
-      - application/json
-      description: Run the benchmark information of the connection information.
-      parameters:
-      - description: ID of the connection info
-        in: path
-        name: connId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully get information of the benchmark.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.Benchmark'
-        "400":
-          description: Sent bad request.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-        "500":
-          description: Failed to get information of the benchmark.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-      summary: Run Benchmark Information
-      tags:
-      - '[Import] RunBenchmark'
   /honeybee/source_group:
     get:
       consumes:
