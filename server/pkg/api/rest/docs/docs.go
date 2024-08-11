@@ -59,6 +59,94 @@ const docTemplate = `{
                 }
             }
         },
+        "/honeybee/bench/{connId}/run": {
+            "get": {
+                "description": "Run the benchmark information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] BenchmarkInfo"
+                ],
+                "summary": "Run Benchmark Information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the benchmark.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.Benchmark"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the benchmark.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/honeybee/bench/{connId}/stop": {
+            "get": {
+                "description": "Stop the benchmark",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] BenchmarkInfo"
+                ],
+                "summary": "Stop Benchmark",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Benchmark Stopped.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to stop of the benchmark.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/honeybee/connection_info/{connId}": {
             "get": {
                 "description": "Get the connection information directly.",
@@ -125,50 +213,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to check ready state.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/honeybee/run/bench/{connId}": {
-            "get": {
-                "description": "Run the benchmark information of the connection information.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "[Import] RunBenchmark"
-                ],
-                "summary": "Run Benchmark Information",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID of the connection info",
-                        "name": "connId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully get information of the benchmark.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.Benchmark"
-                        }
-                    },
-                    "400": {
-                        "description": "Sent bad request.",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to get information of the benchmark.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1306,6 +1350,7 @@ const docTemplate = `{
             "required": [
                 "ip_address",
                 "name",
+                "password",
                 "ssh_port",
                 "user"
             ],
@@ -1363,12 +1408,8 @@ const docTemplate = `{
         },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo": {
             "type": "object",
-            "required": [
-                "benchmark_data",
-                "connection_id"
-            ],
             "properties": {
-                "benchmark_data": {
+                "benchmark": {
                     "type": "string"
                 },
                 "connection_id": {
