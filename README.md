@@ -50,6 +50,11 @@ cd agent
 make run
 ```
 
+Or, you can run it within Docker by this command.
+ ```shell
+ make run_docker
+ ```
+
 ### 2. Build and run server
 
 2.1. Write the configuration file.
