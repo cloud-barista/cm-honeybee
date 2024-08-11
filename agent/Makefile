@@ -29,7 +29,7 @@ lint: dependency ## Lint the files
 	  if [ ! -f "$$go_path/bin/golangci-lint" ]; then \
 	    ${GO_COMMAND} install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
 	  fi; \
-	  $$go_path/bin/golangci-lint run -E contextcheck -E revive
+	  $$go_path/bin/golangci-lint run --timeout 30m -E contextcheck -E revive
 
 test: dependency ## Run unittests
 	@echo "Running tests..."
