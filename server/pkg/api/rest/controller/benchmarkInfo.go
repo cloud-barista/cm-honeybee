@@ -42,13 +42,7 @@ func GetBenchmarkInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Failed to get information of the benchmark.")
 	}
 
-	logger.Println(logger.ERROR, true, "savedBenchmarkInfo : ", savedBenchmarkInfo)
-
-//	var benchmark model.Benchmark
-//	err = json.Unmarshal([]byte(savedBenchmarkInfo.BenchmarkData), &benchmark)
-//	if err != nil {
-//		return common.ReturnInternalError(c, err, "Error occurred while parsing software list.")
-//	}
+	logger.Println(logger.INFO, true, "savedBenchmarkInfo : ", savedBenchmarkInfo)
 
 	return c.JSONPretty(http.StatusOK, savedBenchmarkInfo, " ")
 }

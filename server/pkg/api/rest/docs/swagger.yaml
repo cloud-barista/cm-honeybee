@@ -911,7 +911,7 @@ paths:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Get Benchmark Information
       tags:
-      - '[Import] RunBenchmark'
+      - '[Import] BenchmarkInfo'
   /honeybee/bench/{connId}/run:
     get:
       consumes:
