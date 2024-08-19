@@ -25,7 +25,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Import] RunBenchmark"
+                    "[Import] BenchmarkInfo"
                 ],
                 "summary": "Get Benchmark Information",
                 "parameters": [

@@ -1007,6 +1007,12 @@ const docTemplate = `{
                 "hostConfig": {
                     "type": "object",
                     "properties": {
+                        "annotations": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
                         "networkMode": {
                             "type": "string"
                         }
