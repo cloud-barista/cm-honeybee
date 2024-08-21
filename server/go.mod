@@ -1,6 +1,6 @@
 module github.com/cloud-barista/cm-honeybee/server
 
-go 1.21.6
+go 1.23.0
 
 require (
 	github.com/glebarez/go-sqlite v1.22.0 // indirect

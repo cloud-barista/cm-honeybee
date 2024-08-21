@@ -1,6 +1,6 @@
 module github.com/cloud-barista/cm-honeybee/agent
 
-go 1.21.6
+go 1.23.0
 
 require (
 	github.com/NeowayLabs/drm v0.0.0-20190824133025-4939fc0ad345
