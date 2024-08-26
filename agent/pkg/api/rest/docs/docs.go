@@ -92,6 +92,15 @@ const docTemplate = `{
                     "[Software] Get software info"
                 ],
                 "summary": "Get a list of software information",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "Enable for show all packages include default packages.",
+                        "name": "show_default_packages",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successfully get information of software.",

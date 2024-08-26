@@ -145,7 +145,7 @@ func getConfigFiles(packageName string) ([]string, error) {
 	return configs, nil
 }
 
-func GetDEBs() ([]software.DEB, error) {
+func GetDEBs(showDefaultPackages bool) ([]software.DEB, error) {
 	var DEBs []software.DEB
 
 	dpkgStatusFile := "/var/lib/dpkg/status"
@@ -169,6 +169,35 @@ func GetDEBs() ([]software.DEB, error) {
 				packageName+"' package.")
 		}
 		DEBs[i].Conffiles = configs
+	}
+
+	if !showDefaultPackages {
+		var filteredDEBs []software.DEB
+
+		defaultPackages, err := GetDefaultPackages()
+		if err != nil {
+			logger.Println(logger.DEBUG, false, "DEB: Error occurred while getting default packages."+
+				" ("+err.Error()+")")
+		}
+
+		for _, deb := range DEBs {
+			var defPkgFound bool
+
+			for _, defPkg := range defaultPackages {
+				if defPkg == deb.Package {
+					defPkgFound = true
+					break
+				}
+			}
+
+			if defPkgFound {
+				continue
+			}
+
+			filteredDEBs = append(filteredDEBs, deb)
+		}
+
+		return filteredDEBs, nil
 	}
 
 	return DEBs, nil

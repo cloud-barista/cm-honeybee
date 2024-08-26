@@ -24,6 +24,7 @@ require (
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.3
 	github.com/taigrr/systemctl v1.0.7
+	github.com/ulikunitz/xz v0.5.12
 )
 
 require (

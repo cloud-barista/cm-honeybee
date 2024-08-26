@@ -10,7 +10,7 @@ import (
 
 var softwareInfoLock sync.Mutex
 
-func GetSoftwareInfo() (*software2.Software, error) {
+func GetSoftwareInfo(showDefaultPackages bool) (*software2.Software, error) {
 	if !softwareInfoLock.TryLock() {
 		return nil, errors.New("software info collection is in progress")
 	}
@@ -28,14 +28,14 @@ func GetSoftwareInfo() (*software2.Software, error) {
 	}
 
 	if h.PlatformFamily == "debian" {
-		deb, err = GetDEBs()
+		deb, err = GetDEBs(showDefaultPackages)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	if h.PlatformFamily == "fedora" || h.PlatformFamily == "rhel" {
-		rpm, err = GetRPMs()
+		rpm, err = GetRPMs(showDefaultPackages)
 		if err != nil {
 			return nil, err
 		}
