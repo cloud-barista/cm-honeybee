@@ -1,4 +1,4 @@
-FROM golang:1.21.6-bookworm AS builder
+FROM golang:1.23.0-bookworm AS builder
 
 RUN apt-get update && apt-get install -y make bash git
 
@@ -24,6 +24,10 @@ RUN cp -f /usr/share/zoneinfo/Asia/Seoul /etc/localtime
 
 COPY --from=builder /go/src/github.com/cloud-barista/cm-honeybee/server/conf /conf
 COPY --from=builder /go/src/github.com/cloud-barista/cm-honeybee/server/cmd/cm-honeybee/cm-honeybee /cm-honeybee
+
+RUN mkdir -p /root/.cm-honeybee/
+COPY --from=builder /go/src/github.com/cloud-barista/cm-honeybee/server/_default_key/honeybee.pub /root/.cm-honeybee/honeybee.pub
+COPY --from=builder /go/src/github.com/cloud-barista/cm-honeybee/server/_default_key/honeybee.key /root/.cm-honeybee/honeybee.key
 
 USER root
 CMD ["/cm-honeybee"]

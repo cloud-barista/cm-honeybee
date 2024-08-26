@@ -22,7 +22,7 @@ Collecting and Aggregating Information From Source Computing framework (codename
 * Tested operating systems (OSs):
   * Ubuntu 24.04, Ubuntu 22.04, Ubuntu 18.04, Rocky Linux 9, Windows 11
 * Language:
-  * Go: 1.21.6
+  * Go: 1.23.0
 
 ## How to run
 
@@ -49,6 +49,11 @@ Collecting and Aggregating Information From Source Computing framework (codename
 cd agent
 make run
 ```
+
+Or, you can run it within Docker by this command.
+ ```shell
+ make run_docker
+ ```
 
 ### 2. Build and run server
 
@@ -170,6 +175,35 @@ curl http://localhost:8081/honeybee/readyz
 ## Check out all APIs
 * [Honeybee Agent APIs (Swagger Document)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cm-honeybee/main/agent/pkg/api/rest/docs/swagger.yaml)
 * [Honeybee Server APIs (Swagger Document)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cm-honeybee/main/server/pkg/api/rest/docs/swagger.yaml)
+
+
+## For Docker users
+There are default private key and public key used for encrypt connection info's password from the honeybee server.
+(Located in server/_default_key)
+For security, run these commands to generate new key files.
+
+```bash
+docker exec cm-honeybee rm /root/.cm-honeybee/honeybee.key
+docker exec cm-honeybee rm /root/.cm-honeybee/honeybee.pub
+docker restart cm-honeybee
+```
+
+If you want to use private key file with other modules like cm-grasshopper, run this command.
+```bash
+mkdir keys
+docker cp cm-honeybee:/root/.cm-honeybee/honeybee.key keys/
+docker cp cm-honeybee:/root/.cm-honeybee/honeybee.pub keys/
+```
+
+Now, mount the created folder to the honeybee server container.
+For docker compose, add these lines.
+```yaml
+    volumes:
+        - ./keys/honeybee.key:/root/.cm-honeybee/honeybee.key
+        - ./keys/honeybee.pub:/root/.cm-honeybee/honeybee.pub
+```
+
+Now, you can copy ./keys/honeybee.key file to other module.
 
 ## For who develop modules with Honeybee
 

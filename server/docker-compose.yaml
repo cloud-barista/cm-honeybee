@@ -2,8 +2,5 @@ services:
   cm-honeybee:
     container_name: cm-honeybee
     restart: always
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    image: cm-honeybee:${TAG:-latest}
+    image: cloudbaristaorg/cm-honeybee:edge
     network_mode: "host"
