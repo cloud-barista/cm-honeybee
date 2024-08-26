@@ -2,10 +2,11 @@ package infra
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/cloud-barista/cm-honeybee/agent/driver/network"
 	modelNet "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
 	"github.com/jollaman999/utils/logger"
-	"sync"
 )
 
 var networkInfoLock sync.Mutex
