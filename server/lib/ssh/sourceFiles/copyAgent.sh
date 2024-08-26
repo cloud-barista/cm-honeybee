@@ -26,14 +26,14 @@ then
 fi
 }
 Initializer() {
-    if [ -x "$(command -v curl)" ] && [ -x "$(command -v wget)" ]; then
+    if [ -x "$(command -v curl)" ] && [ -x "$(command -v wget)" && [ -x "$(command -v iptables)" ]; then
         # echo "[Initializer] --PASS"
         echo ""
 
         sleep 1
 
     else
-        NEEDED_DEPS=(curl wget)
+        NEEDED_DEPS=(curl wget iptables)
         # echo "패키지 설치 :" "${NEEDED_DEPS[@]}"
 
         if [ -x "$(command -v apt-get)" ]
