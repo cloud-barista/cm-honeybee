@@ -139,7 +139,6 @@ func parseGroups(data []byte) ([]string, error) {
 			for _, pkg := range group.PackageList {
 				if pkg.Type == "mandatory" || pkg.Type == "default" {
 					packages = append(packages, pkg.Name)
-					fmt.Println(pkg.Name)
 				}
 			}
 		}
