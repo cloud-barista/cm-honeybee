@@ -134,13 +134,13 @@ func parseGroups(data []byte) ([]string, error) {
 
 	var packages []string
 	for _, group := range groups.Groups {
-		if strings.ToLower(group.ID) == "base" || strings.ToLower(group.Name) == "base" {
+		if strings.ToLower(group.ID) == "core" || strings.ToLower(group.Name) == "core" ||
+			strings.ToLower(group.ID) == "base" || strings.ToLower(group.Name) == "base" {
 			for _, pkg := range group.PackageList {
 				if pkg.Type == "mandatory" || pkg.Type == "default" {
 					packages = append(packages, pkg.Name)
 				}
 			}
-			break
 		}
 	}
 
