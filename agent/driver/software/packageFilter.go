@@ -200,15 +200,18 @@ func GetDefaultPackages() ([]string, error) {
 	version := h.PlatformVersion
 
 	baseURL := ""
+	secondaryURL := ""
 	fallbackURL := ""
 	switch strings.ToLower(osType) {
 	case "centos":
-		baseURL = fmt.Sprintf("https://vault.centos.org/%s/os/x86_64/repodata/repomd.xml", version)
+		baseURL = fmt.Sprintf("https://mirror.stream.centos.org/%s/BaseOS/x86_64/os/repodata/repomd.xml", version)
+		secondaryURL = fmt.Sprintf("https://vault.centos.org/%s/BaseOS/x86_64/os/repodata/repomd.xml", version)
+		fallbackURL = fmt.Sprintf("https://vault.centos.org/%s/os/x86_64/repodata/repomd.xml", version)
 	case "redhat":
 		fallthrough
 	case "rocky":
 		baseURL = fmt.Sprintf("https://dl.rockylinux.org/pub/rocky/%s/BaseOS/x86_64/os/repodata/repomd.xml", version)
-		fallbackURL = fmt.Sprintf("https://dl.rockylinux.org/vault/rocky/%s/BaseOS/x86_64/os/repodata/repomd.xml", version)
+		secondaryURL = fmt.Sprintf("https://dl.rockylinux.org/vault/rocky/%s/BaseOS/x86_64/os/repodata/repomd.xml", version)
 	case "ubuntu":
 		releaseName := getUbuntuReleaseName(version)
 		if releaseName == "unknown" {
@@ -247,15 +250,21 @@ func GetDefaultPackages() ([]string, error) {
 	// Fetch repomd.xml for CentOS, RockyLinux, or RedHat
 	logger.Println(logger.INFO, false, "packageFilter: Fetching repomd.xml from:", baseURL)
 	repomdData, err := fetchURL(baseURL)
-	if err != nil && fallbackURL != "" && strings.Contains(err.Error(), "404") {
-		// If there's a 404 error and we have a fallback URL, try fetching from the fallback URL
-		logger.Println(logger.WARN, false, "packageFilter: Primary URL failed, trying fallback URL:", fallbackURL)
-		baseURL = fallbackURL
+	if err != nil && secondaryURL != "" && strings.Contains(err.Error(), "404") {
+		// If there's a 404 error and we have a secondary URL, try fetching from the secondary URL
+		logger.Println(logger.WARN, false, "packageFilter: Primary URL failed, trying secondary URL:", secondaryURL)
+		baseURL = secondaryURL
 		repomdData, err = fetchURL(baseURL)
-		if err != nil {
-			errMsg := "packageFilter: error fetching repomd.xml from fallback URL: " + err.Error()
-			logger.Println(logger.ERROR, true, errMsg)
-			return nil, errors.New(errMsg)
+		if err != nil && fallbackURL != "" && strings.Contains(err.Error(), "404") {
+			// If there's a 404 error and we have a fallback URL, try fetching from the fallback URL
+			logger.Println(logger.WARN, false, "packageFilter: Secondary URL failed, trying fallback URL:", fallbackURL)
+			baseURL = fallbackURL
+			repomdData, err = fetchURL(baseURL)
+			if err != nil {
+				errMsg := "packageFilter: error fetching repomd.xml from fallback URL: " + err.Error()
+				logger.Println(logger.ERROR, true, errMsg)
+				return nil, errors.New(errMsg)
+			}
 		}
 	} else if err != nil {
 		errMsg := "packageFilter: error fetching repomd.xml: " + err.Error()
