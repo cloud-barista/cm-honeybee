@@ -9,7 +9,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jollaman999/utils v1.0.10 // Original codes from https://github.com/hcloud-classic/hcc-harp
-	github.com/knqyf263/go-rpmdb v0.1.1
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/yumaojun03/dmidecode v0.1.5-0.20231113021359-c053d91d9679
@@ -21,6 +20,7 @@ require (
 	github.com/cavaliergopher/rpm v1.2.0
 	github.com/coreos/go-iptables v0.7.0
 	github.com/jaypipes/ghw v0.12.0
+	github.com/knqyf263/go-rpmdb v0.0.0-facee9e1ddaf
 	github.com/kumako/go-win64api v0.0.0-20200829071356-ddc2195639e5
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.3
@@ -96,3 +96,5 @@ require (
 	modernc.org/memory v1.8.0 // indirect
 	modernc.org/sqlite v1.32.0 // indirect
 )
+
+replace github.com/knqyf263/go-rpmdb v0.0.0-facee9e1ddaf => ./go-rpmdb
