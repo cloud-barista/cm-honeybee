@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 // RepoMD represents the structure of repomd.xml for parsing
@@ -60,6 +61,7 @@ func createTransport() *http.Transport {
 func fetchURL(url string) ([]byte, error) {
 	client := &http.Client{
 		Transport: createTransport(),
+		Timeout:   time.Second * 30,
 	}
 
 	resp, err := client.Get(url)
