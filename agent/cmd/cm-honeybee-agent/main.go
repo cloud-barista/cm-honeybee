@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/cloud-barista/cm-honeybee/agent/lib/config"
+	"github.com/cloud-barista/cm-honeybee/agent/lib/privileged"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/controller"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/server"
 	"github.com/jollaman999/utils/logger"
@@ -17,6 +18,11 @@ import (
 
 func init() {
 	err := syscheck.CheckRoot()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	err = privileged.CheckPrivileged()
 	if err != nil {
 		log.Fatalln(err)
 	}
