@@ -139,6 +139,7 @@ func parseGroups(data []byte) ([]string, error) {
 			for _, pkg := range group.PackageList {
 				if pkg.Type == "mandatory" || pkg.Type == "default" {
 					packages = append(packages, pkg.Name)
+					fmt.Println(pkg.Name)
 				}
 			}
 		}
@@ -262,6 +263,16 @@ func fetchDirectoryListing(dirURL string) ([]string, error) {
 			}
 			fileName := line[start : start+end]
 			if strings.HasSuffix(fileName, ".rpm") {
+				// Skip for kernel related rpms
+				if strings.Contains(fileName, "firmware") ||
+					strings.HasPrefix(fileName, "kernel-") ||
+					strings.HasPrefix(fileName, "kpatch-") ||
+					strings.HasPrefix(fileName, "kmod-") ||
+					strings.HasPrefix(fileName, "kexec-") ||
+					strings.HasPrefix(fileName, "microcode") {
+					continue
+				}
+
 				rpmFiles = append(rpmFiles, fileName)
 			}
 		}
@@ -446,7 +457,6 @@ func GetDefaultPackages() ([]string, error) {
 					}
 
 					if matchedRPM == "" {
-						logger.Println(logger.WARN, false, "packageFilter: No RPM found for package:", pkgName)
 						return
 					}
 
@@ -520,7 +530,6 @@ func GetDefaultPackages() ([]string, error) {
 					}
 
 					if matchedRPM == "" {
-						logger.Println(logger.WARN, false, "packageFilter: No RPM found for package:", pkgName)
 						return
 					}
 
