@@ -416,6 +416,8 @@ func GetDefaultPackages() ([]string, error) {
 	// Fetch RPM versions for all default packages
 	var allPackagesWithDependencies []string
 
+	allPackagesWithDependencies = append(allPackagesWithDependencies, packages...)
+
 	var routineMax = 50
 	var wait sync.WaitGroup
 	var mutex = &sync.Mutex{}
