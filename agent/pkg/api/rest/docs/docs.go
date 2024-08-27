@@ -817,6 +817,9 @@ const docTemplate = `{
                 "arch": {
                     "type": "string"
                 },
+                "group": {
+                    "type": "string"
+                },
                 "license": {
                     "type": "string"
                 },

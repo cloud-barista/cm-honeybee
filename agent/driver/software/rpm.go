@@ -51,6 +51,7 @@ func GetRPMs(showDefaultPackages bool) ([]software.RPM, error) {
 			Name:      pkg.Name,
 			Version:   pkg.Version,
 			Release:   pkg.Release,
+			Group:     pkg.Group,
 			Arch:      pkg.Arch,
 			SourceRpm: pkg.SourceRpm,
 			Size:      pkg.Size,

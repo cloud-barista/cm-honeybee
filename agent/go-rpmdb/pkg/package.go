@@ -17,6 +17,7 @@ type PackageInfo struct {
 	Name            string
 	Version         string
 	Release         string
+	Group           string
 	Arch            string
 	SourceRpm       string
 	Size            int
@@ -140,6 +141,13 @@ func getNEVRA(indexEntries []indexEntry) (*PackageInfo, error) {
 			if pkgInfo.License == "(none)" {
 				pkgInfo.License = ""
 			}
+		case RPMTAG_GROUP:
+			// some libraries have a string value instead of international string, so accounting for both
+			if ie.Info.Type != RPM_I18NSTRING_TYPE && ie.Info.Type != RPM_STRING_TYPE {
+				return nil, xerrors.New("invalid tag group")
+			}
+			// since this is an international string, getting the first null terminated string
+			pkgInfo.Group = string(bytes.Split(ie.Data, []byte{0})[0])
 		case RPMTAG_VENDOR:
 			if ie.Info.Type != RPM_STRING_TYPE {
 				return nil, xerrors.New("invalid tag vendor")
