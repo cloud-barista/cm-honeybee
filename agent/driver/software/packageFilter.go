@@ -1,19 +1,22 @@
 package software
 
 import (
+	"bytes"
 	"compress/gzip"
 	"crypto/tls"
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/cavaliergopher/rpm"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/host"
+	"github.com/ulikunitz/xz"
 	"io"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
-
-	"github.com/ulikunitz/xz"
+	"sync"
 )
 
 // RepoMD represents the structure of repomd.xml for parsing
@@ -129,8 +132,7 @@ func parseGroups(data []byte) ([]string, error) {
 
 	var packages []string
 	for _, group := range groups.Groups {
-		// Matching against "core" in a case-insensitive manner
-		if strings.ToLower(group.ID) == "core" || strings.ToLower(group.Name) == "core" {
+		if strings.ToLower(group.ID) == "base" || strings.ToLower(group.Name) == "base" {
 			for _, pkg := range group.PackageList {
 				if pkg.Type == "mandatory" || pkg.Type == "default" {
 					packages = append(packages, pkg.Name)
@@ -189,6 +191,83 @@ func getUbuntuReleaseName(version string) string {
 	}
 }
 
+// fetchAndParseRPMDependencies fetches the RPM file and parses its dependencies
+func fetchAndParseRPMDependencies(rpmURL string) ([]string, error) {
+	logger.Println(logger.INFO, false, "packageFilter: Fetching RPM from:", rpmURL)
+	rpmData, err := fetchURL(rpmURL)
+	if err != nil {
+		errMsg := "packageFilter: error fetching RPM: " + err.Error()
+		logger.Println(logger.ERROR, true, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	// Parse the RPM file to extract dependencies
+	rpmReader := bytes.NewReader(rpmData)
+	pkg, err := rpm.Read(rpmReader)
+	if err != nil {
+		errMsg := "packageFilter: error reading RPM file: " + err.Error()
+		logger.Println(logger.ERROR, true, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	var dependencies []string
+	for _, req := range pkg.Requires() {
+		dependencies = append(dependencies, req.Name())
+	}
+
+	// Sort dependencies in ascending order
+	sort.Strings(dependencies)
+
+	return dependencies, nil
+}
+
+// fetchDirectoryListing fetches and returns a list of RPM filenames from a directory URL.
+func fetchDirectoryListing(dirURL string) ([]string, error) {
+	logger.Println(logger.INFO, false, "Fetching directory listing from: ", dirURL)
+
+	resp, err := http.Get(dirURL)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		errMsg := fmt.Sprintf("Failed to fetch directory listing from %s: %s", dirURL, resp.Status)
+		logger.Println(logger.ERROR, true, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the HTML body to find all links ending with ".rpm"
+	var rpmFiles []string
+	lines := strings.Split(string(body), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, ".rpm") {
+			start := strings.Index(line, "href=\"")
+			if start == -1 {
+				continue
+			}
+			start += len("href=\"")
+			end := strings.Index(line[start:], "\"")
+			if end == -1 {
+				continue
+			}
+			fileName := line[start : start+end]
+			if strings.HasSuffix(fileName, ".rpm") {
+				rpmFiles = append(rpmFiles, fileName)
+			}
+		}
+	}
+
+	return rpmFiles, nil
+}
+
 // GetDefaultPackages fetches and returns the default package list for a given OS type and version
 func GetDefaultPackages() ([]string, error) {
 	h, err := host.Info()
@@ -226,6 +305,8 @@ func GetDefaultPackages() ([]string, error) {
 		return nil, errors.New(errMsg)
 	}
 
+	var packages []string
+
 	if osType == "ubuntu" {
 		// Fetch Ubuntu manifest file
 		logger.Println(logger.INFO, false, "packageFilter: Fetching Ubuntu manifest from:", baseURL)
@@ -237,7 +318,7 @@ func GetDefaultPackages() ([]string, error) {
 		}
 
 		// Parse the manifest file to extract package names
-		packages, err := parseUbuntuManifest(manifestData)
+		packages, err = parseUbuntuManifest(manifestData)
 		if err != nil {
 			errMsg := "packageFilter: error parsing Ubuntu manifest: " + err.Error()
 			logger.Println(logger.ERROR, true, errMsg)
@@ -292,12 +373,218 @@ func GetDefaultPackages() ([]string, error) {
 	}
 
 	// Parse the groups data to extract mandatory and default packages
-	packages, err := parseGroups(groupData)
+	packages, err = parseGroups(groupData)
 	if err != nil {
 		errMsg := "packageFilter: error parsing group data: " + err.Error()
 		logger.Println(logger.ERROR, true, errMsg)
 		return nil, errors.New(errMsg)
 	}
 
-	return packages, nil
+	// Determine if the version is below 9
+	var isVersionBelowNine bool
+	for i := 8; i >= 0; i-- {
+		isVersionBelowNine = strings.HasPrefix(version, strconv.Itoa(i))
+		if isVersionBelowNine {
+			break
+		}
+	}
+
+	// For rocky, it has first letter subdirectory starting from 8.5. redhat uses same information of rocky.
+	if osType == "redhat" || osType == "rocky" {
+		for i := 9; i >= 5; i-- {
+			matched := strings.HasPrefix(version, "8."+strconv.Itoa(i))
+			if matched {
+				isVersionBelowNine = false
+				break
+			}
+		}
+	}
+
+	// Fetch RPM versions for all default packages
+	var allPackagesWithDependencies []string
+
+	var routineMax = 50
+	var wait sync.WaitGroup
+	var mutex = &sync.Mutex{}
+	var lenPackages = len(packages)
+
+	// For each package, fetch and parse RPM dependencies
+	if isVersionBelowNine {
+		// For versions below 9, no first letter subdirectory
+		dirURL := strings.ReplaceAll(baseURL, "repodata/repomd.xml", "Packages/")
+
+		// Fetch RPM files in the directory and cache it
+		rpmFiles, err := fetchDirectoryListing(dirURL)
+		if err != nil {
+			errMsg := "packageFilter: Error fetching directory listing: " + err.Error()
+			logger.Println(logger.ERROR, true, errMsg)
+			return nil, errors.New(errMsg)
+		}
+
+		for i := 0; i < lenPackages; {
+			if lenPackages-i < routineMax {
+				routineMax = lenPackages - i
+			}
+
+			wait.Add(routineMax)
+
+			for j := 0; j < routineMax; j++ {
+				go func(wait *sync.WaitGroup, pkgName string) {
+					defer func() {
+						wait.Done()
+					}()
+
+					// Find the correct RPM for the package
+					var matchedRPM string
+					for _, rpmFile := range rpmFiles {
+						if strings.HasPrefix(rpmFile, pkgName+"-") {
+							matchedRPM = rpmFile
+							break
+						}
+					}
+
+					if matchedRPM == "" {
+						logger.Println(logger.WARN, false, "packageFilter: No RPM found for package:", pkgName)
+						return
+					}
+
+					// For versions below 9, RPM is directly in Packages directory
+					rpmURL := strings.ReplaceAll(baseURL, "repodata/repomd.xml", "Packages/") + matchedRPM
+
+					// Fetch dependencies using the RPM URL
+					dependencies, err := fetchAndParseRPMDependencies(rpmURL)
+					if err != nil {
+						logger.Println(logger.ERROR, true, "packageFilter: Error fetching dependencies for package:", pkgName, err)
+						return
+					}
+
+					mutex.Lock()
+					allPackagesWithDependencies = append(allPackagesWithDependencies, dependencies...)
+					mutex.Unlock()
+				}(&wait, packages[i])
+
+				i++
+				if i == lenPackages {
+					break
+				}
+			}
+
+			wait.Wait()
+		}
+	} else {
+		// Map to store directory listings for each first letter
+		dirListings := make(map[string][]string)
+
+		for i := 0; i < lenPackages; {
+			if lenPackages-i < routineMax {
+				routineMax = lenPackages - i
+			}
+
+			wait.Add(routineMax)
+
+			for j := 0; j < routineMax; j++ {
+				go func(wait *sync.WaitGroup, pkgName string) {
+					defer func() {
+						wait.Done()
+					}()
+
+					// Determine the first letter of the package name
+					firstLetter := strings.ToLower(string(pkgName[0]))
+
+					// Check if directory listing is already fetched
+					if _, exists := dirListings[firstLetter]; !exists {
+						// For versions 9 and above, use first letter subdirectory
+						dirURL := strings.ReplaceAll(baseURL, "repodata/repomd.xml", "Packages/") + firstLetter
+
+						// Fetch RPM files in the directory and cache it
+						rpmFiles, err := fetchDirectoryListing(dirURL)
+						if err != nil {
+							logger.Println(logger.ERROR, true, "packageFilter: Error fetching directory listing:", err)
+							return
+						}
+						dirListings[firstLetter] = rpmFiles
+					}
+
+					// Get the cached directory listing
+					rpmFiles := dirListings[firstLetter]
+
+					// Find the correct RPM for the package
+					var matchedRPM string
+					for _, rpmFile := range rpmFiles {
+						if strings.HasPrefix(rpmFile, pkgName+"-") {
+							matchedRPM = rpmFile
+							break
+						}
+					}
+
+					if matchedRPM == "" {
+						logger.Println(logger.WARN, false, "packageFilter: No RPM found for package:", pkgName)
+						return
+					}
+
+					// For versions 9 and above, RPM is in a subdirectory by first letter
+					rpmURL := strings.ReplaceAll(baseURL, "repodata/repomd.xml", "Packages/") + fmt.Sprintf("%s/%s", firstLetter, matchedRPM)
+
+					// Fetch dependencies using the RPM URL
+					dependencies, err := fetchAndParseRPMDependencies(rpmURL)
+					if err != nil {
+						logger.Println(logger.ERROR, true, "packageFilter: Error fetching dependencies for package:", pkgName, err)
+						return
+					}
+
+					mutex.Lock()
+					allPackagesWithDependencies = append(allPackagesWithDependencies, dependencies...)
+					mutex.Unlock()
+				}(&wait, packages[i])
+
+				i++
+				if i == lenPackages {
+					break
+				}
+			}
+
+			wait.Wait()
+		}
+	}
+
+	// Remove duplicates and sort the package list
+	packageSet := make(map[string]struct{})
+	for _, pkg := range allPackagesWithDependencies {
+		// Skip if contained slash
+		slashIdx := strings.Index(pkg, "/")
+		if slashIdx != -1 {
+			continue
+		}
+
+		// Find and remove text within parentheses, including the parentheses themselves
+		for {
+			openIdx := strings.Index(pkg, "(")
+			closeIdx := strings.Index(pkg, ")")
+			if openIdx != -1 && closeIdx != -1 && closeIdx > openIdx {
+				// Remove the part within parentheses, including the parentheses
+				pkg = pkg[:openIdx] + pkg[closeIdx+1:]
+			} else {
+				break // Exit the loop if no more parentheses are found
+			}
+		}
+
+		// Trim spaces after removing text within parentheses
+		pkg = strings.TrimSpace(pkg)
+
+		// Remove text starting from ".so"
+		soIdx := strings.Index(pkg, ".so")
+		if soIdx != -1 {
+			pkg = pkg[:soIdx]
+		}
+
+		packageSet[pkg] = struct{}{}
+	}
+
+	var uniquePackages []string
+	for pkg := range packageSet {
+		uniquePackages = append(uniquePackages, pkg)
+	}
+	sort.Strings(uniquePackages)
+
+	return uniquePackages, nil
 }

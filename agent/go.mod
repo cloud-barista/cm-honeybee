@@ -18,6 +18,7 @@ require (
 )
 
 require (
+	github.com/cavaliergopher/rpm v1.2.0
 	github.com/coreos/go-iptables v0.7.0
 	github.com/jaypipes/ghw v0.12.0
 	github.com/kumako/go-win64api v0.0.0-20200829071356-ddc2195639e5
