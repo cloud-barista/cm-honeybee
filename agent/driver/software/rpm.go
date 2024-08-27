@@ -4,6 +4,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 	_ "github.com/glebarez/go-sqlite" // sqlite
 	"github.com/hashicorp/go-multierror"
+	"github.com/jollaman999/utils/logger"
 	rpmdb "github.com/knqyf263/go-rpmdb/pkg"
 )
 
@@ -30,12 +31,14 @@ func detectDB() (*rpmdb.RpmDB, error) {
 	return nil, result
 }
 
-func GetRPMs() ([]software.RPM, error) {
+func GetRPMs(showDefaultPackages bool) ([]software.RPM, error) {
 	db, err := detectDB()
 	if err != nil {
 		return []software.RPM{}, err
 	}
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 	pkgList, err := db.ListPackages()
 	if err != nil {
 		return []software.RPM{}, err
@@ -56,6 +59,35 @@ func GetRPMs() ([]software.RPM, error) {
 			Summary:   pkg.Summary,
 			Requires:  pkg.Requires,
 		})
+	}
+
+	if !showDefaultPackages {
+		var filteredRPMs []software.RPM
+
+		defaultPackages, err := GetDefaultPackages()
+		if err != nil {
+			logger.Println(logger.DEBUG, false, "DEB: Error occurred while getting default packages."+
+				" ("+err.Error()+")")
+		}
+
+		for _, rpm := range rpms {
+			var defPkgFound bool
+
+			for _, defPkg := range defaultPackages {
+				if defPkg == rpm.Name {
+					defPkgFound = true
+					break
+				}
+			}
+
+			if defPkgFound {
+				continue
+			}
+
+			filteredRPMs = append(filteredRPMs, rpm)
+		}
+
+		return filteredRPMs, nil
 	}
 
 	return rpms, nil

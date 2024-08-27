@@ -767,6 +767,12 @@ paths:
       consumes:
       - application/json
       description: Get software information.
+      parameters:
+      - description: Enable for show all packages include default packages.
+        in: query
+        name: show_default_packages
+        required: true
+        type: boolean
       produces:
       - application/json
       responses:

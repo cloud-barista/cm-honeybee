@@ -6,6 +6,7 @@ import (
 	_ "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software" // Need for swag
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"strconv"
 )
 
 // GetSoftwareInfo godoc
@@ -15,12 +16,16 @@ import (
 //	@Tags			[Software] Get software info
 //	@Accept			json
 //	@Produce		json
+//	@Param			show_default_packages query bool true "Enable for show all packages include default packages."
 //	@Success		200	{object}	software.Software	"Successfully get information of software."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of software."
 //	@Router			/honeybee-agent/software [get]
 func GetSoftwareInfo(c echo.Context) error {
-	softwareInfo, err := software.GetSoftwareInfo()
+	showDefaultPackagesStr := c.QueryParam("show_default_packages")
+	showDefaultPackages, _ := strconv.ParseBool(showDefaultPackagesStr)
+
+	softwareInfo, err := software.GetSoftwareInfo(showDefaultPackages)
 	if err != nil {
 		return common.ReturnInternalError(c, err, "Failed to get information of software.")
 	}
