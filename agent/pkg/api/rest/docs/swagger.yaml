@@ -458,6 +458,8 @@ definitions:
     properties:
       arch:
         type: string
+      group:
+        type: string
       license:
         type: string
       name:
@@ -771,7 +773,6 @@ paths:
       - description: Enable for show all packages include default packages.
         in: query
         name: show_default_packages
-        required: true
         type: boolean
       produces:
       - application/json

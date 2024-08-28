@@ -86,7 +86,7 @@ func parse(rd io.Reader) []software.DEB {
 
 		if key == "" && value != "" {
 			m[prevKey] = m[prevKey] + value
-		} else if key == "" && value == "" {
+		} else if key == "" {
 			if len(m) > 0 {
 				pkg, err := mapToDEB(m)
 				if err == nil {
@@ -94,7 +94,7 @@ func parse(rd io.Reader) []software.DEB {
 				}
 				m = make(map[string]string)
 			}
-		} else if key != "" && value != "" {
+		} else if value != "" {
 			prevKey = key
 			m[key] = value
 		}

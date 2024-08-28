@@ -17,6 +17,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 // RepoMD represents the structure of repomd.xml for parsing
@@ -60,6 +61,7 @@ func createTransport() *http.Transport {
 func fetchURL(url string) ([]byte, error) {
 	client := &http.Client{
 		Transport: createTransport(),
+		Timeout:   time.Second * 30,
 	}
 
 	resp, err := client.Get(url)
@@ -132,13 +134,13 @@ func parseGroups(data []byte) ([]string, error) {
 
 	var packages []string
 	for _, group := range groups.Groups {
-		if strings.ToLower(group.ID) == "base" || strings.ToLower(group.Name) == "base" {
+		if strings.ToLower(group.ID) == "core" || strings.ToLower(group.Name) == "core" ||
+			strings.ToLower(group.ID) == "base" || strings.ToLower(group.Name) == "base" {
 			for _, pkg := range group.PackageList {
 				if pkg.Type == "mandatory" || pkg.Type == "default" {
 					packages = append(packages, pkg.Name)
 				}
 			}
-			break
 		}
 	}
 
@@ -260,6 +262,16 @@ func fetchDirectoryListing(dirURL string) ([]string, error) {
 			}
 			fileName := line[start : start+end]
 			if strings.HasSuffix(fileName, ".rpm") {
+				// Skip for kernel related rpms
+				if strings.Contains(fileName, "firmware") ||
+					strings.HasPrefix(fileName, "kernel-") ||
+					strings.HasPrefix(fileName, "kpatch-") ||
+					strings.HasPrefix(fileName, "kmod-") ||
+					strings.HasPrefix(fileName, "kexec-") ||
+					strings.HasPrefix(fileName, "microcode") {
+					continue
+				}
+
 				rpmFiles = append(rpmFiles, fileName)
 			}
 		}
@@ -403,6 +415,8 @@ func GetDefaultPackages() ([]string, error) {
 	// Fetch RPM versions for all default packages
 	var allPackagesWithDependencies []string
 
+	allPackagesWithDependencies = append(allPackagesWithDependencies, packages...)
+
 	var routineMax = 50
 	var wait sync.WaitGroup
 	var mutex = &sync.Mutex{}
@@ -444,7 +458,6 @@ func GetDefaultPackages() ([]string, error) {
 					}
 
 					if matchedRPM == "" {
-						logger.Println(logger.WARN, false, "packageFilter: No RPM found for package:", pkgName)
 						return
 					}
 
@@ -518,7 +531,6 @@ func GetDefaultPackages() ([]string, error) {
 					}
 
 					if matchedRPM == "" {
-						logger.Println(logger.WARN, false, "packageFilter: No RPM found for package:", pkgName)
 						return
 					}
 

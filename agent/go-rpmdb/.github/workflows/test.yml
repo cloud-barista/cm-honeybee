@@ -1,0 +1,33 @@
+name: Test
+
+on:
+  push:
+    branches: 
+      - main
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: windows-latest
+            shell: bash
+          - os: macos-latest
+            shell: bash
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version-file: go.mod
+
+    - name: Test
+      run: |
+        go test -v ./...

@@ -97,8 +97,7 @@ const docTemplate = `{
                         "type": "boolean",
                         "description": "Enable for show all packages include default packages.",
                         "name": "show_default_packages",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -815,6 +814,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "arch": {
+                    "type": "string"
+                },
+                "group": {
                     "type": "string"
                 },
                 "license": {

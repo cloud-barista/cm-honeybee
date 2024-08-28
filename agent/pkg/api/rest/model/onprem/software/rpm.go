@@ -4,6 +4,7 @@ type RPM struct {
 	Name      string   `json:"name"`
 	Version   string   `json:"version"`
 	Release   string   `json:"release"`
+	Group     string   `json:"group"`
 	Arch      string   `json:"arch"`
 	SourceRpm string   `json:"sourceRpm"`
 	Size      int      `json:"size"`
