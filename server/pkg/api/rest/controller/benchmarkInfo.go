@@ -1,7 +1,7 @@
 package controller
 
 import (
-//	"encoding/json"
+	//	"encoding/json"
 	"net/http"
 	"time"
 
@@ -9,8 +9,8 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
-	"github.com/labstack/echo/v4"
 	"github.com/jollaman999/utils/logger"
+	"github.com/labstack/echo/v4"
 )
 
 // GetBenchmarkInfo godoc
@@ -50,7 +50,7 @@ func GetBenchmarkInfo(c echo.Context) error {
 // RunBenchmarkInfo godoc
 //
 //	@Summary		Run Benchmark Information
-//	@Description	Run the benchmark information of the connection information.
+//	@Description	Run the benchmark information of the connection information. If no Benchmark Agent is present on the connected server, it will be automatically installed, and the benchmark will be executed.
 //	@Tags			[Import] BenchmarkInfo
 //	@Accept			json
 //	@Produce		json
@@ -72,7 +72,6 @@ func RunBenchmarkInfo(c echo.Context) error {
 
 	oldSavedBenchmarkInfo, _ := dao.SavedBenchmarkInfoGet(connectionInfo.ID)
 
-
 	if oldSavedBenchmarkInfo == nil {
 		savedBenchmarkInfo := new(model.SavedBenchmarkInfo)
 		savedBenchmarkInfo.ConnectionID = connectionInfo.ID
@@ -90,10 +89,9 @@ func RunBenchmarkInfo(c echo.Context) error {
 		Options: ssh.DefaultSSHOptions(),
 	}
 
-
 	oldSavedBenchmarkInfo.Status = "benchmarking"
 	_ = dao.SavedBenchmarkInfoUpdate(oldSavedBenchmarkInfo)
-	
+
 	typeStr := c.QueryParam("types")
 
 	go func(typeStr string, benchmarkInfo *model.SavedBenchmarkInfo) {

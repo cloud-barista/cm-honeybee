@@ -2,9 +2,9 @@ package controller
 
 import (
 	"github.com/cloud-barista/cm-honeybee/server/dao"
+	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
-	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/google/uuid"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
@@ -266,7 +266,7 @@ func CheckConnectionSourceGroup(c echo.Context) error {
 // CheckAgentSourceGroup godoc
 //
 // @Summary		Check Agent SourceGroup
-// @Description	Check Agent in source group. Show each status by returning agent info list.
+// @Description	Check Agent in source group. Show each status by returning agent info list. If no Agent is present on the connected server, the Agent will be automatically installed.
 // @Tags		[On-premise] SourceGroup
 // @Accept		json
 // @Produce		json
@@ -300,9 +300,9 @@ func CheckAgentSourceGroup(c echo.Context) error {
 
 		data, err := s.RunAgent(ci)
 		agentInfo := model.AgentInfo{
-			Connection:    ci.Name,
-			Result:        data,
-			ErrorMsg:      err,
+			Connection: ci.Name,
+			Result:     data,
+			ErrorMsg:   err,
 		}
 
 		agentInfos = append(agentInfos, agentInfo)
@@ -310,4 +310,3 @@ func CheckAgentSourceGroup(c echo.Context) error {
 
 	return c.JSONPretty(http.StatusOK, agentInfos, " ")
 }
-
