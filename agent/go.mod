@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	github.com/NeowayLabs/drm v0.0.0-20190824133025-4939fc0ad345
-	github.com/docker/docker v27.1.2+incompatible
+	github.com/docker/docker v27.2.0+incompatible
 	github.com/glebarez/go-sqlite v1.22.0
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
@@ -91,7 +91,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 	howett.net/plist v1.0.1 // indirect
-	modernc.org/libc v1.59.9 // indirect
+	modernc.org/libc v1.60.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
 	modernc.org/sqlite v1.32.0 // indirect
