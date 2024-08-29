@@ -22,7 +22,7 @@ var IsReady = false
 // @Success		200 {object}	SimpleMsg				"Successfully get ready state."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to check ready state."
 //
-// @Router /honeybee-agent/readyz [get]
+// @Router		/readyz [get]
 func CheckReady(c echo.Context) error {
 	status := http.StatusOK
 

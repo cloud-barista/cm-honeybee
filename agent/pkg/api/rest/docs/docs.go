@@ -10,12 +10,16 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/honeybee-agent/infra": {
+        "/infra": {
             "get": {
                 "description": "Get infra information.",
                 "consumes": [
@@ -50,7 +54,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee-agent/readyz": {
+        "/readyz": {
             "get": {
                 "description": "Check Honeybee Agent is ready",
                 "consumes": [
@@ -79,7 +83,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee-agent/software": {
+        "/software": {
             "get": {
                 "description": "Get software information.",
                 "consumes": [
@@ -1158,12 +1162,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "latest",
 	Host:             "",
-	BasePath:         "",
-	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	BasePath:         "/honeybee-agent",
+	Schemes:          []string{"http"},
+	Title:            "CM-Honeybee Agent REST API",
+	Description:      "Collecting and Aggregating agent module",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

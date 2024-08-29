@@ -10,12 +10,16 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/honeybee/bench/{connId}": {
+        "/bench/{connId}": {
             "get": {
                 "description": "Get the benchmark information of the connection information.",
                 "consumes": [
@@ -59,7 +63,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/bench/{connId}/run": {
+        "/bench/{connId}/run": {
             "get": {
                 "description": "Run the benchmark information of the connection information. If no Benchmark Agent is present on the connected server, it will be automatically installed, and the benchmark will be executed.",
                 "consumes": [
@@ -103,7 +107,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/bench/{connId}/stop": {
+        "/bench/{connId}/stop": {
             "get": {
                 "description": "Stop the benchmark",
                 "consumes": [
@@ -147,7 +151,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/connection_info/{connId}": {
+        "/connection_info/{connId}": {
             "get": {
                 "description": "Get the connection information directly.",
                 "consumes": [
@@ -191,7 +195,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/readyz": {
+        "/readyz": {
             "get": {
                 "description": "Check Honeybee is ready",
                 "consumes": [
@@ -220,7 +224,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group": {
+        "/source_group": {
             "get": {
                 "description": "Get a list of source group.",
                 "consumes": [
@@ -328,7 +332,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}": {
+        "/source_group/{sgId}": {
             "get": {
                 "description": "Get the source group.",
                 "consumes": [
@@ -465,7 +469,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/agent_check": {
+        "/source_group/{sgId}/agent_check": {
             "get": {
                 "description": "Check Agent in source group. Show each status by returning agent info list. If no Agent is present on the connected server, the Agent will be automatically installed.",
                 "consumes": [
@@ -512,7 +516,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/connection_check": {
+        "/source_group/{sgId}/connection_check": {
             "get": {
                 "description": "Check if SSH connection is available for each connection info in source group. Show each status by returning connection info list.",
                 "consumes": [
@@ -559,7 +563,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/connection_info": {
+        "/source_group/{sgId}/connection_info": {
             "get": {
                 "description": "Get a list of connection information.",
                 "consumes": [
@@ -699,7 +703,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/connection_info/{connId}": {
+        "/source_group/{sgId}/connection_info/{connId}": {
             "get": {
                 "description": "Get the connection information.",
                 "consumes": [
@@ -857,7 +861,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/connection_info/{connId}/import/infra": {
+        "/source_group/{sgId}/connection_info/{connId}/import/infra": {
             "post": {
                 "description": "Import the infra information.",
                 "consumes": [
@@ -908,7 +912,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/connection_info/{connId}/import/software": {
+        "/source_group/{sgId}/connection_info/{connId}/import/software": {
             "post": {
                 "description": "Import the software information.",
                 "consumes": [
@@ -959,7 +963,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/connection_info/{connId}/infra": {
+        "/source_group/{sgId}/connection_info/{connId}/infra": {
             "get": {
                 "description": "Get the infra information of the connection information.",
                 "consumes": [
@@ -1010,7 +1014,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/connection_info/{connId}/software": {
+        "/source_group/{sgId}/connection_info/{connId}/software": {
             "get": {
                 "description": "Get the software information of the connection information.",
                 "consumes": [
@@ -1061,7 +1065,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/import/infra": {
+        "/source_group/{sgId}/import/infra": {
             "post": {
                 "description": "Import infra information for all connections in the source group.",
                 "consumes": [
@@ -1108,7 +1112,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/import/software": {
+        "/source_group/{sgId}/import/software": {
             "post": {
                 "description": "Import software information for all connections in the source group.",
                 "consumes": [
@@ -1155,7 +1159,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/infra": {
+        "/source_group/{sgId}/infra": {
             "get": {
                 "description": "Get the infra information for all connections in the source group.",
                 "consumes": [
@@ -1199,7 +1203,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/honeybee/source_group/{sgId}/software": {
+        "/source_group/{sgId}/software": {
             "get": {
                 "description": "Get the software information for all connections in the source group.",
                 "consumes": [
@@ -2520,12 +2524,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
+	Version:          "latest",
 	Host:             "",
-	BasePath:         "",
-	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	BasePath:         "/honeybee",
+	Schemes:          []string{"http"},
+	Title:            "CM-Honeybee Server REST API",
+	Description:      "Collecting and Aggregating server module",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

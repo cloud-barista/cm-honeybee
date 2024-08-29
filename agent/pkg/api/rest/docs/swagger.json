@@ -1,10 +1,21 @@
 {
+    "schemes": [
+        "http"
+    ],
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "Collecting and Aggregating agent module",
+        "title": "CM-Honeybee Agent REST API",
+        "contact": {},
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "latest"
     },
+    "basePath": "/honeybee-agent",
     "paths": {
-        "/honeybee-agent/infra": {
+        "/infra": {
             "get": {
                 "description": "Get infra information.",
                 "consumes": [
@@ -39,7 +50,7 @@
                 }
             }
         },
-        "/honeybee-agent/readyz": {
+        "/readyz": {
             "get": {
                 "description": "Check Honeybee Agent is ready",
                 "consumes": [
@@ -68,7 +79,7 @@
                 }
             }
         },
-        "/honeybee-agent/software": {
+        "/software": {
             "get": {
                 "description": "Get software information.",
                 "consumes": [

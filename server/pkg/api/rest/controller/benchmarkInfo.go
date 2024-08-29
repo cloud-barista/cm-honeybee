@@ -25,7 +25,7 @@ import (
 //	@Success		200	{object}	model.SavedBenchmarkInfo		"Successfully get information of the benchmark."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the benchmark."
-//	@Router			/honeybee/bench/{connId} [get]
+//	@Router			/bench/{connId} [get]
 func GetBenchmarkInfo(c echo.Context) error {
 	connID := c.Param("connId")
 	if connID == "" {
@@ -58,7 +58,7 @@ func GetBenchmarkInfo(c echo.Context) error {
 //	@Success		200	{object}	model.Benchmark			"Successfully get information of the benchmark."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the benchmark."
-//	@Router			/honeybee/bench/{connId}/run [get]
+//	@Router			/bench/{connId}/run [get]
 func RunBenchmarkInfo(c echo.Context) error {
 	connID := c.Param("connId")
 	if connID == "" {
@@ -124,7 +124,7 @@ func RunBenchmarkInfo(c echo.Context) error {
 //	@Success		200	{object}	model.SimpleMsg				"Benchmark Stopped."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to stop of the benchmark."
-//	@Router			/honeybee/bench/{connId}/stop [get]
+//	@Router			/bench/{connId}/stop [get]
 func StopBenchmarkInfo(c echo.Context) error {
 	connID := c.Param("connId")
 	if connID == "" {

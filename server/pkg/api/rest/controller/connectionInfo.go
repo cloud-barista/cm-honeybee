@@ -70,7 +70,7 @@ func encryptPasswordAndPrivateKey(connectionInfo *model.ConnectionInfo) (*model.
 // @Success		200	{object}	model.ConnectionInfo	"Successfully register the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to register the connection information"
-// @Router		/honeybee/source_group/{sgId}/connection_info [post]
+// @Router		/source_group/{sgId}/connection_info [post]
 func CreateConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -149,7 +149,7 @@ func CreateConnectionInfo(c echo.Context) error {
 // @Success		200	{object}	model.ConnectionInfo	"Successfully get the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get the connection information"
-// @Router		/honeybee/source_group/{sgId}/connection_info/{connId} [get]
+// @Router		/source_group/{sgId}/connection_info/{connId} [get]
 func GetConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -190,7 +190,7 @@ func GetConnectionInfo(c echo.Context) error {
 // @Success		200	{object}	model.ConnectionInfo	"Successfully get the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get the connection information"
-// @Router		/honeybee/connection_info/{connId} [get]
+// @Router		/connection_info/{connId} [get]
 func GetConnectionInfoDirectly(c echo.Context) error {
 	connID := c.Param("connId")
 	if connID == "" {
@@ -228,7 +228,7 @@ func GetConnectionInfoDirectly(c echo.Context) error {
 // @Success		200	{object}	[]model.ConnectionInfo	"Successfully get a list of connection information."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get a list of connection information."
-// @Router		/honeybee/source_group/{sgId}/connection_info [get]
+// @Router		/source_group/{sgId}/connection_info [get]
 func ListConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -287,7 +287,7 @@ func ListConnectionInfo(c echo.Context) error {
 // @Success		200	{object}	model.ConnectionInfo	"Successfully update the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to update the connection information"
-// @Router		/honeybee/source_group/{sgId}/connection_info/{connId} [put]
+// @Router		/source_group/{sgId}/connection_info/{connId} [put]
 func UpdateConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -361,7 +361,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 // @Success		200	{object}	model.SimpleMsg			"Successfully delete the connection information"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to delete the connection information"
-// @Router		/honeybee/source_group/{sgId}/connection_info/{connId} [delete]
+// @Router		/source_group/{sgId}/connection_info/{connId} [delete]
 func DeleteConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {

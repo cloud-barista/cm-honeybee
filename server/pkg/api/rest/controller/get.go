@@ -76,7 +76,7 @@ func doGetSoftwareInfo(connID string) (*software.Software, error) {
 // @Success		200	{object}	infra.Infra				"Successfully get information of the infra."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
-// @Router		/honeybee/source_group/{sgId}/connection_info/{connId}/infra [get]
+// @Router		/source_group/{sgId}/connection_info/{connId}/infra [get]
 func GetInfraInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -112,7 +112,7 @@ func GetInfraInfo(c echo.Context) error {
 // @Success		200	{object}	model.InfraInfoList		"Successfully get information of the infra."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
-// @Router		/honeybee/source_group/{sgId}/infra [get]
+// @Router		/source_group/{sgId}/infra [get]
 func GetInfraInfoSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -151,7 +151,7 @@ func GetInfraInfoSourceGroup(c echo.Context) error {
 // @Success	200	{object}	software.Software		"Successfully get information of the software."
 // @Failure	400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure	500	{object}	common.ErrorResponse	"Failed to get information of the software."
-// @Router		/honeybee/source_group/{sgId}/connection_info/{connId}/software [get]
+// @Router		/source_group/{sgId}/connection_info/{connId}/software [get]
 func GetSoftwareInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -187,7 +187,7 @@ func GetSoftwareInfo(c echo.Context) error {
 // @Success		200	{object}	model.SoftwareInfoList	"Successfully get information of the software."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
-// @Router		/honeybee/source_group/{sgId}/software [get]
+// @Router		/source_group/{sgId}/software [get]
 func GetSoftwareInfoSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {

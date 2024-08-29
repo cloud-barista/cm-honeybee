@@ -1,3 +1,4 @@
+basePath: /honeybee-agent
 definitions:
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse:
     properties:
@@ -721,8 +722,14 @@ definitions:
     type: object
 info:
   contact: {}
+  description: Collecting and Aggregating agent module
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: CM-Honeybee Agent REST API
+  version: latest
 paths:
-  /honeybee-agent/infra:
+  /infra:
     get:
       consumes:
       - application/json
@@ -745,7 +752,7 @@ paths:
       summary: Get a list of integrated infra information
       tags:
       - '[Infra] Get infra info'
-  /honeybee-agent/readyz:
+  /readyz:
     get:
       consumes:
       - application/json
@@ -764,7 +771,7 @@ paths:
       summary: Check Ready
       tags:
       - '[Admin] System management'
-  /honeybee-agent/software:
+  /software:
     get:
       consumes:
       - application/json
@@ -792,4 +799,6 @@ paths:
       summary: Get a list of software information
       tags:
       - '[Software] Get software info'
+schemes:
+- http
 swagger: "2.0"

@@ -42,6 +42,17 @@ func getLocalIP() string {
 	return localIP[0]
 }
 
+// @title CM-Honeybee Server REST API
+// @version latest
+// @description Collecting and Aggregating server module
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @BasePath /honeybee
+
+// @schemes http
+
 func Init() {
 	e := echo.New()
 

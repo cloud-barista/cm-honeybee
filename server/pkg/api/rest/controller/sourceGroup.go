@@ -22,7 +22,7 @@ import (
 // @Success		200	{object}	model.CreateSourceGroupReq	"Successfully register the source group"
 // @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse		"Failed to register the source group"
-// @Router		/honeybee/source_group [post]
+// @Router		/source_group [post]
 func CreateSourceGroup(c echo.Context) error {
 	createSourceGroupReq := new(model.CreateSourceGroupReq)
 	err := c.Bind(createSourceGroupReq)
@@ -59,7 +59,7 @@ func CreateSourceGroup(c echo.Context) error {
 // @Success		200	{object}	model.SourceGroup	"Successfully get the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get the source group"
-// @Router		/honeybee/source_group/{sgId} [get]
+// @Router		/source_group/{sgId} [get]
 func GetSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -88,7 +88,7 @@ func GetSourceGroup(c echo.Context) error {
 // @Success		200	{object}	[]model.SourceGroup	"Successfully get a list of source group."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get a list of source group."
-// @Router		/honeybee/source_group [get]
+// @Router		/source_group [get]
 func ListSourceGroup(c echo.Context) error {
 	page, row, err := common.CheckPageRow(c)
 	if err != nil {
@@ -120,7 +120,7 @@ func ListSourceGroup(c echo.Context) error {
 // @Success		200	{object}	model.SourceGroup	"Successfully update the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to update the source group"
-// @Router		/honeybee/source_group/{sgId} [put]
+// @Router		/source_group/{sgId} [put]
 func UpdateSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -187,7 +187,7 @@ func deleteSavedSoftwareInfo(connectionInfo *model.ConnectionInfo) {
 // @Success		200	{object}	model.SimpleMsg			"Successfully delete the source group"
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to delete the source group"
-// @Router		/honeybee/source_group/{sgId} [delete]
+// @Router		/source_group/{sgId} [delete]
 func DeleteSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -233,7 +233,7 @@ func DeleteSourceGroup(c echo.Context) error {
 // @Success		200	{object}	[]model.ConnectionInfo		"Successfully checked SSH connection for the source group"
 // @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse		"Failed to check SSH connection for the source group"
-// @Router		/honeybee/source_group/{sgId}/connection_check [get]
+// @Router		/source_group/{sgId}/connection_check [get]
 func CheckConnectionSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -274,7 +274,7 @@ func CheckConnectionSourceGroup(c echo.Context) error {
 // @Success		200	{object}	[]model.AgentInfo		"Successfully checked Agent for the source group"
 // @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse		"Failed to check Agent for the source group"
-// @Router		/honeybee/source_group/{sgId}/agent_check [get]
+// @Router		/source_group/{sgId}/agent_check [get]
 func CheckAgentSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {

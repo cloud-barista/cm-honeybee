@@ -138,7 +138,6 @@ stop_docker: ## Stop the Docker container
 clean: ## Remove previous build
 	@echo Cleaning build...
 	@rm -f coverage.out
-	@rm -f pkg/api/rest/docs/docs.go pkg/api/rest/docs/swagger.*
 	@rm -rf cmd/${MODULE_NAME}/conf
 	@cd cmd/${MODULE_NAME} && ${GO_COMMAND} clean
 
