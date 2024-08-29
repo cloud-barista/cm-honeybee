@@ -61,7 +61,7 @@ const docTemplate = `{
         },
         "/honeybee/bench/{connId}/run": {
             "get": {
-                "description": "Run the benchmark information of the connection information.",
+                "description": "Run the benchmark information of the connection information. If no Benchmark Agent is present on the connected server, it will be automatically installed, and the benchmark will be executed.",
                 "consumes": [
                     "application/json"
                 ],
@@ -467,7 +467,7 @@ const docTemplate = `{
         },
         "/honeybee/source_group/{sgId}/agent_check": {
             "get": {
-                "description": "Check Agent in source group. Show each status by returning agent info list.",
+                "description": "Check Agent in source group. Show each status by returning agent info list. If no Agent is present on the connected server, the Agent will be automatically installed.",
                 "consumes": [
                     "application/json"
                 ],

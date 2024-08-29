@@ -916,7 +916,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Run the benchmark information of the connection information.
+      description: Run the benchmark information of the connection information. If
+        no Benchmark Agent is present on the connected server, it will be automatically
+        installed, and the benchmark will be executed.
       parameters:
       - description: ID of the connection info
         in: path
@@ -1185,7 +1187,8 @@ paths:
       consumes:
       - application/json
       description: Check Agent in source group. Show each status by returning agent
-        info list.
+        info list. If no Agent is present on the connected server, the Agent will
+        be automatically installed.
       parameters:
       - description: ID of the SourceGroup
         in: path
