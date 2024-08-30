@@ -26,7 +26,7 @@ then
 fi
 }
 Initializer() {
-    if [ -x "$(command -v curl)" ] && [ -x "$(command -v wget)" && [ -x "$(command -v iptables)" ]; then
+    if [ -x "$(command -v curl)" ] && [ -x "$(command -v wget)" ] && [ -x "$(command -v iptables)" ]; then
         # echo "[Initializer] --PASS"
         echo ""
 
