@@ -10,32 +10,23 @@ get_latest_release() {
 }
 
 is_root() {
-    if [[ "$EUID" -ne 0 ]]
-    then
-        return 1
-    else
-        return 0
-    fi
+    [[ "$EUID" -ne 0 ]] && return 1 || return 0
 }
 
 root_check() {
-if ! is_root
-then
-    echo "Root 계정으로 실행해주세요."
-    exit 1
-fi
+    if ! is_root; then
+        echo "Root 계정으로 실행해주세요."
+        exit 1
+    fi
 }
 Initializer() {
-    if [ -x "$(command -v curl)" ] && [ -x "$(command -v wget)" ] && [ -x "$(command -v iptables)" ]; then
-        # echo "[Initializer] --PASS"
-        echo ""
+    local NEEDED_DEPS=(curl wget iptables)
 
+    if [ -x "$(command -v curl)" ] && [ -x "$(command -v wget)" ] && [ -x "$(command -v iptables)" ]; then
         sleep 1
 
     else
-        NEEDED_DEPS=(curl wget iptables)
         # echo "패키지 설치 :" "${NEEDED_DEPS[@]}"
-
         if [ -x "$(command -v apt-get)" ]
         then
             sudo apt-get install "${NEEDED_DEPS[@]}" -y
@@ -50,51 +41,45 @@ Initializer() {
 }
 
 Copy() {
-    if [ -f "/usr/bin/cm-honeybee-agent" ]; then
-        # echo "[Binary Copy] --PASS"
-        echo ""
-
-        sleep 1
-    else
+    if [ ! -f "/usr/bin/cm-honeybee-agent" ]; then
         LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
         DOWNLOAD_URL=https://github.com/cloud-barista/cm-honeybee/releases/download/${LATEST_RELEASE}/cm-honeybee-agent
-
-        wget --no-check-certificate --continue --quiet $DOWNLOAD_URL -P /usr/bin
+        wget --no-check-certificate --quiet "$DOWNLOAD_URL" -P /usr/bin
         chmod a+x /usr/bin/cm-honeybee-agent
+    fi
 
+    if [ ! -f "/etc/cloud-migrator/cm-honeybee-agent/conf/cm-honeybee-agent.yaml" ]; then
         mkdir -p /etc/cloud-migrator/cm-honeybee-agent/conf
-        wget --no-check-certificate --continue --quiet ${AGENT_REPO}/conf/cm-honeybee-agent.yaml -P /etc/cloud-migrator/cm-honeybee-agent/conf
-        wget --no-check-certificate --continue --quiet ${AGENT_REPO}/scripts/systemd/cm-honeybee-agent.service -P /etc/systemd/system
+        wget --no-check-certificate --quiet "${AGENT_REPO}/conf/cm-honeybee-agent.yaml" -P /etc/cloud-migrator/cm-honeybee-agent/conf
+    fi
+
+    if [ ! -f "/etc/systemd/system/cm-honeybee-agent.service" ]; then
+        wget --no-check-certificate --quiet "${AGENT_REPO}/scripts/systemd/cm-honeybee-agent.service" -P /etc/systemd/system
     fi
 }
 
 Start() {
-    status=$(systemctl status cm-honeybee-agent | grep Active | awk '{print $3}')
-    if [[ "$status" == "(running)" ]]; then
-        # echo "[service start] --PASS"
-        echo ""
+    local status
+    status=$(systemctl is-active cm-honeybee-agent)
 
-        sleep 1
-    else
-        # 서비스 활성화
+    if [[ "$status" != "active" ]]; then
         systemctl daemon-reload
         systemctl enable cm-honeybee-agent
         systemctl start cm-honeybee-agent
     fi
-
-    sleep 1
 }
 
+# Main Script
 ((
-# root 체크
-root_check
+    # root 체크
+    root_check
 
-# 초기 설정
-Initializer
+    # 초기 설정
+    Initializer
 
-# Agent 복사
-Copy
+    # Agent 복사
+    Copy
 
-# Agent 실행
-Start
+    # Agent 실행
+    Start
 ) 2>&1) | tee -a /tmp/honeybee-agent-install.log
