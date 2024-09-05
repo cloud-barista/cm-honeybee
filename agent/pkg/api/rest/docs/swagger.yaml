@@ -799,6 +799,4 @@ paths:
       summary: Get a list of software information
       tags:
       - '[Software] Get software info'
-schemes:
-- http
 swagger: "2.0"

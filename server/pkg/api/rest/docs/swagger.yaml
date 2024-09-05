@@ -1712,6 +1712,4 @@ paths:
       summary: Get Software Information Source Group
       tags:
       - '[Get] Get source info'
-schemes:
-- http
 swagger: "2.0"

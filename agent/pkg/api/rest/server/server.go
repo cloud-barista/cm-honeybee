@@ -51,8 +51,6 @@ func getLocalIP() string {
 
 // @BasePath /honeybee-agent
 
-// @schemes http
-
 func Init() {
 	e := echo.New()
 
