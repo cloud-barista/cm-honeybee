@@ -248,17 +248,23 @@ func (o *SSH) getBenchmarkTypes(types string) []string {
 }
 
 func (o *SSH) checkAgentStatus() (string, error) {
-	output, err := o.RunCmd("curl -o /dev/null -w '%{http_code}' -X GET http://localhost:8082/honeybee-agent/readyz -H 'accept: application/json'")
-	if err != nil {
-		logger.Println(logger.ERROR, true, "SSH: Failed to run command: "+
-			output+" (Error: "+err.Error())
-		return "failed", err
+	tryCount := 30
+
+	for i := 0; i < tryCount; i++ {
+		output, err := o.RunCmd("curl -o /dev/null -w '%{http_code}' -X GET http://localhost:8082/honeybee-agent/readyz -H 'accept: application/json'")
+		if err != nil {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		if output == "200" {
+			return "success", nil
+		}
+
+		time.Sleep(1 * time.Second)
 	}
 
-	if output == "200" {
-		return "success", nil
-	}
-	return "failed", nil
+	return "failed", errors.New("agent health check failed")
 }
 
 func (o *SSH) CheckKubernetes(connectionInfo model.ConnectionInfo) (bool, error) {

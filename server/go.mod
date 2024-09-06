@@ -7,17 +7,17 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jollaman999/utils v1.0.10 // Original codes from https://github.com/hcloud-classic/hcc-harp
 	github.com/labstack/echo/v4 v4.12.0
-	golang.org/x/sys v0.24.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20240829051155-8e0d20218d2a
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20240906054810-5351c955b7e8
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.6
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.3
-	golang.org/x/crypto v0.26.0
+	golang.org/x/crypto v0.27.0
 	gorm.io/gorm v1.25.11
 )
 
@@ -53,12 +53,12 @@ require (
 	github.com/swaggo/files/v2 v2.0.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/net v0.29.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	golang.org/x/tools v0.24.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	modernc.org/libc v1.60.0 // indirect
+	modernc.org/libc v1.60.1 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
 	modernc.org/sqlite v1.32.0 // indirect
