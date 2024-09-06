@@ -247,6 +247,23 @@ definitions:
     required:
     - os
     type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Kubernetes:
+    properties:
+      nodes:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Node'
+        type: array
+      workloads:
+        additionalProperties: true
+        type: object
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Node:
+    properties:
+      addresses: {}
+      labels: {}
+      name: {}
+      nodeinfo: {}
+    type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.CSP:
     properties:
       name:
@@ -752,6 +769,29 @@ paths:
       summary: Get a list of integrated infra information
       tags:
       - '[Infra] Get infra info'
+  /kubernetes:
+    get:
+      consumes:
+      - application/json
+      description: Get kubernetes information.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the kubernetes.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Kubernetes'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the kubernetes.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
+      summary: Get a list of integrated kubernetes information
+      tags:
+      - '[Kubernetes] Get kubernetes info'
   /readyz:
     get:
       consumes:

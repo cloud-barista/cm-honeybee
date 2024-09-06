@@ -54,6 +54,41 @@ const docTemplate = `{
                 }
             }
         },
+        "/kubernetes": {
+            "get": {
+                "description": "Get kubernetes information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Kubernetes] Get kubernetes info"
+                ],
+                "summary": "Get a list of integrated kubernetes information",
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the kubernetes.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Kubernetes"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the kubernetes.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/readyz": {
             "get": {
                 "description": "Check Honeybee Agent is ready",
@@ -497,6 +532,30 @@ const docTemplate = `{
                 "os": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.OS"
                 }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Kubernetes": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Node"
+                    }
+                },
+                "workloads": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Node": {
+            "type": "object",
+            "properties": {
+                "addresses": {},
+                "labels": {},
+                "name": {},
+                "nodeinfo": {}
             }
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.CSP": {
