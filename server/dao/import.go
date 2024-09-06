@@ -131,3 +131,13 @@ func SavedKubernetesInfoUpdate(savedKubernetesInfo *model.SavedKubernetesInfo) e
 
 	return nil
 }
+
+func SavedKubernetesInfoDelete(savedKubernetesInfo *model.SavedKubernetesInfo) error {
+	result := db.DB.Delete(savedKubernetesInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
