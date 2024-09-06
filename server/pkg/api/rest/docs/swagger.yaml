@@ -108,6 +108,15 @@ definitions:
     required:
     - servers
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KubernetesInfoList:
+    properties:
+      servers:
+        items:
+          $ref: '#/definitions/kubernetes.Kubernetes'
+        type: array
+    required:
+    - servers
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo:
     properties:
       benchmark:
@@ -132,6 +141,20 @@ definitions:
     required:
     - connection_id
     - infra_data
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedKubernetesInfo:
+    properties:
+      connection_id:
+        type: string
+      kubernetes_data:
+        type: string
+      saved_time:
+        type: string
+      status:
+        type: string
+    required:
+    - connection_id
+    - kubernetes_data
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo:
     properties:
@@ -414,6 +437,23 @@ definitions:
         $ref: '#/definitions/infra.OS'
     required:
     - os
+    type: object
+  kubernetes.Kubernetes:
+    properties:
+      nodes:
+        items:
+          $ref: '#/definitions/kubernetes.Node'
+        type: array
+      workloads:
+        additionalProperties: true
+        type: object
+    type: object
+  kubernetes.Node:
+    properties:
+      addresses: {}
+      labels: {}
+      name: {}
+      nodeinfo: {}
     type: object
   mount.Propagation:
     enum:
@@ -1489,6 +1529,40 @@ paths:
       summary: Import Infra
       tags:
       - '[Import] Import source info'
+  /source_group/{sgId}/connection_info/{connId}/import/kubernetes:
+    post:
+      consumes:
+      - application/json
+      description: Import the kubernetes information.
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the kubernetes information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the kubernetes information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import kubernetes
+      tags:
+      - '[Import] Import source info'
   /source_group/{sgId}/connection_info/{connId}/import/software:
     post:
       consumes:
@@ -1557,6 +1631,40 @@ paths:
       summary: Get Infra Information
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/kubernetes:
+    get:
+      consumes:
+      - application/json
+      description: Get the kubernetes information of the connection information.
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the kubernetes.
+          schema:
+            $ref: '#/definitions/kubernetes.Kubernetes'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the kubernetes.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Kubernetes Information
+      tags:
+      - '[Get] Get source info'
   /source_group/{sgId}/connection_info/{connId}/software:
     get:
       consumes:
@@ -1622,6 +1730,38 @@ paths:
       summary: Import Infra Source Group
       tags:
       - '[Import] Import source info'
+  /source_group/{sgId}/import/kubernetes:
+    post:
+      consumes:
+      - application/json
+      description: Import kubernetes information for all connections in the source
+        group.
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the kubernetes information
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedKubernetesInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the kubernetes information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import Kubernetes Source Group
+      tags:
+      - '[Import] Import source info'
   /source_group/{sgId}/import/software:
     post:
       consumes:
@@ -1640,7 +1780,7 @@ paths:
           description: Successfully saved the software information
           schema:
             items:
-              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo'
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo'
             type: array
         "400":
           description: Sent bad request.
@@ -1686,7 +1826,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get the software information for all connections in the source
+      description: Get the kubernetes information for all connections in the source
         group.
       parameters:
       - description: ID of the source group.
@@ -1698,18 +1838,18 @@ paths:
       - application/json
       responses:
         "200":
-          description: Successfully get information of the software.
+          description: Successfully get information of the kubernetes.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SoftwareInfoList'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KubernetesInfoList'
         "400":
           description: Sent bad request.
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
-          description: Failed to get information of the infra.
+          description: Failed to get information of the kubernetes.
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-      summary: Get Software Information Source Group
+      summary: Get Kubernetes Information Source Group
       tags:
       - '[Get] Get source info'
 swagger: "2.0"

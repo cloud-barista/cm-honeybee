@@ -176,6 +176,17 @@ func deleteSavedSoftwareInfo(connectionInfo *model.ConnectionInfo) {
 	}
 }
 
+func deleteSavedKubernetesInfo(connectionInfo *model.ConnectionInfo) {
+	savedKubernetesInfo, _ := dao.SavedKubernetesInfoGet(connectionInfo.ID)
+	if savedKubernetesInfo == nil {
+		return
+	}
+	err := dao.SavedKubernetesInfoDelete(savedKubernetesInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+}
+
 // DeleteSourceGroup godoc
 //
 // @Summary		Delete SourceGroup
@@ -208,6 +219,7 @@ func DeleteSourceGroup(c echo.Context) error {
 	for _, connectionInfo := range *connectionInfoList {
 		deleteSavedInfraInfo(&connectionInfo)
 		deleteSavedSoftwareInfo(&connectionInfo)
+		deleteSavedKubernetesInfo(&connectionInfo)
 		err = dao.ConnectionInfoDelete(&connectionInfo)
 		if err != nil {
 			logger.Println(logger.ERROR, true, err)
