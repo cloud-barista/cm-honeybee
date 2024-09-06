@@ -116,7 +116,7 @@ func SourceGroupCheckConnection(sourceGroup *model.SourceGroup) (*[]model.Connec
 
 		if err == nil {
 			oldConnectionInfo.Status = "Success"
-			oldConnectionInfo.FailedMessage = " " // Can't set empty string.
+			oldConnectionInfo.FailedMessage = ""
 		}
 
 		err = ConnectionInfoUpdate(oldConnectionInfo)

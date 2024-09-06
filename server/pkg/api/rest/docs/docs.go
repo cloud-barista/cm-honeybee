@@ -912,6 +912,57 @@ const docTemplate = `{
                 }
             }
         },
+        "/source_group/{sgId}/connection_info/{connId}/import/kubernetes": {
+            "post": {
+                "description": "Import the kubernetes information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import kubernetes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the kubernetes information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the kubernetes information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/connection_info/{connId}/import/software": {
             "post": {
                 "description": "Import the software information.",
@@ -1007,6 +1058,57 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to get information of the infra.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/kubernetes": {
+            "get": {
+                "description": "Get the kubernetes information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Kubernetes Information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the kubernetes.",
+                        "schema": {
+                            "$ref": "#/definitions/kubernetes.Kubernetes"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the kubernetes.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1112,6 +1214,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/source_group/{sgId}/import/kubernetes": {
+            "post": {
+                "description": "Import kubernetes information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import Kubernetes Source Group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the kubernetes information",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedKubernetesInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the kubernetes information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/import/software": {
             "post": {
                 "description": "Import software information for all connections in the source group.",
@@ -1140,7 +1289,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo"
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo"
                             }
                         }
                     },
@@ -1205,7 +1354,7 @@ const docTemplate = `{
         },
         "/source_group/{sgId}/software": {
             "get": {
-                "description": "Get the software information for all connections in the source group.",
+                "description": "Get the kubernetes information for all connections in the source group.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1215,7 +1364,7 @@ const docTemplate = `{
                 "tags": [
                     "[Get] Get source info"
                 ],
-                "summary": "Get Software Information Source Group",
+                "summary": "Get Kubernetes Information Source Group",
                 "parameters": [
                     {
                         "type": "string",
@@ -1227,9 +1376,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successfully get information of the software.",
+                        "description": "Successfully get information of the kubernetes.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SoftwareInfoList"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KubernetesInfoList"
                         }
                     },
                     "400": {
@@ -1239,7 +1388,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to get information of the infra.",
+                        "description": "Failed to get information of the kubernetes.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1410,6 +1559,20 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KubernetesInfoList": {
+            "type": "object",
+            "required": [
+                "servers"
+            ],
+            "properties": {
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/kubernetes.Kubernetes"
+                    }
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo": {
             "type": "object",
             "properties": {
@@ -1438,6 +1601,27 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "infra_data": {
+                    "type": "string"
+                },
+                "saved_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedKubernetesInfo": {
+            "type": "object",
+            "required": [
+                "connection_id",
+                "kubernetes_data"
+            ],
+            "properties": {
+                "connection_id": {
+                    "type": "string"
+                },
+                "kubernetes_data": {
                     "type": "string"
                 },
                 "saved_time": {
@@ -1870,6 +2054,30 @@ const docTemplate = `{
                 "os": {
                     "$ref": "#/definitions/infra.OS"
                 }
+            }
+        },
+        "kubernetes.Kubernetes": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/kubernetes.Node"
+                    }
+                },
+                "workloads": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "kubernetes.Node": {
+            "type": "object",
+            "properties": {
+                "addresses": {},
+                "labels": {},
+                "name": {},
+                "nodeinfo": {}
             }
         },
         "mount.Propagation": {

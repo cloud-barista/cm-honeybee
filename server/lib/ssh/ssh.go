@@ -260,6 +260,26 @@ func (o *SSH) checkAgentStatus() (string, error) {
 	}
 	return "failed", nil
 }
+
+func (o *SSH) CheckKubernetes(connectionInfo model.ConnectionInfo) (bool, error) {
+	if err := o.NewClientConn(connectionInfo); err != nil {
+		return false, err
+	}
+	defer o.Close()
+
+	commands := "[ -f \"$HOME/.kube/config\" ] && echo \"true\" || echo \"false\""
+
+	logger.Println(logger.DEBUG, true, "SSH: Kubernetes Checking...")
+	chk, err := o.RunCmd(commands)
+	if err != nil {
+		logger.Println(logger.DEBUG, true, "Failed to run command : ", err)
+		return false, err
+	}
+
+	chk = strings.TrimSpace(chk)
+	return chk == "true", nil
+}
+
 func (o *SSH) getAuthMethods(connectionInfo model.ConnectionInfo) []ssh.AuthMethod {
 	var methods []ssh.AuthMethod
 

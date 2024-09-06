@@ -96,3 +96,38 @@ func SavedSoftwareInfoDelete(savedSoftwareInfo *model.SavedSoftwareInfo) error {
 
 	return nil
 }
+
+func SavedKubernetesInfoGet(connectionID string) (*model.SavedKubernetesInfo, error) {
+	savedKubernetesInfo := &model.SavedKubernetesInfo{}
+
+	result := db.DB.Where("connection_id = ?", connectionID).First(savedKubernetesInfo)
+	err := result.Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("SavedKubernetesInfo not found with the provided connection_id")
+		}
+		return nil, err
+	}
+
+	return savedKubernetesInfo, nil
+}
+
+func SavedKubernetesInfoRegister(savedKubernetesInfo *model.SavedKubernetesInfo) (*model.SavedKubernetesInfo, error) {
+	result := db.DB.Create(savedKubernetesInfo)
+	err := result.Error
+	if err != nil {
+		return nil, err
+	}
+
+	return savedKubernetesInfo, nil
+}
+
+func SavedKubernetesInfoUpdate(savedKubernetesInfo *model.SavedKubernetesInfo) error {
+	result := db.DB.Model(&model.SavedKubernetesInfo{}).Where("connection_id = ?", savedKubernetesInfo.ConnectionID).Updates(savedKubernetesInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
