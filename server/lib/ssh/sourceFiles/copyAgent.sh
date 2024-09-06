@@ -9,6 +9,22 @@ get_latest_release() {
     sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
 }
 
+check_new_version() {
+  LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
+
+  if [ -f /tmp/honeybee_agent_version ]; then
+      CURRENT_RELEASE=$(cat /tmp/honeybee_agent_version)
+  else
+      echo 1
+  fi
+
+  if [ "$LATEST_RELEASE" = "$CURRENT_RELEASE" ]; then
+      echo 0
+  else
+      echo 1
+  fi
+}
+
 is_root() {
     [[ "$EUID" -ne 0 ]] && return 1 || return 0
 }
@@ -24,7 +40,6 @@ Initializer() {
 
     if [ -x "$(command -v curl)" ] && [ -x "$(command -v wget)" ] && [ -x "$(command -v iptables)" ]; then
         sleep 1
-
     else
         # echo "패키지 설치 :" "${NEEDED_DEPS[@]}"
         if [ -x "$(command -v apt-get)" ]
@@ -41,7 +56,12 @@ Initializer() {
 }
 
 Copy() {
-    if [ ! -f "/usr/bin/cm-honeybee-agent" ]; then
+    RESULT=$(check_new_version)
+    if [ "$RESULT" = "0" ]; then
+      echo "Latest version already installed."
+    elif [ "$RESULT" = "1" ] || [ ! -f "/usr/bin/cm-honeybee-agent" ]; then
+        systemctl stop cm-honeybee-agent > /dev/null 2>&1
+        rm -rf /usr/bin/cm-honeybee-agent
         LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
         DOWNLOAD_URL=https://github.com/cloud-barista/cm-honeybee/releases/download/${LATEST_RELEASE}/cm-honeybee-agent
         wget --no-check-certificate --quiet "$DOWNLOAD_URL" -P /usr/bin

@@ -5,6 +5,7 @@ vendor/
 
 .diff_*
 .git_*
+.latest_version
 
 *.log
 

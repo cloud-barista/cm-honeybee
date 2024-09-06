@@ -29,6 +29,8 @@ lint: dependency ## Lint the files
 	  if [ ! -f "$$go_path/bin/golangci-lint" ]; then \
 	    ${GO_COMMAND} install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.2; \
 	  fi; \
+	  curl --silent "https://api.github.com/repos/cloud-barista/cm-honeybee/releases/latest" |  grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' > cmd/${MODULE_NAME}/.latest_version && \
+	  cp -RpPf conf cmd/${MODULE_NAME}/ && \
 	  $$go_path/bin/golangci-lint run --timeout 30m -E contextcheck -E revive
 
 test: dependency ## Run unittests
@@ -138,7 +140,7 @@ stop_docker: ## Stop the Docker container
 clean: ## Remove previous build
 	@echo Cleaning build...
 	@rm -f coverage.out
-	@rm -rf cmd/${MODULE_NAME}/conf
+	@rm -rf cmd/${MODULE_NAME}/conf cmd/${MODULE_NAME}/.latest_version
 	@cd cmd/${MODULE_NAME} && ${GO_COMMAND} clean
 
 help: ## Display this help screen
