@@ -81,11 +81,10 @@ func callClientMethod(methodName string) (interface{}, error) {
 	}
 
 	methods := strings.Split(methodName, ".")
-	var result reflect.Value = reflect.ValueOf(clientset)
+	var result = reflect.ValueOf(clientset)
 
 	for _, method := range methods {
 		if method == "\"\"" {
-			// 빈 문자열 인자로 메소드 호출
 			result = result.Call([]reflect.Value{reflect.ValueOf("")})[0]
 		} else {
 			result = result.MethodByName(method)
@@ -147,8 +146,8 @@ func processObjects(kind string, objects interface{}, workloads map[string]inter
 		if svcType := common.GoJq(objectMap, fmt.Sprintf(".items[%d].spec.type", i)); svcType != nil {
 			item["Type"] = svcType
 		}
-		if svcClusterIp := common.GoJq(objectMap, fmt.Sprintf(".items[%d].spec.clusterIP", i)); svcClusterIp != nil {
-			item["ClusterIP"] = svcClusterIp
+		if svcClusterIP := common.GoJq(objectMap, fmt.Sprintf(".items[%d].spec.clusterIP", i)); svcClusterIP != nil {
+			item["ClusterIP"] = svcClusterIP
 		}
 		if status := common.GoJq(objectMap, fmt.Sprintf(".items[%d].status.phase", i)); status != nil {
 			item["Status"] = status
