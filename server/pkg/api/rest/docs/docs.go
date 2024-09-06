@@ -2530,7 +2530,7 @@ var SwaggerInfo = &swag.Spec{
 	Version:          "latest",
 	Host:             "",
 	BasePath:         "/honeybee",
-	Schemes:          []string{"http"},
+	Schemes:          []string{},
 	Title:            "CM-Honeybee Server REST API",
 	Description:      "Collecting and Aggregating server module",
 	InfoInstanceName: "swagger",
