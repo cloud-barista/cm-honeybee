@@ -1,8 +1,8 @@
 package main
 
 import (
-	"embed"
 	_ "embed"
+	"fmt"
 	"github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/cloud-barista/cm-honeybee/agent/lib/config"
 	"github.com/cloud-barista/cm-honeybee/agent/lib/privileged"
@@ -18,42 +18,20 @@ import (
 	"syscall"
 )
 
-//go:embed .latest_version
-var versionFile embed.FS
-
-func copyVersionFile() error {
-	fileContent, err := versionFile.ReadFile(".latest_version")
-	if err != nil {
-		return err
-	}
-
-	f, err := os.Create("/tmp/honeybee_agent_version")
-	if err != nil {
-		return err
-	}
-
-	_, err = f.Write(fileContent)
-	if err != nil {
-		return err
-	}
-
-	err = f.Close()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
+var version = "v0.2.4"
 
 func init() {
+	argsWithoutProg := os.Args[1:]
+	if len(argsWithoutProg) > 0 {
+		if argsWithoutProg[0] == "version" {
+			fmt.Println(version)
+			return
+		}
+	}
+
 	err := syscheck.CheckRoot()
 	if err != nil {
 		log.Fatalln(err)
-	}
-
-	err = copyVersionFile()
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	err = privileged.CheckPrivileged()

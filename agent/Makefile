@@ -29,8 +29,6 @@ lint: dependency ## Lint the files
 	  if [ ! -f "$$go_path/bin/golangci-lint" ]; then \
 	    ${GO_COMMAND} install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.2; \
 	  fi; \
-	  curl --silent "https://api.github.com/repos/cloud-barista/cm-honeybee/releases/latest" |  grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' > cmd/${MODULE_NAME}/.latest_version && \
-	  cp -RpPf conf cmd/${MODULE_NAME}/ && \
 	  $$go_path/bin/golangci-lint run --timeout 30m -E contextcheck -E revive
 
 test: dependency ## Run unittests
@@ -87,21 +85,18 @@ build: lint swag ## Build the binary file
 	    echo "Not supported Operating System. ($$kernel_name)"; \
 	  fi
 	@git diff > .diff_last_build
-	@git rev-parse HEAD > .git_hash_last_build
 	@echo Build finished!
 
 linux: lint swag ## Build the binary file for Linux
 	@echo Building...
 	@cd cmd/${MODULE_NAME} && GOOS=linux CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
 	@git diff > .diff_last_build
-	@git rev-parse HEAD > .git_hash_last_build
 	@echo Build finished!
 
 windows: lint swag ## Build the binary file for Windows
 	@echo Building...
 	@cd cmd/${MODULE_NAME} && GOOS=windows CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}.exe main.go
 	@git diff > .diff_last_build
-	@git rev-parse HEAD > .git_hash_last_build
 	@echo Build finished!
 
 run: ## Run the built binary
@@ -140,7 +135,6 @@ stop_docker: ## Stop the Docker container
 clean: ## Remove previous build
 	@echo Cleaning build...
 	@rm -f coverage.out
-	@rm -rf cmd/${MODULE_NAME}/conf cmd/${MODULE_NAME}/.latest_version
 	@cd cmd/${MODULE_NAME} && ${GO_COMMAND} clean
 
 help: ## Display this help screen

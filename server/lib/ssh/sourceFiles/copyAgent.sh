@@ -11,14 +11,9 @@ get_latest_release() {
 
 check_new_version() {
   LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
+  CURRENT_VERSION=$(cm-honeybee-agent version 2>&1)
 
-  if [ -f /tmp/honeybee_agent_version ]; then
-      CURRENT_RELEASE=$(cat /tmp/honeybee_agent_version)
-  else
-      echo 1
-  fi
-
-  if [ "$LATEST_RELEASE" = "$CURRENT_RELEASE" ]; then
+  if [ "$LATEST_RELEASE" = "$CURRENT_VERSION" ]; then
       echo 0
   else
       echo 1
