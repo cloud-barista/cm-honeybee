@@ -751,6 +751,7 @@ paths:
       consumes:
       - application/json
       description: Get infra information.
+      operationId: get-infra-info
       produces:
       - application/json
       responses:
@@ -774,6 +775,7 @@ paths:
       consumes:
       - application/json
       description: Get kubernetes information.
+      operationId: get-kubernetes-info
       produces:
       - application/json
       responses:
@@ -797,6 +799,7 @@ paths:
       consumes:
       - application/json
       description: Check Honeybee Agent is ready
+      operationId: health-check-readyz
       produces:
       - application/json
       responses:
@@ -810,12 +813,13 @@ paths:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
       summary: Check Ready
       tags:
-      - '[Admin] System management'
+      - "[Admin]\tSystem management"
   /software:
     get:
       consumes:
       - application/json
       description: Get software information.
+      operationId: get-software-info
       parameters:
       - description: Enable for show all packages include default packages.
         in: query

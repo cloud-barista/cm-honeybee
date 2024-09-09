@@ -32,6 +32,7 @@ const docTemplate = `{
                     "[Infra] Get infra info"
                 ],
                 "summary": "Get a list of integrated infra information",
+                "operationId": "get-infra-info",
                 "responses": {
                     "200": {
                         "description": "Successfully get information of the infra.",
@@ -67,6 +68,7 @@ const docTemplate = `{
                     "[Kubernetes] Get kubernetes info"
                 ],
                 "summary": "Get a list of integrated kubernetes information",
+                "operationId": "get-kubernetes-info",
                 "responses": {
                     "200": {
                         "description": "Successfully get information of the kubernetes.",
@@ -99,9 +101,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin]\tSystem management"
                 ],
                 "summary": "Check Ready",
+                "operationId": "health-check-readyz",
                 "responses": {
                     "200": {
                         "description": "Successfully get ready state.",
@@ -131,6 +134,7 @@ const docTemplate = `{
                     "[Software] Get software info"
                 ],
                 "summary": "Get a list of software information",
+                "operationId": "get-software-info",
                 "parameters": [
                     {
                         "type": "boolean",

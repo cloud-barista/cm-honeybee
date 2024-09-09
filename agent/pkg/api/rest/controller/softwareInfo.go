@@ -11,6 +11,7 @@ import (
 
 // GetSoftwareInfo godoc
 //
+//	@ID				get-software-info
 //	@Summary		Get a list of software information
 //	@Description	Get software information.
 //	@Tags			[Software] Get software info

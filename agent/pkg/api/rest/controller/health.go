@@ -14,15 +14,16 @@ var OkMessage = SimpleMsg{}
 var IsReady = false
 
 // CheckReady func is for checking Honeybee Agent health.
-// @Summary Check Ready
-// @Description Check Honeybee Agent is ready
-// @Tags [Admin] System management
-// @Accept		json
-// @Produce		json
-// @Success		200 {object}	SimpleMsg				"Successfully get ready state."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to check ready state."
 //
-// @Router		/readyz [get]
+//	@ID				health-check-readyz
+//	@Summary		Check Ready
+//	@Description	Check Honeybee Agent is ready
+//	@Tags [Admin]	System management
+//	@Accept			json
+//	@Produce		json
+//	@Success		200 {object}	SimpleMsg				"Successfully get ready state."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to check ready state."
+//	@Router			/readyz [get]
 func CheckReady(c echo.Context) error {
 	status := http.StatusOK
 

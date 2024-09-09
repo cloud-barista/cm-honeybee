@@ -10,6 +10,7 @@ import (
 
 // GetKubernetesInfo godoc
 //
+//	@ID				get-kubernetes-info
 //	@Summary		Get a list of integrated kubernetes information
 //	@Description	Get kubernetes information.
 //	@Tags			[Kubernetes] Get kubernetes info

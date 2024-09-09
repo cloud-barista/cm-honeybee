@@ -10,6 +10,7 @@ import (
 
 // GetInfraInfo godoc
 //
+//	@ID				get-infra-info
 //	@Summary		Get a list of integrated infra information
 //	@Description	Get infra information.
 //	@Tags			[Infra] Get infra info
