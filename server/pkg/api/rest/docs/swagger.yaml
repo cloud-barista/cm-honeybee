@@ -1822,7 +1822,7 @@ paths:
       summary: Get Infra Information Source Group
       tags:
       - '[Get] Get source info'
-  /source_group/{sgId}/software:
+  /source_group/{sgId}/kubernetes:
     get:
       consumes:
       - application/json
@@ -1850,6 +1850,36 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Get Kubernetes Information Source Group
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/software:
+    get:
+      consumes:
+      - application/json
+      description: Get the software information for all connections in the source
+        group.
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the software.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SoftwareInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the software.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Software Information Source Group
       tags:
       - '[Get] Get source info'
 swagger: "2.0"

@@ -289,7 +289,7 @@ func GetKubernetesInfo(c echo.Context) error {
 // @Success		200	{object}	model.KubernetesInfoList	"Successfully get information of the kubernetes."
 // @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 // @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the kubernetes."
-// @Router		/source_group/{sgId}/software [get]
+// @Router		/source_group/{sgId}/kubernetes [get]
 func GetKubernetesInfoSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {

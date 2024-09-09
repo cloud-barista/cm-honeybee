@@ -1352,7 +1352,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/source_group/{sgId}/software": {
+        "/source_group/{sgId}/kubernetes": {
             "get": {
                 "description": "Get the kubernetes information for all connections in the source group.",
                 "consumes": [
@@ -1389,6 +1389,50 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to get information of the kubernetes.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/software": {
+            "get": {
+                "description": "Get the software information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Software Information Source Group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the software.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SoftwareInfoList"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the software.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
