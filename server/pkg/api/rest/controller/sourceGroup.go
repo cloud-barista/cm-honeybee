@@ -13,16 +13,17 @@ import (
 
 // CreateSourceGroup godoc
 //
-// @Summary		Register SourceGroup
-// @Description	Register the source group.
-// @Tags		[On-premise] SourceGroup
-// @Accept		json
-// @Produce		json
-// @Param		SourceGroup body model.CreateSourceGroupReq true "source group of the node."
-// @Success		200	{object}	model.CreateSourceGroupReq	"Successfully register the source group"
-// @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse		"Failed to register the source group"
-// @Router		/source_group [post]
+//	@ID				register-source-group
+//	@Summary		Register SourceGroup
+//	@Description	Register the source group.
+//	@Tags			[On-premise] SourceGroup
+//	@Accept			json
+//	@Produce		json
+//	@Param			SourceGroup body model.CreateSourceGroupReq true "source group of the node."
+//	@Success		200	{object}	model.CreateSourceGroupReq	"Successfully register the source group"
+//	@Failure		400	{object}	common.ErrorResponse		"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse		"Failed to register the source group"
+//	@Router			/source_group [post]
 func CreateSourceGroup(c echo.Context) error {
 	createSourceGroupReq := new(model.CreateSourceGroupReq)
 	err := c.Bind(createSourceGroupReq)
@@ -50,16 +51,17 @@ func CreateSourceGroup(c echo.Context) error {
 
 // GetSourceGroup godoc
 //
-// @Summary		Get SourceGroup
-// @Description	Get the source group.
-// @Tags		[On-premise] SourceGroup
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Success		200	{object}	model.SourceGroup	"Successfully get the source group"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to get the source group"
-// @Router		/source_group/{sgId} [get]
+//	@ID				get-source-group
+//	@Summary		Get SourceGroup
+//	@Description	Get the source group.
+//	@Tags			[On-premise] SourceGroup
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Success		200	{object}	model.SourceGroup	"Successfully get the source group"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get the source group"
+//	@Router			/source_group/{sgId} [get]
 func GetSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -76,19 +78,20 @@ func GetSourceGroup(c echo.Context) error {
 
 // ListSourceGroup godoc
 //
-// @Summary		List SourceGroup
-// @Description	Get a list of source group.
-// @Tags		[On-premise] SourceGroup
-// @Accept		json
-// @Produce		json
-// @Param		page query string false "Page of the source group list."
-// @Param		row query string false "Row of the source group list."
-// @Param		name query string false "Name of the source group."
-// @Param		description query string false "Description of the source group."
-// @Success		200	{object}	[]model.SourceGroup	"Successfully get a list of source group."
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to get a list of source group."
-// @Router		/source_group [get]
+//	@ID				list-source-group
+//	@Summary		List SourceGroup
+//	@Description	Get a list of source group.
+//	@Tags			[On-premise] SourceGroup
+//	@Accept			json
+//	@Produce		json
+//	@Param			page query string false "Page of the source group list."
+//	@Param			row query string false "Row of the source group list."
+//	@Param			name query string false "Name of the source group."
+//	@Param			description query string false "Description of the source group."
+//	@Success		200	{object}	[]model.SourceGroup	"Successfully get a list of source group."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get a list of source group."
+//	@Router			/source_group [get]
 func ListSourceGroup(c echo.Context) error {
 	page, row, err := common.CheckPageRow(c)
 	if err != nil {
@@ -110,17 +113,18 @@ func ListSourceGroup(c echo.Context) error {
 
 // UpdateSourceGroup godoc
 //
-// @Summary		Update SourceGroup
-// @Description	Update the source group.
-// @Tags		[On-premise] SourceGroup
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Param		SourceGroup body model.CreateSourceGroupReq true "source group to modify."
-// @Success		200	{object}	model.SourceGroup	"Successfully update the source group"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to update the source group"
-// @Router		/source_group/{sgId} [put]
+//	@ID				update-source-group
+//	@Summary		Update SourceGroup
+//	@Description	Update the source group.
+//	@Tags			[On-premise] SourceGroup
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Param			SourceGroup body model.CreateSourceGroupReq true "source group to modify."
+//	@Success		200	{object}	model.SourceGroup	"Successfully update the source group"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to update the source group"
+//	@Router			/source_group/{sgId} [put]
 func UpdateSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -189,16 +193,17 @@ func deleteSavedKubernetesInfo(connectionInfo *model.ConnectionInfo) {
 
 // DeleteSourceGroup godoc
 //
-// @Summary		Delete SourceGroup
-// @Description	Delete the source group.
-// @Tags		[On-premise] SourceGroup
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Success		200	{object}	model.SimpleMsg			"Successfully delete the source group"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to delete the source group"
-// @Router		/source_group/{sgId} [delete]
+//	@ID				delete-source-group
+//	@Summary		Delete SourceGroup
+//	@Description	Delete the source group.
+//	@Tags			[On-premise] SourceGroup
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Success		200	{object}	model.SimpleMsg			"Successfully delete the source group"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to delete the source group"
+//	@Router			/source_group/{sgId} [delete]
 func DeleteSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -236,16 +241,17 @@ func DeleteSourceGroup(c echo.Context) error {
 
 // CheckConnectionSourceGroup godoc
 //
-// @Summary		Check Connection SourceGroup
-// @Description	Check if SSH connection is available for each connection info in source group. Show each status by returning connection info list.
-// @Tags		[On-premise] SourceGroup
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Success		200	{object}	[]model.ConnectionInfo		"Successfully checked SSH connection for the source group"
-// @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse		"Failed to check SSH connection for the source group"
-// @Router		/source_group/{sgId}/connection_check [get]
+//	@ID				check-connection-source-group
+//	@Summary		Check Connection SourceGroup
+//	@Description	Check if SSH connection is available for each connection info in source group. Show each status by returning connection info list.
+//	@Tags			[On-premise] SourceGroup
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Success		200	{object}	[]model.ConnectionInfo		"Successfully checked SSH connection for the source group"
+//	@Failure		400	{object}	common.ErrorResponse		"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse		"Failed to check SSH connection for the source group"
+//	@Router			/source_group/{sgId}/connection_check [get]
 func CheckConnectionSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -277,16 +283,17 @@ func CheckConnectionSourceGroup(c echo.Context) error {
 
 // CheckAgentSourceGroup godoc
 //
-// @Summary		Check Agent SourceGroup
-// @Description	Check Agent in source group. Show each status by returning agent info list. If no Agent is present on the connected server, the Agent will be automatically installed.
-// @Tags		[On-premise] SourceGroup
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Success		200	{object}	[]model.AgentInfo		"Successfully checked Agent for the source group"
-// @Failure		400	{object}	common.ErrorResponse		"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse		"Failed to check Agent for the source group"
-// @Router		/source_group/{sgId}/agent_check [get]
+//	@ID				check-agent-source-group
+//	@Summary		Check Agent SourceGroup
+//	@Description	Check Agent in source group. Show each status by returning agent info list. If no Agent is present on the connected server, the Agent will be automatically installed.
+//	@Tags			[On-premise] SourceGroup
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Success		200	{object}	[]model.AgentInfo		"Successfully checked Agent for the source group"
+//	@Failure		400	{object}	common.ErrorResponse		"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse		"Failed to check Agent for the source group"
+//	@Router			/source_group/{sgId}/agent_check [get]
 func CheckAgentSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {

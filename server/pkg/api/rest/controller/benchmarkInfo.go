@@ -15,7 +15,8 @@ import (
 
 // GetBenchmarkInfo godoc
 //
-//	@Summary		Get Benchmark Information
+//	@ID				get-benchmark-info
+//	@Summary		Get Benchmark Info
 //	@Description	Get the benchmark information of the connection information.
 //	@Tags			[Import] BenchmarkInfo
 //	@Accept			json
@@ -49,6 +50,7 @@ func GetBenchmarkInfo(c echo.Context) error {
 
 // RunBenchmarkInfo godoc
 //
+//	@ID				run-benchmark-info
 //	@Summary		Run Benchmark Information
 //	@Description	Run the benchmark information of the connection information. If no Benchmark Agent is present on the connected server, it will be automatically installed, and the benchmark will be executed.
 //	@Tags			[Import] BenchmarkInfo
@@ -115,6 +117,7 @@ func RunBenchmarkInfo(c echo.Context) error {
 
 // StopBenchmarkInfo godoc
 //
+//	@ID				stop-benchmark
 //	@Summary		Stop Benchmark
 //	@Description	Stop the benchmark
 //	@Tags			[Import] BenchmarkInfo

@@ -161,17 +161,18 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 
 // ImportInfra godoc
 //
-// @Summary		Import Infra
-// @Description	Import the infra information.
-// @Tags		[Import] Import source info
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the source group."
-// @Param		connId path string true "ID of the connection info."
-// @Success		200	{object}	model.SavedInfraInfo	"Successfully saved the infra information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
-// @Router		/source_group/{sgId}/connection_info/{connId}/import/infra [post]
+//	@ID				import-infra
+//	@Summary		Import Infra
+//	@Description	Import the infra information.
+//	@Tags			[Import] Import source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	model.SavedInfraInfo	"Successfully saved the infra information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
+//	@Router			/source_group/{sgId}/connection_info/{connId}/import/infra [post]
 func ImportInfra(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -198,16 +199,17 @@ func ImportInfra(c echo.Context) error {
 
 // ImportInfraSourceGroup godoc
 //
-// @Summary		Import Infra Source Group
-// @Description	Import infra information for all connections in the source group.
-// @Tags		[Import] Import source info
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the source group."
-// @Success		200	{object}	[]model.SavedInfraInfo	"Successfully saved the infra information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
-// @Router		/source_group/{sgId}/import/infra [post]
+//	@ID				import-infra-source-group
+//	@Summary		Import Infra Source Group
+//	@Description	Import infra information for all connections in the source group.
+//	@Tags		[Import] Import source info
+//	@Accept		json
+//	@Produce		json
+//	@Param		sgId path string true "ID of the source group."
+//	@Success		200	{object}	[]model.SavedInfraInfo	"Successfully saved the infra information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
+//	@Router		/source_group/{sgId}/import/infra [post]
 func ImportInfraSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -236,17 +238,18 @@ func ImportInfraSourceGroup(c echo.Context) error {
 
 // ImportSoftware godoc
 //
-// @Summary		Import software
-// @Description	Import the software information.
-// @Tags		[Import] Import source info
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the source group."
-// @Param		connId path string true "ID of the connection info."
-// @Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the software information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
-// @Router		/source_group/{sgId}/connection_info/{connId}/import/software [post]
+//	@ID				import-software
+//	@Summary		Import software
+//	@Description	Import the software information.
+//	@Tags			[Import] Import source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the software information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
+//	@Router		/source_group/{sgId}/connection_info/{connId}/import/software [post]
 func ImportSoftware(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -273,16 +276,17 @@ func ImportSoftware(c echo.Context) error {
 
 // ImportSoftwareSourceGroup godoc
 //
-// @Summary		Import Software Source Group
-// @Description	Import software information for all connections in the source group.
-// @Tags		[Import] Import source info
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the source group."
-// @Success		200	{object}	[]model.SavedSoftwareInfo	"Successfully saved the software information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
-// @Router		/source_group/{sgId}/import/software [post]
+//	@ID				import-software-source-group
+//	@Summary		Import Software Source Group
+//	@Description	Import software information for all connections in the source group.
+//	@Tags			[Import] Import source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Success		200	{object}	[]model.SavedSoftwareInfo	"Successfully saved the software information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
+//	@Router			/source_group/{sgId}/import/software [post]
 func ImportSoftwareSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -311,17 +315,18 @@ func ImportSoftwareSourceGroup(c echo.Context) error {
 
 // ImportKubernetes godoc
 //
-// @Summary		Import kubernetes
-// @Description	Import the kubernetes information.
-// @Tags		[Import] Import source info
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the source group."
-// @Param		connId path string true "ID of the connection info."
-// @Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the kubernetes information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to save the kubernetes information"
-// @Router		/source_group/{sgId}/connection_info/{connId}/import/kubernetes [post]
+//	@ID				import-kubernetes
+//	@Summary		Import kubernetes
+//	@Description	Import the kubernetes information.
+//	@Tags			[Import] Import source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the kubernetes information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to save the kubernetes information"
+//	@Router			/source_group/{sgId}/connection_info/{connId}/import/kubernetes [post]
 func ImportKubernetes(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -348,16 +353,17 @@ func ImportKubernetes(c echo.Context) error {
 
 // ImportKubernetesSourceGroup godoc
 //
-// @Summary		Import Kubernetes Source Group
-// @Description	Import kubernetes information for all connections in the source group.
-// @Tags		[Import] Import source info
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the source group."
-// @Success		200	{object}	[]model.SavedKubernetesInfo	"Successfully saved the kubernetes information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to save the kubernetes information"
-// @Router		/source_group/{sgId}/import/kubernetes [post]
+//	@ID				import-kubernetes-source-group
+//	@Summary		Import Kubernetes Source Group
+//	@Description	Import kubernetes information for all connections in the source group.
+//	@Tags			[Import] Import source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Success		200	{object}	[]model.SavedKubernetesInfo	"Successfully saved the kubernetes information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to save the kubernetes information"
+//	@Router			/source_group/{sgId}/import/kubernetes [post]
 func ImportKubernetesSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {

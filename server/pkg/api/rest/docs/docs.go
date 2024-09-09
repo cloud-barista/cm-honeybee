@@ -31,7 +31,8 @@ const docTemplate = `{
                 "tags": [
                     "[Import] BenchmarkInfo"
                 ],
-                "summary": "Get Benchmark Information",
+                "summary": "Get Benchmark Info",
+                "operationId": "get-benchmark-info",
                 "parameters": [
                     {
                         "type": "string",
@@ -76,6 +77,7 @@ const docTemplate = `{
                     "[Import] BenchmarkInfo"
                 ],
                 "summary": "Run Benchmark Information",
+                "operationId": "run-benchmark-info",
                 "parameters": [
                     {
                         "type": "string",
@@ -120,6 +122,7 @@ const docTemplate = `{
                     "[Import] BenchmarkInfo"
                 ],
                 "summary": "Stop Benchmark",
+                "operationId": "stop-benchmark",
                 "parameters": [
                     {
                         "type": "string",
@@ -164,6 +167,7 @@ const docTemplate = `{
                     "[On-premise] ConnectionInfo"
                 ],
                 "summary": "Get ConnectionInfo Directly",
+                "operationId": "get-connection-info-directly",
                 "parameters": [
                     {
                         "type": "string",
@@ -205,9 +209,10 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "[Admin] System management"
+                    "[Admin]\tSystem management"
                 ],
                 "summary": "Check Ready",
+                "operationId": "health-check-readyz",
                 "responses": {
                     "200": {
                         "description": "Successfully get ready state.",
@@ -237,6 +242,7 @@ const docTemplate = `{
                     "[On-premise] SourceGroup"
                 ],
                 "summary": "List SourceGroup",
+                "operationId": "list-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -299,6 +305,7 @@ const docTemplate = `{
                     "[On-premise] SourceGroup"
                 ],
                 "summary": "Register SourceGroup",
+                "operationId": "register-source-group",
                 "parameters": [
                     {
                         "description": "source group of the node.",
@@ -345,6 +352,7 @@ const docTemplate = `{
                     "[On-premise] SourceGroup"
                 ],
                 "summary": "Get SourceGroup",
+                "operationId": "get-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -387,6 +395,7 @@ const docTemplate = `{
                     "[On-premise] SourceGroup"
                 ],
                 "summary": "Update SourceGroup",
+                "operationId": "update-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -438,6 +447,7 @@ const docTemplate = `{
                     "[On-premise] SourceGroup"
                 ],
                 "summary": "Delete SourceGroup",
+                "operationId": "delete-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -482,6 +492,7 @@ const docTemplate = `{
                     "[On-premise] SourceGroup"
                 ],
                 "summary": "Check Agent SourceGroup",
+                "operationId": "check-agent-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -529,6 +540,7 @@ const docTemplate = `{
                     "[On-premise] SourceGroup"
                 ],
                 "summary": "Check Connection SourceGroup",
+                "operationId": "check-connection-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -576,6 +588,7 @@ const docTemplate = `{
                     "[On-premise] ConnectionInfo"
                 ],
                 "summary": "List ConnectionInfo",
+                "operationId": "list-connection-info",
                 "parameters": [
                     {
                         "type": "string",
@@ -663,6 +676,7 @@ const docTemplate = `{
                     "[On-premise] ConnectionInfo"
                 ],
                 "summary": "Create ConnectionInfo",
+                "operationId": "create-connection-info",
                 "parameters": [
                     {
                         "type": "string",
@@ -716,6 +730,7 @@ const docTemplate = `{
                     "[On-premise] ConnectionInfo"
                 ],
                 "summary": "Get ConnectionInfo",
+                "operationId": "get-connection-info",
                 "parameters": [
                     {
                         "type": "string",
@@ -765,6 +780,7 @@ const docTemplate = `{
                     "[On-premise] ConnectionInfo"
                 ],
                 "summary": "Update ConnectionInfo",
+                "operationId": "update-connection-info",
                 "parameters": [
                     {
                         "type": "string",
@@ -823,6 +839,7 @@ const docTemplate = `{
                     "[On-premise] ConnectionInfo"
                 ],
                 "summary": "Delete ConnectionInfo",
+                "operationId": "delete-connection-info",
                 "parameters": [
                     {
                         "type": "string",
@@ -874,6 +891,7 @@ const docTemplate = `{
                     "[Import] Import source info"
                 ],
                 "summary": "Import Infra",
+                "operationId": "import-infra",
                 "parameters": [
                     {
                         "type": "string",
@@ -925,6 +943,7 @@ const docTemplate = `{
                     "[Import] Import source info"
                 ],
                 "summary": "Import kubernetes",
+                "operationId": "import-kubernetes",
                 "parameters": [
                     {
                         "type": "string",
@@ -976,6 +995,7 @@ const docTemplate = `{
                     "[Import] Import source info"
                 ],
                 "summary": "Import software",
+                "operationId": "import-software",
                 "parameters": [
                     {
                         "type": "string",
@@ -1027,6 +1047,7 @@ const docTemplate = `{
                     "[Get] Get source info"
                 ],
                 "summary": "Get Infra Information",
+                "operationId": "get-infra-info",
                 "parameters": [
                     {
                         "type": "string",
@@ -1078,6 +1099,7 @@ const docTemplate = `{
                     "[Get] Get source info"
                 ],
                 "summary": "Get Kubernetes Information",
+                "operationId": "get-kubernetes-info",
                 "parameters": [
                     {
                         "type": "string",
@@ -1129,6 +1151,7 @@ const docTemplate = `{
                     "[Get] Get source info"
                 ],
                 "summary": "Get Software Information",
+                "operationId": "get-software-info",
                 "parameters": [
                     {
                         "type": "string",
@@ -1180,6 +1203,7 @@ const docTemplate = `{
                     "[Import] Import source info"
                 ],
                 "summary": "Import Infra Source Group",
+                "operationId": "import-infra-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -1227,6 +1251,7 @@ const docTemplate = `{
                     "[Import] Import source info"
                 ],
                 "summary": "Import Kubernetes Source Group",
+                "operationId": "import-kubernetes-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -1274,6 +1299,7 @@ const docTemplate = `{
                     "[Import] Import source info"
                 ],
                 "summary": "Import Software Source Group",
+                "operationId": "import-software-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -1321,6 +1347,7 @@ const docTemplate = `{
                     "[Get] Get source info"
                 ],
                 "summary": "Get Infra Information Source Group",
+                "operationId": "get-infra-info-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -1365,6 +1392,7 @@ const docTemplate = `{
                     "[Get] Get source info"
                 ],
                 "summary": "Get Kubernetes Information Source Group",
+                "operationId": "get-kubernetes-info-source-group",
                 "parameters": [
                     {
                         "type": "string",
@@ -1409,6 +1437,7 @@ const docTemplate = `{
                     "[Get] Get source info"
                 ],
                 "summary": "Get Software Information Source Group",
+                "operationId": "get-software-info-source-group",
                 "parameters": [
                     {
                         "type": "string",

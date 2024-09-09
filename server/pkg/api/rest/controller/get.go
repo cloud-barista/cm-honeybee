@@ -93,17 +93,18 @@ func doGetKubernetesInfo(connID string) (*kubernetes.Kubernetes, error) {
 
 // GetInfraInfo godoc
 //
-// @Summary		Get Infra Information
-// @Description	Get the infra information of the connection information.
-// @Tags		[Get] Get source info
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the source group."
-// @Param		connId path string true "ID of the connection info."
-// @Success		200	{object}	infra.Infra				"Successfully get information of the infra."
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
-// @Router		/source_group/{sgId}/connection_info/{connId}/infra [get]
+//	@ID				get-infra-info
+//	@Summary		Get Infra Information
+//	@Description	Get the infra information of the connection information.
+//	@Tags			[Get] Get source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	infra.Infra				"Successfully get information of the infra."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
+//	@Router			/source_group/{sgId}/connection_info/{connId}/infra [get]
 func GetInfraInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -130,16 +131,17 @@ func GetInfraInfo(c echo.Context) error {
 
 // GetInfraInfoSourceGroup godoc
 //
-// @Summary		Get Infra Information Source Group
-// @Description	Get the infra information for all connections in the source group.
-// @Tags		[Get] Get source info
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the source group."
-// @Success		200	{object}	model.InfraInfoList		"Successfully get information of the infra."
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
-// @Router		/source_group/{sgId}/infra [get]
+//	@ID				get-infra-info-source-group
+//	@Summary		Get Infra Information Source Group
+//	@Description	Get the infra information for all connections in the source group.
+//	@Tags			[Get] Get source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Success		200	{object}	model.InfraInfoList		"Successfully get information of the infra."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
+//	@Router		/source_group/{sgId}/infra [get]
 func GetInfraInfoSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -168,17 +170,18 @@ func GetInfraInfoSourceGroup(c echo.Context) error {
 
 // GetSoftwareInfo godoc
 //
-// @Summary	Get Software Information
-// @Description	Get the software information of the connection information.
-// @Tags		[Get] Get source info
-// @Accept		json
-// @Produce	json
-// @Param		sgId path string true "ID of the source group."
-// @Param		connId path string true "ID of the connection info."
-// @Success	200	{object}	software.Software		"Successfully get information of the software."
-// @Failure	400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure	500	{object}	common.ErrorResponse	"Failed to get information of the software."
-// @Router		/source_group/{sgId}/connection_info/{connId}/software [get]
+//	@ID				get-software-info
+//	@Summary		Get Software Information
+//	@Description	Get the software information of the connection information.
+//	@Tags			[Get] Get source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	software.Software		"Successfully get information of the software."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the software."
+//	@Router			/source_group/{sgId}/connection_info/{connId}/software [get]
 func GetSoftwareInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -205,16 +208,17 @@ func GetSoftwareInfo(c echo.Context) error {
 
 // GetSoftwareInfoSourceGroup godoc
 //
-// @Summary		Get Software Information Source Group
-// @Description	Get the software information for all connections in the source group.
-// @Tags		[Get] Get source info
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the source group."
-// @Success		200	{object}	model.SoftwareInfoList	"Successfully get information of the software."
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the software."
-// @Router		/source_group/{sgId}/software [get]
+//	@ID				get-software-info-source-group
+//	@Summary		Get Software Information Source Group
+//	@Description	Get the software information for all connections in the source group.
+//	@Tags			[Get] Get source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Success		200	{object}	model.SoftwareInfoList	"Successfully get information of the software."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the software."
+//	@Router			/source_group/{sgId}/software [get]
 func GetSoftwareInfoSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -243,17 +247,18 @@ func GetSoftwareInfoSourceGroup(c echo.Context) error {
 
 // GetKubernetesInfo godoc
 //
-// @Summary	Get Kubernetes Information
-// @Description	Get the kubernetes information of the connection information.
-// @Tags		[Get] Get source info
-// @Accept		json
-// @Produce	json
-// @Param		sgId path string true "ID of the source group."
-// @Param		connId path string true "ID of the connection info."
-// @Success	200	{object}	kubernetes.Kubernetes		"Successfully get information of the kubernetes."
-// @Failure	400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure	500	{object}	common.ErrorResponse	"Failed to get information of the kubernetes."
-// @Router		/source_group/{sgId}/connection_info/{connId}/kubernetes [get]
+//	@ID				get-kubernetes-info
+//	@Summary		Get Kubernetes Information
+//	@Description	Get the kubernetes information of the connection information.
+//	@Tags			[Get] Get source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	kubernetes.Kubernetes		"Successfully get information of the kubernetes."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the kubernetes."
+//	@Router			/source_group/{sgId}/connection_info/{connId}/kubernetes [get]
 func GetKubernetesInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -280,16 +285,17 @@ func GetKubernetesInfo(c echo.Context) error {
 
 // GetKubernetesInfoSourceGroup godoc
 //
-// @Summary		Get Kubernetes Information Source Group
-// @Description	Get the kubernetes information for all connections in the source group.
-// @Tags		[Get] Get source info
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the source group."
-// @Success		200	{object}	model.KubernetesInfoList	"Successfully get information of the kubernetes."
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to get information of the kubernetes."
-// @Router		/source_group/{sgId}/kubernetes [get]
+//	@ID				get-kubernetes-info-source-group
+//	@Summary		Get Kubernetes Information Source Group
+//	@Description	Get the kubernetes information for all connections in the source group.
+//	@Tags			[Get] Get source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Success		200	{object}	model.KubernetesInfoList	"Successfully get information of the kubernetes."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the kubernetes."
+//	@Router		/source_group/{sgId}/kubernetes [get]
 func GetKubernetesInfoSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {

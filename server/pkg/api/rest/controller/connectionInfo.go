@@ -60,17 +60,18 @@ func encryptPasswordAndPrivateKey(connectionInfo *model.ConnectionInfo) (*model.
 
 // CreateConnectionInfo godoc
 //
-// @Summary		Create ConnectionInfo
-// @Description	Create the connection information.
-// @Tags		[On-premise] ConnectionInfo
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Param		ConnectionInfo body model.CreateConnectionInfoReq true "Connection information of the node."
-// @Success		200	{object}	model.ConnectionInfo	"Successfully register the connection information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to register the connection information"
-// @Router		/source_group/{sgId}/connection_info [post]
+//	@ID				create-connection-info
+//	@Summary		Create ConnectionInfo
+//	@Description	Create the connection information.
+//	@Tags		[On-premise] ConnectionInfo
+//	@Accept		json
+//	@Produce		json
+//	@Param		sgId path string true "ID of the SourceGroup"
+//	@Param		ConnectionInfo body model.CreateConnectionInfoReq true "Connection information of the node."
+//	@Success		200	{object}	model.ConnectionInfo	"Successfully register the connection information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to register the connection information"
+//	@Router		/source_group/{sgId}/connection_info [post]
 func CreateConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -139,17 +140,18 @@ func CreateConnectionInfo(c echo.Context) error {
 
 // GetConnectionInfo godoc
 //
-// @Summary		Get ConnectionInfo
-// @Description	Get the connection information.
-// @Tags		[On-premise] ConnectionInfo
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Param		connId path string true "ID of the connectionInfo"
-// @Success		200	{object}	model.ConnectionInfo	"Successfully get the connection information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to get the connection information"
-// @Router		/source_group/{sgId}/connection_info/{connId} [get]
+//	@ID				get-connection-info
+//	@Summary		Get ConnectionInfo
+//	@Description	Get the connection information.
+//	@Tags		[On-premise] ConnectionInfo
+//	@Accept		json
+//	@Produce		json
+//	@Param		sgId path string true "ID of the SourceGroup"
+//	@Param		connId path string true "ID of the connectionInfo"
+//	@Success		200	{object}	model.ConnectionInfo	"Successfully get the connection information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get the connection information"
+//	@Router		/source_group/{sgId}/connection_info/{connId} [get]
 func GetConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -181,16 +183,17 @@ func GetConnectionInfo(c echo.Context) error {
 
 // GetConnectionInfoDirectly godoc
 //
-// @Summary		Get ConnectionInfo Directly
-// @Description	Get the connection information directly.
-// @Tags		[On-premise] ConnectionInfo
-// @Accept		json
-// @Produce		json
-// @Param		connId path string true "ID of the connectionInfo"
-// @Success		200	{object}	model.ConnectionInfo	"Successfully get the connection information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to get the connection information"
-// @Router		/connection_info/{connId} [get]
+//	@ID				get-connection-info-directly
+//	@Summary		Get ConnectionInfo Directly
+//	@Description	Get the connection information directly.
+//	@Tags		[On-premise] ConnectionInfo
+//	@Accept		json
+//	@Produce		json
+//	@Param		connId path string true "ID of the connectionInfo"
+//	@Success		200	{object}	model.ConnectionInfo	"Successfully get the connection information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get the connection information"
+//	@Router		/connection_info/{connId} [get]
 func GetConnectionInfoDirectly(c echo.Context) error {
 	connID := c.Param("connId")
 	if connID == "" {
@@ -212,23 +215,24 @@ func GetConnectionInfoDirectly(c echo.Context) error {
 
 // ListConnectionInfo godoc
 //
-// @Summary		List ConnectionInfo
-// @Description	Get a list of connection information.
-// @Tags		[On-premise] ConnectionInfo
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Param		page query string false "Page of the connection information list."
-// @Param		row query string false "Row of the connection information list."
-// @Param		name query string false "Name of the connection information."
-// @Param		description query string false "Description of the connection information."
-// @Param		ip_address query string false "IP address of the connection information."
-// @Param		ssh_port query string false "SSH port of the connection information."
-// @Param		user query string false "User of the connection information."
-// @Success		200	{object}	[]model.ConnectionInfo	"Successfully get a list of connection information."
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to get a list of connection information."
-// @Router		/source_group/{sgId}/connection_info [get]
+//	@ID				list-connection-info
+//	@Summary		List ConnectionInfo
+//	@Description	Get a list of connection information.
+//	@Tags		[On-premise] ConnectionInfo
+//	@Accept		json
+//	@Produce		json
+//	@Param		sgId path string true "ID of the SourceGroup"
+//	@Param		page query string false "Page of the connection information list."
+//	@Param		row query string false "Row of the connection information list."
+//	@Param		name query string false "Name of the connection information."
+//	@Param		description query string false "Description of the connection information."
+//	@Param		ip_address query string false "IP address of the connection information."
+//	@Param		ssh_port query string false "SSH port of the connection information."
+//	@Param		user query string false "User of the connection information."
+//	@Success		200	{object}	[]model.ConnectionInfo	"Successfully get a list of connection information."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get a list of connection information."
+//	@Router		/source_group/{sgId}/connection_info [get]
 func ListConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -276,18 +280,19 @@ func ListConnectionInfo(c echo.Context) error {
 
 // UpdateConnectionInfo godoc
 //
-// @Summary		Update ConnectionInfo
-// @Description	Update the connection information.
-// @Tags		[On-premise] ConnectionInfo
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Param		connId path string true "ID of the connectionInfo"
-// @Param		ConnectionInfo body model.CreateConnectionInfoReq true "Connection information to modify."
-// @Success		200	{object}	model.ConnectionInfo	"Successfully update the connection information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to update the connection information"
-// @Router		/source_group/{sgId}/connection_info/{connId} [put]
+//	@ID				update-connection-info
+//	@Summary		Update ConnectionInfo
+//	@Description	Update the connection information.
+//	@Tags		[On-premise] ConnectionInfo
+//	@Accept		json
+//	@Produce		json
+//	@Param		sgId path string true "ID of the SourceGroup"
+//	@Param		connId path string true "ID of the connectionInfo"
+//	@Param		ConnectionInfo body model.CreateConnectionInfoReq true "Connection information to modify."
+//	@Success		200	{object}	model.ConnectionInfo	"Successfully update the connection information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to update the connection information"
+//	@Router		/source_group/{sgId}/connection_info/{connId} [put]
 func UpdateConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
@@ -351,17 +356,18 @@ func UpdateConnectionInfo(c echo.Context) error {
 
 // DeleteConnectionInfo godoc
 //
-// @Summary		Delete ConnectionInfo
-// @Description	Delete the connection information.
-// @Tags		[On-premise] ConnectionInfo
-// @Accept		json
-// @Produce		json
-// @Param		sgId path string true "ID of the SourceGroup"
-// @Param		connId path string true "ID of the connectionInfo"
-// @Success		200	{object}	model.SimpleMsg			"Successfully delete the connection information"
-// @Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-// @Failure		500	{object}	common.ErrorResponse	"Failed to delete the connection information"
-// @Router		/source_group/{sgId}/connection_info/{connId} [delete]
+//	@ID				delete-connection-info
+//	@Summary		Delete ConnectionInfo
+//	@Description	Delete the connection information.
+//	@Tags			[On-premise] ConnectionInfo
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Param			connId path string true "ID of the connectionInfo"
+//	@Success		200	{object}	model.SimpleMsg			"Successfully delete the connection information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to delete the connection information"
+//	@Router			/source_group/{sgId}/connection_info/{connId} [delete]
 func DeleteConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
