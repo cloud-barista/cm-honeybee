@@ -361,9 +361,15 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Memory": {
             "type": "object",
             "required": [
-                "size"
+                "available",
+                "size",
+                "used"
             ],
             "properties": {
+                "available": {
+                    "description": "MB",
+                    "type": "integer"
+                },
                 "size": {
                     "description": "MB",
                     "type": "integer"
@@ -374,6 +380,10 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string"
+                },
+                "used": {
+                    "description": "MB",
+                    "type": "integer"
                 }
             }
         },

@@ -38,9 +38,11 @@ type CPU struct {
 }
 
 type Memory struct {
-	Type  string `json:"type"`
-	Speed uint   `json:"speed"`                    // MHz
-	Size  uint   `json:"size" validate:"required"` // MB
+	Type      string `json:"type"`
+	Speed     uint   `json:"speed"`                         // MHz
+	Size      uint   `json:"size" validate:"required"`      // MB
+	Used      uint   `json:"used" validate:"required"`      // MB
+	Available uint   `json:"available" validate:"required"` // MB
 }
 
 type Disk struct {

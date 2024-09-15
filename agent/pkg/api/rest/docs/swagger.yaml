@@ -129,6 +129,9 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Memory:
     properties:
+      available:
+        description: MB
+        type: integer
       size:
         description: MB
         type: integer
@@ -137,8 +140,13 @@ definitions:
         type: integer
       type:
         type: string
+      used:
+        description: MB
+        type: integer
     required:
+    - available
     - size
+    - used
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.MountPoint:
     properties:

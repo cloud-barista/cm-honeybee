@@ -18,6 +18,7 @@ import (
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/host"
+	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/yumaojun03/dmidecode"
 	"github.com/yumaojun03/dmidecode/parser/memory"
 	"golang.org/x/sys/windows"
@@ -326,7 +327,7 @@ func GetComputeInfo() (infra.Compute, error) {
 	t := time.Now()
 	tz, _ := t.Zone()
 
-	mem, err := dmi.MemoryDevice()
+	memoryDevice, err := dmi.MemoryDevice()
 	if err != nil {
 		return infra.Compute{}, err
 	}
@@ -335,7 +336,7 @@ func GetComputeInfo() (infra.Compute, error) {
 	var memSpeed = uint(0)
 	var memSize = uint(0)
 
-	for _, m := range mem {
+	for _, m := range memoryDevice {
 		memSize += uint(m.Size)
 		if m.Type != memory.MemoryDeviceTypeUnknown {
 			memType = m.Type
@@ -344,6 +345,14 @@ func GetComputeInfo() (infra.Compute, error) {
 			memSpeed = uint(m.Speed)
 		}
 	}
+
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		return compute, err
+	}
+
+	memUsed := uint(v.Used / 1024 / 1024)
+	memAvailable := memSize - memUsed
 
 	// storage information
 	block, err := ghw.Block()
@@ -403,9 +412,11 @@ func GetComputeInfo() (infra.Compute, error) {
 				Threads:  threads,
 			},
 			Memory: infra.Memory{
-				Type:  memType.String(),
-				Speed: memSpeed,
-				Size:  memSize,
+				Type:      memType.String(),
+				Speed:     memSpeed,
+				Size:      memSize,
+				Used:      memUsed,
+				Available: memAvailable,
 			},
 			RootDisk: rootDisk,
 			DataDisk: dataDisk,
