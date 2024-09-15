@@ -270,13 +270,24 @@ definitions:
     type: object
   infra.Disk:
     properties:
+      available:
+        description: GB
+        type: integer
       label:
+        type: string
+      name:
         type: string
       size:
         description: GB
         type: integer
       type:
         type: string
+      used:
+        description: GB
+        type: integer
+    required:
+    - available
+    - used
     type: object
   infra.GPU:
     properties:
@@ -320,6 +331,9 @@ definitions:
     type: object
   infra.Memory:
     properties:
+      available:
+        description: MB
+        type: integer
       size:
         description: MB
         type: integer
@@ -328,8 +342,13 @@ definitions:
         type: integer
       type:
         type: string
+      used:
+        description: MB
+        type: integer
     required:
+    - available
     - size
+    - used
     type: object
   infra.MountPoint:
     properties:
@@ -408,19 +427,33 @@ definitions:
     type: object
   infra.OS:
     properties:
-      architecture:
+      id:
+        example: ubuntu
+        type: string
+      id_like:
+        example: debian
         type: string
       name:
+        example: Ubuntu
         type: string
-      release:
-        type: string
-      vendor:
+      pretty_name:
+        description: Pretty name
+        example: Ubuntu 22.04.3 LTS
         type: string
       version:
+        description: Full version string
+        example: 22.04.3 LTS (Jammy Jellyfish)
+        type: string
+      version_codename:
+        example: jammy
+        type: string
+      version_id:
+        example: "22.04"
         type: string
     required:
-    - release
-    - vendor
+    - name
+    - pretty_name
+    - version
     type: object
   infra.Storage:
     properties:
@@ -1652,6 +1685,41 @@ paths:
       summary: Get Infra Information
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/infra/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined infra information of the connection information.
+      operationId: get-infra-info-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the infra.
+          schema:
+            $ref: '#/definitions/infra.Infra'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the infra.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Infra Information
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/connection_info/{connId}/kubernetes:
     get:
       consumes:
@@ -1849,6 +1917,37 @@ paths:
       summary: Get Infra Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/infra/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined infra information for all connections in the source
+        group.
+      operationId: get-infra-info-source-group-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the infra.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InfraInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the infra.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Infra Information Source Group
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/kubernetes:
     get:
       consumes:

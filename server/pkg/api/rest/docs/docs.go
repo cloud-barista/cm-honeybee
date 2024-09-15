@@ -1086,6 +1086,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/source_group/{sgId}/connection_info/{connId}/infra/refined": {
+            "get": {
+                "description": "Get the refined infra information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Infra Information",
+                "operationId": "get-infra-info-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the infra.",
+                        "schema": {
+                            "$ref": "#/definitions/infra.Infra"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the infra.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/connection_info/{connId}/kubernetes": {
             "get": {
                 "description": "Get the kubernetes information of the connection information.",
@@ -1372,6 +1424,51 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to get information of the infra.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/infra/refined": {
+            "get": {
+                "description": "Get the refined infra information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Infra Information Source Group",
+                "operationId": "get-infra-info-source-group-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the infra.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InfraInfoList"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the infra.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1874,8 +1971,19 @@ const docTemplate = `{
         },
         "infra.Disk": {
             "type": "object",
+            "required": [
+                "available",
+                "used"
+            ],
             "properties": {
+                "available": {
+                    "description": "GB",
+                    "type": "integer"
+                },
                 "label": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 },
                 "size": {
@@ -1884,6 +1992,10 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string"
+                },
+                "used": {
+                    "description": "GB",
+                    "type": "integer"
                 }
             }
         },
@@ -1952,9 +2064,15 @@ const docTemplate = `{
         "infra.Memory": {
             "type": "object",
             "required": [
-                "size"
+                "available",
+                "size",
+                "used"
             ],
             "properties": {
+                "available": {
+                    "description": "MB",
+                    "type": "integer"
+                },
                 "size": {
                     "description": "MB",
                     "type": "integer"
@@ -1965,6 +2083,10 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string"
+                },
+                "used": {
+                    "description": "MB",
+                    "type": "integer"
                 }
             }
         },
@@ -2083,24 +2205,40 @@ const docTemplate = `{
         "infra.OS": {
             "type": "object",
             "required": [
-                "release",
-                "vendor"
+                "name",
+                "pretty_name",
+                "version"
             ],
             "properties": {
-                "architecture": {
-                    "type": "string"
+                "id": {
+                    "type": "string",
+                    "example": "ubuntu"
+                },
+                "id_like": {
+                    "type": "string",
+                    "example": "debian"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Ubuntu"
                 },
-                "release": {
-                    "type": "string"
-                },
-                "vendor": {
-                    "type": "string"
+                "pretty_name": {
+                    "description": "Pretty name",
+                    "type": "string",
+                    "example": "Ubuntu 22.04.3 LTS"
                 },
                 "version": {
-                    "type": "string"
+                    "description": "Full version string",
+                    "type": "string",
+                    "example": "22.04.3 LTS (Jammy Jellyfish)"
+                },
+                "version_codename": {
+                    "type": "string",
+                    "example": "jammy"
+                },
+                "version_id": {
+                    "type": "string",
+                    "example": "22.04"
                 }
             }
         },

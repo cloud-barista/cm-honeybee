@@ -63,6 +63,7 @@ func Init() {
 	route.RegisterSourceGroup(e)
 	route.RegisterImport(e)
 	route.RegisterGet(e)
+	route.RegisterGetRefined(e)
 	route.RegisterSwagger(e)
 	route.RegisterUtility(e)
 	route.RegisterBenchmark(e)

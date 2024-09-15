@@ -141,7 +141,7 @@ func GetInfraInfo(c echo.Context) error {
 //	@Success		200	{object}	model.InfraInfoList		"Successfully get information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the infra."
-//	@Router		/source_group/{sgId}/infra [get]
+//	@Router			/source_group/{sgId}/infra [get]
 func GetInfraInfoSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
 	if sgID == "" {
