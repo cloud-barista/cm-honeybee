@@ -12,19 +12,19 @@ require (
 )
 
 require (
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20240906054810-5351c955b7e8
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20240915113555-8bc46323716a
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.6
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.3
 	golang.org/x/crypto v0.27.0
-	gorm.io/gorm v1.25.11
+	gorm.io/gorm v1.25.12
 )
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
-	github.com/docker/docker v27.2.0+incompatible // indirect
+	github.com/docker/docker v27.2.1+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -56,10 +56,10 @@ require (
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
-	golang.org/x/tools v0.24.0 // indirect
+	golang.org/x/tools v0.25.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	modernc.org/libc v1.60.1 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
-	modernc.org/sqlite v1.32.0 // indirect
+	modernc.org/sqlite v1.33.1 // indirect
 )
