@@ -31,7 +31,9 @@ func readRegistryKey(baseKey registry.Key, path string, keyName string) (string,
 	if err != nil {
 		return "", err
 	}
-	defer key.Close()
+	defer func() {
+		_ = key.Close()
+	}()
 
 	val, _, err := key.GetStringValue(keyName)
 	if err != nil {
@@ -429,17 +431,24 @@ func GetComputeInfo() (infra.Compute, error) {
 
 	rootDisk := infra.Disk{}
 	dataDisk := []infra.Disk{}
+
+	systemRoot, err := readRegistryKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, "SystemRoot")
+	if err != nil {
+		return compute, err
+	}
+
 	for _, d := range block.Disks {
 		for _, part := range d.Partitions {
-			if strings.EqualFold(part.Type, "Installable File System") {
-				dUsage, err := disk.Usage(part.MountPoint)
-				if err != nil {
-					return compute, err
-				}
-				label, err := getVolumeLabel(part.Name)
-				if err != nil {
-					return compute, err
-				}
+			dUsage, err := disk.Usage(part.MountPoint)
+			if err != nil {
+				return compute, err
+			}
+			label, err := getVolumeLabel(part.Name)
+			if err != nil {
+				return compute, err
+			}
+
+			if strings.HasPrefix(systemRoot, part.Name) {
 				rootDisk = infra.Disk{
 					Name:      part.Name,
 					Label:     label,
@@ -449,14 +458,6 @@ func GetComputeInfo() (infra.Compute, error) {
 					Available: uint(dUsage.Free / 1024 / 1024 / 1024),
 				}
 			} else {
-				dUsage, err := disk.Usage(part.MountPoint)
-				if err != nil {
-					continue
-				}
-				label, err := getVolumeLabel(part.Name)
-				if err != nil {
-					return compute, err
-				}
 				dataDisk = append(dataDisk, infra.Disk{
 					Name:      part.Name,
 					Label:     label,
