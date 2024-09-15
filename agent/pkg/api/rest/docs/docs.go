@@ -283,8 +283,19 @@ const docTemplate = `{
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Disk": {
             "type": "object",
+            "required": [
+                "available",
+                "used"
+            ],
             "properties": {
+                "available": {
+                    "description": "GB",
+                    "type": "integer"
+                },
                 "label": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 },
                 "size": {
@@ -293,6 +304,10 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string"
+                },
+                "used": {
+                    "description": "GB",
+                    "type": "integer"
                 }
             }
         },

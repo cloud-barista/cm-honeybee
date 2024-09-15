@@ -46,9 +46,12 @@ type Memory struct {
 }
 
 type Disk struct {
-	Label string `json:"label"`
-	Type  string `json:"type"`
-	Size  uint   `json:"size"` // GB
+	Name      string `json:"name"`
+	Label     string `json:"label"`
+	Type      string `json:"type"`
+	Size      uint   `json:"size"`                          // GB
+	Used      uint   `json:"used" validate:"required"`      // GB
+	Available uint   `json:"available" validate:"required"` // GB
 }
 
 type ComputeResource struct {

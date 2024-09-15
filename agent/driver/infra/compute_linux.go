@@ -7,6 +7,7 @@ package infra
 import (
 	"bufio"
 	"errors"
+	"github.com/shirou/gopsutil/v3/disk"
 	"strings"
 	"time"
 
@@ -145,20 +146,35 @@ func GetComputeInfo() (infra.Compute, error) {
 
 	rootDisk := infra.Disk{}
 	dataDisk := []infra.Disk{}
-	for _, disk := range block.Disks {
-		if !strings.Contains(disk.Name, "loop") {
-			for _, part := range disk.Partitions {
+	for _, d := range block.Disks {
+		if !strings.Contains(d.Name, "loop") {
+			for _, part := range d.Partitions {
 				if strings.EqualFold(part.MountPoint, "/") {
+					dUsage, err := disk.Usage(part.MountPoint)
+					if err != nil {
+						return compute, err
+					}
 					rootDisk = infra.Disk{
-						Label: part.Name,
-						Type:  disk.DriveType.String(),
-						Size:  uint(float64(part.SizeBytes) / float64(1000*1000*1000))}
+						Name:      part.Name,
+						Label:     part.Label,
+						Type:      d.DriveType.String(),
+						Size:      uint(dUsage.Total / 1024 / 1024 / 1024),
+						Used:      uint(dUsage.Used / 1024 / 1024 / 1024),
+						Available: uint(dUsage.Free / 1024 / 1024 / 1024),
+					}
 				} else {
 					if !strings.Contains(strings.ToUpper(part.MountPoint), "EFI") && !strings.Contains(strings.ToUpper(part.Label), "EFI") {
+						dUsage, err := disk.Usage(part.MountPoint)
+						if err != nil {
+							continue
+						}
 						dataDisk = append(dataDisk, infra.Disk{
-							Label: part.Name,
-							Type:  disk.DriveType.String(),
-							Size:  uint(float64(part.SizeBytes) / float64(1000*1000*1000)),
+							Name:      part.Name,
+							Label:     part.Label,
+							Type:      d.DriveType.String(),
+							Size:      uint(dUsage.Total / 1024 / 1024 / 1024),
+							Used:      uint(dUsage.Used / 1024 / 1024 / 1024),
+							Available: uint(dUsage.Free / 1024 / 1024 / 1024),
 						})
 					}
 				}

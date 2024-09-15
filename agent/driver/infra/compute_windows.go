@@ -7,9 +7,11 @@ package infra
 import (
 	"errors"
 	"fmt"
+	"github.com/shirou/gopsutil/v3/disk"
 	"io"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 	"unsafe"
 
@@ -269,6 +271,27 @@ func getVirtualMachineType(dmidecode *dmidecode.Decoder) (string, error) {
 	return checkVirtualMachineRegistry(), nil
 }
 
+func getVolumeLabel(drive string) (string, error) {
+	volumeName := make([]uint16, syscall.MAX_PATH+1)
+
+	err := windows.GetVolumeInformation(
+		windows.StringToUTF16Ptr(drive+"\\"), // Drive path
+		&volumeName[0],                       // Volume name buffer
+		uint32(len(volumeName)),              // Size of the volume name buffer
+		nil,                                  // Volume serial number (not used)
+		nil,                                  // Maximum component length (not used)
+		nil,                                  // File system flags (not used)
+		nil,                                  // File system name (not used)
+		0,                                    // Size of the file system name (not used)
+	)
+	if err != nil {
+		return "", err
+	}
+
+	// Convert from Unicode to string
+	return syscall.UTF16ToString(volumeName), nil
+}
+
 func GetComputeInfo() (infra.Compute, error) {
 	var compute infra.Compute
 
@@ -362,18 +385,41 @@ func GetComputeInfo() (infra.Compute, error) {
 
 	rootDisk := infra.Disk{}
 	dataDisk := []infra.Disk{}
-	for _, disk := range block.Disks {
-		for _, part := range disk.Partitions {
+	for _, d := range block.Disks {
+		for _, part := range d.Partitions {
 			if strings.EqualFold(part.Type, "Installable File System") {
+				dUsage, err := disk.Usage(part.MountPoint)
+				if err != nil {
+					return compute, err
+				}
+				label, err := getVolumeLabel(part.Name)
+				if err != nil {
+					return compute, err
+				}
 				rootDisk = infra.Disk{
-					Label: part.Name,
-					Type:  disk.DriveType.String(),
-					Size:  uint(float64(part.SizeBytes) / float64(1000*1000*1000))}
+					Name:      part.Name,
+					Label:     label,
+					Type:      d.DriveType.String(),
+					Size:      uint(dUsage.Total / 1024 / 1024 / 1024),
+					Used:      uint(dUsage.Used / 1024 / 1024 / 1024),
+					Available: uint(dUsage.Free / 1024 / 1024 / 1024),
+				}
 			} else {
+				dUsage, err := disk.Usage(part.MountPoint)
+				if err != nil {
+					continue
+				}
+				label, err := getVolumeLabel(part.Name)
+				if err != nil {
+					return compute, err
+				}
 				dataDisk = append(dataDisk, infra.Disk{
-					Label: part.Name,
-					Type:  disk.DriveType.String(),
-					Size:  uint(float64(part.SizeBytes) / float64(1000*1000*1000)),
+					Name:      part.Name,
+					Label:     label,
+					Type:      d.DriveType.String(),
+					Size:      uint(dUsage.Total / 1024 / 1024 / 1024),
+					Used:      uint(dUsage.Used / 1024 / 1024 / 1024),
+					Available: uint(dUsage.Free / 1024 / 1024 / 1024),
 				})
 			}
 		}
