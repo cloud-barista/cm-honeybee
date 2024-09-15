@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/jollaman999/utils/fileutil"
+	"github.com/jollaman999/utils/logger"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
@@ -33,6 +34,14 @@ func checkCMHoneybeeAgentConfigFile() error {
 	}
 
 	return nil
+}
+
+func getCMHoneybeeAgentDefaultConfig() cmHoneybeeAgentConfig {
+	var defaultConfig cmHoneybeeAgentConfig
+
+	defaultConfig.CMHoneybeeAgent.Listen.Port = "8082"
+
+	return defaultConfig
 }
 
 func readCMHoneybeeAgentConfigFile() error {
@@ -64,20 +73,22 @@ func readCMHoneybeeAgentConfigFile() error {
 
 	data, err := os.ReadFile(configDir + "/" + cmHoneybeeAgentConfigFile)
 	if err != nil {
-		return errors.New("can't find the config file (" + cmHoneybeeAgentConfigFile + ")" + fmt.Sprintln() +
-			"Must be placed in '." + strings.ToLower(common.ModuleName) + "/conf' directory " +
-			"under user's home directory or 'conf' directory where running the binary " +
-			"or 'conf' directory where placed in the path of '" + common.ModuleROOT + "' environment variable")
-	}
+		logger.Println(logger.WARN, false, "can't find the config file ("+cmHoneybeeAgentConfigFile+")"+fmt.Sprintln()+
+			"Must be placed in '."+strings.ToLower(common.ModuleName)+"/conf' directory "+
+			"under user's home directory or 'conf' directory where running the binary "+
+			"or 'conf' directory where placed in the path of '"+common.ModuleROOT+"' environment variable")
+		logger.Println(logger.WARN, false, "Using default configuration...")
+		CMHoneybeeAgentConfig = getCMHoneybeeAgentDefaultConfig()
+	} else {
+		err = yaml.Unmarshal(data, &CMHoneybeeAgentConfig)
+		if err != nil {
+			return err
+		}
 
-	err = yaml.Unmarshal(data, &CMHoneybeeAgentConfig)
-	if err != nil {
-		return err
-	}
-
-	err = checkCMHoneybeeAgentConfigFile()
-	if err != nil {
-		return err
+		err = checkCMHoneybeeAgentConfigFile()
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
