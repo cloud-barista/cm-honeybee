@@ -236,19 +236,33 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.OS:
     properties:
-      architecture:
+      id:
+        example: ubuntu
+        type: string
+      id_like:
+        example: debian
         type: string
       name:
+        example: Ubuntu
         type: string
-      release:
-        type: string
-      vendor:
+      pretty_name:
+        description: Pretty name
+        example: Ubuntu 22.04.3 LTS
         type: string
       version:
+        description: Full version string
+        example: 22.04.3 LTS (Jammy Jellyfish)
+        type: string
+      version_codename:
+        example: jammy
+        type: string
+      version_id:
+        example: "22.04"
         type: string
     required:
-    - release
-    - vendor
+    - name
+    - pretty_name
+    - version
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Storage:
     properties:

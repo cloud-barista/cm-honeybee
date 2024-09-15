@@ -1,11 +1,13 @@
 package infra
 
 type OS struct {
-	Name         string `json:"name"`
-	Vendor       string `json:"vendor" validate:"required"`
-	Version      string `json:"version"`
-	Release      string `json:"release" validate:"required"`
-	Architecture string `json:"architecture"`
+	PrettyName      string `json:"pretty_name" validate:"required" example:"Ubuntu 22.04.3 LTS"` // Pretty name
+	Name            string `json:"name,omitempty" validate:"required" example:"Ubuntu"`
+	VersionID       string `json:"version_id,omitempty" example:"22.04"`
+	Version         string `json:"version,omitempty" validate:"required" example:"22.04.3 LTS (Jammy Jellyfish)"` // Full version string
+	VersionCodename string `json:"version_codename,omitempty" example:"jammy"`
+	ID              string `json:"id,omitempty" example:"ubuntu"`
+	IDLike          string `json:"id_like,omitempty" example:"debian"`
 }
 
 type Kernel struct {

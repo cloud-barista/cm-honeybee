@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"errors"
 	"github.com/shirou/gopsutil/v3/disk"
+	"regexp"
 	"strings"
 	"time"
 
@@ -22,10 +23,12 @@ import (
 	"github.com/yumaojun03/dmidecode/parser/memory"
 )
 
-func getOSVersion() (string, error) {
+func getOSProperties() (infra.OS, error) {
+	var OS infra.OS
+
 	content, err := fileutil.ReadFile("/etc/os-release")
 	if err != nil {
-		return "", err
+		return OS, errors.New("failed to read os-release file")
 	}
 	content = strings.TrimSpace(content)
 	scanner := bufio.NewScanner(strings.NewReader(content))
@@ -38,12 +41,32 @@ func getOSVersion() (string, error) {
 		}
 		name := strings.TrimSpace(split[0])
 		value := strings.Replace(strings.TrimSpace(split[1]), "\"", "", -1)
-		if name == "VERSION" {
-			return value, nil
+		if name == "PRETTY_NAME" {
+			OS.PrettyName = value
+		} else if name == "NAME" {
+			OS.Name = value
+		} else if name == "VERSION_ID" {
+			OS.VersionID = value
+		} else if name == "VERSION" {
+			OS.Version = value
+		} else if name == "VERSION_CODENAME" {
+			OS.VersionCodename = value
+		} else if name == "ID" {
+			OS.ID = value
+		} else if name == "ID_LIKE" {
+			OS.IDLike = value
 		}
 	}
 
-	return "", errors.New("failed to parse os version")
+	if OS.VersionCodename == "" {
+		re := regexp.MustCompile(`\(([^)]+)\)`)
+		matches := re.FindStringSubmatch(OS.Version)
+		if len(matches) > 1 {
+			OS.VersionCodename = matches[1]
+		}
+	}
+
+	return OS, nil
 }
 func getKernelVersion() (string, error) {
 	output, err := cmd.RunCMD("uname -v")
@@ -59,12 +82,13 @@ func getKernelVersion() (string, error) {
 func GetComputeInfo() (infra.Compute, error) {
 	var compute infra.Compute
 
-	// host information
-	osVersion, err := getOSVersion()
+	// OS information
+	os, err := getOSProperties()
 	if err != nil {
 		return compute, err
 	}
 
+	// host information
 	h, err := host.Info()
 	if err != nil {
 		return compute, err
@@ -185,13 +209,7 @@ func GetComputeInfo() (infra.Compute, error) {
 	// All of compute information
 	compute = infra.Compute{
 		OS: infra.System{
-			OS: infra.OS{
-				Name:         h.OS,
-				Vendor:       h.Platform,
-				Version:      osVersion,
-				Release:      h.PlatformVersion,
-				Architecture: h.KernelArch,
-			},
+			OS: os,
 			Kernel: infra.Kernel{
 				Release:      h.KernelVersion,
 				Version:      kernelVersion,

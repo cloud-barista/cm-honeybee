@@ -7,48 +7,92 @@ package infra
 import (
 	"errors"
 	"fmt"
-	"github.com/shirou/gopsutil/v3/disk"
-	"io"
-	"os"
-	"strings"
-	"syscall"
-	"time"
-	"unsafe"
-
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/jaypipes/ghw"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/cpu"
+	"github.com/shirou/gopsutil/v3/disk"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/yumaojun03/dmidecode"
 	"github.com/yumaojun03/dmidecode/parser/memory"
 	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
+	"io"
+	"os"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
 )
 
-func getWindowsReleaseVersion() (string, error) {
-	var h windows.Handle // like HostIDWithContext(), we query the registry using the raw windows.RegOpenKeyEx/RegQueryValueEx
-	err := windows.RegOpenKeyEx(windows.HKEY_LOCAL_MACHINE, windows.StringToUTF16Ptr(`SOFTWARE\Microsoft\Windows NT\CurrentVersion`), 0, windows.KEY_READ|windows.KEY_WOW64_64KEY, &h)
+func readRegistryKey(baseKey registry.Key, path string, keyName string) (string, error) {
+	key, err := registry.OpenKey(baseKey, path, registry.QUERY_VALUE)
 	if err != nil {
 		return "", err
 	}
-	defer func() {
-		_ = windows.RegCloseKey(h)
-	}()
-	var bufLen uint32
-	var valType uint32
-	err = windows.RegQueryValueEx(h, windows.StringToUTF16Ptr(`DisplayVersion`), nil, &valType, nil, &bufLen)
-	if err != nil {
-		return "", err
-	}
-	regBuf := make([]uint16, bufLen/2+1)
-	err = windows.RegQueryValueEx(h, windows.StringToUTF16Ptr(`DisplayVersion`), nil, &valType, (*byte)(unsafe.Pointer(&regBuf[0])), &bufLen)
+	defer key.Close()
+
+	val, _, err := key.GetStringValue(keyName)
 	if err != nil {
 		return "", err
 	}
 
-	return windows.UTF16ToString(regBuf[:]), nil
+	return val, nil
+}
+
+func getWindowsVersion(productName string, buildNumber int) string {
+	if strings.Contains(productName, "Windows 10") && buildNumber >= 22000 {
+		productName = strings.Replace(productName, "Windows 10", "Windows 11", 1)
+	}
+
+	return productName
+}
+
+func getOSProperties() (infra.OS, error) {
+	productName, err := readRegistryKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, "ProductName")
+	if err != nil {
+		return infra.OS{}, err
+	}
+
+	buildNumberStr, err := readRegistryKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, "CurrentBuild")
+	if err != nil {
+		return infra.OS{}, err
+	}
+
+	buildNumber, err := strconv.Atoi(buildNumberStr)
+	if err != nil {
+		return infra.OS{}, err
+	}
+
+	prettyName := getWindowsVersion(productName, buildNumber)
+
+	versionID, err := readRegistryKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, "ReleaseId")
+	if err != nil {
+		return infra.OS{}, err
+	}
+
+	version, err := readRegistryKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, "CurrentVersion")
+	if err != nil {
+		return infra.OS{}, err
+	}
+
+	versionCodename, err := readRegistryKey(registry.LOCAL_MACHINE, `SOFTWARE\Microsoft\Windows NT\CurrentVersion`, "DisplayVersion")
+	if err != nil {
+		versionCodename = "N/A"
+	}
+
+	osInfo := infra.OS{
+		PrettyName:      prettyName,
+		Name:            "Windows",
+		VersionID:       versionID,
+		Version:         version,
+		VersionCodename: versionCodename,
+		ID:              "windows",
+		IDLike:          "windows",
+	}
+
+	return osInfo, nil
 }
 
 func getKernelLastModifiedDate() (string, error) {
@@ -296,9 +340,9 @@ func GetComputeInfo() (infra.Compute, error) {
 	var compute infra.Compute
 
 	// OS information
-	releaseVersion, err := getWindowsReleaseVersion()
+	os, err := getOSProperties()
 	if err != nil {
-		return infra.Compute{}, err
+		return compute, err
 	}
 
 	// host information
@@ -428,13 +472,7 @@ func GetComputeInfo() (infra.Compute, error) {
 	// All of compute information
 	compute = infra.Compute{
 		OS: infra.System{
-			OS: infra.OS{
-				Name:         h.OS,
-				Vendor:       h.Platform,
-				Version:      h.PlatformVersion,
-				Release:      releaseVersion,
-				Architecture: h.KernelArch,
-			},
+			OS: os,
 			Kernel: infra.Kernel{
 				Release:      h.KernelVersion,
 				Version:      kernelLastModifiedDate,

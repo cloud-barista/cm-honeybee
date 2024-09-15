@@ -517,24 +517,40 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.OS": {
             "type": "object",
             "required": [
-                "release",
-                "vendor"
+                "name",
+                "pretty_name",
+                "version"
             ],
             "properties": {
-                "architecture": {
-                    "type": "string"
+                "id": {
+                    "type": "string",
+                    "example": "ubuntu"
+                },
+                "id_like": {
+                    "type": "string",
+                    "example": "debian"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Ubuntu"
                 },
-                "release": {
-                    "type": "string"
-                },
-                "vendor": {
-                    "type": "string"
+                "pretty_name": {
+                    "description": "Pretty name",
+                    "type": "string",
+                    "example": "Ubuntu 22.04.3 LTS"
                 },
                 "version": {
-                    "type": "string"
+                    "description": "Full version string",
+                    "type": "string",
+                    "example": "22.04.3 LTS (Jammy Jellyfish)"
+                },
+                "version_codename": {
+                    "type": "string",
+                    "example": "jammy"
+                },
+                "version_id": {
+                    "type": "string",
+                    "example": "22.04"
                 }
             }
         },
