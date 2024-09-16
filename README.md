@@ -26,9 +26,12 @@ Collecting and Aggregating Information From Source Computing framework (codename
 
 ## How to run
 
-### 1. Build and run agent
+### 1. Build and run agent (Run on the source computing environment you want to import.)
 
 1.1. Write the configuration file.
+
+(You can skip this step and the default settings will be used instead.)
+
   - Configuration file name is 'cm-honeybee-agent.yaml'
   - The configuration file must be placed in one of the following directories.
     - .cm-honeybee-agent/conf directory under user's home directory
@@ -58,6 +61,9 @@ Or, you can run it within Docker by this command.
 ### 2. Build and run server
 
 2.1. Write the configuration file.
+
+(You can skip this step and the default settings will be used instead.)
+
 - Configuration file name is 'cm-honeybee.yaml'
 - The configuration file must be placed in one of the following directories.
     - .cm-honeybee/conf directory under user's home directory
@@ -145,6 +151,14 @@ Below example is getting saved infrastructure information of all connection in t
 ```shell
 curl -X 'GET' \
  'http://127.0.0.1:8081/honeybee/source_group/b9e86d53-9fbe-4a96-9e06-627f77fdd6b7/infra' \
+ -H 'accept: application/json'
+```
+
+### 7. Get refined, saved source information.
+Below example is getting refined, saved infrastructure information of all connection in the source group.
+```shell
+curl -X 'GET' \
+ 'http://127.0.0.1:8081/honeybee/source_group/b9e86d53-9fbe-4a96-9e06-627f77fdd6b7/infra/refined' \
  -H 'accept: application/json'
 ```
 
