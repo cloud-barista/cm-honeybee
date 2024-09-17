@@ -190,8 +190,12 @@ func RegisterTargetInfoToSourceGroup(c echo.Context) error {
 	}
 
 	if registerTargetInfoReq.ResourceType == "mci" {
-		// TODO: Must be able to set NSID next time.
-		oldSourceGroup.TargetInfo.NSID = "mig01"
+		if registerTargetInfoReq.ID == "" {
+			oldSourceGroup.TargetInfo.NSID = ""
+		} else {
+			// TODO: Must be able to set NSID next time.
+			oldSourceGroup.TargetInfo.NSID = "mig01"
+		}
 		oldSourceGroup.TargetInfo.MCIID = registerTargetInfoReq.ID
 	}
 
