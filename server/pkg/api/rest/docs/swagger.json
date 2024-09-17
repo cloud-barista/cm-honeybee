@@ -1558,6 +1558,60 @@
                     }
                 }
             }
+        },
+        "/source_group/{sgId}/target": {
+            "post": {
+                "description": "Register target information to the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Register TargetInfo to SourceGroup",
+                "operationId": "register-target-to-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Target info data received from infra migration via beetle.",
+                        "name": "TargetInfo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RegisterTargetInfoReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully update the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1736,6 +1790,45 @@
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RegisterTargetInfoReq": {
+            "type": "object",
+            "required": [
+                "id",
+                "resourceType"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "resourceType": {
+                    "type": "string"
+                },
+                "systemLabel": {
+                    "type": "string"
+                },
+                "systemMessage": {
+                    "type": "string"
+                },
+                "targetAction": {
+                    "type": "string"
+                },
+                "targetStatus": {
+                    "type": "string"
+                },
+                "uid": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo": {
             "type": "object",
             "properties": {
@@ -1852,6 +1945,20 @@
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "target_info": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo": {
+            "type": "object",
+            "properties": {
+                "mci_id": {
+                    "type": "string"
+                },
+                "ns_id": {
                     "type": "string"
                 }
             }

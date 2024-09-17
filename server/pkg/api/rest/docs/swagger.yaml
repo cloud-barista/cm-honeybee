@@ -117,6 +117,32 @@ definitions:
     required:
     - servers
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RegisterTargetInfoReq:
+    properties:
+      description:
+        type: string
+      id:
+        type: string
+      label:
+        type: string
+      name:
+        type: string
+      resourceType:
+        type: string
+      systemLabel:
+        type: string
+      systemMessage:
+        type: string
+      targetAction:
+        type: string
+      targetStatus:
+        type: string
+      uid:
+        type: string
+    required:
+    - id
+    - resourceType
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo:
     properties:
       benchmark:
@@ -192,9 +218,18 @@ definitions:
         type: string
       name:
         type: string
+      target_info:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo'
     required:
     - id
     - name
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo:
+    properties:
+      mci_id:
+        type: string
+      ns_id:
+        type: string
     type: object
   infra.CPU:
     properties:
@@ -2010,4 +2045,40 @@ paths:
       summary: Get Software Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/target:
+    post:
+      consumes:
+      - application/json
+      description: Register target information to the source group.
+      operationId: register-target-to-source-group
+      parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: Target info data received from infra migration via beetle.
+        in: body
+        name: TargetInfo
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RegisterTargetInfoReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully update the source group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to update the source group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Register TargetInfo to SourceGroup
+      tags:
+      - '[On-premise] SourceGroup'
 swagger: "2.0"

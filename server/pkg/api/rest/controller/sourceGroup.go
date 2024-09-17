@@ -158,6 +158,51 @@ func UpdateSourceGroup(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, oldSourceGroup, " ")
 }
 
+// RegisterTargetInfoToSourceGroup godoc
+//
+//	@ID				register-target-to-source-group
+//	@Summary		Register TargetInfo to SourceGroup
+//	@Description	Register target information to the source group.
+//	@Tags			[On-premise] SourceGroup
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Param			TargetInfo body model.RegisterTargetInfoReq true "Target info data received from infra migration via beetle."
+//	@Success		200	{object}	model.SourceGroup	"Successfully update the source group"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to update the source group"
+//	@Router			/source_group/{sgId}/target [post]
+func RegisterTargetInfoToSourceGroup(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	registerTargetInfoReq := new(model.RegisterTargetInfoReq)
+	err := c.Bind(registerTargetInfoReq)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	oldSourceGroup, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	if registerTargetInfoReq.ResourceType == "mci" {
+		// TODO: Must be able to set NSID next time.
+		oldSourceGroup.TargetInfo.NSID = "mig01"
+		oldSourceGroup.TargetInfo.MCIID = registerTargetInfoReq.ID
+	}
+
+	err = dao.SourceGroupUpdate(oldSourceGroup)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, oldSourceGroup, " ")
+}
+
 func deleteSavedInfraInfo(connectionInfo *model.ConnectionInfo) {
 	savedInfraInfo, _ := dao.SavedInfraInfoGet(connectionInfo.ID)
 	if savedInfraInfo == nil {

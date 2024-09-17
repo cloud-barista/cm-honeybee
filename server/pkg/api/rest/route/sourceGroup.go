@@ -12,6 +12,7 @@ func RegisterSourceGroup(e *echo.Echo) {
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId", controller.GetSourceGroup)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group", controller.ListSourceGroup)
 	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId", controller.UpdateSourceGroup)
+	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/target", controller.RegisterTargetInfoToSourceGroup)
 	e.DELETE("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId", controller.DeleteSourceGroup)
 
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_check", controller.CheckConnectionSourceGroup)
