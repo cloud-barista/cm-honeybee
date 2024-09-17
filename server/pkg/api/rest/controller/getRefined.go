@@ -50,7 +50,7 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 			Cpus:         uint32(infraInfo.Compute.ComputeResource.CPU.Cpus),
 			Cores:        uint32(infraInfo.Compute.ComputeResource.CPU.Cores),
 			Threads:      uint32(infraInfo.Compute.ComputeResource.CPU.Threads),
-			MaxSpeed:     float32(infraInfo.Compute.ComputeResource.CPU.MaxSpeed) / 1024, // GHz
+			MaxSpeed:     float32(infraInfo.Compute.ComputeResource.CPU.MaxSpeed) / 1000, // GHz
 			Vendor:       infraInfo.Compute.ComputeResource.CPU.Vendor,
 			Model:        infraInfo.Compute.ComputeResource.CPU.Model,
 		},
