@@ -2626,10 +2626,7 @@ const docTemplate = `{
                     }
                 },
                 "gateway": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "type": "string"
                 },
                 "interface": {
                     "type": "string"

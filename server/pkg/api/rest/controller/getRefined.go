@@ -160,14 +160,12 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 
 		infraInfo, _ := doGetInfraInfo(conn.ID)
 		for _, iface := range infraInfo.Network.Host.NetworkInterface {
-			if iface.Gateway != nil {
-				for _, gw := range iface.Gateway {
-					val, ok := gateways[gw]
-					if ok {
-						gateways[gw] = val + 1
-					} else {
-						gateways[gw] = 1
-					}
+			if iface.Gateway != "" {
+				val, ok := gateways[iface.Gateway]
+				if ok {
+					gateways[iface.Gateway] = val + 1
+				} else {
+					gateways[iface.Gateway] = 1
 				}
 			}
 		}

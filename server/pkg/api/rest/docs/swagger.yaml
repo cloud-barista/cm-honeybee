@@ -687,9 +687,7 @@ definitions:
           type: string
         type: array
       gateway:
-        items:
-          type: string
-        type: array
+        type: string
       interface:
         type: string
       mac_address:

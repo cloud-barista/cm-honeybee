@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20240915173704-17758566924d
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20240919024058-6b5173ba891d
 	github.com/cloud-barista/cm-model v0.0.1
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.6
@@ -54,12 +54,13 @@ require (
 	github.com/swaggo/files/v2 v2.0.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
+	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	modernc.org/libc v1.60.1 // indirect
+	modernc.org/libc v1.61.0 // indirect
 	modernc.org/mathutil v1.6.0 // indirect
 	modernc.org/memory v1.8.0 // indirect
 	modernc.org/sqlite v1.33.1 // indirect
