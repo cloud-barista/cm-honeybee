@@ -27,7 +27,7 @@ func GetNICs() ([]network2.NIC, error) {
 
 	for _, i := range interfaces {
 		var addresses []string
-		var gateways []string
+		var gateway string
 
 		for _, a := range i.Addrs {
 			addresses = append(addresses, a.Addr)
@@ -35,14 +35,15 @@ func GetNICs() ([]network2.NIC, error) {
 
 		for _, route := range defaultRoutes {
 			if route.Interface == i.Name {
-				gateways = append(gateways, route.NextHop)
+				gateway = route.NextHop
+				break
 			}
 		}
 
 		nics = append(nics, network2.NIC{
 			Interface:  i.Name,
 			Address:    addresses,
-			Gateway:    gateways,
+			Gateway:    gateway,
 			MACAddress: i.HardwareAddr,
 			MTU:        i.MTU,
 		})
