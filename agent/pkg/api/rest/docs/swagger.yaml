@@ -403,11 +403,19 @@ definitions:
     properties:
       destination:
         type: string
+      link:
+        type: string
       metric:
         type: integer
       netmask:
         type: string
       next_hop:
+        type: string
+      proto:
+        type: string
+      scope:
+        type: string
+      source:
         type: string
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.SecurityGroup:

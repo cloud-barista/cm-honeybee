@@ -1,10 +1,10 @@
+//go:build windows
+
 package network
 
 import (
-	"errors"
 	"github.com/cloud-barista/cm-honeybee/agent/lib/routes"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
-	"runtime"
 )
 
 func GetRoutes() ([]network.Route, error) {
@@ -12,14 +12,7 @@ func GetRoutes() ([]network.Route, error) {
 	var osRoutes []routes.RouteStruct
 	var err error
 
-	if runtime.GOOS == "linux" {
-		osRoutes, err = routes.GetLinuxRoutes(false)
-	} else if runtime.GOOS == "windows" {
-		osRoutes, err = routes.GetWindowsRoutes(false)
-	} else {
-		return rs, errors.New("unsupported OS")
-	}
-
+	osRoutes, err = routes.GetRoutes(false)
 	if err != nil {
 		return rs, err
 	}
@@ -32,8 +25,12 @@ func GetRoutes() ([]network.Route, error) {
 		rs = append(rs, network.Route{
 			Destination: r.Destination,
 			Netmask:     r.Netmask,
+			Source:      "N/A",
 			NextHop:     r.NextHop,
 			Metric:      r.Metric,
+			Scope:       "N/A",
+			Proto:       "N/A",
+			Link:        "N/A",
 		})
 	}
 

@@ -763,6 +763,9 @@ const docTemplate = `{
                 "destination": {
                     "type": "string"
                 },
+                "link": {
+                    "type": "string"
+                },
                 "metric": {
                     "type": "integer"
                 },
@@ -770,6 +773,15 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "next_hop": {
+                    "type": "string"
+                },
+                "proto": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "source": {
                     "type": "string"
                 }
             }

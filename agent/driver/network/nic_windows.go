@@ -21,7 +21,7 @@ func GetNICs() ([]network2.NIC, error) {
 
 	var defaultRoutes []routes.RouteStruct
 
-	defaultRoutes, err = routes.GetWindowsRoutes(true)
+	defaultRoutes, err = routes.GetRoutes(true)
 	if err != nil {
 		return networkInterfaces, err
 	}
