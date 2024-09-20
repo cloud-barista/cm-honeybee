@@ -33,6 +33,7 @@ func GetRoutes() ([]network.Route, error) {
 			Destination: r.Destination,
 			Netmask:     r.Netmask,
 			NextHop:     r.NextHop,
+			Metric:      r.Metric,
 		})
 	}
 

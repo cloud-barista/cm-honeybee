@@ -763,6 +763,9 @@ const docTemplate = `{
                 "destination": {
                     "type": "string"
                 },
+                "metric": {
+                    "type": "integer"
+                },
                 "netmask": {
                     "type": "string"
                 },

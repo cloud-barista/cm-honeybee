@@ -21,6 +21,7 @@ type RouteStruct struct {
 	Destination string
 	Netmask     string
 	NextHop     string
+	Metric      int
 }
 
 // Windows route output format is always like this:
@@ -57,6 +58,7 @@ func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 		netmaskField     = 1 // field containing string dotted netmask
 		gatewayField     = 2 // field containing string dotted gateway IP address
 		interfaceField   = 3 // field containing string dotted interface IP address
+		metricField      = 4 // field containing string metric
 	)
 
 	ipRegex := regexp.MustCompile(`^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4})`)
@@ -87,11 +89,14 @@ func GetWindowsRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 				continue
 			}
 
+			metric, _ := strconv.Atoi(fields[metricField])
+
 			routes = append(routes, RouteStruct{
+				Interface:   fields[interfaceField],
 				Destination: fields[destinationField],
 				Netmask:     fields[netmaskField],
 				NextHop:     strings.ToLower(fields[gatewayField]),
-				Interface:   fields[interfaceField],
+				Metric:      metric,
 			})
 		}
 		if strings.HasPrefix(line, "=======") {
@@ -161,11 +166,12 @@ func GetLinuxRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 		interfaceField   = 0    // field containing string interface name
 		destinationField = 1    // field containing hex destination address
 		gatewayField     = 2    // field containing hex gateway address
+		metricField      = 6    // field containing int metric
 		maskField        = 7    // field containing hex mask
 	)
 	scanner := bufio.NewScanner(bytes.NewReader(readAll))
 
-	// Skip header line
+	// Skip header line1
 	if !scanner.Scan() {
 		err := scanner.Err()
 		if err != nil {
@@ -222,11 +228,14 @@ func GetLinuxRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
 			nextHopStr = "on-link"
 		}
 
+		metric, _ := strconv.Atoi(tokens[metricField])
+
 		routes = append(routes, RouteStruct{
 			Interface:   tokens[interfaceField],
 			Destination: destination.String(),
 			Netmask:     netmask.String(),
 			NextHop:     nextHopStr,
+			Metric:      metric,
 		})
 	}
 

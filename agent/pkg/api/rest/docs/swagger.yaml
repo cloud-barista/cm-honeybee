@@ -403,6 +403,8 @@ definitions:
     properties:
       destination:
         type: string
+      metric:
+        type: integer
       netmask:
         type: string
       next_hop:
