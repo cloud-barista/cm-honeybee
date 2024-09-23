@@ -42,10 +42,10 @@ func GetRoutes() ([]network.Route, error) {
 					continue
 				}
 
-				if link.Attrs().OperState == netlink.OperUp {
-					linkState = "up"
-				} else {
+				if link.Attrs().OperState == netlink.OperDown {
 					linkState = "down"
+				} else {
+					linkState = "up"
 				}
 			}
 		}
