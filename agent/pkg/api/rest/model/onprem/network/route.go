@@ -1,6 +1,7 @@
 package network
 
 type Route struct {
+	Interface   string `json:"interface"`
 	Destination string `json:"destination"`
 	Netmask     string `json:"netmask"`
 	Source      string `json:"source"`

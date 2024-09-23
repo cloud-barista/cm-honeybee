@@ -71,6 +71,7 @@ func GetRoutes() ([]network.Route, error) {
 		}
 
 		rt := network.Route{
+			Interface:   r.Interface,
 			Destination: r.Destination,
 			Netmask:     r.Netmask,
 			NextHop:     r.NextHop,

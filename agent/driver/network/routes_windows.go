@@ -23,6 +23,7 @@ func GetRoutes() ([]network.Route, error) {
 		}
 
 		rs = append(rs, network.Route{
+			Interface:   r.Interface,
 			Destination: r.Destination,
 			Netmask:     r.Netmask,
 			Source:      "N/A",
