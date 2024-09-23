@@ -2679,10 +2679,28 @@ const docTemplate = `{
                 "destination": {
                     "type": "string"
                 },
+                "interface": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string"
+                },
+                "metric": {
+                    "type": "integer"
+                },
                 "netmask": {
                     "type": "string"
                 },
                 "next_hop": {
+                    "type": "string"
+                },
+                "proto": {
+                    "type": "string"
+                },
+                "scope": {
+                    "type": "string"
+                },
+                "source": {
                     "type": "string"
                 }
             }

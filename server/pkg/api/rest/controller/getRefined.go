@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"net"
 	"net/http"
+	"strings"
 
 	_ "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra" // Need for swag
 	"github.com/cloud-barista/cm-honeybee/server/dao"
@@ -32,14 +34,59 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 	var interfaces []onprem.NetworkInterfaceProperty
 
 	for _, iface := range infraInfo.Network.Host.NetworkInterface {
-		var ipAddress string
-		if len(iface.Address) > 0 {
-			ipAddress = iface.Address[0]
+		interf := onprem.NetworkInterfaceProperty{
+			Name:           iface.Interface,
+			MacAddress:     iface.MACAddress,
+			IPv4CidrBlocks: []string{},
+			IPv6CidrBlocks: []string{},
+			Mtu:            iface.MTU,
 		}
-		interfaces = append(interfaces, onprem.NetworkInterfaceProperty{
-			MacAddress: iface.MACAddress,
-			IpAddress:  ipAddress,
-			Mtu:        iface.MTU,
+
+		for _, address := range iface.Address {
+			split := strings.Split(address, "/")
+			if len(split) != 2 {
+				continue
+			}
+
+			validIPv4 := net.ParseIP(split[0]).To4()
+			if validIPv4 != nil {
+				interf.IPv4CidrBlocks = append(interf.IPv4CidrBlocks, address)
+			} else {
+				interf.IPv6CidrBlocks = append(interf.IPv6CidrBlocks, address)
+			}
+		}
+
+		for _, route := range infraInfo.Network.Host.Route {
+			if iface.Interface == route.Interface {
+				interf.State = route.Link
+				break
+			}
+		}
+
+		interfaces = append(interfaces, interf)
+	}
+
+	var routingTable []onprem.RouteProperty
+
+	for _, route := range infraInfo.Network.Host.Route {
+		var gateway string
+
+		for _, iface := range infraInfo.Network.Host.NetworkInterface {
+			if iface.Interface == route.Interface {
+				gateway = iface.Gateway
+				break
+			}
+		}
+
+		routingTable = append(routingTable, onprem.RouteProperty{
+			Interface:   route.Interface,
+			Destination: route.Destination,
+			Gateway:     gateway,
+			Metric:      route.Metric,
+			Protocol:    route.Proto,
+			Scope:       route.Scope,
+			Source:      route.Source,
+			LinkState:   route.Link,
 		})
 	}
 
@@ -67,8 +114,9 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 			Available: uint64(infraInfo.Compute.ComputeResource.RootDisk.Available), // GiB
 			Used:      uint64(infraInfo.Compute.ComputeResource.RootDisk.Used),      // GiB
 		},
-		DataDisks:  dataDisks,
-		Interfaces: interfaces,
+		DataDisks:    dataDisks,
+		Interfaces:   interfaces,
+		RoutingTable: routingTable,
 		OS: onprem.OsProperty{
 			PrettyName:      infraInfo.Compute.OS.OS.PrettyName,
 			Version:         infraInfo.Compute.OS.OS.Version,
@@ -151,33 +199,11 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 	}
 
 	var onPremInfra onprem.OnPremInfra
-	gateways := make(map[string]int)
-	var gateway string
 
 	for _, conn := range *list {
 		refinedInfraInfo, _ := doGetRefinedInfraInfo(conn.ID)
 		onPremInfra.Servers = append(onPremInfra.Servers, *refinedInfraInfo)
-
-		infraInfo, _ := doGetInfraInfo(conn.ID)
-		for _, iface := range infraInfo.Network.Host.NetworkInterface {
-			if iface.Gateway != "" {
-				val, ok := gateways[iface.Gateway]
-				if ok {
-					gateways[iface.Gateway] = val + 1
-				} else {
-					gateways[iface.Gateway] = 1
-				}
-			}
-		}
 	}
-
-	for key := range gateways {
-		if gateways[gateway] < gateways[key] {
-			gateway = key
-		}
-	}
-
-	onPremInfra.Network.Gateway = gateway
 
 	return c.JSONPretty(http.StatusOK, onPremInfra, " ")
 }
