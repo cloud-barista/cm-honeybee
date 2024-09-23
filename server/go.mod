@@ -12,8 +12,8 @@ require (
 )
 
 require (
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20240919024058-6b5173ba891d
-	github.com/cloud-barista/cm-model v0.0.1
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20240923023800-94add75e8898
+	github.com/cloud-barista/cm-model v0.0.2
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.6
 	github.com/swaggo/echo-swagger v1.4.1
@@ -25,7 +25,7 @@ require (
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
-	github.com/docker/docker v27.2.1+incompatible // indirect
+	github.com/docker/docker v27.3.1+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
