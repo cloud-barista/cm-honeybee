@@ -763,6 +763,9 @@ const docTemplate = `{
                 "destination": {
                     "type": "string"
                 },
+                "interface": {
+                    "type": "string"
+                },
                 "link": {
                     "type": "string"
                 },
