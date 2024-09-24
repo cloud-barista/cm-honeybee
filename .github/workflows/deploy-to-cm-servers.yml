@@ -63,6 +63,7 @@ jobs:
           password: ${{ secrets.CM_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
           source: "agent/cmd/cm-honeybee-agent/cm-honeybee-agent"
+          strip_components: 3
           target: "/tmp/"
           overwrite: true
 
@@ -75,7 +76,7 @@ jobs:
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
           script: |
             systemctl stop cm-honeybee-agent
-            cp -f /tmp/cm-honeybee-agent /usr/bin/cm-honeybee-agent
+            mv -f /tmp/cm-honeybee-agent /usr/bin/cm-honeybee-agent
             systemctl start cm-honeybee-agent
             echo "[cm-honeybee-agent Version]"
             /usr/bin/cm-honeybee-agent version
@@ -89,6 +90,7 @@ jobs:
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
           source: "agent/cmd/cm-honeybee-agent/cm-honeybee-agent"
           target: "/tmp/"
+          strip_components: 3
           overwrite: true
 
       - name: Restart agent from Web server with new binary
@@ -100,7 +102,7 @@ jobs:
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
           script: |
             systemctl stop cm-honeybee-agent
-            cp -f /tmp/cm-honeybee-agent /usr/bin/cm-honeybee-agent
+            mv -f /tmp/cm-honeybee-agent /usr/bin/cm-honeybee-agent
             systemctl start cm-honeybee-agent
             echo "[cm-honeybee-agent Version]"
             /usr/bin/cm-honeybee-agent version
@@ -132,6 +134,7 @@ jobs:
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
           source: "server/cmd/cm-honeybee/cm-honeybee"
           target: "/tmp/"
+          strip_components: 3
           overwrite: true
 
       - name: Restart server from NFS server with new binary
@@ -143,5 +146,5 @@ jobs:
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
           script: |
             systemctl stop cm-honeybee
-            cp -f /tmp/cm-honeybee /usr/bin/cm-honeybee
+            mv -f /tmp/cm-honeybee /usr/bin/cm-honeybee
             systemctl start cm-honeybee
