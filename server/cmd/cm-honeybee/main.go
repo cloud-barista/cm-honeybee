@@ -57,7 +57,7 @@ func init() {
 
 	controller.OkMessage.Message = "RSA public key is not ready"
 	if !fileutil.IsExist(privateKeyPath) && !fileutil.IsExist(publicKeyPath) {
-		err := rsautil.GeneratePrivateKeyAndPublicKey(2048, privateKeyPath, publicKeyPath)
+		err := rsautil.GeneratePrivateKeyAndPublicKey(4096, privateKeyPath, publicKeyPath)
 		if err != nil {
 			logger.Panicln(logger.ERROR, true, err.Error())
 		}
