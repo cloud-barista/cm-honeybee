@@ -141,7 +141,7 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
 //	@Param			connId path string true "ID of the connection info."
-//	@Success		200	{object}	infra.Infra				"Successfully get refined information of the infra."
+//	@Success		200	{object}	onprem.ServerProperty	"Successfully get refined information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
 //	@Router			/source_group/{sgId}/connection_info/{connId}/infra/refined [get]
@@ -178,7 +178,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
-//	@Success		200	{object}	model.InfraInfoList		"Successfully get refined information of the infra."
+//	@Success		200	{object}	onprem.OnPremInfra		"Successfully get refined information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
 //	@Router		/source_group/{sgId}/infra/refined [get]
