@@ -18,7 +18,7 @@ import (
 	"syscall"
 )
 
-var version = "v0.2.5"
+var version = "v0.2.6"
 
 func init() {
 	argsWithoutProg := os.Args[1:]
