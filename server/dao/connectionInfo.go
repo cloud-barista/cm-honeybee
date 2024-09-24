@@ -53,8 +53,9 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 			filtered = filtered.Where("ip_address LIKE ?", "%"+connectionInfo.IPAddress+"%")
 		}
 
-		if connectionInfo.SSHPort >= 1 && connectionInfo.SSHPort <= 65535 {
-			filtered = filtered.Where("ssh_port = ?", "%"+strconv.Itoa(connectionInfo.SSHPort)+"%")
+		sshPort, _ := strconv.Atoi(connectionInfo.SSHPort)
+		if sshPort >= 1 && sshPort <= 65535 {
+			filtered = filtered.Where("ssh_port = ?", "%"+connectionInfo.SSHPort+"%")
 		}
 
 		if len(connectionInfo.User) != 0 {

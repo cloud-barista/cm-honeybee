@@ -28,15 +28,25 @@ func checkIPAddress(ipAddress string) error {
 	return nil
 }
 
-func checkPort(port int) error {
-	if port < 1 || port > 65535 {
+func checkPort(port string) error {
+	portInt, err := strconv.Atoi(port)
+	if err != nil || portInt < 1 || portInt > 65535 {
 		return errors.New("port value is invalid")
 	}
 
 	return nil
 }
 
-func encryptPasswordAndPrivateKey(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
+func encryptSecrets(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
+	rsaEncryptedSSHPort, err := rsautil.EncryptWithPublicKey([]byte(connectionInfo.SSHPort), serverCommon.PubKey)
+	if err != nil {
+		errMsg := "error occurred while encrypting the password (" + err.Error() + ")"
+		logger.Println(logger.ERROR, true, errMsg)
+		return nil, errors.New(errMsg)
+	}
+	base64EncodedEncryptedSSHPort := base64.StdEncoding.EncodeToString(rsaEncryptedSSHPort)
+	connectionInfo.SSHPort = base64EncodedEncryptedSSHPort
+
 	rsaEncryptedPasswordBytes, err := rsautil.EncryptWithPublicKey([]byte(connectionInfo.Password), serverCommon.PubKey)
 	if err != nil {
 		errMsg := "error occurred while encrypting the password (" + err.Error() + ")"
@@ -130,7 +140,7 @@ func CreateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	connectionInfo, err = encryptPasswordAndPrivateKey(connectionInfo)
+	connectionInfo, err = encryptSecrets(connectionInfo)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -173,7 +183,7 @@ func GetConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	connectionInfo, err = encryptPasswordAndPrivateKey(connectionInfo)
+	connectionInfo, err = encryptSecrets(connectionInfo)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -205,7 +215,7 @@ func GetConnectionInfoDirectly(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	connectionInfo, err = encryptPasswordAndPrivateKey(connectionInfo)
+	connectionInfo, err = encryptSecrets(connectionInfo)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -249,14 +259,12 @@ func ListConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	sshPort, _ := strconv.Atoi(c.QueryParam("ssh_port"))
-
 	connectionInfo := &model.ConnectionInfo{
 		Name:          c.QueryParam("name"),
 		Description:   c.QueryParam("description"),
 		SourceGroupID: sourceGroup.ID,
 		IPAddress:     c.QueryParam("ip_address"),
-		SSHPort:       sshPort,
+		SSHPort:       c.QueryParam("ssh_port"),
 		User:          c.QueryParam("user"),
 	}
 
@@ -267,7 +275,7 @@ func ListConnectionInfo(c echo.Context) error {
 
 	var encryptedConnectionInfos []model.ConnectionInfo
 	for _, ci := range *connectionInfos {
-		encryptedConnectionInfo, err := encryptPasswordAndPrivateKey(&ci)
+		encryptedConnectionInfo, err := encryptSecrets(&ci)
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
@@ -346,7 +354,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	connectionInfo, err := encryptPasswordAndPrivateKey(oldConnectionInfo)
+	connectionInfo, err := encryptSecrets(oldConnectionInfo)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}

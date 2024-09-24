@@ -1705,7 +1705,7 @@
                     "type": "string"
                 },
                 "ssh_port": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
@@ -1740,7 +1740,7 @@
                     "type": "string"
                 },
                 "ssh_port": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "user": {
                     "type": "string"

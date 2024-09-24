@@ -1712,7 +1712,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ssh_port": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "status": {
                     "type": "string"
@@ -1747,7 +1747,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ssh_port": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "user": {
                     "type": "string"

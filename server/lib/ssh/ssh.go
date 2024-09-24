@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -62,7 +61,7 @@ func DefaultSSHOptions() Options {
 }
 
 func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) error {
-	addr := fmt.Sprintf("%s:%d", connectionInfo.IPAddress, connectionInfo.SSHPort)
+	addr := fmt.Sprintf("%s:%s", connectionInfo.IPAddress, connectionInfo.SSHPort)
 
 	sshConfig := &ssh.ClientConfig{
 		User:            connectionInfo.User,
@@ -76,7 +75,7 @@ func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) error {
 		return err
 	}
 	logger.Println(logger.INFO, false, "SSH Connection Success. (IP: "+connectionInfo.IPAddress+
-		" Port: "+strconv.Itoa(connectionInfo.SSHPort)+", User: "+connectionInfo.User+")")
+		" Port: "+connectionInfo.SSHPort+", User: "+connectionInfo.User+")")
 
 	o.ConnectionInfo = &connectionInfo
 	o.Options.client = client

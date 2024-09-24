@@ -54,7 +54,7 @@ definitions:
       source_group_id:
         type: string
       ssh_port:
-        type: integer
+        type: string
       status:
         type: string
       user:
@@ -80,7 +80,7 @@ definitions:
       private_key:
         type: string
       ssh_port:
-        type: integer
+        type: string
       user:
         type: string
     required:

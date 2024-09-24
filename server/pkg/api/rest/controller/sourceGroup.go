@@ -319,7 +319,7 @@ func CheckConnectionSourceGroup(c echo.Context) error {
 
 	var encryptedConnectionInfos []model.ConnectionInfo
 	for _, ci := range *connectionInfoList {
-		encryptedConnectionInfo, err := encryptPasswordAndPrivateKey(&ci)
+		encryptedConnectionInfo, err := encryptSecrets(&ci)
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
