@@ -1727,7 +1727,6 @@ const docTemplate = `{
             "required": [
                 "ip_address",
                 "name",
-                "password",
                 "ssh_port",
                 "user"
             ],

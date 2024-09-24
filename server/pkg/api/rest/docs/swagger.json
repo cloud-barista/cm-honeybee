@@ -1720,7 +1720,6 @@
             "required": [
                 "ip_address",
                 "name",
-                "password",
                 "ssh_port",
                 "user"
             ],
