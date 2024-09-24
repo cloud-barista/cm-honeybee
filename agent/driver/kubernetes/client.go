@@ -2,18 +2,13 @@ package infra
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
-
 	"k8s.io/client-go/kubernetes"
 	// "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 func GetClientSet() (*kubernetes.Clientset, error) {
-
-	configPath := filepath.Join(os.Getenv("HOME"), ".kube", "config")
-	config, err := clientcmd.BuildConfigFromFlags("", configPath)
+	config, err := clientcmd.BuildConfigFromFlags("", "/etc/kubernetes/admin.conf")
 	if err != nil {
 		return nil, errors.New(".kube/config: no such file or directory")
 	}
