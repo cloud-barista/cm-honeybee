@@ -69,10 +69,6 @@ func EncryptWithPublicKey(msg []byte, pub *rsa.PublicKey) ([]byte, error) {
 
 	maxLen := pub.Size() - 2*hash.Size() - 2
 
-	if len(msg) == 0 {
-		return nil, errors.New("message is empty")
-	}
-
 	var encryptedData bytes.Buffer
 	offset := 0
 
