@@ -55,15 +55,6 @@ jobs:
       - name: Build
         run: make -C agent
 
-      - name: Stop agent from NFS server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.CM_SERVER_IP_NFS }}
-          username: ${{ secrets.CM_SERVER_SSH_USER }}
-          password: ${{ secrets.CM_SERVER_SSH_PASSWORD }}
-          port: ${{ secrets.CM_SERVER_SSH_PORT }}
-          script: "systemctl stop cm-honeybee-agent"
-
       - name: Copy agent binary to NFS server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -72,26 +63,22 @@ jobs:
           password: ${{ secrets.CM_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
           source: "agent/cmd/cm-honeybee-agent/cm-honeybee-agent"
-          target: "/usr/bin/"
+          target: "/tmp/"
           overwrite: true
 
-      - name: Start agent from NFS server
+      - name: Restart agent from NFS server with new binary
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.CM_SERVER_IP_NFS }}
           username: ${{ secrets.CM_SERVER_SSH_USER }}
           password: ${{ secrets.CM_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
-          script: "systemctl start cm-honeybee-agent"
-
-      - name: Stop agent from Web server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.CM_SERVER_IP_WEB }}
-          username: ${{ secrets.CM_SERVER_SSH_USER }}
-          password: ${{ secrets.CM_SERVER_SSH_PASSWORD }}
-          port: ${{ secrets.CM_SERVER_SSH_PORT }}
-          script: "systemctl stop cm-honeybee-agent"
+          script: |
+            systemctl stop cm-honeybee-agent
+            cp -f /tmp/cm-honeybee-agent /usr/bin/cm-honeybee-agent
+            systemctl start cm-honeybee-agent
+            echo "[cm-honeybee-agent Version]"
+            /usr/bin/cm-honeybee-agent version
 
       - name: Copy agent binary to Web server
         uses: appleboy/scp-action@v0.1.7
@@ -101,17 +88,22 @@ jobs:
           password: ${{ secrets.CM_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
           source: "agent/cmd/cm-honeybee-agent/cm-honeybee-agent"
-          target: "/usr/bin/"
+          target: "/tmp/"
           overwrite: true
 
-      - name: Start agent from Web server
+      - name: Restart agent from Web server with new binary
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.CM_SERVER_IP_WEB }}
           username: ${{ secrets.CM_SERVER_SSH_USER }}
           password: ${{ secrets.CM_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
-          script: "systemctl start cm-honeybee-agent"
+          script: |
+            systemctl stop cm-honeybee-agent
+            cp -f /tmp/cm-honeybee-agent /usr/bin/cm-honeybee-agent
+            systemctl start cm-honeybee-agent
+            echo "[cm-honeybee-agent Version]"
+            /usr/bin/cm-honeybee-agent version
 
   build-and-deploy-server:
     name: Build and deploy server
@@ -131,15 +123,6 @@ jobs:
       - name: Build
         run: make -C server
 
-      - name: Stop server from NFS server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.CM_SERVER_IP_NFS }}
-          username: ${{ secrets.CM_SERVER_SSH_USER }}
-          password: ${{ secrets.CM_SERVER_SSH_PASSWORD }}
-          port: ${{ secrets.CM_SERVER_SSH_PORT }}
-          script: "systemctl stop cm-honeybee"
-
       - name: Copy server binary to NFS server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -148,14 +131,17 @@ jobs:
           password: ${{ secrets.CM_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
           source: "server/cmd/cm-honeybee/cm-honeybee"
-          target: "/usr/bin/"
+          target: "/tmp/"
           overwrite: true
 
-      - name: Start server from NFS server
+      - name: Restart server from NFS server with new binary
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.CM_SERVER_IP_NFS }}
           username: ${{ secrets.CM_SERVER_SSH_USER }}
           password: ${{ secrets.CM_SERVER_SSH_PASSWORD }}
           port: ${{ secrets.CM_SERVER_SSH_PORT }}
-          script: "systemctl start cm-honeybee"
+          script: |
+            systemctl stop cm-honeybee
+            cp -f /tmp/cm-honeybee /usr/bin/cm-honeybee
+            systemctl start cm-honeybee
