@@ -21,6 +21,6 @@ type CreateConnectionInfoReq struct {
 	IPAddress   string `gorm:"column:ip_address" json:"ip_address" validate:"required"`
 	SSHPort     int    `gorm:"column:ssh_port" json:"ssh_port" validate:"required"`
 	User        string `gorm:"column:user" json:"user" validate:"required"`
-	Password    string `gorm:"column:password" json:"password" validate:"required"`
+	Password    string `gorm:"column:password" json:"password"`
 	PrivateKey  string `gorm:"column:private_key" json:"private_key"`
 }

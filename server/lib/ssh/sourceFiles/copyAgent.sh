@@ -39,10 +39,10 @@ Initializer() {
         # echo "패키지 설치 :" "${NEEDED_DEPS[@]}"
         if [ -x "$(command -v apt-get)" ]
         then
-            sudo apt-get install "${NEEDED_DEPS[@]}" -y
+            sudo -n apt-get install "${NEEDED_DEPS[@]}" -y
         elif [ -x "$(command -v yum)" ]
         then
-            sudo yum install "${NEEDED_DEPS[@]}" -y
+            sudo -n yum install "${NEEDED_DEPS[@]}" -y
         else
             # echo "패키지 매니저를 찾을 수 없어 설치에 실패하였습니다. 수동으로 다음 패키지 설치 :" "${NEEDED_DEPS[@]}"
             exit 1
