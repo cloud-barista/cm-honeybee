@@ -1,6 +1,7 @@
 package rsautil
 
 import (
+	"bytes"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha512"
@@ -65,10 +66,35 @@ func BytesToPublicKey(pub []byte) (*rsa.PublicKey, error) {
 // EncryptWithPublicKey encrypts data with public key
 func EncryptWithPublicKey(msg []byte, pub *rsa.PublicKey) ([]byte, error) {
 	hash := sha512.New()
-	ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, pub, msg, nil)
-	if err != nil {
-		return nil, err
+
+	maxLen := pub.Size() - 2*hash.Size() - 2
+
+	if len(msg) == 0 {
+		return nil, errors.New("message is empty")
 	}
 
-	return ciphertext, nil
+	var encryptedData bytes.Buffer
+	offset := 0
+
+	for offset < len(msg) {
+		end := offset + maxLen
+		if end > len(msg) {
+			end = len(msg)
+		}
+
+		chunk := msg[offset:end]
+		ciphertext, err := rsa.EncryptOAEP(hash, rand.Reader, pub, chunk, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = encryptedData.Write(ciphertext)
+		if err != nil {
+			return nil, err
+		}
+
+		offset = end
+	}
+
+	return encryptedData.Bytes(), nil
 }
