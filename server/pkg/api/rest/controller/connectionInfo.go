@@ -79,6 +79,55 @@ func encryptSecrets(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo
 	return connectionInfo, nil
 }
 
+func doGetConnectionInfo(connID string) (*model.ConnectionInfo, error) {
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return nil, err
+	}
+
+	oldConnectionInfo, err := dao.ConnectionInfoGet(connectionInfo.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	c := &ssh.SSH{
+		Options: ssh.DefaultSSHOptions(),
+	}
+
+	err = c.NewClientConn(*connectionInfo)
+	if err != nil {
+		oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
+		oldConnectionInfo.ConnectionFailedMessage = err.Error()
+	} else {
+		c.Close()
+		oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
+		oldConnectionInfo.ConnectionFailedMessage = ""
+	}
+
+	err = c.RunAgent(*connectionInfo)
+	if err != nil {
+		oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+		oldConnectionInfo.AgentFailedMessage = err.Error()
+	} else {
+		c.Close()
+		oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
+		oldConnectionInfo.AgentFailedMessage = ""
+	}
+
+	err = dao.ConnectionInfoUpdate(oldConnectionInfo)
+	if err != nil {
+		return nil, errors.New("Error occurred while updating the connection information. " +
+			"(ID: " + oldConnectionInfo.ID + ", Error: " + err.Error() + ")")
+	}
+
+	connectionInfo, err = encryptSecrets(connectionInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return connectionInfo, nil
+}
+
 // CreateConnectionInfo godoc
 //
 //	@ID				create-connection-info
@@ -151,61 +200,12 @@ func CreateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	connectionInfo, err = encryptSecrets(connectionInfo)
+	connectionInfo, err = doGetConnectionInfo(connectionInfo.ID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
-}
-
-func doGetConnectionInfo(connID string) (*model.ConnectionInfo, error) {
-	connectionInfo, err := dao.ConnectionInfoGet(connID)
-	if err != nil {
-		return nil, err
-	}
-
-	oldConnectionInfo, err := dao.ConnectionInfoGet(connectionInfo.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	c := &ssh.SSH{
-		Options: ssh.DefaultSSHOptions(),
-	}
-
-	err = c.NewClientConn(*connectionInfo)
-	if err != nil {
-		oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
-		oldConnectionInfo.ConnectionFailedMessage = err.Error()
-	} else {
-		c.Close()
-		oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
-		oldConnectionInfo.ConnectionFailedMessage = ""
-	}
-
-	err = c.RunAgent(*connectionInfo)
-	if err != nil {
-		oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
-		oldConnectionInfo.AgentFailedMessage = err.Error()
-	} else {
-		c.Close()
-		oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
-		oldConnectionInfo.AgentFailedMessage = ""
-	}
-
-	err = dao.ConnectionInfoUpdate(oldConnectionInfo)
-	if err != nil {
-		return nil, errors.New("Error occurred while updating the connection information. " +
-			"(ID: " + oldConnectionInfo.ID + ", Error: " + err.Error() + ")")
-	}
-
-	connectionInfo, err = encryptSecrets(connectionInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	return connectionInfo, nil
 }
 
 // GetConnectionInfo godoc
@@ -420,7 +420,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	connectionInfo, err := encryptSecrets(oldConnectionInfo)
+	connectionInfo, err := doGetConnectionInfo(oldConnectionInfo.ID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
