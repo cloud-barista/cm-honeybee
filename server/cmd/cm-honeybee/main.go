@@ -25,6 +25,21 @@ func init() {
 		log.Fatalln(err)
 	}
 
+	common.RootPath = os.Getenv(common.ModuleROOT)
+	if len(common.RootPath) == 0 {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		common.RootPath = homeDir + "/." + strings.ToLower(common.ModuleName)
+	}
+
+	err = fileutil.CreateDirIfNotExist(common.RootPath)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	err = logger.InitLogFile(common.RootPath+"/log", strings.ToLower(common.ModuleName))
 	if err != nil {
 		log.Panicln(err)
