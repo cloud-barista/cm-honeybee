@@ -10,7 +10,7 @@ import (
 func GetClientSet() (*kubernetes.Clientset, error) {
 	config, err := clientcmd.BuildConfigFromFlags("", "/etc/kubernetes/admin.conf")
 	if err != nil {
-		return nil, errors.New(".kube/config: no such file or directory")
+		return nil, err
 	}
 
 	clientset, err := kubernetes.NewForConfig(config)
