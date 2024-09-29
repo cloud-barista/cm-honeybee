@@ -100,6 +100,11 @@ func CreateSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the source group's name.")
 	}
 
+	if len(createSourceGroupReq.ConnectionInfo) > model.ConnectionInfoMaxLength {
+		return common.ReturnErrorMsg(c, "Maximum number of connection info is exceeded."+
+			" (Max: "+strconv.Itoa(model.ConnectionInfoMaxLength)+")")
+	}
+
 	sourceGroup := &model.SourceGroup{
 		ID:          uuid.New().String(),
 		Name:        createSourceGroupReq.Name,

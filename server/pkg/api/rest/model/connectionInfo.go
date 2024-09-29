@@ -1,5 +1,7 @@
 package model
 
+const ConnectionInfoMaxLength = 200
+
 const (
 	ConnectionInfoStatusSuccess = "success"
 	ConnectionInfoStatusFailed  = "failed"

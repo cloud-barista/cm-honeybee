@@ -233,6 +233,18 @@ func CreateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	listOption := &model.ConnectionInfo{
+		SourceGroupID: sourceGroup.ID,
+	}
+	connectionInfos, err := dao.ConnectionInfoGetList(listOption, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+	if len(*connectionInfos) >= model.ConnectionInfoMaxLength {
+		return common.ReturnErrorMsg(c, "Maximum number of connection info is exceeded."+
+			" (Max: "+strconv.Itoa(model.ConnectionInfoMaxLength)+")")
+	}
+
 	connectionInfo, err = doCreateConnectionInfo(connectionInfo)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
