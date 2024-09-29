@@ -8,6 +8,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/agent/lib/privileged"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/controller"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/server"
+	"github.com/jollaman999/utils/fileutil"
 	"github.com/jollaman999/utils/logger"
 	"github.com/jollaman999/utils/syscheck"
 	"log"
@@ -35,6 +36,21 @@ func init() {
 	}
 
 	err = privileged.CheckPrivileged()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	common.RootPath = os.Getenv(common.ModuleROOT)
+	if len(common.RootPath) == 0 {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			log.Fatalln(err)
+		}
+
+		common.RootPath = homeDir + "/." + strings.ToLower(common.ModuleName)
+	}
+
+	err = fileutil.CreateDirIfNotExist(common.RootPath)
 	if err != nil {
 		log.Fatalln(err)
 	}

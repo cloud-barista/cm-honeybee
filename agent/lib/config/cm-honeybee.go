@@ -45,21 +45,6 @@ func getCMHoneybeeAgentDefaultConfig() cmHoneybeeAgentConfig {
 }
 
 func readCMHoneybeeAgentConfigFile() error {
-	common.RootPath = os.Getenv(common.ModuleROOT)
-	if len(common.RootPath) == 0 {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return err
-		}
-
-		common.RootPath = homeDir + "/." + strings.ToLower(common.ModuleName)
-	}
-
-	err := fileutil.CreateDirIfNotExist(common.RootPath)
-	if err != nil {
-		return err
-	}
-
 	ex, err := os.Executable()
 	if err != nil {
 		return err
