@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
@@ -8,8 +9,72 @@ import (
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"strconv"
 	"sync"
 )
+
+func deleteSavedInfraInfo(connectionInfo *model.ConnectionInfo) {
+	savedInfraInfo, _ := dao.SavedInfraInfoGet(connectionInfo.ID)
+	if savedInfraInfo == nil {
+		return
+	}
+	err := dao.SavedInfraInfoDelete(savedInfraInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+}
+
+func deleteSavedSoftwareInfo(connectionInfo *model.ConnectionInfo) {
+	savedSoftwareInfo, _ := dao.SavedSoftwareInfoGet(connectionInfo.ID)
+	if savedSoftwareInfo == nil {
+		return
+	}
+	err := dao.SavedSoftwareInfoDelete(savedSoftwareInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+}
+
+func deleteSavedKubernetesInfo(connectionInfo *model.ConnectionInfo) {
+	savedKubernetesInfo, _ := dao.SavedKubernetesInfoGet(connectionInfo.ID)
+	if savedKubernetesInfo == nil {
+		return
+	}
+	err := dao.SavedKubernetesInfoDelete(savedKubernetesInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+}
+
+func doDeleteSourceGroup(sourceGroupID string) error {
+	sourceGroup, err := dao.SourceGroupGet(sourceGroupID)
+	if err != nil {
+		return err
+	}
+
+	connectionInfoList, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{
+		SourceGroupID: sourceGroupID,
+	}, 0, 0)
+	if err != nil {
+		return errors.New("failed to get connection info list to delete")
+	}
+	for _, connectionInfo := range *connectionInfoList {
+		deleteSavedInfraInfo(&connectionInfo)
+		deleteSavedSoftwareInfo(&connectionInfo)
+		deleteSavedKubernetesInfo(&connectionInfo)
+		err = dao.ConnectionInfoDelete(&connectionInfo)
+		if err != nil {
+			logger.Println(logger.ERROR, true, err)
+		}
+	}
+
+	err = dao.SourceGroupDelete(sourceGroup)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 
 // CreateSourceGroup godoc
 //
@@ -20,7 +85,7 @@ import (
 //	@Accept			json
 //	@Produce		json
 //	@Param			SourceGroup body model.CreateSourceGroupReq true "source group of the node."
-//	@Success		200	{object}	model.CreateSourceGroupReq	"Successfully register the source group"
+//	@Success		200	{object}	model.SourceGroupRes		"Successfully register the source group"
 //	@Failure		400	{object}	common.ErrorResponse		"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse		"Failed to register the source group"
 //	@Router			/source_group [post]
@@ -32,7 +97,7 @@ func CreateSourceGroup(c echo.Context) error {
 	}
 
 	if createSourceGroupReq.Name == "" {
-		return common.ReturnErrorMsg(c, "Please provide the name.")
+		return common.ReturnErrorMsg(c, "Please provide the source group's name.")
 	}
 
 	sourceGroup := &model.SourceGroup{
@@ -41,12 +106,59 @@ func CreateSourceGroup(c echo.Context) error {
 		Description: createSourceGroupReq.Description,
 	}
 
+	var connectionInfoList []*model.ConnectionInfo
+	for i, connectionInfoCreateReq := range createSourceGroupReq.ConnectionInfo {
+		connectionInfo, err := checkCreateConnectionInfoReq(sourceGroup.ID, &connectionInfoCreateReq)
+		if err != nil {
+			errMsg := "Error in provided connection info (Connection Info order: " + strconv.Itoa(i+1) +
+				", Error:" + err.Error() + ")"
+			logger.Println(logger.ERROR, true, errMsg)
+
+			return common.ReturnErrorMsg(c, errMsg)
+		}
+
+		connectionInfoList = append(connectionInfoList, connectionInfo)
+	}
+
 	sourceGroup, err = dao.SourceGroupRegister(sourceGroup)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	return c.JSONPretty(http.StatusOK, sourceGroup, " ")
+	sourceGroupRes := model.SourceGroupRes{
+		ID:                        sourceGroup.ID,
+		Name:                      sourceGroup.Name,
+		Description:               sourceGroup.Description,
+		ConnectionInfo:            []model.ConnectionInfo{},
+		ConnectionInfoStatusCount: model.ConnectionInfoStatusCount{},
+	}
+
+	for _, connectionInfo := range connectionInfoList {
+		encryptedConnectionInfo, err := doCreateConnectionInfo(connectionInfo)
+		if err != nil {
+			errMsg := "Error occurred while creating the connection info (Connection Info name: " + connectionInfo.Name +
+				", Error:" + err.Error() + ")"
+			logger.Println(logger.ERROR, true, errMsg)
+			_ = doDeleteSourceGroup(connectionInfo.SourceGroupID)
+
+			return common.ReturnErrorMsg(c, errMsg)
+		}
+
+		sourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
+		if encryptedConnectionInfo.ConnectionStatus == model.ConnectionInfoStatusSuccess {
+			sourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
+		} else {
+			sourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
+		}
+		if encryptedConnectionInfo.AgentStatus == model.ConnectionInfoStatusSuccess {
+			sourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
+		} else {
+			sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
+		}
+		sourceGroupRes.ConnectionInfo = append(sourceGroupRes.ConnectionInfo, *encryptedConnectionInfo)
+	}
+
+	return c.JSONPretty(http.StatusOK, sourceGroupRes, " ")
 }
 
 // GetSourceGroup godoc
@@ -136,7 +248,7 @@ func GetSourceGroup(c echo.Context) error {
 //	@Param			row query string false "Row of the source group list."
 //	@Param			name query string false "Name of the source group."
 //	@Param			description query string false "Description of the source group."
-//	@Success		200	{object}	[]model.SourceGroup	"Successfully get a list of source group."
+//	@Success		200	{object}	[]model.SourceGroup		"Successfully get a list of source group."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get a list of source group."
 //	@Router			/source_group [get]
@@ -168,10 +280,10 @@ func ListSourceGroup(c echo.Context) error {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the SourceGroup"
-//	@Param			SourceGroup body model.CreateSourceGroupReq true "source group to modify."
-//	@Success		200	{object}	model.SourceGroup	"Successfully update the source group"
-//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-//	@Failure		500	{object}	common.ErrorResponse	"Failed to update the source group"
+//	@Param			SourceGroup body model.UpdateSourceGroupReq true	"source group to modify."
+//	@Success		200	{object}	model.SourceGroup					"Successfully update the source group"
+//	@Failure		400	{object}	common.ErrorResponse				"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse				"Failed to update the source group"
 //	@Router			/source_group/{sgId} [put]
 func UpdateSourceGroup(c echo.Context) error {
 	sgID := c.Param("sgId")
@@ -255,39 +367,6 @@ func RegisterTargetInfoToSourceGroup(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, oldSourceGroup, " ")
 }
 
-func deleteSavedInfraInfo(connectionInfo *model.ConnectionInfo) {
-	savedInfraInfo, _ := dao.SavedInfraInfoGet(connectionInfo.ID)
-	if savedInfraInfo == nil {
-		return
-	}
-	err := dao.SavedInfraInfoDelete(savedInfraInfo)
-	if err != nil {
-		logger.Println(logger.ERROR, true, err)
-	}
-}
-
-func deleteSavedSoftwareInfo(connectionInfo *model.ConnectionInfo) {
-	savedSoftwareInfo, _ := dao.SavedSoftwareInfoGet(connectionInfo.ID)
-	if savedSoftwareInfo == nil {
-		return
-	}
-	err := dao.SavedSoftwareInfoDelete(savedSoftwareInfo)
-	if err != nil {
-		logger.Println(logger.ERROR, true, err)
-	}
-}
-
-func deleteSavedKubernetesInfo(connectionInfo *model.ConnectionInfo) {
-	savedKubernetesInfo, _ := dao.SavedKubernetesInfoGet(connectionInfo.ID)
-	if savedKubernetesInfo == nil {
-		return
-	}
-	err := dao.SavedKubernetesInfoDelete(savedKubernetesInfo)
-	if err != nil {
-		logger.Println(logger.ERROR, true, err)
-	}
-}
-
 // DeleteSourceGroup godoc
 //
 //	@ID				delete-source-group
@@ -307,28 +386,7 @@ func DeleteSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	sourceGroup, err := dao.SourceGroupGet(sgID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	connectionInfoList, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{
-		SourceGroupID: sgID,
-	}, 0, 0)
-	if err != nil {
-		return common.ReturnErrorMsg(c, "Failed to get connection info list to delete.")
-	}
-	for _, connectionInfo := range *connectionInfoList {
-		deleteSavedInfraInfo(&connectionInfo)
-		deleteSavedSoftwareInfo(&connectionInfo)
-		deleteSavedKubernetesInfo(&connectionInfo)
-		err = dao.ConnectionInfoDelete(&connectionInfo)
-		if err != nil {
-			logger.Println(logger.ERROR, true, err)
-		}
-	}
-
-	err = dao.SourceGroupDelete(sourceGroup)
+	err := doDeleteSourceGroup(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}

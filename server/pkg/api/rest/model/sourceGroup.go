@@ -32,6 +32,12 @@ type SourceGroup struct {
 }
 
 type CreateSourceGroupReq struct {
+	Name           string                    `json:"name" validate:"required"`
+	Description    string                    `json:"description"`
+	ConnectionInfo []CreateConnectionInfoReq `json:"connection_info"`
+}
+
+type UpdateSourceGroupReq struct {
 	Name        string `json:"name" validate:"required"`
 	Description string `json:"description"`
 }

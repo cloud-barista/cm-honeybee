@@ -100,6 +100,10 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq:
     properties:
+      connection_info:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq'
+        type: array
       description:
         type: string
       name:
@@ -256,6 +260,15 @@ definitions:
         type: string
       ns_id:
         type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.UpdateSourceGroupReq:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - name
     type: object
   infra.CPU:
     properties:
@@ -1447,7 +1460,7 @@ paths:
         "200":
           description: Successfully register the source group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes'
         "400":
           description: Sent bad request.
           schema:
@@ -1534,7 +1547,7 @@ paths:
         name: SourceGroup
         required: true
         schema:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.UpdateSourceGroupReq'
       produces:
       - application/json
       responses:

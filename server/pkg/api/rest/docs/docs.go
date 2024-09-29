@@ -321,7 +321,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully register the source group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes"
                         }
                     },
                     "400": {
@@ -410,7 +410,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.UpdateSourceGroupReq"
                         }
                     }
                 ],
@@ -1678,6 +1678,12 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "connection_info": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
@@ -1910,6 +1916,20 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ns_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.UpdateSourceGroupReq": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
