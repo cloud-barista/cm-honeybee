@@ -59,7 +59,7 @@ func SourceGroupGetList(sourceGroup *model.SourceGroup, page int, row int) (*[]m
 		}
 
 		return filtered
-	}).Find(sourceGroups)
+	}).Order("name").Find(sourceGroups)
 
 	err := result.Error
 	if err != nil {

@@ -14,7 +14,9 @@ import (
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -393,6 +395,10 @@ func ListConnectionInfo(c echo.Context) error {
 	}
 
 	wg.Wait()
+
+	sort.Slice(encryptedConnectionInfos, func(i, j int) bool {
+		return strings.Compare(encryptedConnectionInfos[i].Name, encryptedConnectionInfos[j].Name) < 0
+	})
 
 	return c.JSONPretty(http.StatusOK, &encryptedConnectionInfos, " ")
 }

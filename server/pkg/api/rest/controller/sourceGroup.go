@@ -9,7 +9,9 @@ import (
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -237,6 +239,10 @@ func GetSourceGroup(c echo.Context) error {
 	}
 
 	wg.Wait()
+
+	sort.Slice(sourceGroupRes.ConnectionInfo, func(i, j int) bool {
+		return strings.Compare(sourceGroupRes.ConnectionInfo[i].Name, sourceGroupRes.ConnectionInfo[j].Name) < 0
+	})
 
 	return c.JSONPretty(http.StatusOK, sourceGroupRes, " ")
 }

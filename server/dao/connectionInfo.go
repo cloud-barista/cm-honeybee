@@ -75,7 +75,7 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 		}
 
 		return filtered
-	}).Find(connectionInfos)
+	}).Order("name").Find(connectionInfos)
 
 	err := result.Error
 	if err != nil {
