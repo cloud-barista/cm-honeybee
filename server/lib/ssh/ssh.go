@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cloud-barista/cm-honeybee/server/lib/config"
 	"strings"
 	"time"
 
@@ -250,7 +251,7 @@ func (o *SSH) checkAgentStatus() (string, error) {
 	tryCount := 30
 
 	for i := 0; i < tryCount; i++ {
-		output, err := o.RunCmd("curl -o /dev/null -w '%{http_code}' -X GET http://localhost:8082/honeybee-agent/readyz -H 'accept: application/json'")
+		output, err := o.RunCmd("curl -o /dev/null -w '%{http_code}' -X GET http://localhost:" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/honeybee-agent/readyz -H 'accept: application/json'")
 		if err != nil {
 			time.Sleep(1 * time.Second)
 			continue
@@ -264,6 +265,20 @@ func (o *SSH) checkAgentStatus() (string, error) {
 	}
 
 	return "failed", errors.New("agent health check failed")
+}
+
+func (o *SSH) SendGetRequestToAgent(connectionInfo model.ConnectionInfo, requestPath string) (string, error) {
+	if err := o.NewClientConn(connectionInfo); err != nil {
+		return "", err
+	}
+	defer o.Close()
+
+	output, err := o.RunCmd("curl -s -X GET http://localhost:" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/honeybee-agent" + requestPath + " -H 'accept: application/json'")
+	if err != nil {
+		return "", err
+	}
+
+	return output, nil
 }
 
 func (o *SSH) CheckKubernetes(connectionInfo model.ConnectionInfo) (bool, error) {

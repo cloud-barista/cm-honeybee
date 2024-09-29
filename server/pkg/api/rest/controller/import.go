@@ -2,15 +2,13 @@ package controller
 
 import (
 	"errors"
-	agent "github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
-	"github.com/cloud-barista/cm-honeybee/server/lib/config"
+	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -38,7 +36,10 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 		oldSavedInfraInfo = savedInfraInfo
 	}
 
-	data, err := common.GetHTTPRequest("http://" + connectionInfo.IPAddress + ":" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/" + strings.ToLower(agent.ShortModuleName) + "/infra")
+	s := &ssh.SSH{
+		Options: ssh.DefaultSSHOptions(),
+	}
+	data, err := s.SendGetRequestToAgent(*connectionInfo, "/infra")
 	if err != nil {
 		oldSavedInfraInfo.Status = "failed"
 		_ = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
@@ -86,7 +87,10 @@ func doImportSoftware(connID string) (*model.SavedSoftwareInfo, error) {
 		oldSavedSoftwareInfo = savedSoftwareInfo
 	}
 
-	data, err := common.GetHTTPRequest("http://" + connectionInfo.IPAddress + ":" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/" + strings.ToLower(agent.ShortModuleName) + "/software")
+	s := &ssh.SSH{
+		Options: ssh.DefaultSSHOptions(),
+	}
+	data, err := s.SendGetRequestToAgent(*connectionInfo, "/software")
 	if err != nil {
 		oldSavedSoftwareInfo.Status = "failed"
 		_ = dao.SavedSoftwareInfoUpdate(oldSavedSoftwareInfo)
@@ -134,8 +138,10 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 		oldSavedKubernetesInfo = savedKubernetesInfo
 	}
 
-	logger.Println(logger.INFO, false, "http://"+connectionInfo.IPAddress+":"+config.CMHoneybeeConfig.CMHoneybee.Agent.Port+"/"+strings.ToLower(agent.ShortModuleName)+"/kubernetes")
-	data, err := common.GetHTTPRequest("http://" + connectionInfo.IPAddress + ":" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/" + strings.ToLower(agent.ShortModuleName) + "/kubernetes")
+	s := &ssh.SSH{
+		Options: ssh.DefaultSSHOptions(),
+	}
+	data, err := s.SendGetRequestToAgent(*connectionInfo, "/kubernetes")
 	if err != nil {
 		oldSavedKubernetesInfo.Status = "failed"
 		_ = dao.SavedKubernetesInfoUpdate(oldSavedKubernetesInfo)
