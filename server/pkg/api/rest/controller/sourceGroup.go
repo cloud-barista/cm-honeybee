@@ -140,30 +140,58 @@ func CreateSourceGroup(c echo.Context) error {
 		ConnectionInfoStatusCount: model.ConnectionInfoStatusCount{},
 	}
 
-	for _, connectionInfo := range connectionInfoList {
-		encryptedConnectionInfo, err := doCreateConnectionInfo(connectionInfo)
-		if err != nil {
-			errMsg := "Error occurred while creating the connection info (Connection Info name: " + connectionInfo.Name +
-				", Error:" + err.Error() + ")"
-			logger.Println(logger.ERROR, true, errMsg)
-			_ = doDeleteSourceGroup(connectionInfo.SourceGroupID)
+	var encryptedConnectionInfosLock sync.Mutex
+	var errMsgLock sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(len(connectionInfoList))
+	var errMsg string
 
-			return common.ReturnErrorMsg(c, errMsg)
-		}
+	for _, ci := range connectionInfoList {
+		go func(connectionInfo *model.ConnectionInfo) {
+			defer func() {
+				wg.Done()
+			}()
 
-		sourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
-		if encryptedConnectionInfo.ConnectionStatus == model.ConnectionInfoStatusSuccess {
-			sourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
-		} else {
-			sourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
-		}
-		if encryptedConnectionInfo.AgentStatus == model.ConnectionInfoStatusSuccess {
-			sourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
-		} else {
-			sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
-		}
-		sourceGroupRes.ConnectionInfo = append(sourceGroupRes.ConnectionInfo, *encryptedConnectionInfo)
+			encryptedConnectionInfo, err := doCreateConnectionInfo(connectionInfo)
+			if err != nil {
+				errMsgLock.Lock()
+				if errMsg != "" {
+					errMsg += ", "
+				}
+				errMsg += "Error occurred while creating the connection info (Connection Info name: " + connectionInfo.Name +
+					", Error:" + err.Error() + ")"
+				errMsgLock.Unlock()
+				return
+			}
+
+			encryptedConnectionInfosLock.Lock()
+			sourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
+			if encryptedConnectionInfo.ConnectionStatus == model.ConnectionInfoStatusSuccess {
+				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
+			} else {
+				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
+			}
+			if encryptedConnectionInfo.AgentStatus == model.ConnectionInfoStatusSuccess {
+				sourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
+			} else {
+				sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
+			}
+			sourceGroupRes.ConnectionInfo = append(sourceGroupRes.ConnectionInfo, *encryptedConnectionInfo)
+			encryptedConnectionInfosLock.Unlock()
+		}(ci)
 	}
+
+	wg.Wait()
+
+	if errMsg != "" {
+		logger.Println(logger.ERROR, true, errMsg)
+		_ = doDeleteSourceGroup(sourceGroup.ID)
+		return common.ReturnErrorMsg(c, errMsg)
+	}
+
+	sort.Slice(sourceGroupRes.ConnectionInfo, func(i, j int) bool {
+		return strings.Compare(sourceGroupRes.ConnectionInfo[i].Name, sourceGroupRes.ConnectionInfo[j].Name) < 0
+	})
 
 	return c.JSONPretty(http.StatusOK, sourceGroupRes, " ")
 }
