@@ -5,14 +5,6 @@ definitions:
       error:
         type: string
     type: object
-  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.AgentInfo:
-    properties:
-      connection_name:
-        type: string
-      error_msg: {}
-      result:
-        type: string
-    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.Benchmark:
     properties:
       data:
@@ -35,9 +27,15 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo:
     properties:
-      description:
+      agent_failed_message:
         type: string
-      failed_message:
+      agent_status:
+        type: string
+      connection_failed_message:
+        type: string
+      connection_status:
+        type: string
+      description:
         type: string
       id:
         type: string
@@ -54,8 +52,6 @@ definitions:
       source_group_id:
         type: string
       ssh_port:
-        type: string
-      status:
         type: string
       user:
         type: string
@@ -1524,73 +1520,6 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Update SourceGroup
-      tags:
-      - '[On-premise] SourceGroup'
-  /source_group/{sgId}/agent_check:
-    get:
-      consumes:
-      - application/json
-      description: Check Agent in source group. Show each status by returning agent
-        info list. If no Agent is present on the connected server, the Agent will
-        be automatically installed.
-      operationId: check-agent-source-group
-      parameters:
-      - description: ID of the SourceGroup
-        in: path
-        name: sgId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully checked Agent for the source group
-          schema:
-            items:
-              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.AgentInfo'
-            type: array
-        "400":
-          description: Sent bad request.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-        "500":
-          description: Failed to check Agent for the source group
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-      summary: Check Agent SourceGroup
-      tags:
-      - '[On-premise] SourceGroup'
-  /source_group/{sgId}/connection_check:
-    get:
-      consumes:
-      - application/json
-      description: Check if SSH connection is available for each connection info in
-        source group. Show each status by returning connection info list.
-      operationId: check-connection-source-group
-      parameters:
-      - description: ID of the SourceGroup
-        in: path
-        name: sgId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Successfully checked SSH connection for the source group
-          schema:
-            items:
-              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
-            type: array
-        "400":
-          description: Sent bad request.
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-        "500":
-          description: Failed to check SSH connection for the source group
-          schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
-      summary: Check Connection SourceGroup
       tags:
       - '[On-premise] SourceGroup'
   /source_group/{sgId}/connection_info:

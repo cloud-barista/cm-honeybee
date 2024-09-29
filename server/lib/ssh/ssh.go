@@ -171,9 +171,9 @@ func (o *SSH) StopBenchmark(connectionInfo model.ConnectionInfo) error {
 	return nil
 }
 
-func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) (result string, err error) {
-	if err = o.NewClientConn(connectionInfo); err != nil {
-		return "failed", err
+func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) error {
+	if err := o.NewClientConn(connectionInfo); err != nil {
+		return err
 	}
 	defer o.Close()
 
@@ -181,22 +181,24 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) (result string, err 
 	client, err := sftp.NewClient(o.Options.client)
 	if err != nil {
 		logger.Println(logger.ERROR, true, "Failed to SFTP Connect: "+err.Error())
-		return "failed", err
+		return err
 	}
-	defer client.Close()
+	defer func() {
+		_ = client.Close()
+	}()
 
 	dstPath := "/tmp/"
 	file := "sourceFiles/copyAgent.sh"
 
 	if err = o.copyFileToSFTP(client, file, dstPath); err != nil {
-		return "failed", err
+		return err
 	}
 
 	commands := "/tmp/copyAgent.sh"
 	logger.Printf(logger.DEBUG, true, "SSH: copyAgent Progressing...\n")
 	if _, err = o.RunCmd("sudo " + commands); err != nil {
 		logger.Println(logger.DEBUG, true, "Failed to run command : ", err)
-		return "failed", err
+		return err
 	}
 
 	return o.checkAgentStatus()
@@ -247,7 +249,7 @@ func (o *SSH) getBenchmarkTypes(types string) []string {
 	return strings.Split(types, ",")
 }
 
-func (o *SSH) checkAgentStatus() (string, error) {
+func (o *SSH) checkAgentStatus() error {
 	tryCount := 30
 
 	for i := 0; i < tryCount; i++ {
@@ -258,13 +260,13 @@ func (o *SSH) checkAgentStatus() (string, error) {
 		}
 
 		if output == "200" {
-			return "success", nil
+			return nil
 		}
 
 		time.Sleep(1 * time.Second)
 	}
 
-	return "failed", errors.New("agent health check failed")
+	return errors.New("agent health check failed")
 }
 
 func (o *SSH) SendGetRequestToAgent(connectionInfo model.ConnectionInfo, requestPath string) (string, error) {

@@ -6,6 +6,7 @@ import (
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
+	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/google/uuid"
@@ -14,6 +15,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
 func checkIPAddress(ipAddress string) error {
@@ -157,6 +159,55 @@ func CreateConnectionInfo(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
 }
 
+func doGetConnectionInfo(connID string) (*model.ConnectionInfo, error) {
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return nil, err
+	}
+
+	oldConnectionInfo, err := dao.ConnectionInfoGet(connectionInfo.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	c := &ssh.SSH{
+		Options: ssh.DefaultSSHOptions(),
+	}
+
+	err = c.NewClientConn(*connectionInfo)
+	if err != nil {
+		oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
+		oldConnectionInfo.ConnectionFailedMessage = err.Error()
+	} else {
+		c.Close()
+		oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
+		oldConnectionInfo.ConnectionFailedMessage = ""
+	}
+
+	err = c.RunAgent(*connectionInfo)
+	if err != nil {
+		oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+		oldConnectionInfo.AgentFailedMessage = err.Error()
+	} else {
+		c.Close()
+		oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
+		oldConnectionInfo.AgentFailedMessage = ""
+	}
+
+	err = dao.ConnectionInfoUpdate(oldConnectionInfo)
+	if err != nil {
+		return nil, errors.New("Error occurred while updating the connection information. " +
+			"(ID: " + oldConnectionInfo.ID + ", Error: " + err.Error() + ")")
+	}
+
+	connectionInfo, err = encryptSecrets(connectionInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return connectionInfo, nil
+}
+
 // GetConnectionInfo godoc
 //
 //	@ID				get-connection-info
@@ -187,12 +238,7 @@ func GetConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the connId.")
 	}
 
-	connectionInfo, err := dao.ConnectionInfoGet(connID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	connectionInfo, err = encryptSecrets(connectionInfo)
+	connectionInfo, err := doGetConnectionInfo(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -219,12 +265,7 @@ func GetConnectionInfoDirectly(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the connId.")
 	}
 
-	connectionInfo, err := dao.ConnectionInfoGet(connID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	connectionInfo, err = encryptSecrets(connectionInfo)
+	connectionInfo, err := doGetConnectionInfo(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -283,14 +324,30 @@ func ListConnectionInfo(c echo.Context) error {
 	}
 
 	var encryptedConnectionInfos []model.ConnectionInfo
-	for _, ci := range *connectionInfos {
-		encryptedConnectionInfo, err := encryptSecrets(&ci)
-		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
-		}
 
-		encryptedConnectionInfos = append(encryptedConnectionInfos, *encryptedConnectionInfo)
+	var encryptedConnectionInfosLock sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(len(*connectionInfos))
+
+	for _, ci := range *connectionInfos {
+		go func(connectionInfo model.ConnectionInfo) {
+			defer func() {
+				wg.Done()
+			}()
+
+			encryptedConnectionInfo, err := doGetConnectionInfo(connectionInfo.ID)
+			if err != nil {
+				encryptedConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
+				encryptedConnectionInfo.ConnectionFailedMessage = err.Error()
+			}
+
+			encryptedConnectionInfosLock.Lock()
+			encryptedConnectionInfos = append(encryptedConnectionInfos, *encryptedConnectionInfo)
+			encryptedConnectionInfosLock.Unlock()
+		}(ci)
 	}
+
+	wg.Wait()
 
 	return c.JSONPretty(http.StatusOK, &encryptedConnectionInfos, " ")
 }

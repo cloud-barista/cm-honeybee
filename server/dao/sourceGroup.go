@@ -3,7 +3,6 @@ package dao
 import (
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/server/db"
-	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"gorm.io/gorm"
 )
@@ -88,43 +87,4 @@ func SourceGroupDelete(sourceGroup *model.SourceGroup) error {
 	}
 
 	return nil
-}
-
-func SourceGroupCheckConnection(sourceGroup *model.SourceGroup) (*[]model.ConnectionInfo, error) {
-	connectionInfoList, err := ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sourceGroup.ID}, 0, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, connectionInfo := range *connectionInfoList {
-		oldConnectionInfo, err := ConnectionInfoGet(connectionInfo.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		c := &ssh.SSH{
-			Options: ssh.DefaultSSHOptions(),
-		}
-
-		err = c.NewClientConn(connectionInfo)
-		if err != nil {
-			oldConnectionInfo.Status = "Failed"
-			oldConnectionInfo.FailedMessage = err.Error()
-		} else {
-			c.Close()
-		}
-
-		if err == nil {
-			oldConnectionInfo.Status = "Success"
-			oldConnectionInfo.FailedMessage = ""
-		}
-
-		err = ConnectionInfoUpdate(oldConnectionInfo)
-		if err != nil {
-			return nil, errors.New("Error occurred while updating the connection information. " +
-				"(ID: " + oldConnectionInfo.ID + ", Error: " + err.Error() + ")")
-		}
-	}
-
-	return ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sourceGroup.ID}, 0, 0)
 }

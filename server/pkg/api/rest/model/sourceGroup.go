@@ -11,16 +11,43 @@ type TargetInfo struct {
 	MCIID string `json:"mci_id"`
 }
 
+type RegisterTargetInfoReq struct {
+	ResourceType  string `json:"resourceType" validate:"required"`
+	ID            string `json:"id" validate:"required"`
+	UID           string `json:"uid"`
+	Name          string `json:"name"`
+	TargetStatus  string `json:"targetStatus"`
+	TargetAction  string `json:"targetAction"`
+	Label         string `json:"label"`
+	SystemLabel   string `json:"systemLabel"`
+	SystemMessage string `json:"systemMessage"`
+	Description   string `json:"description"`
+}
+
 type SourceGroup struct {
 	ID          string     `gorm:"primaryKey" json:"id" validate:"required"`
-	Name        string     `gorm:"index:,column:name,unique;type:text collate nocase" json:"name" mapstructure:"name" validate:"required"`
+	Name        string     `gorm:"index:,column:name,unique;type:text collate nocase" json:"name" validate:"required"`
 	Description string     `gorm:"column:description" json:"description"`
 	TargetInfo  TargetInfo `gorm:"column:target_info" json:"target_info"`
 }
 
 type CreateSourceGroupReq struct {
-	Name        string `gorm:"index:,column:name,unique;type:text collate nocase" json:"name" mapstructure:"name" validate:"required"`
-	Description string `gorm:"column:description" json:"description"`
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description"`
+}
+
+type ConnectionInfoStatusCount struct {
+	CountConnectionSuccess string `json:"count_connection_success"`
+	CountConnectionFailed  string `json:"count_connection_failed"`
+	CountTotal             string `json:"count_total"`
+}
+
+type SourceGroupRes struct {
+	ID                        string                    `json:"id" validate:"required"`
+	Name                      string                    `json:"name" validate:"required"`
+	Description               string                    `json:"description"`
+	ConnectionInfo            []ConnectionInfo          `json:"connection_info"`
+	ConnectionInfoStatusCount ConnectionInfoStatusCount `json:"connection_info_status_count"`
 }
 
 func (t TargetInfo) Value() (driver.Value, error) {
@@ -38,15 +65,17 @@ func (t *TargetInfo) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, t)
 }
 
-type RegisterTargetInfoReq struct {
-	ResourceType  string `json:"resourceType" validate:"required"`
-	ID            string `json:"id" validate:"required"`
-	UID           string `json:"uid"`
-	Name          string `json:"name"`
-	TargetStatus  string `json:"targetStatus"`
-	TargetAction  string `json:"targetAction"`
-	Label         string `json:"label"`
-	SystemLabel   string `json:"systemLabel"`
-	SystemMessage string `json:"systemMessage"`
-	Description   string `json:"description"`
+func (c ConnectionInfoStatusCount) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+func (c *ConnectionInfoStatusCount) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("Invalid type for ConnectionInfoStatusCount")
+	}
+	return json.Unmarshal(bytes, c)
 }

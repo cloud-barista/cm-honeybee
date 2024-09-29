@@ -2,14 +2,12 @@ package controller
 
 import (
 	"github.com/cloud-barista/cm-honeybee/server/dao"
-	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/google/uuid"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
-	"sync"
 )
 
 // CreateSourceGroup godoc
@@ -287,121 +285,4 @@ func DeleteSourceGroup(c echo.Context) error {
 	}
 
 	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "success"}, " ")
-}
-
-// CheckConnectionSourceGroup godoc
-//
-//	@ID				check-connection-source-group
-//	@Summary		Check Connection SourceGroup
-//	@Description	Check if SSH connection is available for each connection info in source group. Show each status by returning connection info list.
-//	@Tags			[On-premise] SourceGroup
-//	@Accept			json
-//	@Produce		json
-//	@Param			sgId path string true "ID of the SourceGroup"
-//	@Success		200	{object}	[]model.ConnectionInfo		"Successfully checked SSH connection for the source group"
-//	@Failure		400	{object}	common.ErrorResponse		"Sent bad request."
-//	@Failure		500	{object}	common.ErrorResponse		"Failed to check SSH connection for the source group"
-//	@Router			/source_group/{sgId}/connection_check [get]
-func CheckConnectionSourceGroup(c echo.Context) error {
-	sgID := c.Param("sgId")
-	if sgID == "" {
-		return common.ReturnErrorMsg(c, "Please provide the sgId.")
-	}
-
-	sourceGroup, err := dao.SourceGroupGet(sgID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	connectionInfoList, err := dao.SourceGroupCheckConnection(sourceGroup)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	var encryptedConnectionInfos []model.ConnectionInfo
-
-	var encryptedConnectionInfosLock sync.Mutex
-	var wg sync.WaitGroup
-	wg.Add(len(*connectionInfoList))
-	for _, ci := range *connectionInfoList {
-		go func(connectionInfo model.ConnectionInfo) {
-			defer func() {
-				wg.Done()
-			}()
-
-			encryptedConnectionInfo, err := encryptSecrets(&ci)
-			if err != nil {
-				connectionInfo.Status = model.ConnectionInfoStatusFailed
-				connectionInfo.FailedMessage = err.Error()
-			}
-
-			encryptedConnectionInfosLock.Lock()
-			encryptedConnectionInfos = append(encryptedConnectionInfos, *encryptedConnectionInfo)
-			encryptedConnectionInfosLock.Unlock()
-		}(ci)
-	}
-	wg.Wait()
-
-	return c.JSONPretty(http.StatusOK, encryptedConnectionInfos, " ")
-}
-
-// CheckAgentSourceGroup godoc
-//
-//	@ID				check-agent-source-group
-//	@Summary		Check Agent SourceGroup
-//	@Description	Check Agent in source group. Show each status by returning agent info list. If no Agent is present on the connected server, the Agent will be automatically installed.
-//	@Tags			[On-premise] SourceGroup
-//	@Accept			json
-//	@Produce		json
-//	@Param			sgId path string true "ID of the SourceGroup"
-//	@Success		200	{object}	[]model.AgentInfo		"Successfully checked Agent for the source group"
-//	@Failure		400	{object}	common.ErrorResponse		"Sent bad request."
-//	@Failure		500	{object}	common.ErrorResponse		"Failed to check Agent for the source group"
-//	@Router			/source_group/{sgId}/agent_check [get]
-func CheckAgentSourceGroup(c echo.Context) error {
-	sgID := c.Param("sgId")
-	if sgID == "" {
-		return common.ReturnErrorMsg(c, "Please provide the sgId.")
-	}
-
-	sourceGroup, err := dao.SourceGroupGet(sgID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	connectionInfoList, err := dao.SourceGroupCheckConnection(sourceGroup)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	var agentInfos []model.AgentInfo
-
-	var agentInfosLock sync.Mutex
-	var wg sync.WaitGroup
-	wg.Add(len(*connectionInfoList))
-	for _, ci := range *connectionInfoList {
-		go func(connectionInfo model.ConnectionInfo) {
-			defer func() {
-				wg.Done()
-			}()
-
-			s := &ssh.SSH{
-				Options: ssh.DefaultSSHOptions(),
-			}
-
-			data, err := s.RunAgent(connectionInfo)
-			agentInfo := model.AgentInfo{
-				Connection: connectionInfo.Name,
-				Result:     data,
-				ErrorMsg:   err,
-			}
-
-			agentInfosLock.Lock()
-			agentInfos = append(agentInfos, agentInfo)
-			agentInfosLock.Unlock()
-		}(ci)
-	}
-	wg.Wait()
-
-	return c.JSONPretty(http.StatusOK, agentInfos, " ")
 }
