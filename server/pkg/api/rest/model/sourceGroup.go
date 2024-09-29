@@ -37,9 +37,11 @@ type CreateSourceGroupReq struct {
 }
 
 type ConnectionInfoStatusCount struct {
-	CountConnectionSuccess string `json:"count_connection_success"`
-	CountConnectionFailed  string `json:"count_connection_failed"`
-	CountTotal             string `json:"count_total"`
+	CountConnectionSuccess int `json:"count_connection_success"`
+	CountConnectionFailed  int `json:"count_connection_failed"`
+	CountAgentSuccess      int `json:"count_agent_success"`
+	CountAgentFailed       int `json:"count_agent_failed"`
+	ConnectionInfoTotal    int `json:"connection_info_total"`
 }
 
 type SourceGroupRes struct {

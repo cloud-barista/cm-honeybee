@@ -63,6 +63,19 @@ definitions:
     - ssh_port
     - user
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfoStatusCount:
+    properties:
+      connection_info_total:
+        type: integer
+      count_agent_failed:
+        type: integer
+      count_agent_success:
+        type: integer
+      count_connection_failed:
+        type: integer
+      count_connection_success:
+        type: integer
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq:
     properties:
       description:
@@ -215,6 +228,24 @@ definitions:
         type: string
       target_info:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo'
+    required:
+    - id
+    - name
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes:
+    properties:
+      connection_info:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+        type: array
+      connection_info_status_count:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfoStatusCount'
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
     required:
     - id
     - name
@@ -1475,7 +1506,7 @@ paths:
         "200":
           description: Successfully get the source group
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes'
         "400":
           description: Sent bad request.
           schema:

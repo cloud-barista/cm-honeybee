@@ -8,6 +8,7 @@ import (
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"sync"
 )
 
 // CreateSourceGroup godoc
@@ -57,7 +58,7 @@ func CreateSourceGroup(c echo.Context) error {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the SourceGroup"
-//	@Success		200	{object}	model.SourceGroup	"Successfully get the source group"
+//	@Success		200	{object}	model.SourceGroupRes	"Successfully get the source group"
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get the source group"
 //	@Router			/source_group/{sgId} [get]
@@ -72,7 +73,55 @@ func GetSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	return c.JSONPretty(http.StatusOK, sourceGroup, " ")
+	var sourceGroupRes model.SourceGroupRes
+	sourceGroupRes.ID = sourceGroup.ID
+	sourceGroupRes.Name = sourceGroup.Name
+	sourceGroupRes.Description = sourceGroup.Description
+
+	connectionInfo := &model.ConnectionInfo{
+		SourceGroupID: sourceGroup.ID,
+	}
+	connectionInfos, err := dao.ConnectionInfoGetList(connectionInfo, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	var encryptedConnectionInfosLock sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(len(*connectionInfos))
+
+	for _, ci := range *connectionInfos {
+		go func(connectionInfo model.ConnectionInfo) {
+			defer func() {
+				wg.Done()
+			}()
+
+			encryptedConnectionInfo, err := doGetConnectionInfo(connectionInfo.ID)
+			if err != nil {
+				encryptedConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
+				encryptedConnectionInfo.ConnectionFailedMessage = err.Error()
+			}
+
+			encryptedConnectionInfosLock.Lock()
+			sourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
+			if encryptedConnectionInfo.ConnectionStatus == model.ConnectionInfoStatusSuccess {
+				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
+			} else {
+				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
+			}
+			if encryptedConnectionInfo.AgentStatus == model.ConnectionInfoStatusSuccess {
+				sourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
+			} else {
+				sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
+			}
+			sourceGroupRes.ConnectionInfo = append(sourceGroupRes.ConnectionInfo, *encryptedConnectionInfo)
+			encryptedConnectionInfosLock.Unlock()
+		}(ci)
+	}
+
+	wg.Wait()
+
+	return c.JSONPretty(http.StatusOK, sourceGroupRes, " ")
 }
 
 // ListSourceGroup godoc

@@ -366,7 +366,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully get the source group",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes"
                         }
                     },
                     "400": {
@@ -1620,6 +1620,26 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfoStatusCount": {
+            "type": "object",
+            "properties": {
+                "connection_info_total": {
+                    "type": "integer"
+                },
+                "count_agent_failed": {
+                    "type": "integer"
+                },
+                "count_agent_success": {
+                    "type": "integer"
+                },
+                "count_connection_failed": {
+                    "type": "integer"
+                },
+                "count_connection_success": {
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq": {
             "type": "object",
             "required": [
@@ -1853,6 +1873,33 @@ const docTemplate = `{
                 },
                 "target_info": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes": {
+            "type": "object",
+            "required": [
+                "id",
+                "name"
+            ],
+            "properties": {
+                "connection_info": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
+                    }
+                },
+                "connection_info_status_count": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfoStatusCount"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
