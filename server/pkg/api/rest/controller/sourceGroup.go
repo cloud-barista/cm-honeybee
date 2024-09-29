@@ -9,6 +9,7 @@ import (
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"sync"
 )
 
 // CreateSourceGroup godoc
@@ -318,14 +319,28 @@ func CheckConnectionSourceGroup(c echo.Context) error {
 	}
 
 	var encryptedConnectionInfos []model.ConnectionInfo
-	for _, ci := range *connectionInfoList {
-		encryptedConnectionInfo, err := encryptSecrets(&ci)
-		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
-		}
 
-		encryptedConnectionInfos = append(encryptedConnectionInfos, *encryptedConnectionInfo)
+	var encryptedConnectionInfosLock sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(len(*connectionInfoList))
+	for _, ci := range *connectionInfoList {
+		go func(connectionInfo model.ConnectionInfo) {
+			defer func() {
+				wg.Done()
+			}()
+
+			encryptedConnectionInfo, err := encryptSecrets(&ci)
+			if err != nil {
+				connectionInfo.Status = model.ConnectionInfoStatusFailed
+				connectionInfo.FailedMessage = err.Error()
+			}
+
+			encryptedConnectionInfosLock.Lock()
+			encryptedConnectionInfos = append(encryptedConnectionInfos, *encryptedConnectionInfo)
+			encryptedConnectionInfosLock.Unlock()
+		}(ci)
 	}
+	wg.Wait()
 
 	return c.JSONPretty(http.StatusOK, encryptedConnectionInfos, " ")
 }
@@ -360,21 +375,33 @@ func CheckAgentSourceGroup(c echo.Context) error {
 	}
 
 	var agentInfos []model.AgentInfo
+
+	var agentInfosLock sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(len(*connectionInfoList))
 	for _, ci := range *connectionInfoList {
+		go func(connectionInfo model.ConnectionInfo) {
+			defer func() {
+				wg.Done()
+			}()
 
-		s := &ssh.SSH{
-			Options: ssh.DefaultSSHOptions(),
-		}
+			s := &ssh.SSH{
+				Options: ssh.DefaultSSHOptions(),
+			}
 
-		data, err := s.RunAgent(ci)
-		agentInfo := model.AgentInfo{
-			Connection: ci.Name,
-			Result:     data,
-			ErrorMsg:   err,
-		}
+			data, err := s.RunAgent(connectionInfo)
+			agentInfo := model.AgentInfo{
+				Connection: connectionInfo.Name,
+				Result:     data,
+				ErrorMsg:   err,
+			}
 
-		agentInfos = append(agentInfos, agentInfo)
+			agentInfosLock.Lock()
+			agentInfos = append(agentInfos, agentInfo)
+			agentInfosLock.Unlock()
+		}(ci)
 	}
+	wg.Wait()
 
 	return c.JSONPretty(http.StatusOK, agentInfos, " ")
 }
