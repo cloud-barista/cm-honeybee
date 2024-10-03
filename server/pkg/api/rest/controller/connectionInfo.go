@@ -335,9 +335,9 @@ func GetConnectionInfoDirectly(c echo.Context) error {
 //	@Param			ip_address query string false "IP address of the connection information."
 //	@Param			ssh_port query string false "SSH port of the connection information."
 //	@Param			user query string false "User of the connection information."
-//	@Success		200	{object}	[]model.ConnectionInfo	"Successfully get a list of connection information."
-//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-//	@Failure		500	{object}	common.ErrorResponse	"Failed to get a list of connection information."
+//	@Success		200	{object}	[]model.ListConnectionInfoRes	"Successfully get a list of connection information."
+//	@Failure		400	{object}	common.ErrorResponse			"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse			"Failed to get a list of connection information."
 //	@Router			/source_group/{sgId}/connection_info [get]
 func ListConnectionInfo(c echo.Context) error {
 	sgID := c.Param("sgId")
@@ -369,9 +369,22 @@ func ListConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	var listConnectionInfoRes model.ListConnectionInfoRes
 	var encryptedConnectionInfos []model.ConnectionInfo
 
 	for _, ci := range *connectionInfos {
+		listConnectionInfoRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
+		if ci.ConnectionStatus == model.ConnectionInfoStatusSuccess {
+			listConnectionInfoRes.ConnectionInfoStatusCount.CountConnectionSuccess++
+		} else {
+			listConnectionInfoRes.ConnectionInfoStatusCount.CountConnectionFailed++
+		}
+		if ci.AgentStatus == model.ConnectionInfoStatusSuccess {
+			listConnectionInfoRes.ConnectionInfoStatusCount.CountAgentSuccess++
+		} else {
+			listConnectionInfoRes.ConnectionInfoStatusCount.CountAgentFailed++
+		}
+
 		encryptedConnectionInfo, err := encryptSecrets(&ci)
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
@@ -384,7 +397,9 @@ func ListConnectionInfo(c echo.Context) error {
 		return strings.Compare(encryptedConnectionInfos[i].Name, encryptedConnectionInfos[j].Name) < 0
 	})
 
-	return c.JSONPretty(http.StatusOK, &encryptedConnectionInfos, " ")
+	listConnectionInfoRes.ConnectionInfo = encryptedConnectionInfos
+
+	return c.JSONPretty(http.StatusOK, &listConnectionInfoRes, " ")
 }
 
 // UpdateConnectionInfo godoc

@@ -33,3 +33,8 @@ type CreateConnectionInfoReq struct {
 	Password    string `gorm:"column:password" json:"password"`
 	PrivateKey  string `gorm:"column:private_key" json:"private_key"`
 }
+
+type ListConnectionInfoRes struct {
+	ConnectionInfo            []ConnectionInfo          `json:"connection_info"`
+	ConnectionInfoStatusCount ConnectionInfoStatusCount `json:"connection_info_status_count"`
+}

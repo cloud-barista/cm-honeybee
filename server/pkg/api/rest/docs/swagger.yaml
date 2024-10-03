@@ -129,6 +129,15 @@ definitions:
     required:
     - servers
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListConnectionInfoRes:
+    properties:
+      connection_info:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+        type: array
+      connection_info_status_count:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfoStatusCount'
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RegisterTargetInfoReq:
     properties:
       description:
@@ -1609,7 +1618,7 @@ paths:
           description: Successfully get a list of connection information.
           schema:
             items:
-              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo'
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListConnectionInfoRes'
             type: array
         "400":
           description: Sent bad request.
