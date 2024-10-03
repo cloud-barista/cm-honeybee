@@ -1889,12 +1889,6 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
-                "connection_info": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo"
-                    }
-                },
                 "connection_info_status_count": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfoStatusCount"
                 },

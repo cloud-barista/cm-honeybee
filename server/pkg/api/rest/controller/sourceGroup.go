@@ -9,9 +9,7 @@ import (
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
-	"sort"
 	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -136,7 +134,6 @@ func CreateSourceGroup(c echo.Context) error {
 		ID:                        sourceGroup.ID,
 		Name:                      sourceGroup.Name,
 		Description:               sourceGroup.Description,
-		ConnectionInfo:            []model.ConnectionInfo{},
 		ConnectionInfoStatusCount: model.ConnectionInfoStatusCount{},
 	}
 
@@ -176,7 +173,6 @@ func CreateSourceGroup(c echo.Context) error {
 			} else {
 				sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
 			}
-			sourceGroupRes.ConnectionInfo = append(sourceGroupRes.ConnectionInfo, *encryptedConnectionInfo)
 			encryptedConnectionInfosLock.Unlock()
 		}(ci)
 	}
@@ -188,10 +184,6 @@ func CreateSourceGroup(c echo.Context) error {
 		_ = doDeleteSourceGroup(sourceGroup.ID)
 		return common.ReturnErrorMsg(c, errMsg)
 	}
-
-	sort.Slice(sourceGroupRes.ConnectionInfo, func(i, j int) bool {
-		return strings.Compare(sourceGroupRes.ConnectionInfo[i].Name, sourceGroupRes.ConnectionInfo[j].Name) < 0
-	})
 
 	return c.JSONPretty(http.StatusOK, sourceGroupRes, " ")
 }
@@ -261,16 +253,11 @@ func GetSourceGroup(c echo.Context) error {
 			} else {
 				sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
 			}
-			sourceGroupRes.ConnectionInfo = append(sourceGroupRes.ConnectionInfo, *encryptedConnectionInfo)
 			encryptedConnectionInfosLock.Unlock()
 		}(ci)
 	}
 
 	wg.Wait()
-
-	sort.Slice(sourceGroupRes.ConnectionInfo, func(i, j int) bool {
-		return strings.Compare(sourceGroupRes.ConnectionInfo[i].Name, sourceGroupRes.ConnectionInfo[j].Name) < 0
-	})
 
 	return c.JSONPretty(http.StatusOK, sourceGroupRes, " ")
 }

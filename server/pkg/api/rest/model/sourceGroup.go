@@ -54,7 +54,6 @@ type SourceGroupRes struct {
 	ID                        string                    `json:"id" validate:"required"`
 	Name                      string                    `json:"name" validate:"required"`
 	Description               string                    `json:"description"`
-	ConnectionInfo            []ConnectionInfo          `json:"connection_info"`
 	ConnectionInfoStatusCount ConnectionInfoStatusCount `json:"connection_info_status_count"`
 }
 
