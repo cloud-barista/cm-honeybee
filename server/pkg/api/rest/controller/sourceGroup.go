@@ -254,9 +254,9 @@ func GetSourceGroup(c echo.Context) error {
 //	@Param			row query string false "Row of the source group list."
 //	@Param			name query string false "Name of the source group."
 //	@Param			description query string false "Description of the source group."
-//	@Success		200	{object}	[]model.SourceGroup		"Successfully get a list of source group."
-//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-//	@Failure		500	{object}	common.ErrorResponse	"Failed to get a list of source group."
+//	@Success		200	{object}	[]model.ListSourceGroupRes		"Successfully get a list of source group."
+//	@Failure		400	{object}	common.ErrorResponse			"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse			"Failed to get a list of source group."
 //	@Router			/source_group [get]
 func ListSourceGroup(c echo.Context) error {
 	page, row, err := common.CheckPageRow(c)
@@ -269,12 +269,39 @@ func ListSourceGroup(c echo.Context) error {
 		Description: c.QueryParam("description"),
 	}
 
-	SourceGroups, err := dao.SourceGroupGetList(sourceGroup, page, row)
+	sourceGroups, err := dao.SourceGroupGetList(sourceGroup, page, row)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	return c.JSONPretty(http.StatusOK, SourceGroups, " ")
+	var listSourceGroupRes model.ListSourceGroupRes
+	listSourceGroupRes.SourceGroup = *sourceGroups
+
+	for _, sg := range *sourceGroups {
+		connectionInfo := &model.ConnectionInfo{
+			SourceGroupID: sg.ID,
+		}
+		connectionInfos, err := dao.ConnectionInfoGetList(connectionInfo, 0, 0)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+
+		for _, ci := range *connectionInfos {
+			listSourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
+			if ci.ConnectionStatus == model.ConnectionInfoStatusSuccess {
+				listSourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
+			} else {
+				listSourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
+			}
+			if ci.AgentStatus == model.ConnectionInfoStatusSuccess {
+				listSourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
+			} else {
+				listSourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
+			}
+		}
+	}
+
+	return c.JSONPretty(http.StatusOK, &listSourceGroupRes, " ")
 }
 
 // UpdateSourceGroup godoc

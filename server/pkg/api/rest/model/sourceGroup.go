@@ -57,6 +57,11 @@ type SourceGroupRes struct {
 	ConnectionInfoStatusCount ConnectionInfoStatusCount `json:"connection_info_status_count"`
 }
 
+type ListSourceGroupRes struct {
+	SourceGroup               []SourceGroup             `json:"source_group"`
+	ConnectionInfoStatusCount ConnectionInfoStatusCount `json:"connection_info_status_count"`
+}
+
 func (t TargetInfo) Value() (driver.Value, error) {
 	return json.Marshal(t)
 }
