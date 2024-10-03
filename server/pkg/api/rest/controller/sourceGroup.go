@@ -225,39 +225,19 @@ func GetSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	var encryptedConnectionInfosLock sync.Mutex
-	var wg sync.WaitGroup
-	wg.Add(len(*connectionInfos))
-
 	for _, ci := range *connectionInfos {
-		go func(connectionInfo model.ConnectionInfo) {
-			defer func() {
-				wg.Done()
-			}()
-
-			encryptedConnectionInfo, err := doGetConnectionInfo(connectionInfo.ID)
-			if err != nil {
-				encryptedConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
-				encryptedConnectionInfo.ConnectionFailedMessage = err.Error()
-			}
-
-			encryptedConnectionInfosLock.Lock()
-			sourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
-			if encryptedConnectionInfo.ConnectionStatus == model.ConnectionInfoStatusSuccess {
-				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
-			} else {
-				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
-			}
-			if encryptedConnectionInfo.AgentStatus == model.ConnectionInfoStatusSuccess {
-				sourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
-			} else {
-				sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
-			}
-			encryptedConnectionInfosLock.Unlock()
-		}(ci)
+		sourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
+		if ci.ConnectionStatus == model.ConnectionInfoStatusSuccess {
+			sourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
+		} else {
+			sourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
+		}
+		if ci.AgentStatus == model.ConnectionInfoStatusSuccess {
+			sourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
+		} else {
+			sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
+		}
 	}
-
-	wg.Wait()
 
 	return c.JSONPretty(http.StatusOK, sourceGroupRes, " ")
 }
@@ -415,6 +395,72 @@ func DeleteSourceGroup(c echo.Context) error {
 	err := doDeleteSourceGroup(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "success"}, " ")
+}
+
+// RefreshSourceGroupConnectionInfoStatus godoc
+//
+//	@ID				refresh-source-group-connection-info-status
+//	@Summary		Refresh SourceGroup Connection Info Status
+//	@Description	Refresh connection info status of the source group.
+//	@Tags			[On-premise] SourceGroup
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Success		200	{object}	model.SimpleMsg			"Successfully refresh the source group"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to refresh the source group"
+//	@Router			/source_group/{sgId}/refresh [put]
+func RefreshSourceGroupConnectionInfoStatus(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	sourceGroup, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	connectionInfo := &model.ConnectionInfo{
+		SourceGroupID: sourceGroup.ID,
+	}
+	connectionInfos, err := dao.ConnectionInfoGetList(connectionInfo, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	var errMsgLock sync.Mutex
+	var wg sync.WaitGroup
+	wg.Add(len(*connectionInfos))
+	var errMsg string
+
+	for _, ci := range *connectionInfos {
+		go func(connectionInfo model.ConnectionInfo) {
+			defer func() {
+				wg.Done()
+			}()
+
+			_, err := doGetConnectionInfo(connectionInfo.ID)
+			if err != nil {
+				errMsgLock.Lock()
+				if errMsg != "" {
+					errMsg += ", "
+				}
+				errMsg += "Error occurred while refreshing the connection info (Connection Info name: " + connectionInfo.Name +
+					", Error:" + err.Error() + ")"
+				errMsgLock.Unlock()
+			}
+		}(ci)
+	}
+
+	wg.Wait()
+
+	if errMsg != "" {
+		logger.Println(logger.ERROR, true, errMsg)
+		return common.ReturnErrorMsg(c, errMsg)
 	}
 
 	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "success"}, " ")

@@ -17,7 +17,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 func checkIPAddress(ipAddress string) error {
@@ -131,25 +130,6 @@ func checkCreateConnectionInfoReq(sourceGroupID string, createConnectionInfoReq 
 	return connectionInfo, nil
 }
 
-func doCreateConnectionInfo(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
-	_, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
-	if err != nil {
-		return nil, err
-	}
-
-	connectionInfo, err = dao.ConnectionInfoRegister(connectionInfo)
-	if err != nil {
-		return nil, err
-	}
-
-	connectionInfo, err = doGetConnectionInfo(connectionInfo.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return connectionInfo, nil
-}
-
 func doGetConnectionInfo(connID string) (*model.ConnectionInfo, error) {
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
@@ -192,6 +172,25 @@ func doGetConnectionInfo(connID string) (*model.ConnectionInfo, error) {
 	}
 
 	connectionInfo, err = encryptSecrets(oldConnectionInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return connectionInfo, nil
+}
+
+func doCreateConnectionInfo(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
+	_, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
+	if err != nil {
+		return nil, err
+	}
+
+	connectionInfo, err = dao.ConnectionInfoRegister(connectionInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	connectionInfo, err = doGetConnectionInfo(connectionInfo.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -372,29 +371,14 @@ func ListConnectionInfo(c echo.Context) error {
 
 	var encryptedConnectionInfos []model.ConnectionInfo
 
-	var encryptedConnectionInfosLock sync.Mutex
-	var wg sync.WaitGroup
-	wg.Add(len(*connectionInfos))
-
 	for _, ci := range *connectionInfos {
-		go func(connectionInfo model.ConnectionInfo) {
-			defer func() {
-				wg.Done()
-			}()
+		encryptedConnectionInfo, err := encryptSecrets(&ci)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
 
-			encryptedConnectionInfo, err := doGetConnectionInfo(connectionInfo.ID)
-			if err != nil {
-				encryptedConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
-				encryptedConnectionInfo.ConnectionFailedMessage = err.Error()
-			}
-
-			encryptedConnectionInfosLock.Lock()
-			encryptedConnectionInfos = append(encryptedConnectionInfos, *encryptedConnectionInfo)
-			encryptedConnectionInfosLock.Unlock()
-		}(ci)
+		encryptedConnectionInfos = append(encryptedConnectionInfos, *encryptedConnectionInfo)
 	}
-
-	wg.Wait()
 
 	sort.Slice(encryptedConnectionInfos, func(i, j int) bool {
 		return strings.Compare(encryptedConnectionInfos[i].Name, encryptedConnectionInfos[j].Name) < 0

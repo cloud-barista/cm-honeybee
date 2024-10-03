@@ -2200,6 +2200,36 @@ paths:
       summary: Get Kubernetes Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/refresh:
+    put:
+      consumes:
+      - application/json
+      description: Refresh connection info status of the source group.
+      operationId: refresh-source-group-connection-info-status
+      parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully refresh the source group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to refresh the source group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Refresh SourceGroup Connection Info Status
+      tags:
+      - '[On-premise] SourceGroup'
   /source_group/{sgId}/software:
     get:
       consumes:

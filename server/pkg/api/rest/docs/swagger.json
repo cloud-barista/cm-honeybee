@@ -1418,6 +1418,51 @@
                 }
             }
         },
+        "/source_group/{sgId}/refresh": {
+            "put": {
+                "description": "Refresh connection info status of the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] SourceGroup"
+                ],
+                "summary": "Refresh SourceGroup Connection Info Status",
+                "operationId": "refresh-source-group-connection-info-status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully refresh the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to refresh the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/software": {
             "get": {
                 "description": "Get the software information for all connections in the source group.",
