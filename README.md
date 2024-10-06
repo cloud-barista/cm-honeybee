@@ -26,41 +26,9 @@ Collecting and Aggregating Information From Source Computing framework (codename
 
 ## How to run
 
-### 1. Build and run agent (Run on the source computing environment you want to import.)
+### 1. Build and run server
 
-1.1. Write the configuration file.
-
-(You can skip this step and the default settings will be used instead.)
-
-  - Configuration file name is 'cm-honeybee-agent.yaml'
-  - The configuration file must be placed in one of the following directories.
-    - .cm-honeybee-agent/conf directory under user's home directory
-    - 'conf' directory where running the binary
-    - 'conf' directory where placed in the path of 'CMHONEYBEE_AGENT_ROOT' environment variable
-  - Configuration options
-    - listen
-      - port : Listen port of the agent's API.
-  - Configuration file example
-    ```yaml
-    cm-honeybee-agent:
-        listen:
-            port: 8082
-    ```
-
-1.2. Build and run the agent binary
-```shell
-cd agent
-make run
-```
-
-Or, you can run it within Docker by this command.
- ```shell
- make run_docker
- ```
-
-### 2. Build and run server
-
-2.1. Write the configuration file.
+1.1. Write the configuration file. (Optional)
 
 (You can skip this step and the default settings will be used instead.)
 
@@ -83,13 +51,18 @@ Or, you can run it within Docker by this command.
           port: 8082
   ```
 
-2.2. Build and run the server binary
+1.2. Build and run the server binary
 ```shell
 cd server
 make run
 ```
 
-### 3. Register source group
+Or, you can run it within Docker by this command.
+ ```shell
+ make run_docker
+ ```
+
+### 2. Register source group
 Check your source group ID (sgID) after register.
 - Request
 ```shell
@@ -107,11 +80,19 @@ curl -X 'POST' \
 {
  "id": "b9e86d53-9fbe-4a96-9e06-627f77fdd6b7",
  "name": "test-group",
- "description": "test migration group"
+ "description": "test migration group",
+  "connection_info_status_count": {
+    "count_connection_success": 0,
+    "count_connection_failed": 0,
+    "count_agent_success": 0,
+    "count_agent_failed": 0,
+    "connection_info_total": 0
+  }
 }
 ```
-### 4. Register connection info
+### 3. Register connection info
 Register the connection information to the source group.
+Agent will be installed automatically.
 - Request
 ```shell
 curl -X 'POST' \
@@ -128,17 +109,19 @@ curl -X 'POST' \
   "description": "NFS Server",
   "source_group_id": "b9e86d53-9fbe-4a96-9e06-627f77fdd6b7",
   "ip_address": "172.16.0.123",
-  "ssh_port": 22,
-  "user": "ubuntu",
-  "password": "O6fiNHqV71q5cXbJ31Y7i5xefELacROcugMz8rdo42vbJVHsN3Geh+5iqQqYJlT+gFGY2DoH8EgftrI3jWFbofUIhEe0gJWQakIO+1T3mVNb458ZFg9agoqZucAf2JJlCQFw5Wddswd88KegFcE3nqTXalQX1rspV2v2M/rJ/d7DHVh7Ej2sMxn+7ZKSdtnk3tSthJ5Z6zAcLlaequ210UZHcwGk58ByP6A+2Ga08pxoqd++z+OTkXCWCLMRpd85LBo0VHc2qDLrWhkxZDv4OBqTeT3RpgCTX9PDyjNXt7/4srSBOb7Al9DNx6ITCme+rcBRUSCmeulECCBr9CZFQ==",
-  "private_key": "CNTS7NvcwUj09/ZFL43GotzE68x/l6pesSRvp6/hv85ISDe1ynCxy/V8SxRIvzji2jPjcg2AwLEViPCi5vSFT5LTFQneFAXwtgJj9MdLQB4LBJVl8Bq/8MOfUsM/zltV98BX/XErzQZHrKipYmjchl1u90/Kka2zt6Ko7MugZqmmvpSy9ILOlxMPRTDdmLreW2toaFeAIfIT6NbrsYhLq+Je2FRqeET9tsabDmooQiMFIAo+t7J3vbvYuRQeEjdj66hlGzxrde/sCV8aA7hLsupiXOoJKxLTLfiha2oGOWtF9ofvEoQulX1f8M98zMl+VXFpYgx2SSxgpWFx0iTfhA==",
+  "ssh_port": "XXXXXXXX...=",
+  "user": "XXXXXXXX...=",
+  "password": "XXXXXXXX...=",
+  "private_key": "XXXXXXXX...=",
   "public_key": "",
-  "status": "",
-  "failed_message": ""
+  "connection_status": "success",
+  "connection_failed_message": "",
+  "agent_status": "success",
+  "agent_failed_message": ""
 }
 ```
 
-### 5. Save current source information.
+### 4. Save current source information.
 Below example is saving infrastructure information of all connection in the source group.
 ```shell
 curl -X 'POST' \
@@ -146,7 +129,7 @@ curl -X 'POST' \
  -H 'accept: application/json'
 ```
 
-### 6. Get saved source information.
+### 5. Get saved source information.
 Below example is getting saved infrastructure information of all connection in the source group.
 ```shell
 curl -X 'GET' \
@@ -154,7 +137,7 @@ curl -X 'GET' \
  -H 'accept: application/json'
 ```
 
-### 7. Get refined, saved source information.
+### 6. Get refined, saved source information.
 Below example is getting refined, saved infrastructure information of all connection in the source group.
 ```shell
 curl -X 'GET' \
@@ -163,17 +146,6 @@ curl -X 'GET' \
 ```
 
 ## Health-check
-
-### Agent
-
-Check if CM-Honeybee agent is running
-
-```bash
-curl http://localhost:8082/honeybee-agent/readyz
-
-# Output if it's running successfully
-# {"message":"CM-Honeybee Agent API server is ready"}
-```
 
 ### Server
 
@@ -186,13 +158,24 @@ curl http://localhost:8081/honeybee/readyz
 # {"message":"CM-Honeybee API server is ready"}
 ```
 
+### Agent
+
+Check if CM-Honeybee agent is running
+
+```bash
+curl http://localhost:8081/honeybee/readyz
+
+# Output if it's running successfully
+# {"message":"CM-Honeybee Agent API server is ready"}
+```
+
 ## Check out all APIs
 * [Honeybee Agent APIs (Swagger Document)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cm-honeybee/main/agent/pkg/api/rest/docs/swagger.yaml)
 * [Honeybee Server APIs (Swagger Document)](https://cloud-barista.github.io/cb-tumblebug-api-web/?url=https://raw.githubusercontent.com/cloud-barista/cm-honeybee/main/server/pkg/api/rest/docs/swagger.yaml)
 
 
 ## For Docker users
-There are default private key and public key used for encrypt connection info's password from the honeybee server.
+There are default private key and public key used for encrypt connection info's secret values (ssh port, user, password, private key) from the honeybee server.
 (Located in server/_default_key)
 For security, run these commands to generate new key files.
 
@@ -221,10 +204,10 @@ Now, you can copy ./keys/honeybee.key file to other module.
 
 ## For who develop modules with Honeybee
 
-### About passwords and private keys
+### About encrypted values of the connection info
 Those encrypted values are always changes with each request by RSA algorithm.
 
-### How to decrypt the password and the private key in the connection info?
+### How to decrypt encrypted values in the connection info?
   1. Build and run the Honeybee server.
      ```shell
      cd server
