@@ -9,6 +9,7 @@ import (
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -63,7 +64,7 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 	return oldSavedInfraInfo, nil
 }
 
-func doImportSoftware(connID string) (*model.SavedSoftwareInfo, error) {
+func doImportSoftware(connID string, showDefaultPackages bool) (*model.SavedSoftwareInfo, error) {
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return nil, err
@@ -90,7 +91,7 @@ func doImportSoftware(connID string) (*model.SavedSoftwareInfo, error) {
 	s := &ssh.SSH{
 		Options: ssh.DefaultSSHOptions(),
 	}
-	data, err := s.SendGetRequestToAgent(*connectionInfo, "/software")
+	data, err := s.SendGetRequestToAgent(*connectionInfo, "/software?show_default_packages="+strconv.FormatBool(showDefaultPackages))
 	if err != nil {
 		oldSavedSoftwareInfo.Status = "failed"
 		_ = dao.SavedSoftwareInfoUpdate(oldSavedSoftwareInfo)
@@ -100,7 +101,7 @@ func doImportSoftware(connID string) (*model.SavedSoftwareInfo, error) {
 		return nil, errors.New(errMsg)
 	}
 
-	oldSavedSoftwareInfo.SoftwareData = string(data)
+	oldSavedSoftwareInfo.SoftwareData = data
 	oldSavedSoftwareInfo.Status = "success"
 	oldSavedSoftwareInfo.SavedTime = time.Now()
 	err = dao.SavedSoftwareInfoUpdate(oldSavedSoftwareInfo)
@@ -252,6 +253,7 @@ func ImportInfraSourceGroup(c echo.Context) error {
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
 //	@Param			connId path string true "ID of the connection info."
+//	@Param			show_default_packages query bool false "Enable for show all packages include default packages."
 //	@Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the software information"
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
@@ -267,12 +269,15 @@ func ImportSoftware(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the connId.")
 	}
 
+	showDefaultPackagesStr := c.QueryParam("show_default_packages")
+	showDefaultPackages, _ := strconv.ParseBool(showDefaultPackagesStr)
+
 	_, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	savedSoftwareInfo, err := doImportSoftware(connID)
+	savedSoftwareInfo, err := doImportSoftware(connID, showDefaultPackages)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -289,6 +294,7 @@ func ImportSoftware(c echo.Context) error {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
+//	@Param			show_default_packages query bool false "Enable for show all packages include default packages."
 //	@Success		200	{object}	[]model.SavedSoftwareInfo	"Successfully saved the software information"
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
@@ -298,6 +304,9 @@ func ImportSoftwareSourceGroup(c echo.Context) error {
 	if sgID == "" {
 		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
+
+	showDefaultPackagesStr := c.QueryParam("show_default_packages")
+	showDefaultPackages, _ := strconv.ParseBool(showDefaultPackagesStr)
 
 	_, err := dao.SourceGroupGet(sgID)
 	if err != nil {
@@ -312,7 +321,7 @@ func ImportSoftwareSourceGroup(c echo.Context) error {
 	var savedSoftwareInfoList []model.SavedSoftwareInfo
 
 	for _, conn := range *list {
-		savedSoftwareInfo, _ := doImportSoftware(conn.ID)
+		savedSoftwareInfo, _ := doImportSoftware(conn.ID, showDefaultPackages)
 		savedSoftwareInfoList = append(savedSoftwareInfoList, *savedSoftwareInfo)
 	}
 

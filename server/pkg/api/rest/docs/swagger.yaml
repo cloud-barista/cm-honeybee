@@ -1871,6 +1871,10 @@ paths:
         name: connId
         required: true
         type: string
+      - description: Enable for show all packages include default packages.
+        in: query
+        name: show_default_packages
+        type: boolean
       produces:
       - application/json
       responses:
@@ -2106,6 +2110,10 @@ paths:
         name: sgId
         required: true
         type: string
+      - description: Enable for show all packages include default packages.
+        in: query
+        name: show_default_packages
+        type: boolean
       produces:
       - application/json
       responses:

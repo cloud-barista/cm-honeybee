@@ -914,6 +914,12 @@ const docTemplate = `{
                         "name": "connId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Enable for show all packages include default packages.",
+                        "name": "show_default_packages",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1263,6 +1269,12 @@ const docTemplate = `{
                         "name": "sgId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Enable for show all packages include default packages.",
+                        "name": "show_default_packages",
+                        "in": "query"
                     }
                 ],
                 "responses": {
