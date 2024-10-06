@@ -60,7 +60,7 @@ func GetBenchmarkInfo(c echo.Context) error {
 //	@Success		200	{object}	model.Benchmark			"Successfully get information of the benchmark."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the benchmark."
-//	@Router			/bench/{connId}/run [get]
+//	@Router			/bench/{connId}/run [post]
 func RunBenchmarkInfo(c echo.Context) error {
 	connID := c.Param("connId")
 	if connID == "" {
@@ -127,7 +127,7 @@ func RunBenchmarkInfo(c echo.Context) error {
 //	@Success		200	{object}	model.SimpleMsg				"Benchmark Stopped."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to stop of the benchmark."
-//	@Router			/bench/{connId}/stop [get]
+//	@Router			/bench/{connId}/stop [post]
 func StopBenchmarkInfo(c echo.Context) error {
 	connID := c.Param("connId")
 	if connID == "" {

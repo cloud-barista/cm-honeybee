@@ -65,7 +65,7 @@ const docTemplate = `{
             }
         },
         "/bench/{connId}/run": {
-            "get": {
+            "post": {
                 "description": "Run the benchmark information of the connection information. If no Benchmark Agent is present on the connected server, it will be automatically installed, and the benchmark will be executed.",
                 "consumes": [
                     "application/json"
@@ -110,7 +110,7 @@ const docTemplate = `{
             }
         },
         "/bench/{connId}/stop": {
-            "get": {
+            "post": {
                 "description": "Stop the benchmark",
                 "consumes": [
                     "application/json"

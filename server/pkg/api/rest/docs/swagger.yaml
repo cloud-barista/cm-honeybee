@@ -1302,7 +1302,7 @@ paths:
       tags:
       - '[Import] BenchmarkInfo'
   /bench/{connId}/run:
-    get:
+    post:
       consumes:
       - application/json
       description: Run the benchmark information of the connection information. If
@@ -1334,7 +1334,7 @@ paths:
       tags:
       - '[Import] BenchmarkInfo'
   /bench/{connId}/stop:
-    get:
+    post:
       consumes:
       - application/json
       description: Stop the benchmark
