@@ -144,7 +144,7 @@ definitions:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfoStatusCount'
       source_group:
         items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes'
         type: array
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RegisterTargetInfoReq:

@@ -1800,7 +1800,7 @@ const docTemplate = `{
                 "source_group": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes"
                     }
                 }
             }

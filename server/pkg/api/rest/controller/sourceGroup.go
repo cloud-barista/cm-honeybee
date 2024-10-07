@@ -9,7 +9,9 @@ import (
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -275,7 +277,6 @@ func ListSourceGroup(c echo.Context) error {
 	}
 
 	var listSourceGroupRes model.ListSourceGroupRes
-	listSourceGroupRes.SourceGroup = *sourceGroups
 
 	for _, sg := range *sourceGroups {
 		connectionInfo := &model.ConnectionInfo{
@@ -286,20 +287,39 @@ func ListSourceGroup(c echo.Context) error {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 
+		var sourceGroupRes = model.SourceGroupRes{
+			ID:          sg.ID,
+			Name:        sg.Name,
+			Description: sg.Description,
+		}
+
 		for _, ci := range *connectionInfos {
+			sourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
 			listSourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
+
 			if ci.ConnectionStatus == model.ConnectionInfoStatusSuccess {
+				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
 				listSourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
 			} else {
+				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
 				listSourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
 			}
+
 			if ci.AgentStatus == model.ConnectionInfoStatusSuccess {
+				sourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
 				listSourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
 			} else {
+				sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
 				listSourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
 			}
 		}
+
+		listSourceGroupRes.SourceGroup = append(listSourceGroupRes.SourceGroup, sourceGroupRes)
 	}
+
+	sort.Slice(listSourceGroupRes.SourceGroup, func(i, j int) bool {
+		return strings.Compare(listSourceGroupRes.SourceGroup[i].Name, listSourceGroupRes.SourceGroup[j].Name) < 0
+	})
 
 	return c.JSONPretty(http.StatusOK, &listSourceGroupRes, " ")
 }

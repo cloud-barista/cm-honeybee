@@ -58,7 +58,7 @@ type SourceGroupRes struct {
 }
 
 type ListSourceGroupRes struct {
-	SourceGroup               []SourceGroup             `json:"source_group"`
+	SourceGroup               []SourceGroupRes          `json:"source_group"`
 	ConnectionInfoStatusCount ConnectionInfoStatusCount `json:"connection_info_status_count"`
 }
 
