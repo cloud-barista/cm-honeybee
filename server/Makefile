@@ -27,7 +27,7 @@ lint: dependency ## Lint the files
 	    go_path=`echo $$cygdrive_prefix/$$drive/$$path | sed 's@\/\/@\/@g'`; \
 	  fi; \
 	  if [ ! -f "$$go_path/bin/golangci-lint" ]; then \
-	    ${GO_COMMAND} install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.2; \
+	    ${GO_COMMAND} install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0; \
 	  fi; \
 	  $$go_path/bin/golangci-lint run --timeout 30m -E contextcheck -E revive
 
