@@ -2195,6 +2195,47 @@ paths:
       summary: Get Refined Infra Information Source Group
       tags:
       - '[Get] Get refined source info'
+  /source_group/{sgId}/infra/refined/{CSP}/{region}:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined infra information for all connections in the source
+        group for recommendation request.
+      operationId: get-infra-info-source-group-refined-for-recommendation-request
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: Name of the CSP.
+        in: path
+        name: CSP
+        required: true
+        type: string
+      - description: Name of the CSP's region.
+        in: path
+        name: region
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the infra.
+          schema:
+            $ref: '#/definitions/onprem.OnPremInfra'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the infra.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Infra Information Source Group For Recommendation Request
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/kubernetes:
     get:
       consumes:

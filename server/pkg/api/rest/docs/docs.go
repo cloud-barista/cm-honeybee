@@ -1392,6 +1392,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/source_group/{sgId}/infra/refined/{CSP}/{region}": {
+            "get": {
+                "description": "Get the refined infra information for all connections in the source group for recommendation request.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Infra Information Source Group For Recommendation Request",
+                "operationId": "get-infra-info-source-group-refined-for-recommendation-request",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the CSP.",
+                        "name": "CSP",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Name of the CSP's region.",
+                        "name": "region",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the infra.",
+                        "schema": {
+                            "$ref": "#/definitions/onprem.OnPremInfra"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the infra.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/kubernetes": {
             "get": {
                 "description": "Get the kubernetes information for all connections in the source group.",
