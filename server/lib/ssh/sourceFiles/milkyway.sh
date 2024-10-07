@@ -156,6 +156,10 @@ Collecting_Data() {
     esac
 }
 
+Clean() {
+    curl -sX GET "http://localhost:1324/milkyway/clean"
+}
+
 # 각 결과를 가져오고 JSON 형식으로 변환하여 출력하는 함수
 get_and_convert_result() {
     type="$1"
@@ -190,6 +194,7 @@ while [[ $# -gt 0 ]]; do
             Root_check
             Initializer
             Collecting_Data $2
+            Clean
             Process_Kill
             ;;
         --stop)
