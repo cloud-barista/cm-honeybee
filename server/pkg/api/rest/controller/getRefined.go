@@ -3,6 +3,7 @@ package controller
 import (
 	"net"
 	"net/http"
+	"regexp"
 	"strings"
 
 	beetleController "github.com/cloud-barista/cm-beetle/pkg/api/rest/controller"
@@ -212,6 +213,23 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, onPremInfra, " ")
 }
 
+func convertedHostname(input string) string {
+	// Regex to match allowed characters: dash, letters, digits, and +
+	re := regexp.MustCompile(`[^a-zA-Z0-9\-\+]`)
+	// Replace disallowed characters with a dash
+	hostname := re.ReplaceAllString(input, "-")
+
+	// Convert to lowercase
+	hostname = strings.ToLower(hostname)
+
+	// Ensure last character is not a dash
+	if strings.HasSuffix(hostname, "-") {
+		hostname = strings.TrimRight(hostname, "-")
+	}
+
+	return hostname
+}
+
 // GetInfraInfoSourceGroupRefinedForRecommendationRequest godoc
 //
 //	@ID				get-infra-info-source-group-refined-for-recommendation-request
@@ -260,6 +278,9 @@ func GetInfraInfoSourceGroupRefinedForRecommendationRequest(c echo.Context) erro
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
+
+		refinedInfraInfo.Hostname = convertedHostname(refinedInfraInfo.Hostname)
+
 		onPremInfra.Servers = append(onPremInfra.Servers, *refinedInfraInfo)
 	}
 
