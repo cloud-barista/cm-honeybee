@@ -1871,34 +1871,18 @@ const docTemplate = `{
                 "resourceType"
             ],
             "properties": {
-                "description": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "string"
                 },
                 "label": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
+                    "type": "object",
+                    "properties": {
+                        "sys.namespace": {
+                            "type": "string"
+                        }
+                    }
                 },
                 "resourceType": {
-                    "type": "string"
-                },
-                "systemLabel": {
-                    "type": "string"
-                },
-                "systemMessage": {
-                    "type": "string"
-                },
-                "targetAction": {
-                    "type": "string"
-                },
-                "targetStatus": {
-                    "type": "string"
-                },
-                "uid": {
                     "type": "string"
                 }
             }

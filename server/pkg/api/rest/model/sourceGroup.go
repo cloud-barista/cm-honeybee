@@ -12,16 +12,11 @@ type TargetInfo struct {
 }
 
 type RegisterTargetInfoReq struct {
-	ResourceType  string `json:"resourceType" validate:"required"`
-	ID            string `json:"id" validate:"required"`
-	UID           string `json:"uid"`
-	Name          string `json:"name"`
-	TargetStatus  string `json:"targetStatus"`
-	TargetAction  string `json:"targetAction"`
-	Label         string `json:"label"`
-	SystemLabel   string `json:"systemLabel"`
-	SystemMessage string `json:"systemMessage"`
-	Description   string `json:"description"`
+	ResourceType string `json:"resourceType" validate:"required"`
+	ID           string `json:"id" validate:"required"`
+	Label        struct {
+		SysNamespace string `json:"sys.namespace"`
+	} `json:"label"`
 }
 
 type SourceGroup struct {

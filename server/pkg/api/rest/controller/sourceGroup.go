@@ -403,12 +403,7 @@ func RegisterTargetInfoToSourceGroup(c echo.Context) error {
 	}
 
 	if registerTargetInfoReq.ResourceType == "mci" {
-		if registerTargetInfoReq.ID == "" {
-			oldSourceGroup.TargetInfo.NSID = ""
-		} else {
-			// TODO: Must be able to set NSID next time.
-			oldSourceGroup.TargetInfo.NSID = "mig01"
-		}
+		oldSourceGroup.TargetInfo.NSID = registerTargetInfoReq.Label.SysNamespace
 		oldSourceGroup.TargetInfo.MCIID = registerTargetInfoReq.ID
 	}
 
