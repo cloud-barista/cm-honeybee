@@ -85,6 +85,13 @@ const docTemplate = `{
                         "name": "connId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "cpus,cpum",
+                        "description": "Comma-separated types for benchmarking (e.g., cpus, cpum, memR, memW, fioR, fioW, dbR, dbW)",
+                        "name": "types",
+                        "in": "query"
                     }
                 ],
                 "responses": {

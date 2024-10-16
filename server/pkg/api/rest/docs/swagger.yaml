@@ -1304,6 +1304,12 @@ paths:
         name: connId
         required: true
         type: string
+      - default: cpus,cpum
+        description: Comma-separated types for benchmarking (e.g., cpus, cpum, memR,
+          memW, fioR, fioW, dbR, dbW)
+        in: query
+        name: types
+        type: string
       produces:
       - application/json
       responses:
