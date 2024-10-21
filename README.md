@@ -214,5 +214,7 @@ Those encrypted values are always changes with each request by RSA algorithm.
      make run
      ```
   2. Copy `honeybee.key` file from `~/.cm-honeybee` or the path of 'CMHONEYBEE_ROOT' environment variable.
-  3. See this commit to modify your source.
+  3. See this commits to modify your source.
      * [cm-grasshopper: Decrypt passwords and private keys of Honeybee's connection info](https://github.com/cloud-barista/cm-grasshopper/commit/4c1c2c2224570d87296e24accca4b37e6ec7a81b)
+     * [rsautil: Decrypt data with splited sizes](https://github.com/cloud-barista/cm-grasshopper/commit/08d6e90bd09e408e2ba1ddc026f07076e515f960)
+     * [ssh: Apply honeybee changes](https://github.com/cloud-barista/cm-grasshopper/commit/0a412981c3005706544136e5f3b92d36e520bb5f)
