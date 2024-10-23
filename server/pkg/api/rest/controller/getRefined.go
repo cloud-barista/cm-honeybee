@@ -3,10 +3,8 @@ package controller
 import (
 	"net"
 	"net/http"
-	"regexp"
 	"strings"
 
-	beetleController "github.com/cloud-barista/cm-beetle/pkg/api/rest/controller"
 	_ "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra" // Need for swag
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
@@ -211,84 +209,4 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 	}
 
 	return c.JSONPretty(http.StatusOK, onPremInfra, " ")
-}
-
-func convertedHostname(input string) string {
-	// Regex to match allowed characters: dash, letters, digits, and +
-	re := regexp.MustCompile(`[^a-zA-Z0-9\-\+]`)
-	// Replace disallowed characters with a dash
-	hostname := re.ReplaceAllString(input, "-")
-
-	// Convert to lowercase
-	hostname = strings.ToLower(hostname)
-
-	// Ensure last character is not a dash
-	if strings.HasSuffix(hostname, "-") {
-		hostname = strings.TrimRight(hostname, "-")
-	}
-
-	return hostname
-}
-
-// GetInfraInfoSourceGroupRefinedForRecommendationRequest godoc
-//
-//	@ID				get-infra-info-source-group-refined-for-recommendation-request
-//	@Summary		Get Refined Infra Information Source Group For Recommendation Request
-//	@Description	Get the refined infra information for all connections in the source group for recommendation request.
-//	@Tags			[Get] Get refined source info
-//	@Accept			json
-//	@Produce		json
-//	@Param			sgId path string true "ID of the source group."
-//	@Param			CSP path string true "Name of the CSP."
-//	@Param			region path string true "Name of the CSP's region."
-//	@Success		200	{object}	onprem.OnPremInfra		"Successfully get refined information of the infra."
-//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-//	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
-//	@Router		/source_group/{sgId}/infra/refined/{CSP}/{region} [get]
-func GetInfraInfoSourceGroupRefinedForRecommendationRequest(c echo.Context) error {
-	sgID := c.Param("sgId")
-	if sgID == "" {
-		return common.ReturnErrorMsg(c, "Please provide the sgId.")
-	}
-
-	csp := c.Param("CSP")
-	if csp == "" {
-		return common.ReturnErrorMsg(c, "Please provide the CSP.")
-	}
-
-	region := c.Param("region")
-	if region == "" {
-		return common.ReturnErrorMsg(c, "Please provide the region.")
-	}
-
-	_, err := dao.SourceGroupGet(sgID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	var onPremInfra onprem.OnPremInfra
-
-	for _, conn := range *list {
-		refinedInfraInfo, err := doGetRefinedInfraInfo(conn.ID)
-		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
-		}
-
-		refinedInfraInfo.Hostname = convertedHostname(refinedInfraInfo.Hostname)
-
-		onPremInfra.Servers = append(onPremInfra.Servers, *refinedInfraInfo)
-	}
-
-	recommendInfraRequest := beetleController.RecommendInfraRequest{
-		DesiredProvider:     csp,
-		DesiredRegion:       region,
-		OnpremiseInfraModel: onPremInfra,
-	}
-
-	return c.JSONPretty(http.StatusOK, recommendInfraRequest, " ")
 }
