@@ -168,9 +168,57 @@ func GetInfraInfoRefined(c echo.Context) error {
 
 	var onpremiseInfraModel inframodel.OnpremiseInfraModel
 	var onpremiseInfra inframodel.OnpremInfra
+	var networkProperty inframodel.NetworkProperty
 
 	onpremiseInfra.Servers = append(onpremiseInfra.Servers, *refinedInfraInfo)
 
+	for _, iface := range refinedInfraInfo.Interfaces {
+		// append IPv4 networks
+		for _, ipv4cidr := range iface.IPv4CidrBlocks {
+			_, netNetwork, err := net.ParseCIDR(ipv4cidr)
+			if err != nil {
+				continue
+			}
+
+			var found bool
+			networkCidr := netNetwork.String()
+
+			for _, cidr := range networkProperty.IPv4Networks {
+				if cidr == networkCidr {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				networkProperty.IPv4Networks = append(networkProperty.IPv4Networks, networkCidr)
+			}
+		}
+
+		// append IPv6 networks
+		for _, ipv6cidr := range iface.IPv6CidrBlocks {
+			_, netNetwork, err := net.ParseCIDR(ipv6cidr)
+			if err != nil {
+				continue
+			}
+
+			var found bool
+			networkCidr := netNetwork.String()
+
+			for _, cidr := range networkProperty.IPv6Networks {
+				if cidr == networkCidr {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				networkProperty.IPv6Networks = append(networkProperty.IPv6Networks, networkCidr)
+			}
+		}
+	}
+
+	onpremiseInfra.Network = networkProperty
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
 
 	return c.JSONPretty(http.StatusOK, onpremiseInfraModel, " ")
@@ -207,6 +255,7 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 
 	var onpremiseInfraModel inframodel.OnpremiseInfraModel
 	var onpremiseInfra inframodel.OnpremInfra
+	var networkProperty inframodel.NetworkProperty
 
 	for _, conn := range *list {
 		refinedInfraInfo, err := doGetRefinedInfraInfo(conn.ID)
@@ -214,8 +263,54 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 		onpremiseInfra.Servers = append(onpremiseInfra.Servers, *refinedInfraInfo)
+		for _, iface := range refinedInfraInfo.Interfaces {
+			// append IPv4 networks
+			for _, ipv4cidr := range iface.IPv4CidrBlocks {
+				_, netNetwork, err := net.ParseCIDR(ipv4cidr)
+				if err != nil {
+					continue
+				}
+
+				var found bool
+				networkCidr := netNetwork.String()
+
+				for _, cidr := range networkProperty.IPv4Networks {
+					if cidr == networkCidr {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					networkProperty.IPv4Networks = append(networkProperty.IPv4Networks, networkCidr)
+				}
+			}
+
+			// append IPv6 networks
+			for _, ipv6cidr := range iface.IPv6CidrBlocks {
+				_, netNetwork, err := net.ParseCIDR(ipv6cidr)
+				if err != nil {
+					continue
+				}
+
+				var found bool
+				networkCidr := netNetwork.String()
+
+				for _, cidr := range networkProperty.IPv6Networks {
+					if cidr == networkCidr {
+						found = true
+						break
+					}
+				}
+
+				if !found {
+					networkProperty.IPv6Networks = append(networkProperty.IPv6Networks, networkCidr)
+				}
+			}
+		}
 	}
 
+	onpremiseInfra.Network = networkProperty
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
 
 	return c.JSONPretty(http.StatusOK, onpremiseInfraModel, " ")
