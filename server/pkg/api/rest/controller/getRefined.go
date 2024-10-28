@@ -3,28 +3,26 @@ package controller
 import (
 	"net"
 	"net/http"
-	"regexp"
 	"strings"
 
-	beetleController "github.com/cloud-barista/cm-beetle/pkg/api/rest/controller"
 	_ "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra" // Need for swag
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
-	"github.com/cloud-barista/cm-model/infra/onprem"
+	inframodel "github.com/cloud-barista/cm-model/infra/onprem"
 	"github.com/labstack/echo/v4"
 )
 
-func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
+func doGetRefinedInfraInfo(connID string) (*inframodel.ServerProperty, error) {
 	infraInfo, err := doGetInfraInfo(connID)
 	if err != nil {
 		return nil, err
 	}
 
-	var dataDisks []onprem.DiskProperty
+	var dataDisks []inframodel.DiskProperty
 
 	for _, dataDisk := range infraInfo.Compute.ComputeResource.DataDisk {
-		dataDisks = append(dataDisks, onprem.DiskProperty{
+		dataDisks = append(dataDisks, inframodel.DiskProperty{
 			Label:     dataDisk.Label,
 			Type:      dataDisk.Type,
 			TotalSize: uint64(dataDisk.Size),
@@ -33,10 +31,10 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 		})
 	}
 
-	var interfaces []onprem.NetworkInterfaceProperty
+	var interfaces []inframodel.NetworkInterfaceProperty
 
 	for _, iface := range infraInfo.Network.Host.NetworkInterface {
-		interf := onprem.NetworkInterfaceProperty{
+		interf := inframodel.NetworkInterfaceProperty{
 			Name:           iface.Interface,
 			MacAddress:     iface.MACAddress,
 			IPv4CidrBlocks: []string{},
@@ -68,7 +66,7 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 		interfaces = append(interfaces, interf)
 	}
 
-	var routingTable []onprem.RouteProperty
+	var routingTable []inframodel.RouteProperty
 
 	for _, route := range infraInfo.Network.Host.Route {
 		var gateway string
@@ -80,7 +78,7 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 			}
 		}
 
-		routingTable = append(routingTable, onprem.RouteProperty{
+		routingTable = append(routingTable, inframodel.RouteProperty{
 			Interface:   route.Interface,
 			Destination: route.Destination,
 			Gateway:     gateway,
@@ -92,9 +90,9 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 		})
 	}
 
-	refinedInfraInfo := onprem.ServerProperty{
+	refinedInfraInfo := inframodel.ServerProperty{
 		Hostname: infraInfo.Compute.OS.Node.Hostname,
-		CPU: onprem.CpuProperty{
+		CPU: inframodel.CpuProperty{
 			Architecture: infraInfo.Compute.OS.Kernel.Architecture,
 			Cpus:         uint32(infraInfo.Compute.ComputeResource.CPU.Cpus),
 			Cores:        uint32(infraInfo.Compute.ComputeResource.CPU.Cores),
@@ -103,13 +101,13 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 			Vendor:       infraInfo.Compute.ComputeResource.CPU.Vendor,
 			Model:        infraInfo.Compute.ComputeResource.CPU.Model,
 		},
-		Memory: onprem.MemoryProperty{
+		Memory: inframodel.MemoryProperty{
 			Type:      infraInfo.Compute.ComputeResource.Memory.Type,
 			TotalSize: uint64(infraInfo.Compute.ComputeResource.Memory.Size / 1024),      // GiB
 			Available: uint64(infraInfo.Compute.ComputeResource.Memory.Available / 1024), // GiB
 			Used:      uint64(infraInfo.Compute.ComputeResource.Memory.Used / 1024),      // GiB
 		},
-		RootDisk: onprem.DiskProperty{
+		RootDisk: inframodel.DiskProperty{
 			Label:     infraInfo.Compute.ComputeResource.RootDisk.Label,
 			Type:      infraInfo.Compute.ComputeResource.RootDisk.Type,
 			TotalSize: uint64(infraInfo.Compute.ComputeResource.RootDisk.Size),      // GiB
@@ -119,7 +117,7 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 		DataDisks:    dataDisks,
 		Interfaces:   interfaces,
 		RoutingTable: routingTable,
-		OS: onprem.OsProperty{
+		OS: inframodel.OsProperty{
 			PrettyName:      infraInfo.Compute.OS.OS.PrettyName,
 			Version:         infraInfo.Compute.OS.OS.Version,
 			Name:            infraInfo.Compute.OS.OS.Name,
@@ -133,6 +131,81 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 	return &refinedInfraInfo, nil
 }
 
+func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, ifaces *[]inframodel.NetworkInterfaceProperty) {
+	for _, iface := range *ifaces {
+		// append IPv4 networks
+		for _, ipv4cidr := range iface.IPv4CidrBlocks {
+			_, netNetwork, err := net.ParseCIDR(ipv4cidr)
+			if err != nil {
+				continue
+			}
+
+			networkCidr := netNetwork.String()
+
+			// Skip local networks
+			if networkCidr == "127.0.0.0/8" {
+				continue
+			}
+
+			var found bool
+
+			for _, cidr := range networkProperty.IPv4Networks {
+				if cidr == networkCidr {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				networkProperty.IPv4Networks = append(networkProperty.IPv4Networks, networkCidr)
+			}
+		}
+
+		// append IPv6 networks
+		for _, ipv6cidr := range iface.IPv6CidrBlocks {
+			_, netNetwork, err := net.ParseCIDR(ipv6cidr)
+			if err != nil {
+				continue
+			}
+
+			networkCidr := netNetwork.String()
+
+			// Skip local networks
+			if networkCidr == "::1/128" {
+				continue
+			}
+
+			// Skip all nodes multicast
+			if strings.HasPrefix(networkCidr, "ff02::1/") {
+				continue
+			}
+
+			// Skip all routers multicast
+			if strings.HasPrefix(networkCidr, "ff02::2/") {
+				continue
+			}
+
+			// Skip unspecified
+			if networkCidr == "::/128" {
+				continue
+			}
+
+			var found bool
+
+			for _, cidr := range networkProperty.IPv6Networks {
+				if cidr == networkCidr {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				networkProperty.IPv6Networks = append(networkProperty.IPv6Networks, networkCidr)
+			}
+		}
+	}
+}
+
 // GetInfraInfoRefined godoc
 //
 //	@ID				get-infra-info-refined
@@ -143,7 +216,7 @@ func doGetRefinedInfraInfo(connID string) (*onprem.ServerProperty, error) {
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
 //	@Param			connId path string true "ID of the connection info."
-//	@Success		200	{object}	onprem.ServerProperty	"Successfully get refined information of the infra."
+//	@Success		200	{object}	inframodel.OnpremiseInfraModel	"Successfully get refined information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
 //	@Router			/source_group/{sgId}/connection_info/{connId}/infra/refined [get]
@@ -168,7 +241,15 @@ func GetInfraInfoRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	return c.JSONPretty(http.StatusOK, refinedInfraInfo, " ")
+	var onpremiseInfraModel inframodel.OnpremiseInfraModel
+	var onpremiseInfra inframodel.OnpremInfra
+
+	onpremiseInfra.Servers = append(onpremiseInfra.Servers, *refinedInfraInfo)
+	doGetRefinedNetworkInfo(&onpremiseInfra.Network, &refinedInfraInfo.Interfaces)
+
+	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
+
+	return c.JSONPretty(http.StatusOK, onpremiseInfraModel, " ")
 }
 
 // GetInfraInfoSourceGroupRefined godoc
@@ -180,7 +261,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
-//	@Success		200	{object}	onprem.OnPremInfra		"Successfully get refined information of the infra."
+//	@Success		200	{object}	inframodel.OnpremiseInfraModel		"Successfully get refined information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
 //	@Router		/source_group/{sgId}/infra/refined [get]
@@ -200,95 +281,19 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	var onPremInfra onprem.OnPremInfra
+	var onpremiseInfraModel inframodel.OnpremiseInfraModel
+	var onpremiseInfra inframodel.OnpremInfra
 
 	for _, conn := range *list {
 		refinedInfraInfo, err := doGetRefinedInfraInfo(conn.ID)
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
-		onPremInfra.Servers = append(onPremInfra.Servers, *refinedInfraInfo)
+		onpremiseInfra.Servers = append(onpremiseInfra.Servers, *refinedInfraInfo)
+		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &refinedInfraInfo.Interfaces)
 	}
 
-	return c.JSONPretty(http.StatusOK, onPremInfra, " ")
-}
+	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
 
-func convertedHostname(input string) string {
-	// Regex to match allowed characters: dash, letters, digits, and +
-	re := regexp.MustCompile(`[^a-zA-Z0-9\-\+]`)
-	// Replace disallowed characters with a dash
-	hostname := re.ReplaceAllString(input, "-")
-
-	// Convert to lowercase
-	hostname = strings.ToLower(hostname)
-
-	// Ensure last character is not a dash
-	if strings.HasSuffix(hostname, "-") {
-		hostname = strings.TrimRight(hostname, "-")
-	}
-
-	return hostname
-}
-
-// GetInfraInfoSourceGroupRefinedForRecommendationRequest godoc
-//
-//	@ID				get-infra-info-source-group-refined-for-recommendation-request
-//	@Summary		Get Refined Infra Information Source Group For Recommendation Request
-//	@Description	Get the refined infra information for all connections in the source group for recommendation request.
-//	@Tags			[Get] Get refined source info
-//	@Accept			json
-//	@Produce		json
-//	@Param			sgId path string true "ID of the source group."
-//	@Param			CSP path string true "Name of the CSP."
-//	@Param			region path string true "Name of the CSP's region."
-//	@Success		200	{object}	onprem.OnPremInfra		"Successfully get refined information of the infra."
-//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
-//	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
-//	@Router		/source_group/{sgId}/infra/refined/{CSP}/{region} [get]
-func GetInfraInfoSourceGroupRefinedForRecommendationRequest(c echo.Context) error {
-	sgID := c.Param("sgId")
-	if sgID == "" {
-		return common.ReturnErrorMsg(c, "Please provide the sgId.")
-	}
-
-	csp := c.Param("CSP")
-	if csp == "" {
-		return common.ReturnErrorMsg(c, "Please provide the CSP.")
-	}
-
-	region := c.Param("region")
-	if region == "" {
-		return common.ReturnErrorMsg(c, "Please provide the region.")
-	}
-
-	_, err := dao.SourceGroupGet(sgID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	var onPremInfra onprem.OnPremInfra
-
-	for _, conn := range *list {
-		refinedInfraInfo, err := doGetRefinedInfraInfo(conn.ID)
-		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
-		}
-
-		refinedInfraInfo.Hostname = convertedHostname(refinedInfraInfo.Hostname)
-
-		onPremInfra.Servers = append(onPremInfra.Servers, *refinedInfraInfo)
-	}
-
-	recommendInfraRequest := beetleController.RecommendInfraRequest{
-		DesiredProvider:     csp,
-		DesiredRegion:       region,
-		OnpremiseInfraModel: onPremInfra,
-	}
-
-	return c.JSONPretty(http.StatusOK, recommendInfraRequest, " ")
+	return c.JSONPretty(http.StatusOK, onpremiseInfraModel, " ")
 }

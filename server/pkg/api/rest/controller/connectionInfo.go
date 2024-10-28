@@ -444,6 +444,9 @@ func UpdateConnectionInfo(c echo.Context) error {
 		return err
 	}
 
+	if updateConnectionInfoReq.Name != "" {
+		oldConnectionInfo.Name = updateConnectionInfoReq.Name
+	}
 	if updateConnectionInfoReq.Description != "" {
 		oldConnectionInfo.Description = updateConnectionInfoReq.Description
 	}

@@ -344,7 +344,7 @@ func UpdateSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	updateSourceGroupReq := new(model.CreateSourceGroupReq)
+	updateSourceGroupReq := new(model.UpdateSourceGroupReq)
 	err := c.Bind(updateSourceGroupReq)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())

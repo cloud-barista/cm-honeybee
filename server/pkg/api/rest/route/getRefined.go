@@ -10,5 +10,4 @@ import (
 func RegisterGetRefined(e *echo.Echo) {
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/infra/refined", controller.GetInfraInfoRefined)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/infra/refined", controller.GetInfraInfoSourceGroupRefined)
-	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/infra/refined/:CSP/:region", controller.GetInfraInfoSourceGroupRefinedForRecommendationRequest)
 }
