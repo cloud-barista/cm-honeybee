@@ -41,15 +41,6 @@ func checkPort(port string) error {
 }
 
 func encryptSecrets(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
-	rsaEncryptedSSHPort, err := rsautil.EncryptWithPublicKey([]byte(connectionInfo.SSHPort), serverCommon.PubKey)
-	if err != nil {
-		errMsg := "error occurred while encrypting the ssh port (" + err.Error() + ")"
-		logger.Println(logger.ERROR, true, errMsg)
-		return nil, errors.New(errMsg)
-	}
-	base64EncodedEncryptedSSHPort := base64.StdEncoding.EncodeToString(rsaEncryptedSSHPort)
-	connectionInfo.SSHPort = base64EncodedEncryptedSSHPort
-
 	rsaEncryptedUser, err := rsautil.EncryptWithPublicKey([]byte(connectionInfo.User), serverCommon.PubKey)
 	if err != nil {
 		errMsg := "error occurred while encrypting the user (" + err.Error() + ")"
