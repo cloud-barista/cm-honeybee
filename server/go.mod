@@ -2,6 +2,8 @@ module github.com/cloud-barista/cm-honeybee/server
 
 go 1.23.0
 
+replace github.com/cloud-barista/cm-honeybee/agent => ../agent
+
 require (
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
 	github.com/google/uuid v1.6.0

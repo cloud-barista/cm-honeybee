@@ -141,3 +141,48 @@ func SavedKubernetesInfoDelete(savedKubernetesInfo *model.SavedKubernetesInfo) e
 
 	return nil
 }
+
+func SavedHelmInfoGet(connectionID string) (*model.SavedHelmInfo, error) {
+	savedHelmInfo := &model.SavedHelmInfo{}
+
+	result := db.DB.Where("connection_id = ?", connectionID).First(savedHelmInfo)
+	err := result.Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("savedHelmInfo not found with the provided connection_id")
+		}
+		return nil, err
+	}
+
+	return savedHelmInfo, nil
+}
+
+func SavedHelmInfoRegister(savedHelmInfo *model.SavedHelmInfo) (*model.SavedHelmInfo, error) {
+	result := db.DB.Create(savedHelmInfo)
+	err := result.Error
+	if err != nil {
+		return nil, err
+	}
+
+	return savedHelmInfo, nil
+}
+
+func SavedHelmInfoUpdate(savedHelmInfo *model.SavedHelmInfo) error {
+	result := db.DB.Model(&model.SavedHelmInfo{}).Where("connection_id = ?", savedHelmInfo.ConnectionID).Updates(savedHelmInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SavedHelmInfoDelete(savedHelmInfo *model.SavedHelmInfo) error {
+	result := db.DB.Delete(savedHelmInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

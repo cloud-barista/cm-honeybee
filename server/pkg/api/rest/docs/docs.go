@@ -789,6 +789,110 @@ const docTemplate = `{
                 }
             }
         },
+        "/source_group/{sgId}/connection_info/{connId}/helm": {
+            "get": {
+                "description": "Get the helm information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Helm Information",
+                "operationId": "get-helm-info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the kubernetes.",
+                        "schema": {
+                            "$ref": "#/definitions/kubernetes.Helm"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the kubernetes.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/import/helm": {
+            "post": {
+                "description": "Import the helm information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import helm",
+                "operationId": "import-helm",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the helm information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedHelmInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the helm information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/connection_info/{connId}/import/infra": {
             "post": {
                 "description": "Import the infra information.",
@@ -875,7 +979,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Successfully saved the kubernetes information",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo"
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedKubernetesInfo"
                         }
                     },
                     "400": {
@@ -1152,6 +1256,99 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to get information of the software.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/helm": {
+            "get": {
+                "description": "Get the helm information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get helm Information Source Group",
+                "operationId": "get-helm-info-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the helm.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.HelmInfoList"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the helm.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/import/helm": {
+            "post": {
+                "description": "Import helm information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import helm Source Group",
+                "operationId": "import-helm-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the helm information",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedHelmInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the helm information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1756,6 +1953,20 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.HelmInfoList": {
+            "type": "object",
+            "required": [
+                "servers"
+            ],
+            "properties": {
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/kubernetes.Helm"
+                    }
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InfraInfoList": {
             "type": "object",
             "required": [
@@ -1842,6 +2053,27 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "connection_id": {
+                    "type": "string"
+                },
+                "saved_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedHelmInfo": {
+            "type": "object",
+            "required": [
+                "connection_id",
+                "helm_data"
+            ],
+            "properties": {
+                "connection_id": {
+                    "type": "string"
+                },
+                "helm_data": {
                     "type": "string"
                 },
                 "saved_time": {
@@ -2707,6 +2939,23 @@ const docTemplate = `{
                 }
             }
         },
+        "kubernetes.Helm": {
+            "type": "object",
+            "properties": {
+                "release": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/kubernetes.Release"
+                    }
+                },
+                "repo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/kubernetes.Repo"
+                    }
+                }
+            }
+        },
         "kubernetes.Kubernetes": {
             "type": "object",
             "properties": {
@@ -2729,6 +2978,43 @@ const docTemplate = `{
                 "labels": {},
                 "name": {},
                 "nodeinfo": {}
+            }
+        },
+        "kubernetes.Release": {
+            "type": "object",
+            "properties": {
+                "app_version": {
+                    "type": "string"
+                },
+                "chart": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "revision": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated": {
+                    "type": "string"
+                }
+            }
+        },
+        "kubernetes.Repo": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
             }
         },
         "mount.Propagation": {

@@ -1,4 +1,4 @@
-package infra
+package kubernetes
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 )
 
 var kubernetesInfoLock sync.Mutex
+var helmInfoLock sync.Mutex
 
 func GetKubernetesInfo() (*kubernetes.Kubernetes, error) {
 	if !kubernetesInfoLock.TryLock() {
@@ -26,6 +27,30 @@ func GetKubernetesInfo() (*kubernetes.Kubernetes, error) {
 	}
 
 	i.Workloads, err = GetWorkloadInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	return &i, nil
+}
+
+func GetHelmInfo() (*kubernetes.Helm, error) {
+	if !helmInfoLock.TryLock() {
+		return nil, errors.New("helm info collection is in progress")
+	}
+	defer func() {
+		helmInfoLock.Unlock()
+	}()
+
+	var i kubernetes.Helm
+	var err error
+
+	i.Repo, err = GetRepoInfo()
+	if err != nil {
+		return nil, err
+	}
+
+	i.Release, err = GetReleaseInfo()
 	if err != nil {
 		return nil, err
 	}
