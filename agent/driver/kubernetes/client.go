@@ -18,10 +18,7 @@ const (
 
 func KubeConfigCheck() bool {
 	_, err := os.ReadFile(KubeConfigPath)
-	if err != nil {
-		return false
-	}
-	return true
+	return err == nil
 }
 
 func GetKubernetesClientSet() (*kubernetes.Clientset, error) {
