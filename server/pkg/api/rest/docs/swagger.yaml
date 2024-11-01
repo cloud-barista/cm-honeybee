@@ -155,11 +155,14 @@ definitions:
         properties:
           sys.namespace:
             type: string
+        required:
+        - sys.namespace
         type: object
       resourceType:
         type: string
     required:
     - id
+    - label
     - resourceType
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedBenchmarkInfo:

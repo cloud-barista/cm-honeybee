@@ -15,8 +15,8 @@ type RegisterTargetInfoReq struct {
 	ResourceType string `json:"resourceType" validate:"required"`
 	ID           string `json:"id" validate:"required"`
 	Label        struct {
-		SysNamespace string `json:"sys.namespace"`
-	} `json:"label"`
+		SysNamespace string `json:"sys.namespace" validate:"required"`
+	} `json:"label" validate:"required"`
 }
 
 type SourceGroup struct {

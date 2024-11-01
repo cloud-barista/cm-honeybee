@@ -1802,6 +1802,7 @@
             "type": "object",
             "required": [
                 "id",
+                "label",
                 "resourceType"
             ],
             "properties": {
@@ -1810,6 +1811,9 @@
                 },
                 "label": {
                     "type": "object",
+                    "required": [
+                        "sys.namespace"
+                    ],
                     "properties": {
                         "sys.namespace": {
                             "type": "string"

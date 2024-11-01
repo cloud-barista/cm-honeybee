@@ -1809,6 +1809,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "id",
+                "label",
                 "resourceType"
             ],
             "properties": {
@@ -1817,6 +1818,9 @@ const docTemplate = `{
                 },
                 "label": {
                     "type": "object",
+                    "required": [
+                        "sys.namespace"
+                    ],
                     "properties": {
                         "sys.namespace": {
                             "type": "string"
