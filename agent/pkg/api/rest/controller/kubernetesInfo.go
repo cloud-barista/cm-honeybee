@@ -21,7 +21,8 @@ import (
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the kubernetes."
 //	@Router			/kubernetes [get]
 func GetKubernetesInfo(c echo.Context) error {
-	kubernetesInfo, err := infra.GetKubernetesInfo()
+
+	kubernetesInfo, err := kubernetes.GetKubernetesInfo()
 	if err != nil {
 		return common.ReturnInternalError(c, err, "Failed to get information of the kubernetes.")
 	}

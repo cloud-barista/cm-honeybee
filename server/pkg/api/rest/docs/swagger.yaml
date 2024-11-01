@@ -111,6 +111,15 @@ definitions:
     required:
     - name
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.HelmInfoList:
+    properties:
+      servers:
+        items:
+          $ref: '#/definitions/kubernetes.Helm'
+        type: array
+    required:
+    - servers
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InfraInfoList:
     properties:
       servers:
@@ -172,6 +181,20 @@ definitions:
         type: string
       status:
         type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedHelmInfo:
+    properties:
+      connection_id:
+        type: string
+      helm_data:
+        type: string
+      saved_time:
+        type: string
+      status:
+        type: string
+    required:
+    - connection_id
+    - helm_data
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo:
     properties:
@@ -763,6 +786,17 @@ definitions:
           $ref: '#/definitions/inframodel.RouteProperty'
         type: array
     type: object
+  kubernetes.Helm:
+    properties:
+      release:
+        items:
+          $ref: '#/definitions/kubernetes.Release'
+        type: array
+      repo:
+        items:
+          $ref: '#/definitions/kubernetes.Repo'
+        type: array
+    type: object
   kubernetes.Kubernetes:
     properties:
       nodes:
@@ -779,6 +813,30 @@ definitions:
       labels: {}
       name: {}
       nodeinfo: {}
+    type: object
+  kubernetes.Release:
+    properties:
+      app_version:
+        type: string
+      chart:
+        type: string
+      name:
+        type: string
+      namespace:
+        type: string
+      revision:
+        type: integer
+      status:
+        type: string
+      updated:
+        type: string
+    type: object
+  kubernetes.Repo:
+    properties:
+      name:
+        type: string
+      url:
+        type: string
     type: object
   mount.Propagation:
     enum:
@@ -1311,6 +1369,12 @@ paths:
         name: connId
         required: true
         type: string
+      - default: cpus,cpum
+        description: Comma-separated types for benchmarking (e.g., cpus, cpum, memR,
+          memW, fioR, fioW, dbR, dbW)
+        in: query
+        name: types
+        type: string
       produces:
       - application/json
       responses:
@@ -1780,6 +1844,76 @@ paths:
       summary: Update ConnectionInfo
       tags:
       - '[On-premise] ConnectionInfo'
+  /source_group/{sgId}/connection_info/{connId}/helm:
+    get:
+      consumes:
+      - application/json
+      description: Get the helm information of the connection information.
+      operationId: get-helm-info
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the kubernetes.
+          schema:
+            $ref: '#/definitions/kubernetes.Helm'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the kubernetes.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Helm Information
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/import/helm:
+    post:
+      consumes:
+      - application/json
+      description: Import the helm information.
+      operationId: import-helm
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the helm information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedHelmInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the helm information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import helm
+      tags:
+      - '[Import] Import source info'
   /source_group/{sgId}/connection_info/{connId}/import/infra:
     post:
       consumes:
@@ -1838,7 +1972,7 @@ paths:
         "200":
           description: Successfully saved the kubernetes information
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedKubernetesInfo'
         "400":
           description: Sent bad request.
           schema:
@@ -2029,6 +2163,68 @@ paths:
       summary: Get Software Information
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/helm:
+    get:
+      consumes:
+      - application/json
+      description: Get the helm information for all connections in the source group.
+      operationId: get-helm-info-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the helm.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.HelmInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the helm.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get helm Information Source Group
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/import/helm:
+    post:
+      consumes:
+      - application/json
+      description: Import helm information for all connections in the source group.
+      operationId: import-helm-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the helm information
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedHelmInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the helm information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import helm Source Group
+      tags:
+      - '[Import] Import source info'
   /source_group/{sgId}/import/infra:
     post:
       consumes:

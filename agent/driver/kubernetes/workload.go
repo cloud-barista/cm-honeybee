@@ -1,4 +1,4 @@
-package infra
+package kubernetes
 
 import (
 	"context"
@@ -74,7 +74,7 @@ func GetWorkloadInfo() (map[string]interface{}, error) {
 }
 
 func callClientMethod(methodName string) (interface{}, error) {
-	clientset, err := GetClientSet()
+	clientset, err := GetKubernetesClientSet()
 	if err != nil {
 		logger.Println(logger.ERROR, true, "Kubernetes Connection Error: "+err.Error())
 		return nil, err

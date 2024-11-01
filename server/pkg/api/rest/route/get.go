@@ -14,4 +14,6 @@ func RegisterGet(e *echo.Echo) {
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/software", controller.GetSoftwareInfoSourceGroup)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/kubernetes", controller.GetKubernetesInfo)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/kubernetes", controller.GetKubernetesInfoSourceGroup)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/helm", controller.GetHelmInfo)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/helm", controller.GetHelmInfoSourceGroup)
 }

@@ -280,6 +280,17 @@ definitions:
     required:
     - os
     type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Helm:
+    properties:
+      release:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Release'
+        type: array
+      repo:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Repo'
+        type: array
+    type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Kubernetes:
     properties:
       nodes:
@@ -296,6 +307,30 @@ definitions:
       labels: {}
       name: {}
       nodeinfo: {}
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Release:
+    properties:
+      app_version:
+        type: string
+      chart:
+        type: string
+      name:
+        type: string
+      namespace:
+        type: string
+      revision:
+        type: integer
+      status:
+        type: string
+      updated:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Repo:
+    properties:
+      name:
+        type: string
+      url:
+        type: string
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.CSP:
     properties:
@@ -789,6 +824,30 @@ info:
   title: CM-Honeybee Agent REST API
   version: latest
 paths:
+  /helm:
+    get:
+      consumes:
+      - application/json
+      description: Get helm information.
+      operationId: get-helm-info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the helm.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Helm'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the helm.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
+      summary: Get a list of integrated helm information
+      tags:
+      - '[Kubernetes] Get helm info'
   /infra:
     get:
       consumes:

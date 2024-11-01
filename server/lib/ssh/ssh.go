@@ -289,7 +289,7 @@ func (o *SSH) CheckKubernetes(connectionInfo model.ConnectionInfo) (bool, error)
 	}
 	defer o.Close()
 
-	commands := "[ -f \"$HOME/.kube/config\" ] && echo \"true\" || echo \"false\""
+	commands := "[ -f \"/etc/kubernetes/admin.conf\" ] && echo \"true\" || echo \"false\""
 
 	logger.Println(logger.DEBUG, true, "SSH: Kubernetes Checking...")
 	chk, err := o.RunCmd(commands)
