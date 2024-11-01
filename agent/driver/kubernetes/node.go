@@ -1,4 +1,4 @@
-package infra
+package kubernetes
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 )
 
 func GetNodeInfo() ([]kubernetes.Node, error) {
-	clientset, err := GetClientSet()
+	clientset, err := GetKubernetesClientSet()
 	if err != nil {
 		logger.Println(logger.ERROR, true, "Kubernetes Connection Error: "+err.Error())
 		return []kubernetes.Node{}, err

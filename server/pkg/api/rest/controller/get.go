@@ -91,6 +91,31 @@ func doGetKubernetesInfo(connID string) (*kubernetes.Kubernetes, error) {
 	return &kubernetesInfo, nil
 }
 
+func doGetHelmInfo(connID string) (*kubernetes.Helm, error) {
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return nil, err
+	}
+
+	savedHelmInfo, err := dao.SavedHelmInfoGet(connectionInfo.ID)
+	if err != nil {
+		errMsg := "Failed to get information of the helm." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+	var helmInfo kubernetes.Helm
+	err = json.Unmarshal([]byte(savedHelmInfo.HelmData), &helmInfo)
+	if err != nil {
+		errMsg := "Error occurred while parsing helm information." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return &helmInfo, nil
+}
+
 // GetInfraInfo godoc
 //
 //	@ID				get-infra-info
@@ -320,4 +345,81 @@ func GetKubernetesInfoSourceGroup(c echo.Context) error {
 	}
 
 	return c.JSONPretty(http.StatusOK, kubernetesInfoList, " ")
+}
+
+// GetHelmInfo godoc
+//
+//	@ID				get-helm-info
+//	@Summary		Get Helm Information
+//	@Description	Get the helm information of the connection information.
+//	@Tags			[Get] Get source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	kubernetes.Helm		"Successfully get information of the kubernetes."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the kubernetes."
+//	@Router			/source_group/{sgId}/connection_info/{connId}/helm [get]
+func GetHelmInfo(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	helmInfo, err := doGetHelmInfo(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, helmInfo, " ")
+}
+
+// GetHelmInfoSourceGroup godoc
+//
+//	@ID				get-helm-info-source-group
+//	@Summary		Get helm Information Source Group
+//	@Description	Get the helm information for all connections in the source group.
+//	@Tags			[Get] Get source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Success		200	{object}	model.HelmInfoList	"Successfully get information of the helm."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the helm."
+//	@Router		/source_group/{sgId}/helm [get]
+func GetHelmInfoSourceGroup(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	var helmInfoList model.HelmInfoList
+
+	for _, conn := range *list {
+		helmInfo, _ := doGetHelmInfo(conn.ID)
+		helmInfoList.Servers = append(helmInfoList.Servers, *helmInfo)
+	}
+
+	return c.JSONPretty(http.StatusOK, helmInfoList, " ")
 }

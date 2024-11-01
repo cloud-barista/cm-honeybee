@@ -166,6 +166,57 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 	return oldSavedKubernetesInfo, nil
 }
 
+func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return nil, err
+	}
+
+	oldSavedHelmInfo, _ := dao.SavedHelmInfoGet(connectionInfo.ID)
+
+	if oldSavedHelmInfo == nil {
+		savedHelmInfo := new(model.SavedHelmInfo)
+		savedHelmInfo.ConnectionID = connectionInfo.ID
+		savedHelmInfo.HelmData = ""
+		savedHelmInfo.Status = "importing"
+		savedHelmInfo.SavedTime = time.Now()
+		savedHelmInfo, err = dao.SavedHelmInfoRegister(savedHelmInfo)
+		if err != nil {
+			errMsg := "Error occurred while getting helm information." +
+				" (ConnectionID = " + connectionInfo.ID + ")"
+			logger.Println(logger.ERROR, false, errMsg)
+			return nil, errors.New(errMsg)
+		}
+		oldSavedHelmInfo = savedHelmInfo
+	}
+
+	s := &ssh.SSH{
+		Options: ssh.DefaultSSHOptions(),
+	}
+	data, err := s.SendGetRequestToAgent(*connectionInfo, "/helm")
+	if err != nil {
+		oldSavedHelmInfo.Status = "failed"
+		_ = dao.SavedHelmInfoUpdate(oldSavedHelmInfo)
+		errMsg := "Error occurred while getting software information." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	oldSavedHelmInfo.HelmData = string(data)
+	oldSavedHelmInfo.Status = "success"
+	oldSavedHelmInfo.SavedTime = time.Now()
+	err = dao.SavedHelmInfoUpdate(oldSavedHelmInfo)
+	if err != nil {
+		errMsg := "Error occurred while saving the kubernetes information." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return oldSavedHelmInfo, nil
+}
+
 // ImportInfra godoc
 //
 //	@ID				import-infra
@@ -338,7 +389,7 @@ func ImportSoftwareSourceGroup(c echo.Context) error {
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
 //	@Param			connId path string true "ID of the connection info."
-//	@Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the kubernetes information"
+//	@Success		200	{object}	model.SavedKubernetesInfo	"Successfully saved the kubernetes information"
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to save the kubernetes information"
 //	@Router			/source_group/{sgId}/connection_info/{connId}/import/kubernetes [post]
@@ -403,4 +454,81 @@ func ImportKubernetesSourceGroup(c echo.Context) error {
 	}
 
 	return c.JSONPretty(http.StatusOK, savedKubernetesInfoList, " ")
+}
+
+// ImportHelm godoc
+//
+//	@ID				import-helm
+//	@Summary		Import helm
+//	@Description	Import the helm information.
+//	@Tags			[Import] Import source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	model.SavedHelmInfo	"Successfully saved the helm information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to save the helm information"
+//	@Router			/source_group/{sgId}/connection_info/{connId}/import/helm [post]
+func ImportHelm(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	savedHelmInfo, err := doImportHelm(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, savedHelmInfo, " ")
+}
+
+// ImportHelmSourceGroup godoc
+//
+//	@ID				import-helm-source-group
+//	@Summary		Import helm Source Group
+//	@Description	Import helm information for all connections in the source group.
+//	@Tags			[Import] Import source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Success		200	{object}	[]model.SavedHelmInfo	"Successfully saved the helm information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to save the helm information"
+//	@Router			/source_group/{sgId}/import/helm [post]
+func ImportHelmSourceGroup(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	var savedHelmInfoList []model.SavedHelmInfo
+
+	for _, conn := range *list {
+		savedHelmInfo, _ := doImportHelm(conn.ID)
+		savedHelmInfoList = append(savedHelmInfoList, *savedHelmInfo)
+	}
+
+	return c.JSONPretty(http.StatusOK, savedHelmInfoList, " ")
 }

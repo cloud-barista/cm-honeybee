@@ -4,20 +4,20 @@
 AGENT_REPO="https://raw.githubusercontent.com/cloud-barista/cm-honeybee/main/agent"
 
 get_latest_release() {
-  curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
+    curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
     grep '"tag_name":' |                                            # Get tag line
     sed -E 's/.*"([^"]+)".*/\1/'                                    # Pluck JSON value
 }
 
 check_new_version() {
-  LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
-  CURRENT_VERSION=$(cm-honeybee-agent version 2>&1)
+    LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
+    CURRENT_VERSION=$(cm-honeybee-agent version 2>&1)
 
-  if [ "$LATEST_RELEASE" = "$CURRENT_VERSION" ]; then
-      echo 0
-  else
-      echo 1
-  fi
+    if [ "$LATEST_RELEASE" = "$CURRENT_VERSION" ]; then
+        echo 0
+    else
+        echo 1
+    fi
 }
 
 is_root() {
@@ -53,7 +53,7 @@ Initializer() {
 Copy() {
     RESULT=$(check_new_version)
     if [ "$RESULT" = "0" ]; then
-      echo "Latest version already installed."
+        echo "Latest version already installed."
     elif [ "$RESULT" = "1" ] || [ ! -f "/usr/bin/cm-honeybee-agent" ]; then
         systemctl stop cm-honeybee-agent > /dev/null 2>&1
         rm -rf /usr/bin/cm-honeybee-agent
