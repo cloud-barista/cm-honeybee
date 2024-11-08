@@ -7,18 +7,18 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jollaman999/utils v1.0.10 // Original codes from https://github.com/hcloud-classic/hcc-harp
 	github.com/labstack/echo/v4 v4.12.0
-	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20241107074155-1b499af92956
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20241107074442-8f678b142ddb
 	github.com/cloud-barista/cm-model v0.0.3
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.7
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.4
-	golang.org/x/crypto v0.28.0
+	golang.org/x/crypto v0.29.0
 	gorm.io/gorm v1.25.12
 )
 
@@ -57,8 +57,8 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
 	golang.org/x/net v0.30.0 // indirect
-	golang.org/x/text v0.19.0 // indirect
-	golang.org/x/time v0.7.0 // indirect
+	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/time v0.8.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	modernc.org/libc v1.61.0 // indirect
