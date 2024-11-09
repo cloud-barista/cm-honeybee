@@ -1456,6 +1456,36 @@ paths:
       summary: Get ConnectionInfo Directly
       tags:
       - '[On-premise] ConnectionInfo'
+  /connection_info/{connId}/refresh:
+    put:
+      consumes:
+      - application/json
+      description: Refresh the connection info status directly.
+      operationId: refresh-connection-info-status-directly
+      parameters:
+      - description: ID of the connectionInfo
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully refresh the source group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to refresh the source group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Refresh Connection Info Status Directly
+      tags:
+      - '[On-premise] ConnectionInfo'
   /readyz:
     get:
       consumes:
@@ -2131,6 +2161,41 @@ paths:
       summary: Get Kubernetes Information
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/refresh:
+    put:
+      consumes:
+      - application/json
+      description: Refresh the connection info status.
+      operationId: refresh-connection-info-status
+      parameters:
+      - description: ID of the SourceGroup
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connectionInfo
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully refresh the source group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to refresh the source group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Refresh Connection Info Status
+      tags:
+      - '[On-premise] ConnectionInfo'
   /source_group/{sgId}/connection_info/{connId}/software:
     get:
       consumes:

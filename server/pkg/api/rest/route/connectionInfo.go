@@ -13,6 +13,8 @@ func RegisterConnectionInfo(e *echo.Echo) {
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info", controller.ListConnectionInfo)
 	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId", controller.UpdateConnectionInfo)
 	e.DELETE("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId", controller.DeleteConnectionInfo)
+	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/refresh", controller.RefreshConnectionInfoStatus)
 
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/connection_info/:connId", controller.GetConnectionInfoDirectly)
+	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/connection_info/:connId/refresh", controller.RefreshConnectionInfoStatusDirectly)
 }

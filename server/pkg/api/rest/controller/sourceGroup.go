@@ -485,7 +485,7 @@ func RefreshSourceGroupConnectionInfoStatus(c echo.Context) error {
 				wg.Done()
 			}()
 
-			_, err := doGetConnectionInfo(connectionInfo.ID)
+			_, err := doGetConnectionInfo(connectionInfo.ID, true)
 			if err != nil {
 				errMsgLock.Lock()
 				if errMsg != "" {

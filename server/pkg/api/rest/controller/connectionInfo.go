@@ -121,7 +121,7 @@ func checkCreateConnectionInfoReq(sourceGroupID string, createConnectionInfoReq 
 	return connectionInfo, nil
 }
 
-func doGetConnectionInfo(connID string) (*model.ConnectionInfo, error) {
+func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, error) {
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return nil, err
@@ -132,34 +132,36 @@ func doGetConnectionInfo(connID string) (*model.ConnectionInfo, error) {
 		return nil, err
 	}
 
-	c := &ssh.SSH{
-		Options: ssh.DefaultSSHOptions(),
-	}
+	if refresh {
+		c := &ssh.SSH{
+			Options: ssh.DefaultSSHOptions(),
+		}
 
-	err = c.NewClientConn(*connectionInfo)
-	if err != nil {
-		oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
-		oldConnectionInfo.ConnectionFailedMessage = err.Error()
-	} else {
-		c.Close()
-		oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
-		oldConnectionInfo.ConnectionFailedMessage = ""
-	}
+		err = c.NewClientConn(*connectionInfo)
+		if err != nil {
+			oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
+			oldConnectionInfo.ConnectionFailedMessage = err.Error()
+		} else {
+			c.Close()
+			oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
+			oldConnectionInfo.ConnectionFailedMessage = ""
+		}
 
-	err = c.RunAgent(*connectionInfo)
-	if err != nil {
-		oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
-		oldConnectionInfo.AgentFailedMessage = err.Error()
-	} else {
-		c.Close()
-		oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
-		oldConnectionInfo.AgentFailedMessage = ""
-	}
+		err = c.RunAgent(*connectionInfo)
+		if err != nil {
+			oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+			oldConnectionInfo.AgentFailedMessage = err.Error()
+		} else {
+			c.Close()
+			oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
+			oldConnectionInfo.AgentFailedMessage = ""
+		}
 
-	err = dao.ConnectionInfoUpdate(oldConnectionInfo)
-	if err != nil {
-		return nil, errors.New("Error occurred while updating the connection information. " +
-			"(ID: " + oldConnectionInfo.ID + ", Error: " + err.Error() + ")")
+		err = dao.ConnectionInfoUpdate(oldConnectionInfo)
+		if err != nil {
+			return nil, errors.New("Error occurred while updating the connection information. " +
+				"(ID: " + oldConnectionInfo.ID + ", Error: " + err.Error() + ")")
+		}
 	}
 
 	connectionInfo, err = encryptSecrets(oldConnectionInfo)
@@ -181,7 +183,7 @@ func doCreateConnectionInfo(connectionInfo *model.ConnectionInfo) (*model.Connec
 		return nil, err
 	}
 
-	connectionInfo, err = doGetConnectionInfo(connectionInfo.ID)
+	connectionInfo, err = doGetConnectionInfo(connectionInfo.ID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +277,7 @@ func GetConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the connId.")
 	}
 
-	connectionInfo, err := doGetConnectionInfo(connID)
+	connectionInfo, err := doGetConnectionInfo(connID, false)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -302,7 +304,7 @@ func GetConnectionInfoDirectly(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the connId.")
 	}
 
-	connectionInfo, err := doGetConnectionInfo(connID)
+	connectionInfo, err := doGetConnectionInfo(connID, false)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -464,7 +466,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	connectionInfo, err := doGetConnectionInfo(oldConnectionInfo.ID)
+	connectionInfo, err := doGetConnectionInfo(oldConnectionInfo.ID, true)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -508,6 +510,71 @@ func DeleteConnectionInfo(c echo.Context) error {
 	}
 
 	err = dao.ConnectionInfoDelete(connectionInfo)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "success"}, " ")
+}
+
+// RefreshConnectionInfoStatus godoc
+//
+//	@ID				refresh-connection-info-status
+//	@Summary		Refresh Connection Info Status
+//	@Description	Refresh the connection info status.
+//	@Tags			[On-premise] ConnectionInfo
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Param			connId path string true "ID of the connectionInfo"
+//	@Success		200	{object}	model.SimpleMsg			"Successfully refresh the source group"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to refresh the source group"
+//	@Router			/source_group/{sgId}/connection_info/{connId}/refresh [put]
+func RefreshConnectionInfoStatus(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err = doGetConnectionInfo(connID, true)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "success"}, " ")
+}
+
+// RefreshConnectionInfoStatusDirectly godoc
+//
+//	@ID				refresh-connection-info-status-directly
+//	@Summary		Refresh Connection Info Status Directly
+//	@Description	Refresh the connection info status directly.
+//	@Tags			[On-premise] ConnectionInfo
+//	@Accept			json
+//	@Produce		json
+//	@Param			connId path string true "ID of the connectionInfo"
+//	@Success		200	{object}	model.SimpleMsg			"Successfully refresh the source group"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to refresh the source group"
+//	@Router			/connection_info/{connId}/refresh [put]
+func RefreshConnectionInfoStatusDirectly(c echo.Context) error {
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err := doGetConnectionInfo(connID, true)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
