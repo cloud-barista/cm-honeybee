@@ -5,7 +5,7 @@ This repository provides a features of collection and aggregation for all source
 
 Collecting and Aggregating Information From Source Computing framework (codename: cm-honeybee) is going to support:
 
-* collect and aggregate information from source computing about intrastructure, software, data
+* collect and aggregate information from source computing about infrastructure, software, data
 * provides the Agent for collecting source computing information
 
 <details>
@@ -129,6 +129,10 @@ curl -X 'POST' \
  -H 'accept: application/json'
 ```
 
+- For software: POST http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/import/software
+- For Kubernetes: POST http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/import/kubernetes
+- For Helm: POST http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/import/helm
+
 ### 5. Get saved source information.
 Below example is getting saved infrastructure information of all connection in the source group.
 ```shell
@@ -136,6 +140,10 @@ curl -X 'GET' \
  'http://127.0.0.1:8081/honeybee/source_group/b9e86d53-9fbe-4a96-9e06-627f77fdd6b7/infra' \
  -H 'accept: application/json'
 ```
+
+- For software: GET http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/software
+- For Kubernetes: GET http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/kubernetes
+- For Helm: GET http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/helm
 
 ### 6. Get refined, saved source information.
 Below example is getting refined, saved infrastructure information of all connection in the source group.
