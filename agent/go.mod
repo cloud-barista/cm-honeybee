@@ -2,7 +2,7 @@ module github.com/cloud-barista/cm-honeybee/agent
 
 go 1.23.0
 
-replace github.com/knqyf263/go-rpmdb v0.0.0-facee9e1ddaf => ./go-rpmdb
+replace github.com/knqyf263/go-rpmdb v0.1.1 => ./go-rpmdb
 
 require (
 	github.com/NeowayLabs/drm v0.0.0-20190824133025-4939fc0ad345
@@ -15,7 +15,7 @@ require (
 	github.com/itchyny/gojq v0.12.16
 	github.com/jaypipes/ghw v0.13.0
 	github.com/jollaman999/utils v1.0.10
-	github.com/knqyf263/go-rpmdb v0.0.0-facee9e1ddaf
+	github.com/knqyf263/go-rpmdb v0.1.1
 	github.com/kumako/go-win64api v0.0.0-20200829071356-ddc2195639e5
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/mittwald/go-helm-client v0.12.14
