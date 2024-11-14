@@ -4,7 +4,7 @@ MODULE_NAME := "cm-honeybee-agent"
 PROJECT_NAME := "github.com/cloud-barista/cm-honeybee/agent"
 PKG_LIST := $(shell go list ${PROJECT_NAME}/... 2>&1)
 
-GOPROXY_OPTION := GOPROXY=direct GOSUMDB=off
+GOPROXY_OPTION := GOPROXY=direct GOSUMDB=sum.golang.org GONOSUMDB=*,!golang.org/toolchain
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
