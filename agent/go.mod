@@ -25,7 +25,7 @@ require (
 	github.com/taigrr/systemctl v1.0.7
 	github.com/ulikunitz/xz v0.5.12
 	github.com/vishvananda/netlink v1.3.0
-	github.com/yumaojun03/dmidecode v0.1.4
+	github.com/yumaojun03/dmidecode v0.1.5-0.20231113021359-c053d91d9679
 	golang.org/x/sys v0.27.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.16.2
