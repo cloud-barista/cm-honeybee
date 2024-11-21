@@ -2814,6 +2814,35 @@ const docTemplate = `{
                 }
             }
         },
+        "inframodel.FirewallRuleProperty": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "description": "allow, deny",
+                    "type": "string"
+                },
+                "direction": {
+                    "description": "inbound, outbound",
+                    "type": "string"
+                },
+                "dstCIDR": {
+                    "type": "string"
+                },
+                "dstPorts": {
+                    "type": "string"
+                },
+                "protocol": {
+                    "description": "TCP, UDP, ICMP",
+                    "type": "string"
+                },
+                "srcCIDR": {
+                    "type": "string"
+                },
+                "srcPorts": {
+                    "type": "string"
+                }
+            }
+        },
         "inframodel.MemoryProperty": {
             "type": "object",
             "required": [
@@ -3012,6 +3041,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/inframodel.DiskProperty"
+                    }
+                },
+                "firewallRules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/inframodel.FirewallRuleProperty"
                     }
                 },
                 "hostname": {

@@ -90,6 +90,20 @@ func doGetRefinedInfraInfo(connID string) (*inframodel.ServerProperty, error) {
 		})
 	}
 
+	var firewallRules []inframodel.FirewallRuleProperty
+
+	for _, firewall := range infraInfo.Network.Host.FirewallRule {
+		firewallRules = append(firewallRules, inframodel.FirewallRuleProperty{
+			SrcCIDR:   firewall.Src,
+			DstCIDR:   firewall.Dst,
+			SrcPorts:  firewall.SrcPorts,
+			DstPorts:  firewall.DstPorts,
+			Protocol:  firewall.Protocol,
+			Direction: firewall.Direction,
+			Action:    firewall.Action,
+		})
+	}
+
 	refinedInfraInfo := inframodel.ServerProperty{
 		Hostname: infraInfo.Compute.OS.Node.Hostname,
 		CPU: inframodel.CpuProperty{
@@ -114,9 +128,10 @@ func doGetRefinedInfraInfo(connID string) (*inframodel.ServerProperty, error) {
 			Available: uint64(infraInfo.Compute.ComputeResource.RootDisk.Available), // GiB
 			Used:      uint64(infraInfo.Compute.ComputeResource.RootDisk.Used),      // GiB
 		},
-		DataDisks:    dataDisks,
-		Interfaces:   interfaces,
-		RoutingTable: routingTable,
+		DataDisks:     dataDisks,
+		Interfaces:    interfaces,
+		RoutingTable:  routingTable,
+		FirewallRules: firewallRules,
 		OS: inframodel.OsProperty{
 			PrettyName:      infraInfo.Compute.OS.OS.PrettyName,
 			Version:         infraInfo.Compute.OS.OS.Version,

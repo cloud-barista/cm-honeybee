@@ -630,6 +630,26 @@ definitions:
     - totalSize
     - type
     type: object
+  inframodel.FirewallRuleProperty:
+    properties:
+      action:
+        description: allow, deny
+        type: string
+      direction:
+        description: inbound, outbound
+        type: string
+      dstCIDR:
+        type: string
+      dstPorts:
+        type: string
+      protocol:
+        description: TCP, UDP, ICMP
+        type: string
+      srcCIDR:
+        type: string
+      srcPorts:
+        type: string
+    type: object
   inframodel.MemoryProperty:
     properties:
       available:
@@ -771,6 +791,10 @@ definitions:
       dataDisks:
         items:
           $ref: '#/definitions/inframodel.DiskProperty'
+        type: array
+      firewallRules:
+        items:
+          $ref: '#/definitions/inframodel.FirewallRuleProperty'
         type: array
       hostname:
         type: string
