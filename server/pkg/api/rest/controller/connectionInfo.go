@@ -133,9 +133,7 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 	}
 
 	if refresh {
-		c := &ssh.SSH{
-			Options: ssh.DefaultSSHOptions(),
-		}
+		c := &ssh.SSH{}
 
 		err = c.NewClientConn(*connectionInfo)
 		if err != nil {

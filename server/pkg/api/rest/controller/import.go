@@ -37,9 +37,7 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 		oldSavedInfraInfo = savedInfraInfo
 	}
 
-	s := &ssh.SSH{
-		Options: ssh.DefaultSSHOptions(),
-	}
+	s := &ssh.SSH{}
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/infra")
 	if err != nil {
 		oldSavedInfraInfo.Status = "failed"
@@ -50,7 +48,7 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 		return nil, errors.New(errMsg)
 	}
 
-	oldSavedInfraInfo.InfraData = string(data)
+	oldSavedInfraInfo.InfraData = data
 	oldSavedInfraInfo.Status = "success"
 	oldSavedInfraInfo.SavedTime = time.Now()
 	err = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
@@ -88,9 +86,7 @@ func doImportSoftware(connID string, showDefaultPackages bool) (*model.SavedSoft
 		oldSavedSoftwareInfo = savedSoftwareInfo
 	}
 
-	s := &ssh.SSH{
-		Options: ssh.DefaultSSHOptions(),
-	}
+	s := &ssh.SSH{}
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/software?show_default_packages="+strconv.FormatBool(showDefaultPackages))
 	if err != nil {
 		oldSavedSoftwareInfo.Status = "failed"
@@ -139,9 +135,7 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 		oldSavedKubernetesInfo = savedKubernetesInfo
 	}
 
-	s := &ssh.SSH{
-		Options: ssh.DefaultSSHOptions(),
-	}
+	s := &ssh.SSH{}
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/kubernetes")
 	if err != nil {
 		oldSavedKubernetesInfo.Status = "failed"
@@ -152,7 +146,7 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 		return nil, errors.New(errMsg)
 	}
 
-	oldSavedKubernetesInfo.KubernetesData = string(data)
+	oldSavedKubernetesInfo.KubernetesData = data
 	oldSavedKubernetesInfo.Status = "success"
 	oldSavedKubernetesInfo.SavedTime = time.Now()
 	err = dao.SavedKubernetesInfoUpdate(oldSavedKubernetesInfo)
@@ -190,9 +184,7 @@ func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
 		oldSavedHelmInfo = savedHelmInfo
 	}
 
-	s := &ssh.SSH{
-		Options: ssh.DefaultSSHOptions(),
-	}
+	s := &ssh.SSH{}
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/helm")
 	if err != nil {
 		oldSavedHelmInfo.Status = "failed"
@@ -203,7 +195,7 @@ func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
 		return nil, errors.New(errMsg)
 	}
 
-	oldSavedHelmInfo.HelmData = string(data)
+	oldSavedHelmInfo.HelmData = data
 	oldSavedHelmInfo.Status = "success"
 	oldSavedHelmInfo.SavedTime = time.Now()
 	err = dao.SavedHelmInfoUpdate(oldSavedHelmInfo)

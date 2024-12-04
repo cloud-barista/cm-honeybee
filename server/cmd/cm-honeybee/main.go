@@ -6,7 +6,6 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/lib/config"
 	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
-	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/controller"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/server"
 	"github.com/jollaman999/utils/fileutil"
@@ -47,11 +46,6 @@ func init() {
 	}
 
 	err = config.PrepareConfigs()
-	if err != nil {
-		logger.Panicln(logger.ERROR, false, err.Error())
-	}
-
-	err = ssh.GenerateSSHIdentityFile()
 	if err != nil {
 		logger.Panicln(logger.ERROR, false, err.Error())
 	}

@@ -88,9 +88,7 @@ func RunBenchmarkInfo(c echo.Context) error {
 		oldSavedBenchmarkInfo = savedBenchmarkInfo
 	}
 
-	s := &ssh.SSH{
-		Options: ssh.DefaultSSHOptions(),
-	}
+	s := &ssh.SSH{}
 
 	oldSavedBenchmarkInfo.Status = "benchmarking"
 	_ = dao.SavedBenchmarkInfoUpdate(oldSavedBenchmarkInfo)
@@ -146,9 +144,7 @@ func StopBenchmarkInfo(c echo.Context) error {
 		return common.ReturnInternalError(c, err, "Error occurred while getting benchmark information.")
 	}
 
-	s := &ssh.SSH{
-		Options: ssh.DefaultSSHOptions(),
-	}
+	s := &ssh.SSH{}
 
 	err = s.StopBenchmark(*connectionInfo)
 	if err != nil {

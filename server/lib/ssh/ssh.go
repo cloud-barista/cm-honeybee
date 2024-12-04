@@ -2,12 +2,8 @@ package ssh
 
 import (
 	"bytes"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
 	"embed"
 	"encoding/json"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"github.com/cloud-barista/cm-honeybee/server/lib/config"
@@ -19,7 +15,6 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 
 	"io"
-	"os"
 	"path/filepath"
 
 	"github.com/pkg/sftp"
@@ -38,101 +33,12 @@ type Response struct {
 }
 
 type Options struct {
-	SSHAddress               string
-	SSHPort                  int
-	SSHUsername              string
-	SSHPassword              string
-	IdentityFilePath         string
-	IdentityFilePathProvided bool
-	session                  *ssh.Session
-	client                   *ssh.Client
+	session *ssh.Session
+	client  *ssh.Client
 }
 
 //go:embed sourceFiles/*
 var sourceFiles embed.FS
-
-var homeDir string
-
-func GenerateSSHIdentityFile() error {
-	var err error
-
-	homeDir, err = os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("failed to determine user home directory: %v", err)
-	}
-	sshDir := filepath.Join(homeDir, ".ssh")
-	privateKeyPath := filepath.Join(sshDir, "id_rsa")
-	publicKeyPath := filepath.Join(sshDir, "id_rsa.pub")
-
-	_, err = os.Stat(privateKeyPath)
-	if err == nil {
-		return nil
-	}
-
-	err = os.MkdirAll(sshDir, 0700)
-	if err != nil {
-		return err
-	}
-
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return fmt.Errorf("failed to generate ssh private key file: %v", err)
-	}
-
-	privateKeyPEM := &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
-	}
-
-	privateKeyFile, err := os.OpenFile(privateKeyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-	if err != nil {
-		return fmt.Errorf("failed to generate ssh private key file: %v", err)
-	}
-	defer func() {
-		_ = privateKeyFile.Close()
-	}()
-
-	err = pem.Encode(privateKeyFile, privateKeyPEM)
-	if err != nil {
-		return fmt.Errorf("failed to store ssh private key file: %v", err)
-	}
-
-	publicKey := &privateKey.PublicKey
-	publicKeyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
-	if err != nil {
-		return fmt.Errorf("failed to generate ssh public key file: %v", err)
-	}
-
-	publicKeyPEM := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: publicKeyBytes,
-	}
-
-	publicKeyFile, err := os.OpenFile(publicKeyPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		return fmt.Errorf("failed to generate ssh public key file: %v", err)
-	}
-	defer func() {
-		_ = publicKeyFile.Close()
-	}()
-
-	err = pem.Encode(publicKeyFile, publicKeyPEM)
-	if err != nil {
-		return fmt.Errorf("failed to store ssh public key file: %v", err)
-	}
-
-	return nil
-}
-
-func DefaultSSHOptions() Options {
-	return Options{
-		SSHPort:                  22,
-		SSHUsername:              defaultUsername(),
-		SSHPassword:              "",
-		IdentityFilePath:         filepath.Join(homeDir, ".ssh", "id_rsa"),
-		IdentityFilePathProvided: false,
-	}
-}
 
 func (o *SSH) NewClientConn(connectionInfo model.ConnectionInfo) error {
 	addr := fmt.Sprintf("%s:%s", connectionInfo.IPAddress, connectionInfo.SSHPort)
@@ -443,18 +349,4 @@ func (o *SSH) Close() {
 	if o.Options.client != nil {
 		_ = o.Options.client.Close()
 	}
-}
-
-func defaultUsername() string {
-	vars := []string{
-		"USER",     // linux
-		"USERNAME", // linux, windows
-		"LOGNAME",  // linux
-	}
-	for _, env := range vars {
-		if v := os.Getenv(env); v != "" {
-			return v
-		}
-	}
-	return ""
 }
