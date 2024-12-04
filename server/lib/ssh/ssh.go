@@ -96,7 +96,9 @@ func (o *SSH) RunBenchmark(connectionInfo model.ConnectionInfo, types string) (s
 		logger.Println(logger.ERROR, true, "Failed to SFTP Connect: "+err.Error())
 		return "", err
 	}
-	defer client.Close()
+	defer func() {
+		_ = client.Close()
+	}()
 
 	dstPath := "/tmp/"
 	files := []string{"sourceFiles/milkyway", "sourceFiles/milkyway.sh"}
@@ -226,7 +228,9 @@ func (o *SSH) copyFileToSFTP(client *sftp.Client, file, dstPath string) error {
 		logger.Println(logger.ERROR, true, "SSH: Failed to create destination file: "+err.Error())
 		return err
 	}
-	defer dstFile.Close()
+	defer func() {
+		_ = dstFile.Close()
+	}()
 
 	logger.Println(logger.DEBUG, true, "SSH: Copying "+file+" to "+dstFilePath)
 	if _, err := io.Copy(dstFile, bytes.NewReader(fileContents)); err != nil {
@@ -355,7 +359,9 @@ func (o *SSH) RunCmd(cmd string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create session: %s", err)
 	}
-	defer session.Close()
+	defer func() {
+		_ = session.Close()
+	}()
 
 	var output, stderr bytes.Buffer
 	session.Stdout = &output
