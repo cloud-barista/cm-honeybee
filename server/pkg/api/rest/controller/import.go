@@ -30,7 +30,7 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 		savedInfraInfo, err = dao.SavedInfraInfoRegister(savedInfraInfo)
 		if err != nil {
 			errMsg := "Error occurred while getting infra information." +
-				" (ConnectionID = " + connectionInfo.ID + ")"
+				" (ConnectionID=" + connectionInfo.ID + ", Error=" + err.Error() + ")"
 			logger.Println(logger.ERROR, false, errMsg)
 			return nil, errors.New(errMsg)
 		}
@@ -45,7 +45,7 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 		oldSavedInfraInfo.Status = "failed"
 		_ = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
 		errMsg := "Error occurred while getting infra information." +
-			" (ConnectionID = " + connectionInfo.ID + ")"
+			" (ConnectionID=" + connectionInfo.ID + ", Error=" + err.Error() + ")"
 		logger.Println(logger.ERROR, false, errMsg)
 		return nil, errors.New(errMsg)
 	}
@@ -55,8 +55,8 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 	oldSavedInfraInfo.SavedTime = time.Now()
 	err = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
 	if err != nil {
-		errMsg := "Error occurred while saving the infra information." +
-			" (ConnectionID = " + connectionInfo.ID + ")"
+		errMsg := "Error occurred while getting infra information." +
+			" (ConnectionID=" + connectionInfo.ID + ", Error=" + err.Error() + ")"
 		logger.Println(logger.ERROR, false, errMsg)
 		return nil, errors.New(errMsg)
 	}
@@ -287,7 +287,10 @@ func ImportInfraSourceGroup(c echo.Context) error {
 	var savedInfraInfoList []model.SavedInfraInfo
 
 	for _, conn := range *list {
-		savedInfraInfo, _ := doImportInfra(conn.ID)
+		savedInfraInfo, err := doImportInfra(conn.ID)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
 		savedInfraInfoList = append(savedInfraInfoList, *savedInfraInfo)
 	}
 
