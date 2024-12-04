@@ -125,14 +125,54 @@ func (o *SSH) runBenchmarkCommand(cmd string, BenchmarkList *[]model.Benchmark, 
 	}
 	logger.Println(logger.DEBUG, true, "SSH: Benchmark Output: "+output)
 
-	var response Response
-	if err := json.Unmarshal([]byte(output), &response); err != nil {
-		logger.Println(logger.DEBUG, true, "Failed to unmarshal output", err)
-		return err
+	// Find the first complete JSON object
+	var firstJSON string
+	braceCount := 0
+	inQuotes := false
+	escapeNext := false
+
+	for _, char := range output {
+		if escapeNext {
+			escapeNext = false
+			firstJSON += string(char)
+			continue
+		}
+
+		switch char {
+		case '\\':
+			escapeNext = true
+			firstJSON += string(char)
+		case '"':
+			inQuotes = !inQuotes
+			firstJSON += string(char)
+		case '{':
+			if !inQuotes {
+				braceCount++
+			}
+			firstJSON += string(char)
+		case '}':
+			if !inQuotes {
+				braceCount--
+				if braceCount == 0 {
+					firstJSON += string(char)
+					// Found complete JSON object
+					var response Response
+					if err := json.Unmarshal([]byte(firstJSON), &response); err != nil {
+						logger.Println(logger.DEBUG, true, "Failed to unmarshal output", err)
+						return err
+					}
+
+					*BenchmarkList = append(*BenchmarkList, model.Benchmark{Type: t, Data: response.Data})
+					return nil
+				}
+			}
+			firstJSON += string(char)
+		default:
+			firstJSON += string(char)
+		}
 	}
 
-	*BenchmarkList = append(*BenchmarkList, model.Benchmark{Type: t, Data: response.Data})
-	return nil
+	return fmt.Errorf("no valid JSON object found in output")
 }
 
 func (o *SSH) StopBenchmark(connectionInfo model.ConnectionInfo) error {
