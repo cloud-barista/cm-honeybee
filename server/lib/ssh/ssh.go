@@ -382,37 +382,27 @@ func (o *SSH) CheckKubernetes(connectionInfo model.ConnectionInfo) (bool, error)
 func (o *SSH) getAuthMethods(connectionInfo model.ConnectionInfo) []ssh.AuthMethod {
 	var methods []ssh.AuthMethod
 
-	methods = o.tryPrivateKey(methods)
+	if connectionInfo.PrivateKey != "" && connectionInfo.PrivateKey != "-" {
+		methods = o.tryPrivateKey(methods, connectionInfo)
+	}
 
-	methods = append(methods, ssh.PasswordCallback(func() (secret string, err error) {
-		return connectionInfo.Password, nil
-	}))
+	if connectionInfo.Password != "" {
+		methods = append(methods, ssh.PasswordCallback(func() (secret string, err error) {
+			return connectionInfo.Password, nil
+		}))
+	}
 
 	return methods
 }
 
-func (o *SSH) tryPrivateKey(methods []ssh.AuthMethod) []ssh.AuthMethod {
-
-	if !o.Options.IdentityFilePathProvided {
-		if _, err := os.Stat(o.Options.IdentityFilePath); errors.Is(err, os.ErrNotExist) {
-			fmt.Printf("No ssh key at the default location %q found, skipping RSA authentication.\n", o.Options.IdentityFilePath)
-			return methods
-		}
-	}
-
+func (o *SSH) tryPrivateKey(methods []ssh.AuthMethod, connectionInfo model.ConnectionInfo) []ssh.AuthMethod {
 	callback := ssh.PublicKeysCallback(func() (signers []ssh.Signer, err error) {
-		key, err := os.ReadFile(o.Options.IdentityFilePath)
-		if err != nil {
-			return nil, err
-		}
+		privateKey := strings.ReplaceAll(connectionInfo.PrivateKey, "\\n", "\n")
+		key := []byte(privateKey)
 
 		signer, err := ssh.ParsePrivateKey(key)
-		var passphraseMissingError *ssh.PassphraseMissingError
-		isPassErr := errors.As(err, &passphraseMissingError)
-		if isPassErr {
-			signer, err = o.parsePrivateKeyWithPassphrase(key)
-		}
 		if err != nil {
+			logger.Println(logger.ERROR, true, "Failed to parse private key: ", err)
 			return nil, err
 		}
 
@@ -420,10 +410,6 @@ func (o *SSH) tryPrivateKey(methods []ssh.AuthMethod) []ssh.AuthMethod {
 	})
 
 	return append(methods, callback)
-}
-
-func (o *SSH) parsePrivateKeyWithPassphrase(key []byte) (ssh.Signer, error) {
-	return ssh.ParsePrivateKeyWithPassphrase(key, []byte{})
 }
 
 // RunCmd to SSH Server
