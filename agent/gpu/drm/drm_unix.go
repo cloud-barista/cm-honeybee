@@ -5,6 +5,7 @@
 package drm
 
 import (
+	"errors"
 	"github.com/NeowayLabs/drm"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/jollaman999/utils/logger"
@@ -14,8 +15,10 @@ import (
 func GetDRMInfo() ([]infra.DRM, error) {
 	versions := drm.ListDevices()
 	if len(versions) == 0 {
-		logger.Println(logger.DEBUG, true, "DRM: DRM is not available.")
-		return []infra.DRM{}, nil
+		errMsg := "DRM: DRM is not available."
+		logger.Println(logger.DEBUG, true, errMsg)
+
+		return []infra.DRM{}, errors.New(errMsg)
 	}
 
 	var d []infra.DRM

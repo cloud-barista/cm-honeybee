@@ -356,6 +356,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.DRM"
                     }
                 },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "nvidia": {
                     "type": "array",
                     "items": {

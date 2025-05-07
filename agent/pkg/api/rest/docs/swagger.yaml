@@ -104,6 +104,10 @@ definitions:
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.DRM'
         type: array
+      errors:
+        items:
+          type: string
+        type: array
       nvidia:
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIA'

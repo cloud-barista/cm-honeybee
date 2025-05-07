@@ -34,4 +34,5 @@ type DRM struct {
 type GPU struct {
 	NVIDIA []NVIDIA `json:"nvidia"`
 	DRM    []DRM    `json:"drm"`
+	Errors []string `json:"errors"`
 }

@@ -2,6 +2,7 @@ package nvidia
 
 import (
 	"encoding/xml"
+	"errors"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/jollaman999/utils/logger"
 	"strconv"
@@ -13,7 +14,7 @@ func QueryGPU() ([]infra.NVIDIA, error) {
 		errMsg := "NVIDIA: nvidia-smi command is not available"
 		logger.Println(logger.DEBUG, false, errMsg)
 
-		return []infra.NVIDIA{}, nil
+		return []infra.NVIDIA{}, errors.New(errMsg)
 	}
 
 	output, err := runNVIDIASmi("-q -x")
