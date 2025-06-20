@@ -58,7 +58,7 @@ jobs:
           go-version: ${{matrix.go-version}}
 
       - name: Build
-        run: cd agent/ && make
+        run: cd agent/ && make build-only
 
   # The job key (i.e., ID) is "build-server-source-code"
   build-server-source-code:
@@ -77,7 +77,7 @@ jobs:
         with:
           go-version: ${{matrix.go-version}}
       - name: Build
-        run: cd server/ && make
+        run: cd server/ && make build-only
 
   # The job key is "build-server-container-image"
   build-server-container-image:
