@@ -1,8 +1,10 @@
 package software
 
-import "github.com/docker/docker/api/types"
+import (
+	"github.com/docker/docker/api/types/container"
+)
 
 type Podman struct {
-	Containers []types.Container
+	Containers []container.Summary
 	//Images     []types.ImageMetadata
 }

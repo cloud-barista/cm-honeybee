@@ -15,7 +15,7 @@ import (
 func GetDRMInfo() ([]infra.DRM, error) {
 	versions := drm.ListDevices()
 	if len(versions) == 0 {
-		errMsg := "DRM: DRM is not available."
+		errMsg := "drm: DRM is not available"
 		logger.Println(logger.DEBUG, true, errMsg)
 
 		return []infra.DRM{}, errors.New(errMsg)

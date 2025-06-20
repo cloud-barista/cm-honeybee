@@ -40,20 +40,21 @@ func getOSProperties() (infra.OS, error) {
 			continue
 		}
 		name := strings.TrimSpace(split[0])
-		value := strings.Replace(strings.TrimSpace(split[1]), "\"", "", -1)
-		if name == "PRETTY_NAME" {
+		value := strings.ReplaceAll(strings.TrimSpace(split[1]), "\"", "")
+		switch name {
+		case "PRETTY_NAME":
 			OS.PrettyName = value
-		} else if name == "NAME" {
+		case "NAME":
 			OS.Name = value
-		} else if name == "VERSION_ID" {
+		case "VERSION_ID":
 			OS.VersionID = value
-		} else if name == "VERSION" {
+		case "VERSION":
 			OS.Version = value
-		} else if name == "VERSION_CODENAME" {
+		case "VERSION_CODENAME":
 			OS.VersionCodename = value
-		} else if name == "ID" {
+		case "ID":
 			OS.ID = value
-		} else if name == "ID_LIKE" {
+		case "ID_LIKE":
 			OS.IDLike = value
 		}
 	}

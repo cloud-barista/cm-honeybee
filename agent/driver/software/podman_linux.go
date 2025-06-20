@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/jollaman999/utils/cmd"
@@ -69,7 +68,7 @@ func getPodmanSocketPath() (string, error) {
 func newPodmanClient() (*client.Client, error) {
 	err := checkPodman()
 	if err != nil {
-		errMsg := "Podman not found."
+		errMsg := "podman not found"
 		logger.Println(logger.DEBUG, true, "PODMAN: "+errMsg)
 		return nil, errors.New(errMsg)
 	}
@@ -108,15 +107,15 @@ func newPodmanClient() (*client.Client, error) {
 	return cli, nil
 }
 
-func GetPodmanContainers() ([]types.Container, error) {
+func GetPodmanContainers() ([]container.Summary, error) {
 	cli, err := newPodmanClient()
 	if err != nil {
-		return []types.Container{}, err
+		return []container.Summary{}, err
 	}
 
 	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
-		return []types.Container{}, err
+		return []container.Summary{}, err
 	}
 
 	return containers, nil

@@ -67,7 +67,7 @@ func (t *TargetInfo) Scan(value interface{}) error {
 	}
 	bytes, ok := value.([]byte)
 	if !ok {
-		return errors.New("Invalid type for TargetInfo")
+		return errors.New("invalid type for TargetInfo")
 	}
 	return json.Unmarshal(bytes, t)
 }
@@ -82,7 +82,7 @@ func (c *ConnectionInfoStatusCount) Scan(value interface{}) error {
 	}
 	bytes, ok := value.([]byte)
 	if !ok {
-		return errors.New("Invalid type for ConnectionInfoStatusCount")
+		return errors.New("invalid type for ConnectionInfoStatusCount")
 	}
 	return json.Unmarshal(bytes, c)
 }

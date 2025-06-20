@@ -32,19 +32,19 @@ func QueryGPU() ([]infra.NVIDIA, error) {
 	var nvidia []infra.NVIDIA
 
 	for _, gpu := range nvidiaSMILog.Gpu {
-		gpuUsage, _ := strconv.Atoi(strings.Replace(strings.Replace(strings.ToLower(gpu.Utilization.GpuUtil),
-			"%", "", -1), " ", "", -1))
+		gpuUsage, _ := strconv.Atoi(strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(gpu.Utilization.GpuUtil),
+			"%", ""), " ", ""))
 
-		fbMemoryUsed, _ := strconv.Atoi(strings.Replace(strings.Replace(strings.ToLower(gpu.FbMemoryUsage.Used),
-			"mib", "", -1), " ", "", -1))
-		fbMemoryTotal, _ := strconv.Atoi(strings.Replace(strings.Replace(strings.ToLower(gpu.FbMemoryUsage.Total),
-			"mib", "", -1), " ", "", -1))
+		fbMemoryUsed, _ := strconv.Atoi(strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(gpu.FbMemoryUsage.Used),
+			"mib", ""), " ", ""))
+		fbMemoryTotal, _ := strconv.Atoi(strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(gpu.FbMemoryUsage.Total),
+			"mib", ""), " ", ""))
 		fBMemoryUsage := float32(fbMemoryUsed) / float32(fbMemoryTotal) * 100
 
-		bar1MemoryUsed, _ := strconv.Atoi(strings.Replace(strings.Replace(strings.ToLower(gpu.Bar1MemoryUsage.Used),
-			"mib", "", -1), " ", "", -1))
-		bar1MemoryTotal, _ := strconv.Atoi(strings.Replace(strings.Replace(strings.ToLower(gpu.Bar1MemoryUsage.Total),
-			"mib", "", -1), " ", "", -1))
+		bar1MemoryUsed, _ := strconv.Atoi(strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(gpu.Bar1MemoryUsage.Used),
+			"mib", ""), " ", ""))
+		bar1MemoryTotal, _ := strconv.Atoi(strings.ReplaceAll(strings.ReplaceAll(strings.ToLower(gpu.Bar1MemoryUsage.Total),
+			"mib", ""), " ", ""))
 		bar1MemoryUsage := float32(bar1MemoryUsed) / float32(bar1MemoryTotal) * 100
 
 		nv := infra.NVIDIA{

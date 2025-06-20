@@ -27,11 +27,12 @@ func parseIptablesRules(ipt *iptables.IPTables, rules []string, prevPriority *ui
 					skip = true
 				case "-j":
 					jump := strings.ToLower(ruleSplited[i+1])
-					if jump == "accept" {
+					switch jump {
+					case "accept":
 						fwRule.Action = "allow"
-					} else if jump == "drop" || jump == "deny" {
+					case "drop", "deny":
 						fwRule.Action = "deny"
-					} else {
+					default:
 						subRules, err := ipt.List("filter", ruleSplited[i+1])
 						if err != nil {
 							logger.Println(logger.DEBUG, true, "FIREWALL: "+err.Error())
@@ -41,7 +42,6 @@ func parseIptablesRules(ipt *iptables.IPTables, rules []string, prevPriority *ui
 						fwSubRules := parseIptablesRules(ipt, subRules, prevPriority, direction)
 						fwRules = append(fwRules, fwSubRules...)
 						skip = true
-						break
 					}
 				case "-s":
 					fwRule.Src = ruleSplited[i+1]

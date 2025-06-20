@@ -3,3 +3,5 @@ linters:
   disable:
     - contextcheck
     - revive
+run:
+  timeout: 30m

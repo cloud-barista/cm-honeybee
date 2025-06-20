@@ -2,7 +2,6 @@ package software
 
 import (
 	"context"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/jollaman999/utils/logger"
@@ -24,31 +23,31 @@ func isRealDocker(cli *client.Client) (bool, error) {
 	return false, nil
 }
 
-func GetDockerContainers() ([]types.Container, error) {
+func GetDockerContainers() ([]container.Summary, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		logger.Println(logger.DEBUG, true, "DOCKER: "+err.Error())
-		return []types.Container{}, err
+		return []container.Summary{}, err
 	}
 	cli.NegotiateAPIVersion(ctx)
 
 	yes, err := isRealDocker(cli)
 	if err != nil {
 		logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
-		return []types.Container{}, err
+		return []container.Summary{}, err
 	}
 	if !yes {
 		logger.Println(logger.INFO, true, "DOCKER: Docker not found.")
-		return []types.Container{}, nil
+		return []container.Summary{}, nil
 	}
 
 	containers, err := cli.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
 		logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
-		return []types.Container{}, err
+		return []container.Summary{}, err
 	}
 
 	return containers, nil

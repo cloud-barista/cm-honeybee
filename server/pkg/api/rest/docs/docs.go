@@ -1884,6 +1884,113 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "container.ContainerState": {
+            "type": "string",
+            "enum": [
+                "created",
+                "running",
+                "paused",
+                "restarting",
+                "removing",
+                "exited",
+                "dead"
+            ],
+            "x-enum-comments": {
+                "StateCreated": "StateCreated indicates the container is created, but not (yet) started.",
+                "StateDead": "StateDead indicates that the container failed to be deleted. Containers in this state are attempted to be cleaned up when the daemon restarts.",
+                "StateExited": "StateExited indicates that the container exited.",
+                "StatePaused": "StatePaused indicates that the container's current state is paused.",
+                "StateRemoving": "StateRemoving indicates that the container is being removed.",
+                "StateRestarting": "StateRestarting indicates that the container is currently restarting.",
+                "StateRunning": "StateRunning indicates that the container is running."
+            },
+            "x-enum-varnames": [
+                "StateCreated",
+                "StateRunning",
+                "StatePaused",
+                "StateRestarting",
+                "StateRemoving",
+                "StateExited",
+                "StateDead"
+            ]
+        },
+        "container.MountPoint": {
+            "type": "object",
+            "properties": {
+                "destination": {
+                    "description": "Destination is the path relative to the container root (` + "`" + `/` + "`" + `) where the\nSource is mounted inside the container.",
+                    "type": "string"
+                },
+                "driver": {
+                    "description": "Driver is the volume driver used to create the volume (if it is a volume).",
+                    "type": "string"
+                },
+                "mode": {
+                    "description": "Mode is a comma separated list of options supplied by the user when\ncreating the bind/volume mount.\n\nThe default is platform-specific (` + "`" + `\"z\"` + "`" + ` on Linux, empty on Windows).",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Name is the name reference to the underlying data defined by ` + "`" + `Source` + "`" + `\ne.g., the volume name.",
+                    "type": "string"
+                },
+                "propagation": {
+                    "description": "Propagation describes how mounts are propagated from the host into the\nmount point, and vice-versa. Refer to the Linux kernel documentation\nfor details:\nhttps://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt\n\nThis field is not used on Windows.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mount.Propagation"
+                        }
+                    ]
+                },
+                "rw": {
+                    "description": "RW indicates whether the mount is mounted writable (read-write).",
+                    "type": "boolean"
+                },
+                "source": {
+                    "description": "Source is the source location of the mount.\n\nFor volumes, this contains the storage location of the volume (within\n` + "`" + `/var/lib/docker/volumes/` + "`" + `). For bind-mounts, and ` + "`" + `npipe` + "`" + `, this contains\nthe source (host) part of the bind-mount. For ` + "`" + `tmpfs` + "`" + ` mount points, this\nfield is empty.",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "Type is the type of mount, see ` + "`" + `Type\u003cfoo\u003e` + "`" + ` definitions in\ngithub.com/docker/docker/api/types/mount.Type",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/mount.Type"
+                        }
+                    ]
+                }
+            }
+        },
+        "container.NetworkSettingsSummary": {
+            "type": "object",
+            "properties": {
+                "networks": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/network.EndpointSettings"
+                    }
+                }
+            }
+        },
+        "container.Port": {
+            "type": "object",
+            "properties": {
+                "IP": {
+                    "description": "Host IP address that the container's port is mapped to",
+                    "type": "string"
+                },
+                "PrivatePort": {
+                    "description": "Port on the container\nRequired: true",
+                    "type": "integer"
+                },
+                "PublicPort": {
+                    "description": "Port exposed on the host",
+                    "type": "integer"
+                },
+                "Type": {
+                    "description": "type\nRequired: true",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -2480,6 +2587,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/infra.DRM"
+                    }
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 },
                 "nvidia": {
@@ -3179,14 +3292,16 @@ const docTemplate = `{
                 "volume",
                 "tmpfs",
                 "npipe",
-                "cluster"
+                "cluster",
+                "image"
             ],
             "x-enum-varnames": [
                 "TypeBind",
                 "TypeVolume",
                 "TypeTmpfs",
                 "TypeNamedPipe",
-                "TypeCluster"
+                "TypeCluster",
+                "TypeImage"
             ]
         },
         "network.CSP": {
@@ -3277,6 +3392,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "globalIPv6PrefixLen": {
+                    "type": "integer"
+                },
+                "gwPriority": {
+                    "description": "GwPriority determines which endpoint will provide the default gateway\nfor the container. The endpoint with the highest priority will be used.\nIf multiple endpoints have the same priority, they are lexicographically\nsorted based on their network name, and the one that sorts first is picked.",
                     "type": "integer"
                 },
                 "ipaddress": {
@@ -3674,6 +3793,9 @@ const docTemplate = `{
                 "Id": {
                     "type": "string"
                 },
+                "ImageManifestDescriptor": {
+                    "$ref": "#/definitions/v1.Descriptor"
+                },
                 "command": {
                     "type": "string"
                 },
@@ -3709,7 +3831,7 @@ const docTemplate = `{
                 "mounts": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.MountPoint"
+                        "$ref": "#/definitions/container.MountPoint"
                     }
                 },
                 "names": {
@@ -3719,12 +3841,12 @@ const docTemplate = `{
                     }
                 },
                 "networkSettings": {
-                    "$ref": "#/definitions/types.SummaryNetworkSettings"
+                    "$ref": "#/definitions/container.NetworkSettingsSummary"
                 },
                 "ports": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.Port"
+                        "$ref": "#/definitions/container.Port"
                     }
                 },
                 "sizeRootFs": {
@@ -3734,87 +3856,88 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "state": {
-                    "type": "string"
+                    "$ref": "#/definitions/container.ContainerState"
                 },
                 "status": {
                     "type": "string"
                 }
             }
         },
-        "types.MountPoint": {
+        "v1.Descriptor": {
             "type": "object",
             "properties": {
-                "destination": {
-                    "description": "Destination is the path relative to the container root (` + "`" + `/` + "`" + `) where the\nSource is mounted inside the container.",
-                    "type": "string"
-                },
-                "driver": {
-                    "description": "Driver is the volume driver used to create the volume (if it is a volume).",
-                    "type": "string"
-                },
-                "mode": {
-                    "description": "Mode is a comma separated list of options supplied by the user when\ncreating the bind/volume mount.\n\nThe default is platform-specific (` + "`" + `\"z\"` + "`" + ` on Linux, empty on Windows).",
-                    "type": "string"
-                },
-                "name": {
-                    "description": "Name is the name reference to the underlying data defined by ` + "`" + `Source` + "`" + `\ne.g., the volume name.",
-                    "type": "string"
-                },
-                "propagation": {
-                    "description": "Propagation describes how mounts are propagated from the host into the\nmount point, and vice-versa. Refer to the Linux kernel documentation\nfor details:\nhttps://www.kernel.org/doc/Documentation/filesystems/sharedsubtree.txt\n\nThis field is not used on Windows.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mount.Propagation"
-                        }
-                    ]
-                },
-                "rw": {
-                    "description": "RW indicates whether the mount is mounted writable (read-write).",
-                    "type": "boolean"
-                },
-                "source": {
-                    "description": "Source is the source location of the mount.\n\nFor volumes, this contains the storage location of the volume (within\n` + "`" + `/var/lib/docker/volumes/` + "`" + `). For bind-mounts, and ` + "`" + `npipe` + "`" + `, this contains\nthe source (host) part of the bind-mount. For ` + "`" + `tmpfs` + "`" + ` mount points, this\nfield is empty.",
-                    "type": "string"
-                },
-                "type": {
-                    "description": "Type is the type of mount, see ` + "`" + `Type\u003cfoo\u003e` + "`" + ` definitions in\ngithub.com/docker/docker/api/types/mount.Type",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/mount.Type"
-                        }
-                    ]
-                }
-            }
-        },
-        "types.Port": {
-            "type": "object",
-            "properties": {
-                "IP": {
-                    "description": "Host IP address that the container's port is mapped to",
-                    "type": "string"
-                },
-                "PrivatePort": {
-                    "description": "Port on the container\nRequired: true",
-                    "type": "integer"
-                },
-                "PublicPort": {
-                    "description": "Port exposed on the host",
-                    "type": "integer"
-                },
-                "Type": {
-                    "description": "type\nRequired: true",
-                    "type": "string"
-                }
-            }
-        },
-        "types.SummaryNetworkSettings": {
-            "type": "object",
-            "properties": {
-                "networks": {
+                "annotations": {
+                    "description": "Annotations contains arbitrary metadata relating to the targeted content.",
                     "type": "object",
                     "additionalProperties": {
-                        "$ref": "#/definitions/network.EndpointSettings"
+                        "type": "string"
                     }
+                },
+                "artifactType": {
+                    "description": "ArtifactType is the IANA media type of this artifact.",
+                    "type": "string"
+                },
+                "data": {
+                    "description": "Data is an embedding of the targeted content. This is encoded as a base64\nstring when marshalled to JSON (automatically, by encoding/json). If\npresent, Data can be used directly to avoid fetching the targeted content.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "digest": {
+                    "description": "Digest is the digest of the targeted content.",
+                    "type": "string"
+                },
+                "mediaType": {
+                    "description": "MediaType is the media type of the object this schema refers to.",
+                    "type": "string"
+                },
+                "platform": {
+                    "description": "Platform describes the platform which the image in the manifest runs on.\n\nThis should only be used when referring to a manifest.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1.Platform"
+                        }
+                    ]
+                },
+                "size": {
+                    "description": "Size specifies the size in bytes of the blob.",
+                    "type": "integer"
+                },
+                "urls": {
+                    "description": "URLs specifies a list of URLs from which this object MAY be downloaded",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "v1.Platform": {
+            "type": "object",
+            "properties": {
+                "architecture": {
+                    "description": "Architecture field specifies the CPU architecture, for example\n` + "`" + `amd64` + "`" + ` or ` + "`" + `ppc64le` + "`" + `.",
+                    "type": "string"
+                },
+                "os": {
+                    "description": "OS specifies the operating system, for example ` + "`" + `linux` + "`" + ` or ` + "`" + `windows` + "`" + `.",
+                    "type": "string"
+                },
+                "os.features": {
+                    "description": "OSFeatures is an optional field specifying an array of strings,\neach listing a required OS feature (for example on Windows ` + "`" + `win32k` + "`" + `).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "os.version": {
+                    "description": "OSVersion is an optional field specifying the operating system\nversion, for example on Windows ` + "`" + `10.0.14393.1066` + "`" + `.",
+                    "type": "string"
+                },
+                "variant": {
+                    "description": "Variant is an optional field specifying a variant of the CPU, for\nexample ` + "`" + `v7` + "`" + ` to specify ARMv7 when architecture is ` + "`" + `arm` + "`" + `.",
+                    "type": "string"
                 }
             }
         }
