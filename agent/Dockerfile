@@ -14,7 +14,7 @@ RUN git config --global user.name "ish-hcc"
 RUN git init
 RUN git commit --allow-empty -m "a commit for the build"
 
-RUN make
+RUN make build-only
 
 FROM alpine:3.20.1 as prod
 
