@@ -12,7 +12,7 @@ lint: ## Lint the files
 	@"$(MAKE)" -C ./agent lint
 	@"$(MAKE)" -C ./server lint
 
-test: ## Run unittests
+test: ## Run unit tests
 	@"$(MAKE)" -C ./agent test
 	@"$(MAKE)" -C ./server test
 
@@ -40,35 +40,39 @@ swag swagger: ## Generate Swagger Documentation
 	@"$(MAKE)" -C ./agent swag
 	@"$(MAKE)" -C ./server swag
 
-build: ## Build the binary file
+build: ## Build binary files
 	@"$(MAKE)" -C ./agent build
 	@"$(MAKE)" -C ./server build
 
-linux: ## Build the binary file for Linux
+build-only: ## Build binary files without running linter
+	@"$(MAKE)" -C ./agent build-only
+	@"$(MAKE)" -C ./server build-only
+
+linux: ## Build binary files for Linux
 	@"$(MAKE)" -C ./agent linux
 	@"$(MAKE)" -C ./server linux
 
-windows: ## Build the binary file for Windows
+windows: ## Build binary files for Windows
 	@"$(MAKE)" -C ./agent windows
 	@"$(MAKE)" -C ./server windows
 
-run: ## Run the built binary
+run: ## Run built binaries
 	@"$(MAKE)" -C ./agent run
 	@"$(MAKE)" -C ./server run
 
-run_docker: ## Run the built binary within Docker
+run_docker: ## Run built binaries within Docker
 	@"$(MAKE)" -C ./agent run_docker
 	@"$(MAKE)" -C ./server run_docker
 
-stop: ## Stop the built binary
+stop: ## Stop built binaries
 	@"$(MAKE)" -C ./agent stop
 	@"$(MAKE)" -C ./server stop
 
-stop_docker: ## Stop the Docker container
+stop_docker: ## Stop Docker containers
 	@"$(MAKE)" -C ./agent stop_docker
 	@"$(MAKE)" -C ./server stop_docker
 
-clean: ## Remove previous build
+clean: ## Remove previous builds
 	@"$(MAKE)" -C ./agent clean
 	@"$(MAKE)" -C ./server clean
 
