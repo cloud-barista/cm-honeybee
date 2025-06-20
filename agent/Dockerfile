@@ -18,7 +18,7 @@ RUN make build-only
 
 FROM alpine:3.20.1 as prod
 
-RUN apk --no-cache add tzdata iptables podman
+RUN apk --no-cache add tzdata iptables nftables podman
 RUN echo "Asia/Seoul" >  /etc/timezone
 RUN cp -f /usr/share/zoneinfo/Asia/Seoul /etc/localtime
 
