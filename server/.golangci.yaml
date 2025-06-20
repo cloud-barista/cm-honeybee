@@ -1,0 +1,7 @@
+version: "2"
+linters:
+  disable:
+    - contextcheck
+    - revive
+run:
+  timeout: 30m
