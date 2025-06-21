@@ -8,7 +8,7 @@ GOPROXY_OPTION := GOPROXY=direct
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all milkyway dependency lint test race coverage coverhtml gofmt update swag swagger build linux windows run run_docker stop stop_docker clean help
+.PHONY: all milkyway dependency lint test race coverage coverhtml gofmt update swag swagger build build-only linux windows run run_docker stop stop_docker clean help
 
 all: build
 

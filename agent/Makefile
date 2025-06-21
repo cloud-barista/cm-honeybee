@@ -8,7 +8,7 @@ GOPROXY_OPTION := GOPROXY=direct GOSUMDB=sum.golang.org GONOSUMDB=*,!golang.org/
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build linux windows run run_docker stop stop_docker clean help
+.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build build-only linux windows run run_docker stop stop_docker clean help
 
 all: build
 
