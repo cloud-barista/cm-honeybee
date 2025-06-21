@@ -932,9 +932,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "dst": {
+                    "description": "e.g., \"123.123.123.123/32\", \"123.123.123.123/24\", \"0.0.0.0/0\", \"2001:db8:4567::/48\", \"2001:db8:1234:0::/64\", \"::/0\"",
                     "type": "string"
                 },
                 "dst_ports": {
+                    "description": "e.g., \"80\", \"80,443\", \"1024-65535\"",
                     "type": "string"
                 },
                 "priority": {
@@ -942,13 +944,15 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "protocol": {
-                    "description": "TCP, UDP, ICMP",
+                    "description": "*, tcp, udp, icmp, icmpv6",
                     "type": "string"
                 },
                 "src": {
+                    "description": "e.g., \"123.123.123.123/32\", \"123.123.123.123/24\", \"0.0.0.0/0\", \"2001:db8:4567::/48\", \"2001:db8:1234:0::/64\", \"::/0\"",
                     "type": "string"
                 },
                 "src_ports": {
+                    "description": "e.g., \"80\", \"80,443\", \"1024-65535\"",
                     "type": "string"
                 }
             }
