@@ -116,6 +116,24 @@ func GetFirewallRules() ([]network.FirewallRule, error) {
 			continue
 		}
 
+		// Skip all local inbound rules
+		if rule.Direction == winapi.NET_FW_RULE_DIR_IN {
+			if rule.RemoteAddresses == "LocalSubnet" ||
+				strings.HasPrefix(rule.RemoteAddresses, "fe80:") ||
+				strings.Contains(rule.RemoteAddresses, localSubnetCIDR) {
+				continue
+			}
+		}
+
+		// Skip all local outbound rules
+		if rule.Direction == winapi.NET_FW_RULE_DIR_OUT {
+			if rule.RemoteAddresses == "LocalSubnet" ||
+				strings.HasPrefix(rule.RemoteAddresses, "fe80:") ||
+				strings.Contains(rule.RemoteAddresses, localSubnetCIDR) {
+				continue
+			}
+		}
+
 		// Skip all of any-any allows
 		if (rule.LocalAddresses == "*" || rule.LocalAddresses == "LocalSubnet") &&
 			(rule.RemoteAddresses == "*" || rule.RemoteAddresses == "LocalSubnet") &&
