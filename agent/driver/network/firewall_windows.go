@@ -134,9 +134,11 @@ func GetFirewallRules() ([]network.FirewallRule, error) {
 			}
 		}
 
-		// Skip all of any-any allows
-		if (rule.LocalAddresses == "*" || rule.LocalAddresses == "LocalSubnet") &&
-			(rule.RemoteAddresses == "*" || rule.RemoteAddresses == "LocalSubnet") &&
+		// Skip all of any-any, local-local, any-local and local-any allows
+		if (rule.LocalAddresses == "*" || rule.LocalAddresses == "LocalSubnet" ||
+			strings.HasPrefix(rule.LocalAddresses, "fe80:") || strings.Contains(rule.LocalAddresses, localSubnetCIDR)) &&
+			(rule.RemoteAddresses == "*" || rule.RemoteAddresses == "LocalSubnet" ||
+				strings.HasPrefix(rule.RemoteAddresses, "fe80:") || strings.Contains(rule.RemoteAddresses, localSubnetCIDR)) &&
 			(rule.LocalPorts == "*" || rule.LocalPorts == "LocalSubnet" || rule.LocalPorts == "") &&
 			(rule.RemotePorts == "*" || rule.RemotePorts == "LocalSubnet" || rule.RemotePorts == "") {
 			continue
