@@ -242,6 +242,18 @@ func normalizeAddresses(addr string, localSubnetCIDR string) []string {
 	return result
 }
 
+func isNumericPortRange(port string) bool {
+	if port == "" || port == "*" {
+		return true
+	}
+	for _, r := range port {
+		if !((r >= '0' && r <= '9') || r == '-' || r == ',' || r == ' ') {
+			return false
+		}
+	}
+	return true
+}
+
 func removeDuplicatedRules(fw *[]network.FirewallRule) {
 	seen := make(map[string]bool)
 	uniqueFw := make([]network.FirewallRule, 0)
@@ -326,6 +338,11 @@ func GetFirewallRules() ([]network.FirewallRule, error) {
 						strings.Contains(remoteAddr, localSubnetCIDR)) &&
 					(rule.LocalPorts == "*" || rule.LocalPorts == "LocalSubnet" || rule.LocalPorts == "") &&
 					(rule.RemotePorts == "*" || rule.RemotePorts == "LocalSubnet" || rule.RemotePorts == "") {
+					continue
+				}
+
+				// Skip string port values
+				if !isNumericPortRange(rule.LocalPorts) || !isNumericPortRange(rule.RemotePorts) {
 					continue
 				}
 
