@@ -307,12 +307,16 @@ func GetFirewallRules() ([]network.FirewallRule, error) {
 					}
 				}
 
-				// Skip all of between any/local
+				// Skip all of between any/local/all-nodes/all-routers
 				if (rule.LocalAddresses == "*" || rule.LocalAddresses == "LocalSubnet" ||
 					strings.HasPrefix(rule.LocalAddresses, "fe80:") ||
+					rule.LocalAddresses == "ff02::1/128" ||
+					rule.LocalAddresses == "ff02::2/128" ||
 					strings.Contains(rule.LocalAddresses, localSubnetCIDR)) &&
 					(rule.RemoteAddresses == "*" || rule.RemoteAddresses == "LocalSubnet" ||
 						strings.HasPrefix(rule.RemoteAddresses, "fe80:") ||
+						rule.RemoteAddresses == "ff02::1/128" ||
+						rule.RemoteAddresses == "ff02::2/128" ||
 						strings.Contains(rule.RemoteAddresses, localSubnetCIDR)) &&
 					(rule.LocalPorts == "*" || rule.LocalPorts == "LocalSubnet" || rule.LocalPorts == "") &&
 					(rule.RemotePorts == "*" || rule.RemotePorts == "LocalSubnet" || rule.RemotePorts == "") {
