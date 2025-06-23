@@ -291,33 +291,33 @@ func GetFirewallRules() ([]network.FirewallRule, error) {
 			for _, remoteAddr := range remoteAddresses {
 				// Skip all local inbound rules
 				if rule.Direction == winapi.NET_FW_RULE_DIR_IN {
-					if rule.RemoteAddresses == "LocalSubnet" ||
-						strings.HasPrefix(rule.RemoteAddresses, "fe80:") ||
-						strings.Contains(rule.RemoteAddresses, localSubnetCIDR) {
+					if remoteAddr == "LocalSubnet" ||
+						strings.HasPrefix(remoteAddr, "fe80:") ||
+						strings.Contains(remoteAddr, localSubnetCIDR) {
 						continue
 					}
 				}
 
 				// Skip all local outbound rules
 				if rule.Direction == winapi.NET_FW_RULE_DIR_OUT {
-					if rule.RemoteAddresses == "LocalSubnet" ||
-						strings.HasPrefix(rule.RemoteAddresses, "fe80:") ||
-						strings.Contains(rule.RemoteAddresses, localSubnetCIDR) {
+					if remoteAddr == "LocalSubnet" ||
+						strings.HasPrefix(remoteAddr, "fe80:") ||
+						strings.Contains(remoteAddr, localSubnetCIDR) {
 						continue
 					}
 				}
 
 				// Skip all of between any/local/all-nodes/all-routers
-				if (rule.LocalAddresses == "*" || rule.LocalAddresses == "LocalSubnet" ||
-					strings.HasPrefix(rule.LocalAddresses, "fe80:") ||
-					rule.LocalAddresses == "ff02::1/128" ||
-					rule.LocalAddresses == "ff02::2/128" ||
-					strings.Contains(rule.LocalAddresses, localSubnetCIDR)) &&
-					(rule.RemoteAddresses == "*" || rule.RemoteAddresses == "LocalSubnet" ||
-						strings.HasPrefix(rule.RemoteAddresses, "fe80:") ||
-						rule.RemoteAddresses == "ff02::1/128" ||
-						rule.RemoteAddresses == "ff02::2/128" ||
-						strings.Contains(rule.RemoteAddresses, localSubnetCIDR)) &&
+				if (localAddr == "*" || localAddr == "LocalSubnet" ||
+					strings.HasPrefix(localAddr, "fe80:") ||
+					localAddr == "ff02::1/128" ||
+					localAddr == "ff02::2/128" ||
+					strings.Contains(localAddr, localSubnetCIDR)) &&
+					(remoteAddr == "*" || remoteAddr == "LocalSubnet" ||
+						strings.HasPrefix(remoteAddr, "fe80:") ||
+						remoteAddr == "ff02::1/128" ||
+						remoteAddr == "ff02::2/128" ||
+						strings.Contains(remoteAddr, localSubnetCIDR)) &&
 					(rule.LocalPorts == "*" || rule.LocalPorts == "LocalSubnet" || rule.LocalPorts == "") &&
 					(rule.RemotePorts == "*" || rule.RemotePorts == "LocalSubnet" || rule.RemotePorts == "") {
 					continue
