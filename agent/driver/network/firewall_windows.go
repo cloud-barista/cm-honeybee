@@ -310,12 +310,12 @@ func GetFirewallRules() ([]network.FirewallRule, error) {
 				}
 
 				// Skip all of between any/local/all-nodes/all-routers
-				if (localAddr == "*" || localAddr == "LocalSubnet" ||
+				if (localAddr == "0.0.0.0/0" || localAddr == "::/0" ||
 					strings.HasPrefix(localAddr, "fe80:") ||
 					localAddr == "ff02::1/128" ||
 					localAddr == "ff02::2/128" ||
 					strings.Contains(localAddr, localSubnetCIDR)) &&
-					(remoteAddr == "*" || remoteAddr == "LocalSubnet" ||
+					(remoteAddr == "0.0.0.0/0" || remoteAddr == "::/0" ||
 						strings.HasPrefix(remoteAddr, "fe80:") ||
 						remoteAddr == "ff02::1/128" ||
 						remoteAddr == "ff02::2/128" ||
