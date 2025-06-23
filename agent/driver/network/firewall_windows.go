@@ -89,37 +89,25 @@ func intToIP(n uint32) net.IP {
 	return net.IPv4(byte(n>>24), byte(n>>16), byte(n>>8), byte(n))
 }
 
-func ipv4RangeToCIDRs(start, end net.IP) []string {
-	var cidrs []string
-
+func approximateIPv4Subnet(start, end net.IP) []string {
 	startInt := ipToInt(start)
 	endInt := ipToInt(end)
 
-	if startInt == endInt {
-		return []string{start.String() + "/32"}
-	}
+	diff := endInt - startInt + 1
 
-	for startInt <= endInt {
-		maxSize := 32
-		for i := 0; i < 32; i++ {
-			mask := uint32(1) << i
-			if (startInt & (mask - 1)) != 0 {
-				break
-			}
-			if startInt+mask-1 > endInt {
-				break
-			}
-			maxSize = 32 - i - 1
+	prefixLen := 32
+	for i := uint(0); i < 32; i++ {
+		if (1 << i) >= diff {
+			prefixLen = int(32 - i)
+			break
 		}
-
-		cidr := fmt.Sprintf("%s/%d", intToIP(startInt).String(), maxSize)
-		cidrs = append(cidrs, cidr)
-
-		blockSize := uint32(1) << (32 - maxSize)
-		startInt += blockSize
 	}
 
-	return cidrs
+	mask := uint32(0xFFFFFFFF) << (32 - prefixLen)
+	baseInt := startInt & mask
+	baseIP := intToIP(baseInt)
+
+	return []string{fmt.Sprintf("%s/%d", baseIP.String(), prefixLen)}
 }
 
 func ipv6ToInt(ip net.IP) *big.Int {
@@ -135,44 +123,33 @@ func intToIPv6(ipInt *big.Int) net.IP {
 		copy(padded[16-len(bytes):], bytes)
 		bytes = padded
 	}
-	return net.IP(bytes)
+	return bytes
 }
 
-func ipv6RangeToCIDRs(start, end net.IP) []string {
-	var cidrs []string
-
+func approximateIPv6Subnet(start, end net.IP) []string {
 	startInt := ipv6ToInt(start)
 	endInt := ipv6ToInt(end)
 
-	if startInt.Cmp(endInt) == 0 {
-		return []string{start.String() + "/128"}
-	}
+	diff := new(big.Int).Sub(endInt, startInt)
+	diff.Add(diff, big.NewInt(1))
 
-	for startInt.Cmp(endInt) <= 0 {
-		maxSize := 128
-		for i := 0; i < 128; i++ {
-			mask := new(big.Int).Lsh(big.NewInt(1), uint(i))
-			mask.Sub(mask, big.NewInt(1))
-
-			if new(big.Int).And(startInt, mask).Cmp(big.NewInt(0)) != 0 {
-				break
-			}
-
-			blockEnd := new(big.Int).Add(startInt, mask)
-			if blockEnd.Cmp(endInt) > 0 {
-				break
-			}
-			maxSize = 128 - i - 1
+	prefixLen := 128
+	for i := 0; i < 128; i++ {
+		blockSize := new(big.Int).Lsh(big.NewInt(1), uint(i))
+		if blockSize.Cmp(diff) >= 0 {
+			prefixLen = 128 - i
+			break
 		}
-
-		cidr := fmt.Sprintf("%s/%d", intToIPv6(startInt).String(), maxSize)
-		cidrs = append(cidrs, cidr)
-
-		blockSize := new(big.Int).Lsh(big.NewInt(1), uint(128-maxSize))
-		startInt.Add(startInt, blockSize)
 	}
 
-	return cidrs
+	mask := new(big.Int).Lsh(big.NewInt(1), uint(128-prefixLen))
+	mask.Sub(mask, big.NewInt(1))
+	mask.Not(mask)
+
+	baseInt := new(big.Int).And(startInt, mask)
+	baseIP := intToIPv6(baseInt)
+
+	return []string{fmt.Sprintf("%s/%d", baseIP.String(), prefixLen)}
 }
 
 func rangeToCIDRs(startIP, endIP string) []string {
@@ -186,11 +163,18 @@ func rangeToCIDRs(startIP, endIP string) []string {
 		return []string{startIP + "/32", endIP + "/32"}
 	}
 
-	if start.To4() != nil && end.To4() != nil {
-		return ipv4RangeToCIDRs(start.To4(), end.To4())
+	if start.Equal(end) {
+		if start.To4() != nil {
+			return []string{start.String() + "/32"}
+		}
+		return []string{start.String() + "/128"}
 	}
 
-	return ipv6RangeToCIDRs(start, end)
+	if start.To4() != nil && end.To4() != nil {
+		return approximateIPv4Subnet(start.To4(), end.To4())
+	} else {
+		return approximateIPv6Subnet(start, end)
+	}
 }
 
 func normalizeAddresses(addr string, localSubnetCIDR string) []string {
