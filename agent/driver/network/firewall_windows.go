@@ -289,6 +289,12 @@ func GetFirewallRules() ([]network.FirewallRule, error) {
 
 		for _, localAddr := range localAddresses {
 			for _, remoteAddr := range remoteAddresses {
+				// Skip invalid protocol mismatch
+				if (localAddr == "0.0.0.0/0" && remoteAddr == "::/0") ||
+					(localAddr == "::/0" && remoteAddr == "0.0.0.0/0") {
+					continue
+				}
+
 				// Skip all local inbound rules
 				if rule.Direction == winapi.NET_FW_RULE_DIR_IN {
 					if remoteAddr == "LocalSubnet" ||
