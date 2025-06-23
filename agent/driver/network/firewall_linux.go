@@ -88,14 +88,28 @@ func parseIptablesRules(ipt *iptables.IPTables, rules []string, prevPriority *ui
 
 		fwRule.Direction = direction
 		fwRule.Priority = *prevPriority
-		if len(fwRule.Protocol) == 0 {
-			fwRule.Protocol = "*"
+		if len(fwRule.Src) == 0 {
+			if isIPv6 {
+				fwRule.Src = "::/0"
+			} else {
+				fwRule.Src = "0.0.0.0/0"
+			}
+		}
+		if len(fwRule.Dst) == 0 {
+			if isIPv6 {
+				fwRule.Dst = "::/0"
+			} else {
+				fwRule.Dst = "0.0.0.0/0"
+			}
 		}
 		if len(fwRule.SrcPorts) == 0 {
 			fwRule.SrcPorts = "*"
 		}
 		if len(fwRule.DstPorts) == 0 {
 			fwRule.DstPorts = "*"
+		}
+		if len(fwRule.Protocol) == 0 {
+			fwRule.Protocol = "*"
 		}
 
 		fwRules = append(fwRules, fwRule)

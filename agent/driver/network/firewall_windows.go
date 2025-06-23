@@ -79,6 +79,28 @@ func parseProtocol(fwRuleProtocol int32) string {
 	}
 }
 
+func removeDuplicatedRules(fw *[]network.FirewallRule) {
+	seen := make(map[string]bool)
+	uniqueFw := make([]network.FirewallRule, 0)
+
+	for _, rule := range *fw {
+		key := fmt.Sprintf("%s-%s-%s-%s-%s-%s-%s",
+			rule.Src, rule.Dst, rule.SrcPorts, rule.DstPorts,
+			rule.Protocol, rule.Direction, rule.Action)
+
+		if !seen[key] {
+			seen[key] = true
+			uniqueFw = append(uniqueFw, rule)
+		}
+	}
+
+	for i := range uniqueFw {
+		uniqueFw[i].Priority = uint(i + 1)
+	}
+
+	*fw = uniqueFw
+}
+
 func GetFirewallRules() ([]network.FirewallRule, error) {
 	var fwRules = make([]network.FirewallRule, 0)
 	rules, err := winapi.FirewallRulesGet()
@@ -143,7 +165,39 @@ func GetFirewallRules() ([]network.FirewallRule, error) {
 
 		priority++
 		fwRule.Priority = uint(priority)
-		fwRules = append(fwRules, fwRule)
+
+		if strings.Contains(fwRule.Src, "*") &&
+			strings.Contains(fwRule.Dst, "*") {
+			fwRule.Src = "0.0.0.0/0"
+			fwRule.Dst = "0.0.0.0/0"
+			fwRules = append(fwRules, fwRule)
+
+			priority++
+			fwRule.Priority = uint(priority)
+
+			fwRule.Src = "::/0"
+			fwRule.Dst = "::/0"
+			fwRules = append(fwRules, fwRule)
+		} else if strings.Contains(fwRule.Src, "*") {
+			if strings.Contains(fwRule.Dst, ":") {
+				fwRule.Src = "::/0"
+			} else {
+				fwRule.Src = "0.0.0.0/0"
+			}
+			fwRules = append(fwRules, fwRule)
+		} else if strings.Contains(fwRule.Dst, "*") {
+			if strings.Contains(fwRule.Src, ":") {
+				fwRule.Dst = "::/0"
+			} else {
+				fwRule.Dst = "0.0.0.0/0"
+			}
+			fwRules = append(fwRules, fwRule)
+		} else {
+			fwRules = append(fwRules, fwRule)
+		}
 	}
+
+	removeDuplicatedRules(&fwRules)
+
 	return fwRules, nil
 }
