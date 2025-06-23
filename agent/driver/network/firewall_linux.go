@@ -40,9 +40,6 @@ func parseIptablesRules(ipt *iptables.IPTables, rules []string, prevPriority *ui
 					case "drop", "deny":
 						fwRule.Action = "deny"
 					default:
-						if ipt == nil {
-							continue
-						}
 						subRules, err := ipt.List("filter", ruleSplited[i+1])
 						if err != nil {
 							logger.Println(logger.DEBUG, true, "FIREWALL: "+err.Error())
