@@ -1073,7 +1073,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
-                        "description": "Enable for show all packages include default packages.",
+                        "description": "Enable for show all packages include default packages. (Default: false)",
                         "name": "show_default_packages",
                         "in": "query"
                     }
@@ -1573,7 +1573,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "boolean",
-                        "description": "Enable for show all packages include default packages.",
+                        "description": "Enable for show all packages include default packages. (Default: false)",
                         "name": "show_default_packages",
                         "in": "query"
                     }

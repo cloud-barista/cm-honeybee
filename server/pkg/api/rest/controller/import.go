@@ -299,7 +299,7 @@ func ImportInfraSourceGroup(c echo.Context) error {
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
 //	@Param			connId path string true "ID of the connection info."
-//	@Param			show_default_packages query bool false "Enable for show all packages include default packages."
+//	@Param			show_default_packages query bool false "Enable for show all packages include default packages. (Default: false)"
 //	@Success		200	{object}	model.SavedSoftwareInfo	"Successfully saved the software information"
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"
@@ -340,7 +340,7 @@ func ImportSoftware(c echo.Context) error {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
-//	@Param			show_default_packages query bool false "Enable for show all packages include default packages."
+//	@Param			show_default_packages query bool false "Enable for show all packages include default packages. (Default: false)"
 //	@Success		200	{object}	[]model.SavedSoftwareInfo	"Successfully saved the software information"
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to save the software information"

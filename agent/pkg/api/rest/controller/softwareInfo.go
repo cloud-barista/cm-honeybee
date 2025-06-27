@@ -17,7 +17,7 @@ import (
 //	@Tags			[Software] Get software info
 //	@Accept			json
 //	@Produce		json
-//	@Param			show_default_packages query bool false "Enable for show all packages include default packages."
+//	@Param			show_default_packages query bool false "Enable for show all packages include default packages. (Default: false)"
 //	@Success		200	{object}	software.Software	"Successfully get information of software."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of software."
