@@ -145,6 +145,25 @@ func getConfigFiles(packageName string) ([]string, error) {
 	return configs, nil
 }
 
+func parseDepends(depends string) []string {
+	parts := strings.Split(depends, ",")
+	var packages []string
+
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		spaceIndex := strings.Index(trimmed, " ")
+
+		if spaceIndex != -1 {
+			packageName := trimmed[:spaceIndex]
+			packages = append(packages, packageName)
+		} else {
+			packages = append(packages, trimmed)
+		}
+	}
+
+	return packages
+}
+
 func GetDEBs(showDefaultPackages bool) ([]software.DEB, error) {
 	var DEBs []software.DEB
 
@@ -171,9 +190,31 @@ func GetDEBs(showDefaultPackages bool) ([]software.DEB, error) {
 		DEBs[i].Conffiles = configs
 	}
 
-	if !showDefaultPackages {
-		var filteredDEBs []software.DEB
+	var dependsPackages []string
+	var dependsRemovedList = make([]software.DEB, 0)
 
+	for _, deb := range DEBs {
+		dependsPackages = append(dependsPackages, parseDepends(deb.Depends)...)
+	}
+
+	if showDefaultPackages {
+		for _, deb := range DEBs {
+			var depPkgFound bool
+
+			for _, pkg := range dependsPackages {
+				if deb.Package == pkg {
+					depPkgFound = true
+					break
+				}
+			}
+
+			if depPkgFound {
+				continue
+			}
+
+			dependsRemovedList = append(dependsRemovedList, deb)
+		}
+	} else {
 		defaultPackages, err := GetDefaultPackages()
 		if err != nil {
 			logger.Println(logger.DEBUG, false, "DEB: Error occurred while getting default packages."+
@@ -194,11 +235,22 @@ func GetDEBs(showDefaultPackages bool) ([]software.DEB, error) {
 				continue
 			}
 
-			filteredDEBs = append(filteredDEBs, deb)
-		}
+			var depPkgFound bool
 
-		return filteredDEBs, nil
+			for _, pkg := range dependsPackages {
+				if deb.Package == pkg {
+					depPkgFound = true
+					break
+				}
+			}
+
+			if depPkgFound {
+				continue
+			}
+
+			dependsRemovedList = append(dependsRemovedList, deb)
+		}
 	}
 
-	return DEBs, nil
+	return dependsRemovedList, nil
 }

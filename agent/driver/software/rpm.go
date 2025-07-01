@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/jollaman999/utils/logger"
 	rpmdb "github.com/knqyf263/go-rpmdb/pkg"
+	"strings"
 )
 
 func detectDB() (*rpmdb.RpmDB, error) {
@@ -29,6 +30,92 @@ func detectDB() (*rpmdb.RpmDB, error) {
 	result = multierror.Append(result, err)
 
 	return nil, result
+}
+
+func isValidPackageName(name string) bool {
+	if name == "" {
+		return false
+	}
+
+	if strings.ContainsAny(name, "=<>()[]{}") {
+		return false
+	}
+
+	for _, r := range name {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') &&
+			(r < '0' || r > '9') && r != '-' && r != '_' && r != '.' && r != '+' {
+			return false
+		}
+	}
+
+	hasAlpha := false
+	for _, r := range name {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+			hasAlpha = true
+			break
+		}
+	}
+
+	return hasAlpha
+}
+
+func extractPackageName(req string) string {
+	req = strings.TrimSpace(req)
+
+	if strings.HasPrefix(req, "rpmlib(") {
+		return ""
+	}
+
+	if strings.HasPrefix(req, "config(") {
+		return ""
+	}
+
+	if strings.HasPrefix(req, "/") {
+		return ""
+	}
+
+	if strings.HasPrefix(req, "lib") && strings.Contains(req, ".so") {
+		return ""
+	}
+
+	if strings.HasPrefix(req, "rtld(") {
+		return ""
+	}
+
+	if parenIndex := strings.Index(req, "("); parenIndex != -1 {
+		packageName := strings.TrimSpace(req[:parenIndex])
+
+		if isValidPackageName(packageName) {
+			return packageName
+		}
+		return ""
+	}
+
+	if isValidPackageName(req) {
+		return req
+	}
+
+	return ""
+}
+
+func parseRpmRequires(requires []string) []string {
+	var packages []string
+	packageSet := make(map[string]bool)
+
+	for _, req := range requires {
+		req = strings.TrimSpace(req)
+		if req == "" {
+			continue
+		}
+
+		packageName := extractPackageName(req)
+		if packageName != "" && !packageSet[packageName] {
+			packages = append(packages, packageName)
+			packageSet[packageName] = true
+		}
+	}
+
+	return packages
 }
 
 func GetRPMs(showDefaultPackages bool) ([]software.RPM, error) {
@@ -62,12 +149,34 @@ func GetRPMs(showDefaultPackages bool) ([]software.RPM, error) {
 		})
 	}
 
-	if !showDefaultPackages {
-		var filteredRPMs []software.RPM
+	var requiresPackages []string
+	var requiresRemovedList = make([]software.RPM, 0)
 
+	for _, rpm := range rpms {
+		requiresPackages = append(requiresPackages, parseRpmRequires(rpm.Requires)...)
+	}
+
+	if showDefaultPackages {
+		for _, rpm := range rpms {
+			var requirePkgFound bool
+
+			for _, pkg := range requiresPackages {
+				if rpm.Name == pkg {
+					requirePkgFound = true
+					break
+				}
+			}
+
+			if requirePkgFound {
+				continue
+			}
+
+			requiresRemovedList = append(requiresRemovedList, rpm)
+		}
+	} else {
 		defaultPackages, err := GetDefaultPackages()
 		if err != nil {
-			logger.Println(logger.DEBUG, false, "DEB: Error occurred while getting default packages."+
+			logger.Println(logger.DEBUG, false, "RPM: Error occurred while getting default packages."+
 				" ("+err.Error()+")")
 		}
 
@@ -85,10 +194,21 @@ func GetRPMs(showDefaultPackages bool) ([]software.RPM, error) {
 				continue
 			}
 
-			filteredRPMs = append(filteredRPMs, rpm)
-		}
+			var depPkgFound bool
 
-		return filteredRPMs, nil
+			for _, pkg := range requiresPackages {
+				if rpm.Name == pkg {
+					depPkgFound = true
+					break
+				}
+			}
+
+			if depPkgFound {
+				continue
+			}
+
+			requiresRemovedList = append(requiresRemovedList, rpm)
+		}
 	}
 
 	return rpms, nil
