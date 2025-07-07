@@ -106,6 +106,56 @@ definitions:
           Required: true
         type: string
     type: object
+  container.Summary:
+    properties:
+      Id:
+        type: string
+      ImageManifestDescriptor:
+        $ref: '#/definitions/v1.Descriptor'
+      command:
+        type: string
+      created:
+        type: integer
+      hostConfig:
+        properties:
+          annotations:
+            additionalProperties:
+              type: string
+            type: object
+          networkMode:
+            type: string
+        type: object
+      image:
+        type: string
+      imageID:
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      mounts:
+        items:
+          $ref: '#/definitions/container.MountPoint'
+        type: array
+      names:
+        items:
+          type: string
+        type: array
+      networkSettings:
+        $ref: '#/definitions/container.NetworkSettingsSummary'
+      ports:
+        items:
+          $ref: '#/definitions/container.Port'
+        type: array
+      sizeRootFs:
+        type: integer
+      sizeRw:
+        type: integer
+      state:
+        $ref: '#/definitions/container.ContainerState'
+      status:
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse:
     properties:
       error:
@@ -760,6 +810,18 @@ definitions:
       srcPorts:
         type: string
     type: object
+  inframodel.GatewayProperty:
+    properties:
+      interfaceName:
+        example: eth0
+        type: string
+      ip:
+        example: 192.168.1.1
+        type: string
+      metric:
+        example: 100
+        type: integer
+    type: object
   inframodel.MemoryProperty:
     properties:
       available:
@@ -778,6 +840,13 @@ definitions:
     required:
     - totalSize
     - type
+    type: object
+  inframodel.NetworkDetail:
+    properties:
+      defaultRouteInterface:
+        $ref: '#/definitions/inframodel.NetworkInterfaceProperty'
+      gateway:
+        $ref: '#/definitions/inframodel.GatewayProperty'
     type: object
   inframodel.NetworkInterfaceProperty:
     properties:
@@ -810,15 +879,13 @@ definitions:
   inframodel.NetworkProperty:
     properties:
       ipv4Networks:
-        example:
-        - 172.26.240.0/20
         items:
-          type: string
+          $ref: '#/definitions/inframodel.NetworkDetail'
         type: array
       ipv6Networks:
         description: TBD
         items:
-          type: string
+          $ref: '#/definitions/inframodel.NetworkDetail'
         type: array
     type: object
   inframodel.OnpremInfra:
@@ -1110,18 +1177,24 @@ definitions:
         description: inbound, outbound
         type: string
       dst:
+        description: e.g., "123.123.123.123/32", "123.123.123.123/24", "0.0.0.0/0",
+          "2001:db8:4567::/48", "2001:db8:1234:0::/64", "::/0"
         type: string
       dst_ports:
+        description: e.g., "80", "80,443", "1024-65535"
         type: string
       priority:
         description: Lower has higher priority
         type: integer
       protocol:
-        description: TCP, UDP, ICMP
+        description: '*, tcp, udp, icmp, icmpv6'
         type: string
       src:
+        description: e.g., "123.123.123.123/32", "123.123.123.123/24", "0.0.0.0/0",
+          "2001:db8:4567::/48", "2001:db8:1234:0::/64", "::/0"
         type: string
       src_ports:
+        description: e.g., "80", "80,443", "1024-65535"
         type: string
     type: object
   network.Host:
@@ -1181,6 +1254,8 @@ definitions:
   network.Route:
     properties:
       destination:
+        type: string
+      family:
         type: string
       interface:
         type: string
@@ -1284,14 +1359,14 @@ definitions:
     properties:
       containers:
         items:
-          $ref: '#/definitions/types.Container'
+          $ref: '#/definitions/container.Summary'
         type: array
     type: object
   software.Podman:
     properties:
       containers:
         items:
-          $ref: '#/definitions/types.Container'
+          $ref: '#/definitions/container.Summary'
         type: array
     type: object
   software.RPM:
@@ -1335,56 +1410,6 @@ definitions:
         items:
           $ref: '#/definitions/software.RPM'
         type: array
-    type: object
-  types.Container:
-    properties:
-      Id:
-        type: string
-      ImageManifestDescriptor:
-        $ref: '#/definitions/v1.Descriptor'
-      command:
-        type: string
-      created:
-        type: integer
-      hostConfig:
-        properties:
-          annotations:
-            additionalProperties:
-              type: string
-            type: object
-          networkMode:
-            type: string
-        type: object
-      image:
-        type: string
-      imageID:
-        type: string
-      labels:
-        additionalProperties:
-          type: string
-        type: object
-      mounts:
-        items:
-          $ref: '#/definitions/container.MountPoint'
-        type: array
-      names:
-        items:
-          type: string
-        type: array
-      networkSettings:
-        $ref: '#/definitions/container.NetworkSettingsSummary'
-      ports:
-        items:
-          $ref: '#/definitions/container.Port'
-        type: array
-      sizeRootFs:
-        type: integer
-      sizeRw:
-        type: integer
-      state:
-        $ref: '#/definitions/container.ContainerState'
-      status:
-        type: string
     type: object
   v1.Descriptor:
     properties:

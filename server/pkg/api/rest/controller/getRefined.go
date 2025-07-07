@@ -1,11 +1,12 @@
 package controller
 
 import (
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
 	"net"
 	"net/http"
 	"strings"
 
-	_ "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra" // Need for swag
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
@@ -13,12 +14,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func doGetRefinedInfraInfo(connID string) (*inframodel.ServerProperty, error) {
-	infraInfo, err := doGetInfraInfo(connID)
-	if err != nil {
-		return nil, err
-	}
-
+func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, error) {
 	var dataDisks []inframodel.DiskProperty
 
 	for _, dataDisk := range infraInfo.Compute.ComputeResource.DataDisk {
@@ -146,77 +142,50 @@ func doGetRefinedInfraInfo(connID string) (*inframodel.ServerProperty, error) {
 	return &refinedInfraInfo, nil
 }
 
-func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, ifaces *[]inframodel.NetworkInterfaceProperty) {
-	for _, iface := range *ifaces {
-		// append IPv4 networks
-		for _, ipv4cidr := range iface.IPv4CidrBlocks {
-			_, netNetwork, err := net.ParseCIDR(ipv4cidr)
-			if err != nil {
-				continue
-			}
-
-			networkCidr := netNetwork.String()
-
-			// Skip local networks
-			if networkCidr == "127.0.0.0/8" {
-				continue
-			}
-
-			var found bool
-
-			for _, cidr := range networkProperty.IPv4Networks {
-				if cidr == networkCidr {
-					found = true
-					break
-				}
-			}
-
-			if !found {
-				networkProperty.IPv4Networks = append(networkProperty.IPv4Networks, networkCidr)
-			}
+func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, routes *[]network.Route) {
+	for _, route := range *routes {
+		if strings.ToLower(route.Interface) == "lo" {
+			continue
 		}
 
-		// append IPv6 networks
-		for _, ipv6cidr := range iface.IPv6CidrBlocks {
-			_, netNetwork, err := net.ParseCIDR(ipv6cidr)
-			if err != nil {
-				continue
-			}
-
-			networkCidr := netNetwork.String()
-
-			// Skip local networks
-			if networkCidr == "::1/128" {
-				continue
-			}
-
-			// Skip all nodes multicast
-			if strings.HasPrefix(networkCidr, "ff02::1/") {
-				continue
-			}
-
-			// Skip all routers multicast
-			if strings.HasPrefix(networkCidr, "ff02::2/") {
-				continue
-			}
-
-			// Skip unspecified
-			if networkCidr == "::/128" {
-				continue
-			}
-
-			var found bool
-
-			for _, cidr := range networkProperty.IPv6Networks {
-				if cidr == networkCidr {
-					found = true
+		if route.Family == "ipv4" && route.Destination == "0.0.0.0" && route.Netmask == "0.0.0.0" {
+			var dup bool
+			for _, ipv4net := range networkProperty.IPv4Networks {
+				if ipv4net.DefaultGateway.InterfaceName == route.Interface {
+					dup = true
 					break
 				}
 			}
-
-			if !found {
-				networkProperty.IPv6Networks = append(networkProperty.IPv6Networks, networkCidr)
+			if dup {
+				continue
 			}
+
+			var ipv4Network inframodel.NetworkDetail
+
+			ipv4Network.DefaultGateway.IP = route.NextHop
+			ipv4Network.DefaultGateway.InterfaceName = route.Interface
+			ipv4Network.DefaultGateway.Metric = route.Metric
+
+			networkProperty.IPv4Networks = append(networkProperty.IPv4Networks, ipv4Network)
+		} else if route.Family == "ipv6" && route.Destination == "::" && route.Netmask == "/0" {
+			var dup bool
+			for _, ipv6net := range networkProperty.IPv6Networks {
+				if ipv6net.DefaultGateway.InterfaceName == route.Interface {
+					dup = true
+					break
+				}
+			}
+			if dup {
+				continue
+			}
+
+			var ipv6Network inframodel.NetworkDetail
+
+			ipv6Network.DefaultGateway.IP = route.NextHop
+			ipv6Network.DefaultGateway.InterfaceName = route.Interface
+			ipv6Network.DefaultGateway.Metric = route.Metric
+
+			networkProperty.IPv6Networks = append(networkProperty.IPv6Networks, ipv6Network)
 		}
 	}
 }
@@ -251,7 +220,12 @@ func GetInfraInfoRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	refinedInfraInfo, err := doGetRefinedInfraInfo(connID)
+	infraInfo, err := doGetInfraInfo(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	refinedInfraInfo, err := doGetRefinedInfraInfo(infraInfo)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -260,7 +234,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 	var onpremiseInfra inframodel.OnpremInfra
 
 	onpremiseInfra.Servers = append(onpremiseInfra.Servers, *refinedInfraInfo)
-	doGetRefinedNetworkInfo(&onpremiseInfra.Network, &refinedInfraInfo.Interfaces)
+	doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route)
 
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
 
@@ -300,12 +274,16 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 	var onpremiseInfra inframodel.OnpremInfra
 
 	for _, conn := range *list {
-		refinedInfraInfo, err := doGetRefinedInfraInfo(conn.ID)
+		infraInfo, err := doGetInfraInfo(conn.ID)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		refinedInfraInfo, err := doGetRefinedInfraInfo(infraInfo)
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 		onpremiseInfra.Servers = append(onpremiseInfra.Servers, *refinedInfraInfo)
-		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &refinedInfraInfo.Interfaces)
+		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route)
 	}
 
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra

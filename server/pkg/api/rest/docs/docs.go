@@ -1991,6 +1991,82 @@ const docTemplate = `{
                 }
             }
         },
+        "container.Summary": {
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "string"
+                },
+                "ImageManifestDescriptor": {
+                    "$ref": "#/definitions/v1.Descriptor"
+                },
+                "command": {
+                    "type": "string"
+                },
+                "created": {
+                    "type": "integer"
+                },
+                "hostConfig": {
+                    "type": "object",
+                    "properties": {
+                        "annotations": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        },
+                        "networkMode": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "image": {
+                    "type": "string"
+                },
+                "imageID": {
+                    "type": "string"
+                },
+                "labels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "mounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container.MountPoint"
+                    }
+                },
+                "names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "networkSettings": {
+                    "$ref": "#/definitions/container.NetworkSettingsSummary"
+                },
+                "ports": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container.Port"
+                    }
+                },
+                "sizeRootFs": {
+                    "type": "integer"
+                },
+                "sizeRw": {
+                    "type": "integer"
+                },
+                "state": {
+                    "$ref": "#/definitions/container.ContainerState"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -2956,6 +3032,23 @@ const docTemplate = `{
                 }
             }
         },
+        "inframodel.GatewayProperty": {
+            "type": "object",
+            "properties": {
+                "interfaceName": {
+                    "type": "string",
+                    "example": "eth0"
+                },
+                "ip": {
+                    "type": "string",
+                    "example": "192.168.1.1"
+                },
+                "metric": {
+                    "type": "integer",
+                    "example": 100
+                }
+            }
+        },
         "inframodel.MemoryProperty": {
             "type": "object",
             "required": [
@@ -2979,6 +3072,17 @@ const docTemplate = `{
                 "used": {
                     "description": "Unit GiB",
                     "type": "integer"
+                }
+            }
+        },
+        "inframodel.NetworkDetail": {
+            "type": "object",
+            "properties": {
+                "defaultRouteInterface": {
+                    "$ref": "#/definitions/inframodel.NetworkInterfaceProperty"
+                },
+                "gateway": {
+                    "$ref": "#/definitions/inframodel.GatewayProperty"
                 }
             }
         },
@@ -3026,17 +3130,14 @@ const docTemplate = `{
                 "ipv4Networks": {
                     "type": "array",
                     "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "172.26.240.0/20"
-                    ]
+                        "$ref": "#/definitions/inframodel.NetworkDetail"
+                    }
                 },
                 "ipv6Networks": {
                     "description": "TBD",
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/inframodel.NetworkDetail"
                     }
                 }
             }
@@ -3443,9 +3544,11 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "dst": {
+                    "description": "e.g., \"123.123.123.123/32\", \"123.123.123.123/24\", \"0.0.0.0/0\", \"2001:db8:4567::/48\", \"2001:db8:1234:0::/64\", \"::/0\"",
                     "type": "string"
                 },
                 "dst_ports": {
+                    "description": "e.g., \"80\", \"80,443\", \"1024-65535\"",
                     "type": "string"
                 },
                 "priority": {
@@ -3453,13 +3556,15 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "protocol": {
-                    "description": "TCP, UDP, ICMP",
+                    "description": "*, tcp, udp, icmp, icmpv6",
                     "type": "string"
                 },
                 "src": {
+                    "description": "e.g., \"123.123.123.123/32\", \"123.123.123.123/24\", \"0.0.0.0/0\", \"2001:db8:4567::/48\", \"2001:db8:1234:0::/64\", \"::/0\"",
                     "type": "string"
                 },
                 "src_ports": {
+                    "description": "e.g., \"80\", \"80,443\", \"1024-65535\"",
                     "type": "string"
                 }
             }
@@ -3551,6 +3656,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "destination": {
+                    "type": "string"
+                },
+                "family": {
                     "type": "string"
                 },
                 "interface": {
@@ -3707,7 +3815,7 @@ const docTemplate = `{
                 "containers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.Container"
+                        "$ref": "#/definitions/container.Summary"
                     }
                 }
             }
@@ -3718,7 +3826,7 @@ const docTemplate = `{
                 "containers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/types.Container"
+                        "$ref": "#/definitions/container.Summary"
                     }
                 }
             }
@@ -3784,82 +3892,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/software.RPM"
                     }
-                }
-            }
-        },
-        "types.Container": {
-            "type": "object",
-            "properties": {
-                "Id": {
-                    "type": "string"
-                },
-                "ImageManifestDescriptor": {
-                    "$ref": "#/definitions/v1.Descriptor"
-                },
-                "command": {
-                    "type": "string"
-                },
-                "created": {
-                    "type": "integer"
-                },
-                "hostConfig": {
-                    "type": "object",
-                    "properties": {
-                        "annotations": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        },
-                        "networkMode": {
-                            "type": "string"
-                        }
-                    }
-                },
-                "image": {
-                    "type": "string"
-                },
-                "imageID": {
-                    "type": "string"
-                },
-                "labels": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "mounts": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/container.MountPoint"
-                    }
-                },
-                "names": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "networkSettings": {
-                    "$ref": "#/definitions/container.NetworkSettingsSummary"
-                },
-                "ports": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/container.Port"
-                    }
-                },
-                "sizeRootFs": {
-                    "type": "integer"
-                },
-                "sizeRw": {
-                    "type": "integer"
-                },
-                "state": {
-                    "$ref": "#/definitions/container.ContainerState"
-                },
-                "status": {
-                    "type": "string"
                 }
             }
         },

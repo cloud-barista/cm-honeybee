@@ -1,6 +1,8 @@
 module github.com/cloud-barista/cm-honeybee/server
 
-go 1.23.0
+go 1.24.0
+
+toolchain go1.24.4
 
 require (
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
@@ -12,8 +14,8 @@ require (
 )
 
 require (
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250507052528-10f1962038df
-	github.com/cloud-barista/cm-model v0.0.4-0.20250428083710-ce15d81d44c2
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250707102117-4772a1139e30
+	github.com/cloud-barista/cm-model v0.0.0-00010101000000-000000000000
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.9
 	github.com/swaggo/echo-swagger v1.4.1
@@ -34,7 +36,6 @@ require (
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-openapi/swag v0.23.1 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -65,3 +66,5 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.38.0 // indirect
 )
+
+replace github.com/cloud-barista/cm-model => github.com/yunkon-kim/cm-model v0.0.0-20250429084200-e606929e03c6
