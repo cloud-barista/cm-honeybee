@@ -604,6 +604,8 @@ definitions:
     properties:
       destination:
         type: string
+      family:
+        type: string
       interface:
         type: string
       link:

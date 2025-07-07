@@ -10,4 +10,5 @@ type Route struct {
 	Scope       string `json:"scope"`
 	Proto       string `json:"proto"`
 	Link        string `json:"link"`
+	Family      string `json:"family"`
 }

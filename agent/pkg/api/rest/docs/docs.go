@@ -1046,6 +1046,9 @@ const docTemplate = `{
                 "destination": {
                     "type": "string"
                 },
+                "family": {
+                    "type": "string"
+                },
                 "interface": {
                     "type": "string"
                 },

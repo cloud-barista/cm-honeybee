@@ -76,6 +76,7 @@ func GetRoutes() ([]network.Route, error) {
 			Netmask:     r.Netmask,
 			NextHop:     r.NextHop,
 			Metric:      r.Metric,
+			Family:      r.Family,
 		}
 
 		ext, ok := routeExts[r.Interface]

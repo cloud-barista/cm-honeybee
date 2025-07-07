@@ -32,6 +32,7 @@ func GetRoutes() ([]network.Route, error) {
 			Scope:       "N/A",
 			Proto:       "N/A",
 			Link:        "N/A",
+			Family:      r.Family,
 		})
 	}
 

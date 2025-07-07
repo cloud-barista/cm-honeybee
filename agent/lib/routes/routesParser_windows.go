@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/logger"
+	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -17,94 +18,139 @@ type RouteStruct struct {
 	Netmask     string
 	NextHop     string
 	Metric      int
+	Family      string
 }
 
-// Windows route output format is always like this:
-// ===========================================================================
-// Interface List
-// 8 ...00 12 3f a7 17 ba ...... Intel(R) PRO/100 VE Network Connection
-// 1 ........................... Software Loopback Interface 1
-// ===========================================================================
-// IPv4 Route Table
-// ===========================================================================
-// Active Routes:
-// Network Destination        Netmask          Gateway       Interface  Metric
+func cidrToNetmask(prefixLen int) string {
+	if prefixLen < 0 || prefixLen > 32 {
+		return "0.0.0.0"
+	}
+
+	mask := net.CIDRMask(prefixLen, 32)
+	netmask := net.IPv4(mask[0], mask[1], mask[2], mask[3])
+	return netmask.String()
+}
+
+// PowerShell Get-NetRoute output format with interface names:
+// ifIndex DestinationPrefix             NextHop         RouteMetric InterfaceAlias
+// ------- -----------------             -------         ----------- --------------
+// 12      0.0.0.0/0                     192.168.110.254 256         Ethernet
+// 12      192.168.110.0/24              0.0.0.0         256         Ethernet
+// 1       ::1/128                       ::              256         Interface1
 //
-//	0.0.0.0          0.0.0.0      192.168.1.1    192.168.1.100     20
+// This function uses PowerShell Get-NetRoute cmdlet to get both IPv4 and IPv6 routing information
+// in a structured format that's easier to parse than traditional route print command.
 //
-// ===========================================================================
-//
-// Windows commands are localized, so we can't just look for "Active Routes:" string
-// I'm trying to pick the active route,
-// then jump 2 lines and get the row
-// Not using regex because output is quite standard from Windows XP to 8 (NEEDS TESTING)
+// For on-link routes:
+// - IPv4: NextHop shows as "0.0.0.0"
+// - IPv6: NextHop shows as "::"
 //
 // If multiple default gateways are present, then the one with the lowest metric is returned.
+// For IPv4: default route is 0.0.0.0/0
+// For IPv6: default route is ::/0
 func GetRoutes(getOnlyDefaults bool) ([]RouteStruct, error) {
-	output, err := cmd.RunCMD("route print")
+	output, err := cmd.RunPowerShell("[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; " +
+		"Get-NetRoute | " +
+		"Select-Object ifIndex,DestinationPrefix,NextHop,RouteMetric," +
+		"@{Name='InterfaceAlias';" +
+		"Expression={$adapter = Get-NetAdapter -InterfaceIndex $_.ifIndex -ErrorAction SilentlyContinue; " +
+		"if($adapter){$adapter.InterfaceAlias | " +
+		"Select-Object -First 1}" +
+		"else{$ipif = Get-NetIPInterface -InterfaceIndex $_.ifIndex -ErrorAction SilentlyContinue; " +
+		"if($ipif){($ipif.InterfaceAlias | Select-Object -First 1)}" +
+		"else{'Interface'+$_.ifIndex}}}}" +
+		" | Format-Table -AutoSize")
 	if err != nil {
 		errMsg := err.Error()
 		logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
 		return nil, errors.New(errMsg)
 	}
 
-	const (
-		destinationField = 0 // field containing string dotted destination IP address
-		netmaskField     = 1 // field containing string dotted netmask
-		gatewayField     = 2 // field containing string dotted gateway IP address
-		interfaceField   = 3 // field containing string dotted interface IP address
-		metricField      = 4 // field containing string metric
-	)
+	ipv4Regex := regexp.MustCompile(`^(\d{1,3}\.){3}\d{1,3}(/\d{1,2})?$`)
+	ipv6Regex := regexp.MustCompile(`^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(/\d{1,3})?$|^::(/\d{1,3})?$`)
 
-	ipRegex := regexp.MustCompile(`^(((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.|$)){4})`)
 	var routes []RouteStruct
 	lines := strings.Split(output, "\n")
-	sep := 0
-	for idx, line := range lines {
-		if sep == 3 {
-			// We just entered the 2nd section containing "Active Routes:"
-			if len(lines) <= idx+2 {
-				return []RouteStruct{}, nil
-			}
 
-			inputLine := lines[idx+2]
-			if strings.HasPrefix(inputLine, "=======") {
-				// End of routes
-				break
-			}
-			fields := strings.Fields(inputLine)
-			if len(fields) < 5 || !ipRegex.MatchString(fields[0]) {
-				errMsg := "invalid filed found"
-				logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
-				return nil, errors.New(errMsg)
-			}
+	headerFound := false
 
-			// found default route
-			if getOnlyDefaults && (fields[destinationField] != "0.0.0.0" || fields[netmaskField] != "0.0.0.0") {
-				continue
-			}
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
 
-			metric, _ := strconv.Atoi(fields[metricField])
-
-			routes = append(routes, RouteStruct{
-				Interface:   fields[interfaceField],
-				Destination: fields[destinationField],
-				Netmask:     fields[netmaskField],
-				NextHop:     strings.ToLower(fields[gatewayField]),
-				Metric:      metric,
-			})
-		}
-		if strings.HasPrefix(line, "=======") {
-			sep++
+		if line == "" {
 			continue
 		}
-	}
 
-	if sep == 0 {
-		// We saw no separator lines, so input must have been garbage.
-		errMsg := "got invalid result from route command"
-		logger.Println(logger.ERROR, true, "ROUTES: "+errMsg)
-		return nil, errors.New(errMsg)
+		if strings.Contains(line, "DestinationPrefix") && strings.Contains(line, "InterfaceAlias") {
+			headerFound = true
+			continue
+		}
+
+		if strings.HasPrefix(line, "---") {
+			continue
+		}
+
+		if !headerFound {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < 5 {
+			continue
+		}
+
+		destinationPrefix := fields[1]
+		nextHop := fields[2]
+		routeMetric := fields[3]
+		interfaceAlias := strings.Join(fields[4:], " ")
+
+		if !ipv4Regex.MatchString(destinationPrefix) && !ipv6Regex.MatchString(destinationPrefix) {
+			continue
+		}
+
+		family := "ipv4"
+		if strings.Contains(destinationPrefix, ":") {
+			family = "ipv6"
+		}
+
+		if getOnlyDefaults {
+			if family == "ipv4" && destinationPrefix != "0.0.0.0/0" {
+				continue
+			}
+			if family == "ipv6" && destinationPrefix != "::/0" {
+				continue
+			}
+		}
+
+		dest := destinationPrefix
+		netmask := ""
+
+		if strings.Contains(destinationPrefix, "/") {
+			parts := strings.Split(destinationPrefix, "/")
+			dest = parts[0]
+			prefixLen, _ := strconv.Atoi(parts[1])
+
+			if family == "ipv4" {
+				netmask = cidrToNetmask(prefixLen)
+			} else {
+				netmask = "/" + parts[1]
+			}
+		}
+
+		if nextHop == "0.0.0.0" || nextHop == "::" {
+			nextHop = "on-link"
+		}
+
+		metric, _ := strconv.Atoi(routeMetric)
+
+		routes = append(routes, RouteStruct{
+			Interface:   interfaceAlias,
+			Destination: dest,
+			Netmask:     netmask,
+			NextHop:     nextHop,
+			Metric:      metric,
+			Family:      family,
+		})
 	}
 
 	return routes, nil
