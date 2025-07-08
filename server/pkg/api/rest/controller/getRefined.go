@@ -1,10 +1,13 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
+	"github.com/jollaman999/utils/logger"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/cloud-barista/cm-honeybee/server/dao"
@@ -13,6 +16,52 @@ import (
 	inframodel "github.com/cloud-barista/cm-model/infra/onprem"
 	"github.com/labstack/echo/v4"
 )
+
+func netmaskToCIDR(netmask string) (int, error) {
+	ip := net.ParseIP(netmask)
+	if ip == nil {
+		return 0, fmt.Errorf("invalid netmask: %s", netmask)
+	}
+
+	mask := net.IPMask(ip.To4())
+	if mask == nil {
+		return 0, fmt.Errorf("invalid netmask: %s", netmask)
+	}
+
+	cidr, _ := mask.Size()
+
+	return cidr, nil
+}
+
+func convertRouteToRefinedRoute(route *network.Route, gateway string) (*inframodel.RouteProperty, error) {
+	var destination string
+
+	switch route.Family {
+	case "ipv4":
+		cidr, err := netmaskToCIDR(route.Netmask)
+		if err != nil {
+			return nil, err
+		}
+		destination = route.Destination + "/" + strconv.Itoa(cidr)
+	case "ipv6":
+		destination = route.Destination + route.Netmask
+	default:
+		return nil, fmt.Errorf("invalid route family: %s", route.Family)
+	}
+
+	routeProperty := inframodel.RouteProperty{
+		Destination: destination,
+		Gateway:     gateway,
+		Interface:   route.Interface,
+		Metric:      route.Metric,
+		Protocol:    route.Proto,
+		Scope:       route.Scope,
+		Source:      route.Source,
+		LinkState:   route.Link,
+	}
+
+	return &routeProperty, nil
+}
 
 func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, error) {
 	var dataDisks []inframodel.DiskProperty
@@ -73,17 +122,13 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, 
 				break
 			}
 		}
+		refinedRoute, err := convertRouteToRefinedRoute(&route, gateway)
+		if err != nil {
+			logger.Println(logger.WARN, true, err.Error())
+			continue
+		}
 
-		routingTable = append(routingTable, inframodel.RouteProperty{
-			Interface:   route.Interface,
-			Destination: route.Destination,
-			Gateway:     gateway,
-			Metric:      route.Metric,
-			Protocol:    route.Proto,
-			Scope:       route.Scope,
-			Source:      route.Source,
-			LinkState:   route.Link,
-		})
+		routingTable = append(routingTable, *refinedRoute)
 	}
 
 	var firewallRules []inframodel.FirewallRuleProperty
