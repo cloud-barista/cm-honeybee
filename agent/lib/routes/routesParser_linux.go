@@ -223,9 +223,9 @@ func getIPv6Routes(getOnlyDefaults bool) ([]RouteStruct, error) {
 		}
 
 		destAddr := fields[0]
-		prefixLen, _ := strconv.Atoi(fields[1])
+		prefixLen, _ := strconv.ParseInt(fields[1], 16, 32)
 		nextHopAddr := fields[4]
-		metric, _ := strconv.Atoi(fields[5])
+		metric, _ := strconv.ParseInt(fields[5], 16, 32)
 		interfaceName := fields[9]
 
 		destination, err := parseIPv6Address(destAddr)
@@ -254,7 +254,7 @@ func getIPv6Routes(getOnlyDefaults bool) ([]RouteStruct, error) {
 			Destination: destination.String(),
 			Netmask:     netmask,
 			NextHop:     nextHopStr,
-			Metric:      metric,
+			Metric:      int(metric),
 			Family:      "ipv6",
 		})
 	}
