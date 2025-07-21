@@ -30,7 +30,7 @@ require (
 	github.com/yumaojun03/dmidecode v0.1.5-0.20231113021359-c053d91d9679
 	golang.org/x/sys v0.33.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.18.3
+	helm.sh/helm/v3 v3.18.4
 	k8s.io/apimachinery v0.33.2
 	k8s.io/client-go v0.33.2
 )
