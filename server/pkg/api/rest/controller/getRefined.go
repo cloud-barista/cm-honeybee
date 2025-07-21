@@ -13,7 +13,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
-	inframodel "github.com/cloud-barista/cm-model/infra/onprem"
+	inframodel "github.com/cloud-barista/cm-model/infra/on-premise-model"
 	"github.com/labstack/echo/v4"
 )
 
@@ -131,10 +131,10 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, 
 		routingTable = append(routingTable, *refinedRoute)
 	}
 
-	var firewallRules []inframodel.FirewallRuleProperty
+	var firewallTable []inframodel.FirewallRuleProperty
 
 	for _, firewall := range infraInfo.Network.Host.FirewallRule {
-		firewallRules = append(firewallRules, inframodel.FirewallRuleProperty{
+		firewallTable = append(firewallTable, inframodel.FirewallRuleProperty{
 			SrcCIDR:   firewall.Src,
 			DstCIDR:   firewall.Dst,
 			SrcPorts:  firewall.SrcPorts,
@@ -172,7 +172,7 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, 
 		DataDisks:     dataDisks,
 		Interfaces:    interfaces,
 		RoutingTable:  routingTable,
-		FirewallRules: firewallRules,
+		FirewallTable: firewallTable,
 		OS: inframodel.OsProperty{
 			PrettyName:      infraInfo.Compute.OS.OS.PrettyName,
 			Version:         infraInfo.Compute.OS.OS.Version,
@@ -187,50 +187,74 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, 
 	return &refinedInfraInfo, nil
 }
 
-func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, routes *[]network.Route) {
+func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, routes *[]network.Route, machineID *string) {
 	for _, route := range *routes {
 		if strings.ToLower(route.Interface) == "lo" {
 			continue
 		}
 
-		if route.Family == "ipv4" && route.Destination == "0.0.0.0" && route.Netmask == "0.0.0.0" {
-			var dup bool
-			for _, ipv4net := range networkProperty.IPv4Networks {
-				if ipv4net.DefaultGateway.InterfaceName == route.Interface {
-					dup = true
-					break
+		if route.Family == "ipv4" {
+			if route.Destination == "0.0.0.0" && route.Netmask == "0.0.0.0" {
+				var gatewayProperty inframodel.GatewayProperty
+
+				gatewayProperty.IP = route.NextHop
+				gatewayProperty.InterfaceName = route.Interface
+				gatewayProperty.MachineId = *machineID
+
+				networkProperty.IPv4Networks.DefaultGateways = append(networkProperty.IPv4Networks.DefaultGateways, gatewayProperty)
+			} else {
+				var dup bool
+
+				cidr, err := netmaskToCIDR(route.Destination)
+				if err != nil {
+					logger.Println(logger.ERROR, true, err.Error())
 				}
-			}
-			if dup {
-				continue
-			}
+				cidrBlock := route.Destination + "/" + strconv.Itoa(cidr)
 
-			var ipv4Network inframodel.NetworkDetail
-
-			ipv4Network.DefaultGateway.IP = route.NextHop
-			ipv4Network.DefaultGateway.InterfaceName = route.Interface
-			ipv4Network.DefaultGateway.Metric = route.Metric
-
-			networkProperty.IPv4Networks = append(networkProperty.IPv4Networks, ipv4Network)
-		} else if route.Family == "ipv6" && route.Destination == "::" && route.Netmask == "/0" {
-			var dup bool
-			for _, ipv6net := range networkProperty.IPv6Networks {
-				if ipv6net.DefaultGateway.InterfaceName == route.Interface {
-					dup = true
-					break
+				for _, ipv4CidrBlock := range networkProperty.IPv4Networks.CidrBlocks {
+					if ipv4CidrBlock == cidrBlock {
+						dup = true
+						break
+					}
 				}
+				if dup {
+					continue
+				}
+
+				networkProperty.IPv4Networks.CidrBlocks = append(networkProperty.IPv4Networks.CidrBlocks, cidrBlock)
 			}
-			if dup {
-				continue
+		} else if route.Family == "ipv6" {
+			if route.Destination == "::" && route.Netmask == "/0" {
+				var gatewayProperty inframodel.GatewayProperty
+
+				gatewayProperty.IP = route.NextHop
+				gatewayProperty.InterfaceName = route.Interface
+				gatewayProperty.MachineId = *machineID
+
+				networkProperty.IPv6Networks.DefaultGateways = append(networkProperty.IPv6Networks.DefaultGateways, gatewayProperty)
+			} else {
+				if strings.HasPrefix(route.Destination, "fe80:") { // Skip lick local addresses
+					continue
+				} else if strings.HasPrefix(route.Destination, "ff") { // Skip multicast addresses
+					continue
+				}
+
+				var dup bool
+
+				cidrBlock := route.Destination + route.Netmask
+
+				for _, ipv6CidrBlock := range networkProperty.IPv6Networks.CidrBlocks {
+					if ipv6CidrBlock == cidrBlock {
+						dup = true
+						break
+					}
+				}
+				if dup {
+					continue
+				}
+
+				networkProperty.IPv6Networks.CidrBlocks = append(networkProperty.IPv6Networks.CidrBlocks, cidrBlock)
 			}
-
-			var ipv6Network inframodel.NetworkDetail
-
-			ipv6Network.DefaultGateway.IP = route.NextHop
-			ipv6Network.DefaultGateway.InterfaceName = route.Interface
-			ipv6Network.DefaultGateway.Metric = route.Metric
-
-			networkProperty.IPv6Networks = append(networkProperty.IPv6Networks, ipv6Network)
 		}
 	}
 }
@@ -279,7 +303,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 	var onpremiseInfra inframodel.OnpremInfra
 
 	onpremiseInfra.Servers = append(onpremiseInfra.Servers, *refinedInfraInfo)
-	doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route)
+	doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
 
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
 
@@ -328,7 +352,7 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 		onpremiseInfra.Servers = append(onpremiseInfra.Servers, *refinedInfraInfo)
-		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route)
+		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
 	}
 
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
