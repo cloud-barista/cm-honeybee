@@ -15,7 +15,7 @@ require (
 
 require (
 	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250707160610-88928be6b1d4
-	github.com/cloud-barista/cm-model v0.0.6
+	github.com/cloud-barista/cm-model v0.0.7
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.9
 	github.com/swaggo/echo-swagger v1.4.1
@@ -66,5 +66,3 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.38.0 // indirect
 )
-
-replace github.com/cloud-barista/cm-model => github.com/yunkon-kim/cm-model v0.0.0-20250715065944-d55721a8cf87
