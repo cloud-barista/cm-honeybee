@@ -9,25 +9,25 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jollaman999/utils v1.0.10 // Original codes from https://github.com/hcloud-classic/hcc-harp
 	github.com/labstack/echo/v4 v4.13.4
-	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/sys v0.34.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250707160610-88928be6b1d4
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250721153741-7b8271e60e14
 	github.com/cloud-barista/cm-model v0.0.7
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.9
 	github.com/swaggo/echo-swagger v1.4.1
-	github.com/swaggo/swag v1.16.4
-	golang.org/x/crypto v0.39.0
+	github.com/swaggo/swag v1.16.5
+	golang.org/x/crypto v0.40.0
 	gorm.io/gorm v1.30.0
 )
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
-	github.com/docker/docker v28.3.1+incompatible // indirect
+	github.com/docker/docker v28.3.2+incompatible // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -54,14 +54,16 @@ require (
 	github.com/swaggo/files/v2 v2.0.2 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
-	golang.org/x/net v0.41.0 // indirect
-	golang.org/x/text v0.26.0 // indirect
+	golang.org/x/exp v0.0.0-20250718183923-645b1fa84792 // indirect
+	golang.org/x/mod v0.26.0 // indirect
+	golang.org/x/net v0.42.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
+	golang.org/x/text v0.27.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
-	golang.org/x/tools v0.34.0 // indirect
+	golang.org/x/tools v0.35.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
-	modernc.org/libc v1.66.2 // indirect
+	modernc.org/libc v1.66.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.38.0 // indirect
