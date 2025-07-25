@@ -146,7 +146,8 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, 
 	}
 
 	refinedInfraInfo := inframodel.ServerProperty{
-		Hostname: infraInfo.Compute.OS.Node.Hostname,
+		Hostname:  infraInfo.Compute.OS.Node.Hostname,
+		MachineId: infraInfo.Compute.OS.Node.Machineid,
 		CPU: inframodel.CpuProperty{
 			Architecture: infraInfo.Compute.OS.Kernel.Architecture,
 			Cpus:         uint32(infraInfo.Compute.ComputeResource.CPU.Cpus),
