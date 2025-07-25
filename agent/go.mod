@@ -20,7 +20,6 @@ require (
 	github.com/knqyf263/go-rpmdb v0.1.1
 	github.com/kumako/go-win64api v0.0.0-20200829071356-ddc2195639e5
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/mittwald/go-helm-client v0.12.17
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.4
@@ -32,6 +31,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.18.4
 	k8s.io/apimachinery v0.33.2
+	k8s.io/cli-runtime v0.33.2
 	k8s.io/client-go v0.33.2
 )
 
@@ -182,7 +182,6 @@ require (
 	k8s.io/api v0.33.2 // indirect
 	k8s.io/apiextensions-apiserver v0.33.2 // indirect
 	k8s.io/apiserver v0.33.2 // indirect
-	k8s.io/cli-runtime v0.33.2 // indirect
 	k8s.io/component-base v0.33.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250701173324-9bd5c66d9911 // indirect

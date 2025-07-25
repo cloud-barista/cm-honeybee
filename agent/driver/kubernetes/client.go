@@ -2,24 +2,22 @@ package kubernetes
 
 import (
 	"errors"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/cli"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"os"
 
 	"k8s.io/client-go/kubernetes"
 
 	// "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
-
-	helmclient "github.com/mittwald/go-helm-client"
 )
 
-const (
+var (
+	//KubeConfigPath = os.Getenv("KUBECONFIG")
 	KubeConfigPath = "/etc/kubernetes/admin.conf"
+	settings       = cli.New()
 )
-
-func KubeConfigCheck() bool {
-	_, err := os.ReadFile(KubeConfigPath)
-	return err == nil
-}
 
 func GetKubernetesClientSet() (*kubernetes.Clientset, error) {
 
@@ -28,40 +26,28 @@ func GetKubernetesClientSet() (*kubernetes.Clientset, error) {
 		return nil, err
 	}
 
-	clientset, err := kubernetes.NewForConfig(config)
+	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return nil, errors.New("get clientset error")
+		return nil, errors.New("get clientSet error")
 	}
 
-	return clientset, nil
+	return clientSet, nil
 }
 
-func GetHelmClientSet(ns string) (helmclient.Client, error) {
+func GetHelmConfig(namespace string) (*action.Configuration, error) {
 
-	if ns == "" {
-		ns = "default"
-	}
+	//if namespace == "" {
+	//	namespace = "default"
+	//}
 
-	opt := &helmclient.KubeConfClientOptions{
-		Options: &helmclient.Options{
-			Namespace:        ns,
-			RepositoryCache:  "/tmp/.helmcache",
-			RepositoryConfig: "/tmp/.helmrepo",
-			Debug:            true,
-			Linting:          true,
-		},
-	}
+	configFlags := genericclioptions.NewConfigFlags(false)
+	configFlags.KubeConfig = &KubeConfigPath
+	configFlags.Namespace = &namespace
 
-	kubeConfigData, err := os.ReadFile(KubeConfigPath)
+	cfg := new(action.Configuration)
+	err := cfg.Init(configFlags, namespace, os.Getenv("HELM_DRIVER"), nil)
 	if err != nil {
 		return nil, err
 	}
-	opt.KubeConfig = kubeConfigData
-
-	helmClient, err := helmclient.NewClientFromKubeConf(opt, nil)
-	if err != nil {
-		return nil, errors.New("get clientset error")
-	}
-
-	return helmClient, err
+	return cfg, nil
 }

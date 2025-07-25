@@ -1,12 +1,13 @@
 package kubernetes
 
 import (
-	"encoding/json"
 	"fmt"
-	"os/exec"
+	"os"
 	"sort"
 
-	"helm.sh/helm/v3/pkg/release"
+	"gopkg.in/yaml.v3"
+	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/repo"
 
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/kubernetes"
 
@@ -19,35 +20,31 @@ type Release struct {
 
 func GetHelmNamespaces() ([]string, error) {
 
-	if !KubeConfigCheck() {
-		return nil, fmt.Errorf(KubeConfigPath + ": no such file or directory")
-	}
-
-	cmd := exec.Command("helm", "ls", "-A", "-o", "json", "--kube-insecure-skip-tls-verify", "--kubeconfig", KubeConfigPath)
-
-	output, err := cmd.Output()
+	cfg, err := GetHelmConfig("")
 	if err != nil {
-		logger.Println(logger.ERROR, true, "Error executing helm command: "+err.Error())
-		return []string{}, err
+		logger.Println(logger.ERROR, true, "Failed to GetHelmConfig: "+err.Error())
+		return nil, err
 	}
 
-	var releases []Release
-	err = json.Unmarshal(output, &releases)
+	list := action.NewList(cfg)
+	list.All = true
+	list.AllNamespaces = true
+
+	releases, err := list.Run()
 	if err != nil {
-		logger.Println(logger.ERROR, true, "Error unmarshaling helm Namespace: "+err.Error())
-		return []string{}, err
+		logger.Println(logger.ERROR, true, "Failed to list helm releases: "+err.Error())
+		return nil, err
 	}
 
-	namespaceSet := make(map[string]struct{})
-	for _, release := range releases {
-		namespaceSet[release.Namespace] = struct{}{}
+	nsMap := make(map[string]struct{})
+	for _, rel := range releases {
+		nsMap[rel.Namespace] = struct{}{}
 	}
 
 	var namespaces []string
-	for ns := range namespaceSet {
+	for ns := range nsMap {
 		namespaces = append(namespaces, ns)
 	}
-
 	sort.Strings(namespaces)
 
 	return namespaces, nil
@@ -55,69 +52,66 @@ func GetHelmNamespaces() ([]string, error) {
 
 func GetRepoInfo() ([]kubernetes.Repo, error) {
 
-	// $USER/.config/helm/repositories.yaml
-	cmd := exec.Command("helm", "repo", "list", "-o", "json", "--kube-insecure-skip-tls-verify", "--kubeconfig", KubeConfigPath)
+	repoFile := settings.RepositoryConfig // ~/.config/helm/repositories.yaml
 
-	output, err := cmd.Output()
+	yamlBytes, err := os.ReadFile(repoFile)
 	if err != nil {
-		logger.Println(logger.ERROR, true, "Error executing helm command: "+err.Error())
-		return []kubernetes.Repo{}, err
+		logger.Println(logger.ERROR, true, "Failed to read helm repo config: "+err.Error())
+		return nil, err
+	}
+
+	var rf repo.File
+	if err := yaml.Unmarshal(yamlBytes, &rf); err != nil {
+		logger.Println(logger.ERROR, true, "Failed to parse repo config: "+err.Error())
+		return nil, err
 	}
 
 	var repos []kubernetes.Repo
-	err = json.Unmarshal(output, &repos)
-	if err != nil {
-		logger.Println(logger.ERROR, true, "Error unmarshaling helm Repo: "+err.Error())
-		return []kubernetes.Repo{}, err
+	for _, entry := range rf.Repositories {
+		repos = append(repos, kubernetes.Repo{
+			Name: entry.Name,
+			URL:  entry.URL,
+		})
 	}
-
 	return repos, nil
 }
 
 func GetReleaseInfo() ([]kubernetes.Release, error) {
-
 	namespaces, err := GetHelmNamespaces()
 	if err != nil {
-		return []kubernetes.Release{}, err
+		return nil, err
 	}
 
 	var releases []kubernetes.Release
 
 	for _, ns := range namespaces {
-		helmClientset, err := GetHelmClientSet(ns)
+		cfg, err := GetHelmConfig(ns)
 		if err != nil {
-			logger.Println(logger.ERROR, true, "Helm Connection Error: "+err.Error())
-			return []kubernetes.Release{}, err
+			logger.Println(logger.ERROR, true, fmt.Sprintf("Helm config init failed for %s: %s", ns, err.Error()))
+			continue
 		}
 
-		var objects []*release.Release
-		objects, err = helmClientset.ListDeployedReleases()
+		list := action.NewList(cfg)
+		list.All = false
+		list.Deployed = true
+
+		releaseList, err := list.Run()
 		if err != nil {
-			return []kubernetes.Release{}, err
+			logger.Println(logger.ERROR, true, fmt.Sprintf("Failed to list releases in %s: %s", ns, err.Error()))
+			continue
 		}
 
-		ObjectCnt := len(objects)
-
-		for i := 0; i < ObjectCnt; i++ {
-
-			object, err := helmClientset.GetRelease(objects[i].Name)
-			if err != nil {
-				return []kubernetes.Release{}, err
-			}
-
-			release := kubernetes.Release{
-				Name:             object.Name,
-				Namespace:        object.Namespace,
-				Revision:         object.Version,
-				Updated:          object.Info.LastDeployed.Time,
-				Status:           string(object.Info.Status),
-				AppVersion:       object.Chart.Metadata.AppVersion,
-				ChartNameVersion: object.Chart.Metadata.Name + "-" + object.Chart.Metadata.Version,
-			}
-			releases = append(releases, release)
+		for _, release := range releaseList {
+			releases = append(releases, kubernetes.Release{
+				Name:             release.Name,
+				Namespace:        release.Namespace,
+				Revision:         release.Version,
+				Updated:          release.Info.LastDeployed.Time,
+				Status:           string(release.Info.Status),
+				AppVersion:       release.Chart.AppVersion(),
+				ChartNameVersion: fmt.Sprintf("%s-%s", release.Chart.Metadata.Name, release.Chart.Metadata.Version),
+			})
 		}
-
 	}
-
 	return releases, nil
 }
