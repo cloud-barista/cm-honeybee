@@ -146,7 +146,8 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, 
 	}
 
 	refinedInfraInfo := inframodel.ServerProperty{
-		Hostname: infraInfo.Compute.OS.Node.Hostname,
+		Hostname:  infraInfo.Compute.OS.Node.Hostname,
+		MachineId: infraInfo.Compute.OS.Node.Machineid,
 		CPU: inframodel.CpuProperty{
 			Architecture: infraInfo.Compute.OS.Kernel.Architecture,
 			Cpus:         uint32(infraInfo.Compute.ComputeResource.CPU.Cpus),
@@ -193,7 +194,8 @@ func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, routes
 			continue
 		}
 
-		if route.Family == "ipv4" {
+		switch route.Family {
+		case "ipv4":
 			if route.Destination == "0.0.0.0" && route.Netmask == "0.0.0.0" {
 				var gatewayProperty inframodel.GatewayProperty
 
@@ -202,28 +204,8 @@ func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, routes
 				gatewayProperty.MachineId = *machineID
 
 				networkProperty.IPv4Networks.DefaultGateways = append(networkProperty.IPv4Networks.DefaultGateways, gatewayProperty)
-			} else {
-				var dup bool
-
-				cidr, err := netmaskToCIDR(route.Destination)
-				if err != nil {
-					logger.Println(logger.ERROR, true, err.Error())
-				}
-				cidrBlock := route.Destination + "/" + strconv.Itoa(cidr)
-
-				for _, ipv4CidrBlock := range networkProperty.IPv4Networks.CidrBlocks {
-					if ipv4CidrBlock == cidrBlock {
-						dup = true
-						break
-					}
-				}
-				if dup {
-					continue
-				}
-
-				networkProperty.IPv4Networks.CidrBlocks = append(networkProperty.IPv4Networks.CidrBlocks, cidrBlock)
 			}
-		} else if route.Family == "ipv6" {
+		case "ipv6":
 			if route.Destination == "::" && route.Netmask == "/0" {
 				var gatewayProperty inframodel.GatewayProperty
 
@@ -232,28 +214,6 @@ func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, routes
 				gatewayProperty.MachineId = *machineID
 
 				networkProperty.IPv6Networks.DefaultGateways = append(networkProperty.IPv6Networks.DefaultGateways, gatewayProperty)
-			} else {
-				if strings.HasPrefix(route.Destination, "fe80:") { // Skip lick local addresses
-					continue
-				} else if strings.HasPrefix(route.Destination, "ff") { // Skip multicast addresses
-					continue
-				}
-
-				var dup bool
-
-				cidrBlock := route.Destination + route.Netmask
-
-				for _, ipv6CidrBlock := range networkProperty.IPv6Networks.CidrBlocks {
-					if ipv6CidrBlock == cidrBlock {
-						dup = true
-						break
-					}
-				}
-				if dup {
-					continue
-				}
-
-				networkProperty.IPv6Networks.CidrBlocks = append(networkProperty.IPv6Networks.CidrBlocks, cidrBlock)
 			}
 		}
 	}
