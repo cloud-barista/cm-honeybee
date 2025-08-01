@@ -203,6 +203,175 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "blkiodev.ThrottleDevice": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "rate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "blkiodev.WeightDevice": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "integer"
+                }
+            }
+        },
+        "container.CgroupnsMode": {
+            "type": "string",
+            "enum": [
+                "",
+                "private",
+                "host"
+            ],
+            "x-enum-varnames": [
+                "CgroupnsModeEmpty",
+                "CgroupnsModePrivate",
+                "CgroupnsModeHost"
+            ]
+        },
+        "container.Config": {
+            "type": "object",
+            "properties": {
+                "argsEscaped": {
+                    "description": "True if command is already escaped (meaning treat as a command line) (Windows specific).",
+                    "type": "boolean"
+                },
+                "attachStderr": {
+                    "description": "Attach the standard error",
+                    "type": "boolean"
+                },
+                "attachStdin": {
+                    "description": "Attach the standard input, makes possible user interaction",
+                    "type": "boolean"
+                },
+                "attachStdout": {
+                    "description": "Attach the standard output",
+                    "type": "boolean"
+                },
+                "cmd": {
+                    "description": "Command to run when starting the container",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "domainname": {
+                    "description": "Domainname",
+                    "type": "string"
+                },
+                "entrypoint": {
+                    "description": "Entrypoint to run when starting the container",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "env": {
+                    "description": "List of environment variable to set in the container",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "exposedPorts": {
+                    "description": "List of exposed ports",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/nat.PortSet"
+                        }
+                    ]
+                },
+                "healthcheck": {
+                    "description": "Healthcheck describes how to check the container is healthy",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.HealthConfig"
+                        }
+                    ]
+                },
+                "hostname": {
+                    "description": "Hostname",
+                    "type": "string"
+                },
+                "image": {
+                    "description": "Name of the image as it was passed by the operator (e.g. could be symbolic)",
+                    "type": "string"
+                },
+                "labels": {
+                    "description": "List of labels set to this container",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "macAddress": {
+                    "description": "Mac Address of the container.\n\nDeprecated: this field is deprecated since API v1.44. Use EndpointSettings.MacAddress instead.",
+                    "type": "string"
+                },
+                "networkDisabled": {
+                    "description": "Is network disabled",
+                    "type": "boolean"
+                },
+                "onBuild": {
+                    "description": "ONBUILD metadata that were defined on the image Dockerfile",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "openStdin": {
+                    "description": "Open stdin",
+                    "type": "boolean"
+                },
+                "shell": {
+                    "description": "Shell for shell-form of RUN, CMD, ENTRYPOINT",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "stdinOnce": {
+                    "description": "If true, close stdin after the 1 attached client disconnects.",
+                    "type": "boolean"
+                },
+                "stopSignal": {
+                    "description": "Signal to stop a container",
+                    "type": "string"
+                },
+                "stopTimeout": {
+                    "description": "Timeout (in seconds) to stop a container",
+                    "type": "integer"
+                },
+                "tty": {
+                    "description": "Attach standard streams to a tty, including stdin if it is not closed.",
+                    "type": "boolean"
+                },
+                "user": {
+                    "description": "User that will run the command(s) inside the container, also support user:group",
+                    "type": "string"
+                },
+                "volumes": {
+                    "description": "List of volumes (mounts) used for the container",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object"
+                    }
+                },
+                "workingDir": {
+                    "description": "Current directory (PWD) in the command will be launched",
+                    "type": "string"
+                }
+            }
+        },
         "container.ContainerState": {
             "type": "string",
             "enum": [
@@ -232,6 +401,712 @@ const docTemplate = `{
                 "StateExited",
                 "StateDead"
             ]
+        },
+        "container.DeviceMapping": {
+            "type": "object",
+            "properties": {
+                "cgroupPermissions": {
+                    "type": "string"
+                },
+                "pathInContainer": {
+                    "type": "string"
+                },
+                "pathOnHost": {
+                    "type": "string"
+                }
+            }
+        },
+        "container.DeviceRequest": {
+            "type": "object",
+            "properties": {
+                "capabilities": {
+                    "description": "An OR list of AND lists of device capabilities (e.g. \"gpu\")",
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "count": {
+                    "description": "Number of devices to request (-1 = All)",
+                    "type": "integer"
+                },
+                "deviceIDs": {
+                    "description": "List of device IDs as recognizable by the device driver",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "driver": {
+                    "description": "Name of device driver",
+                    "type": "string"
+                },
+                "options": {
+                    "description": "Options to pass onto the device driver",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "container.Health": {
+            "type": "object",
+            "properties": {
+                "failingStreak": {
+                    "description": "FailingStreak is the number of consecutive failures",
+                    "type": "integer"
+                },
+                "log": {
+                    "description": "Log contains the last few results (oldest first)",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container.HealthcheckResult"
+                    }
+                },
+                "status": {
+                    "description": "Status is one of [Starting], [Healthy] or [Unhealthy].",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.HealthStatus"
+                        }
+                    ]
+                }
+            }
+        },
+        "container.HealthConfig": {
+            "type": "object",
+            "properties": {
+                "interval": {
+                    "description": "Zero means to inherit. Durations are expressed as integer nanoseconds.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "retries": {
+                    "description": "Retries is the number of consecutive failures needed to consider a container as unhealthy.\nZero means inherit.",
+                    "type": "integer"
+                },
+                "startInterval": {
+                    "description": "The interval to attempt healthchecks at during the start period",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "startPeriod": {
+                    "description": "The start period for the container to initialize before the retries starts to count down.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "test": {
+                    "description": "Test is the test to perform to check that the container is healthy.\nAn empty slice means to inherit the default.\nThe options are:\n{} : inherit healthcheck\n{\"NONE\"} : disable healthcheck\n{\"CMD\", args...} : exec arguments directly\n{\"CMD-SHELL\", command} : run command with system's default shell",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "timeout": {
+                    "description": "Timeout is the time to wait before considering the check to have hung.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                }
+            }
+        },
+        "container.HealthStatus": {
+            "type": "string",
+            "enum": [
+                "none",
+                "starting",
+                "healthy",
+                "unhealthy"
+            ],
+            "x-enum-comments": {
+                "Healthy": "Healthy indicates that the container is running correctly",
+                "NoHealthcheck": "Indicates there is no healthcheck",
+                "Starting": "Starting indicates that the container is not yet ready",
+                "Unhealthy": "Unhealthy indicates that the container has a problem"
+            },
+            "x-enum-varnames": [
+                "NoHealthcheck",
+                "Starting",
+                "Healthy",
+                "Unhealthy"
+            ]
+        },
+        "container.HealthcheckResult": {
+            "type": "object",
+            "properties": {
+                "end": {
+                    "description": "End is the time this check ended",
+                    "type": "string"
+                },
+                "exitCode": {
+                    "description": "ExitCode meanings: 0=healthy, 1=unhealthy, 2=reserved (considered unhealthy), else=error running probe",
+                    "type": "integer"
+                },
+                "output": {
+                    "description": "Output from last check",
+                    "type": "string"
+                },
+                "start": {
+                    "description": "Start is the time this check started",
+                    "type": "string"
+                }
+            }
+        },
+        "container.HostConfig": {
+            "type": "object",
+            "properties": {
+                "CpuCount": {
+                    "description": "Applicable to Windows",
+                    "type": "integer"
+                },
+                "CpuPercent": {
+                    "description": "CPU percent",
+                    "type": "integer"
+                },
+                "CpuPeriod": {
+                    "description": "CPU CFS (Completely Fair Scheduler) period",
+                    "type": "integer"
+                },
+                "CpuQuota": {
+                    "description": "CPU CFS (Completely Fair Scheduler) quota",
+                    "type": "integer"
+                },
+                "CpuRealtimePeriod": {
+                    "description": "CPU real-time period",
+                    "type": "integer"
+                },
+                "CpuRealtimeRuntime": {
+                    "description": "CPU real-time runtime",
+                    "type": "integer"
+                },
+                "CpuShares": {
+                    "description": "Applicable to all platforms",
+                    "type": "integer"
+                },
+                "Dns": {
+                    "description": "List of DNS server to lookup",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "DnsOptions": {
+                    "description": "List of DNSOption to look for",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "DnsSearch": {
+                    "description": "List of DNSSearch to look for",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "NanoCpus": {
+                    "description": "CPU quota in units of 10\u003csup\u003e-9\u003c/sup\u003e CPUs.",
+                    "type": "integer"
+                },
+                "annotations": {
+                    "description": "Arbitrary non-identifying metadata attached to container and provided to the runtime",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "autoRemove": {
+                    "description": "Automatically remove container when it exits",
+                    "type": "boolean"
+                },
+                "binds": {
+                    "description": "Applicable to all platforms",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "blkioDeviceReadBps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
+                    }
+                },
+                "blkioDeviceReadIOps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
+                    }
+                },
+                "blkioDeviceWriteBps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
+                    }
+                },
+                "blkioDeviceWriteIOps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
+                    }
+                },
+                "blkioWeight": {
+                    "description": "Block IO weight (relative weight vs. other containers)",
+                    "type": "integer"
+                },
+                "blkioWeightDevice": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/blkiodev.WeightDevice"
+                    }
+                },
+                "capAdd": {
+                    "description": "Applicable to UNIX platforms",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "capDrop": {
+                    "description": "List of kernel capabilities to remove from the container",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cgroup": {
+                    "description": "Cgroup to use for the container",
+                    "type": "string"
+                },
+                "cgroupParent": {
+                    "description": "Applicable to UNIX platforms",
+                    "type": "string"
+                },
+                "cgroupnsMode": {
+                    "description": "Cgroup namespace mode to use for the container",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.CgroupnsMode"
+                        }
+                    ]
+                },
+                "consoleSize": {
+                    "description": "Initial console size (height,width)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "containerIDFile": {
+                    "description": "File (path) where the containerId is written",
+                    "type": "string"
+                },
+                "cpusetCpus": {
+                    "description": "CpusetCpus 0-2, 0,1",
+                    "type": "string"
+                },
+                "cpusetMems": {
+                    "description": "CpusetMems 0-2, 0,1",
+                    "type": "string"
+                },
+                "deviceCgroupRules": {
+                    "description": "List of rule to be added to the device cgroup",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "deviceRequests": {
+                    "description": "List of device requests for device drivers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container.DeviceRequest"
+                    }
+                },
+                "devices": {
+                    "description": "List of devices to map inside the container",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container.DeviceMapping"
+                    }
+                },
+                "extraHosts": {
+                    "description": "List of extra hosts",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "groupAdd": {
+                    "description": "List of additional groups that the container process will run as",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "init": {
+                    "description": "Run a custom init inside the container, if null, use the daemon's configured settings",
+                    "type": "boolean"
+                },
+                "iomaximumBandwidth": {
+                    "description": "Maximum IO in bytes per second for the container system drive",
+                    "type": "integer"
+                },
+                "iomaximumIOps": {
+                    "description": "Maximum IOps for the container system drive",
+                    "type": "integer"
+                },
+                "ipcMode": {
+                    "description": "IPC namespace to use for the container",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.IpcMode"
+                        }
+                    ]
+                },
+                "isolation": {
+                    "description": "Applicable to Windows",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.Isolation"
+                        }
+                    ]
+                },
+                "kernelMemory": {
+                    "description": "KernelMemory specifies the kernel memory limit (in bytes) for the container.\nDeprecated: kernel 5.4 deprecated kmem.limit_in_bytes.",
+                    "type": "integer"
+                },
+                "kernelMemoryTCP": {
+                    "description": "Hard limit for kernel TCP buffer memory (in bytes)",
+                    "type": "integer"
+                },
+                "links": {
+                    "description": "List of links (in the name:alias form)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "logConfig": {
+                    "description": "Configuration of the logs for this container",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.LogConfig"
+                        }
+                    ]
+                },
+                "maskedPaths": {
+                    "description": "MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "memory": {
+                    "description": "Memory limit (in bytes)",
+                    "type": "integer"
+                },
+                "memoryReservation": {
+                    "description": "Memory soft limit (in bytes)",
+                    "type": "integer"
+                },
+                "memorySwap": {
+                    "description": "Total memory usage (memory + swap); set ` + "`" + `-1` + "`" + ` to enable unlimited swap",
+                    "type": "integer"
+                },
+                "memorySwappiness": {
+                    "description": "Tuning container memory swappiness behaviour",
+                    "type": "integer"
+                },
+                "mounts": {
+                    "description": "Mounts specs used by the container",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mount.Mount"
+                    }
+                },
+                "networkMode": {
+                    "description": "Network mode to use for the container",
+                    "type": "string"
+                },
+                "oomKillDisable": {
+                    "description": "Whether to disable OOM Killer or not",
+                    "type": "boolean"
+                },
+                "oomScoreAdj": {
+                    "description": "Container preference for OOM-killing",
+                    "type": "integer"
+                },
+                "pidMode": {
+                    "description": "PID namespace to use for the container",
+                    "type": "string"
+                },
+                "pidsLimit": {
+                    "description": "Setting PIDs limit for a container; Set ` + "`" + `0` + "`" + ` or ` + "`" + `-1` + "`" + ` for unlimited, or ` + "`" + `null` + "`" + ` to not change.",
+                    "type": "integer"
+                },
+                "portBindings": {
+                    "description": "Port mapping between the exposed port (container) and the host",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/nat.PortMap"
+                        }
+                    ]
+                },
+                "privileged": {
+                    "description": "Is the container in privileged mode",
+                    "type": "boolean"
+                },
+                "publishAllPorts": {
+                    "description": "Should docker publish all exposed port for the container",
+                    "type": "boolean"
+                },
+                "readonlyPaths": {
+                    "description": "ReadonlyPaths is the list of paths to be set as read-only inside the container (this overrides the default set of paths)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "readonlyRootfs": {
+                    "description": "Is the container root filesystem in read-only",
+                    "type": "boolean"
+                },
+                "restartPolicy": {
+                    "description": "Restart policy to be used for the container",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.RestartPolicy"
+                        }
+                    ]
+                },
+                "runtime": {
+                    "description": "Runtime to use with this container",
+                    "type": "string"
+                },
+                "securityOpt": {
+                    "description": "List of string values to customize labels for MLS systems, such as SELinux.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "shmSize": {
+                    "description": "Total shm memory usage",
+                    "type": "integer"
+                },
+                "storageOpt": {
+                    "description": "Storage driver options per container.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "sysctls": {
+                    "description": "List of Namespaced sysctls used for the container",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "tmpfs": {
+                    "description": "List of tmpfs (mounts) used for the container",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "ulimits": {
+                    "description": "List of ulimits to be set in the container",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container.Ulimit"
+                    }
+                },
+                "usernsMode": {
+                    "description": "The user namespace to use for the container",
+                    "type": "string"
+                },
+                "utsmode": {
+                    "description": "UTS namespace to use for the container",
+                    "type": "string"
+                },
+                "volumeDriver": {
+                    "description": "Name of the volume driver used to mount volumes",
+                    "type": "string"
+                },
+                "volumesFrom": {
+                    "description": "List of volumes to take from other container",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "container.InspectResponse": {
+            "type": "object",
+            "properties": {
+                "Id": {
+                    "type": "string"
+                },
+                "ImageManifestDescriptor": {
+                    "description": "ImageManifestDescriptor is the descriptor of a platform-specific manifest of the image used to create the container.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1.Descriptor"
+                        }
+                    ]
+                },
+                "appArmorProfile": {
+                    "type": "string"
+                },
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "config": {
+                    "$ref": "#/definitions/container.Config"
+                },
+                "created": {
+                    "type": "string"
+                },
+                "driver": {
+                    "type": "string"
+                },
+                "execIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "graphDriver": {
+                    "$ref": "#/definitions/storage.DriverData"
+                },
+                "hostConfig": {
+                    "$ref": "#/definitions/container.HostConfig"
+                },
+                "hostnamePath": {
+                    "type": "string"
+                },
+                "hostsPath": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "logPath": {
+                    "type": "string"
+                },
+                "mountLabel": {
+                    "type": "string"
+                },
+                "mounts": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container.MountPoint"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "networkSettings": {
+                    "$ref": "#/definitions/container.NetworkSettings"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "platform": {
+                    "type": "string"
+                },
+                "processLabel": {
+                    "type": "string"
+                },
+                "resolvConfPath": {
+                    "type": "string"
+                },
+                "restartCount": {
+                    "type": "integer"
+                },
+                "sizeRootFs": {
+                    "type": "integer"
+                },
+                "sizeRw": {
+                    "type": "integer"
+                },
+                "state": {
+                    "$ref": "#/definitions/container.State"
+                }
+            }
+        },
+        "container.IpcMode": {
+            "type": "string",
+            "enum": [
+                "none",
+                "host",
+                "container",
+                "private",
+                "shareable"
+            ],
+            "x-enum-varnames": [
+                "IPCModeNone",
+                "IPCModeHost",
+                "IPCModeContainer",
+                "IPCModePrivate",
+                "IPCModeShareable"
+            ]
+        },
+        "container.Isolation": {
+            "type": "string",
+            "enum": [
+                "",
+                "default",
+                "process",
+                "hyperv"
+            ],
+            "x-enum-comments": {
+                "IsolationDefault": "IsolationDefault is the default isolation mode on current daemon",
+                "IsolationEmpty": "IsolationEmpty is unspecified (same behavior as default)",
+                "IsolationHyperV": "IsolationHyperV is HyperV isolation mode",
+                "IsolationProcess": "IsolationProcess is process isolation mode"
+            },
+            "x-enum-varnames": [
+                "IsolationEmpty",
+                "IsolationDefault",
+                "IsolationProcess",
+                "IsolationHyperV"
+            ]
+        },
+        "container.LogConfig": {
+            "type": "object",
+            "properties": {
+                "config": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
         },
         "container.MountPoint": {
             "type": "object",
@@ -278,6 +1153,95 @@ const docTemplate = `{
                 }
             }
         },
+        "container.NetworkSettings": {
+            "type": "object",
+            "properties": {
+                "bridge": {
+                    "description": "Bridge contains the name of the default bridge interface iff it was set through the daemon --bridge flag.",
+                    "type": "string"
+                },
+                "endpointID": {
+                    "description": "EndpointID uniquely represents a service endpoint in a Sandbox",
+                    "type": "string"
+                },
+                "gateway": {
+                    "description": "Gateway holds the gateway address for the network",
+                    "type": "string"
+                },
+                "globalIPv6Address": {
+                    "description": "GlobalIPv6Address holds network's global IPv6 address",
+                    "type": "string"
+                },
+                "globalIPv6PrefixLen": {
+                    "description": "GlobalIPv6PrefixLen represents mask length of network's global IPv6 address",
+                    "type": "integer"
+                },
+                "hairpinMode": {
+                    "description": "HairpinMode specifies if hairpin NAT should be enabled on the virtual interface\n\nDeprecated: This field is never set and will be removed in a future release.",
+                    "type": "boolean"
+                },
+                "ipaddress": {
+                    "description": "IPAddress holds the IPv4 address for the network",
+                    "type": "string"
+                },
+                "ipprefixLen": {
+                    "description": "IPPrefixLen represents mask length of network's IPv4 address",
+                    "type": "integer"
+                },
+                "ipv6Gateway": {
+                    "description": "IPv6Gateway holds gateway address specific for IPv6",
+                    "type": "string"
+                },
+                "linkLocalIPv6Address": {
+                    "description": "LinkLocalIPv6Address is an IPv6 unicast address using the link-local prefix\n\nDeprecated: This field is never set and will be removed in a future release.",
+                    "type": "string"
+                },
+                "linkLocalIPv6PrefixLen": {
+                    "description": "LinkLocalIPv6PrefixLen is the prefix length of an IPv6 unicast address\n\nDeprecated: This field is never set and will be removed in a future release.",
+                    "type": "integer"
+                },
+                "macAddress": {
+                    "description": "MacAddress holds the MAC address for the network",
+                    "type": "string"
+                },
+                "networks": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/network.EndpointSettings"
+                    }
+                },
+                "ports": {
+                    "description": "Ports is a collection of PortBinding indexed by Port",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/nat.PortMap"
+                        }
+                    ]
+                },
+                "sandboxID": {
+                    "description": "SandboxID uniquely represents a container's network stack",
+                    "type": "string"
+                },
+                "sandboxKey": {
+                    "description": "SandboxKey identifies the sandbox",
+                    "type": "string"
+                },
+                "secondaryIPAddresses": {
+                    "description": "Deprecated: This field is never set and will be removed in a future release.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.Address"
+                    }
+                },
+                "secondaryIPv6Addresses": {
+                    "description": "Deprecated: This field is never set and will be removed in a future release.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/network.Address"
+                    }
+                }
+            }
+        },
         "container.NetworkSettingsSummary": {
             "type": "object",
             "properties": {
@@ -307,6 +1271,78 @@ const docTemplate = `{
                 "Type": {
                     "description": "type\nRequired: true",
                     "type": "string"
+                }
+            }
+        },
+        "container.RestartPolicy": {
+            "type": "object",
+            "properties": {
+                "maximumRetryCount": {
+                    "type": "integer"
+                },
+                "name": {
+                    "$ref": "#/definitions/container.RestartPolicyMode"
+                }
+            }
+        },
+        "container.RestartPolicyMode": {
+            "type": "string",
+            "enum": [
+                "no",
+                "always",
+                "on-failure",
+                "unless-stopped"
+            ],
+            "x-enum-varnames": [
+                "RestartPolicyDisabled",
+                "RestartPolicyAlways",
+                "RestartPolicyOnFailure",
+                "RestartPolicyUnlessStopped"
+            ]
+        },
+        "container.State": {
+            "type": "object",
+            "properties": {
+                "dead": {
+                    "type": "boolean"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "exitCode": {
+                    "type": "integer"
+                },
+                "finishedAt": {
+                    "type": "string"
+                },
+                "health": {
+                    "$ref": "#/definitions/container.Health"
+                },
+                "oomkilled": {
+                    "type": "boolean"
+                },
+                "paused": {
+                    "type": "boolean"
+                },
+                "pid": {
+                    "type": "integer"
+                },
+                "restarting": {
+                    "type": "boolean"
+                },
+                "running": {
+                    "type": "boolean"
+                },
+                "startedAt": {
+                    "type": "string"
+                },
+                "status": {
+                    "description": "String representation of the container state. Can be one of \"created\", \"running\", \"paused\", \"restarting\", \"removing\", \"exited\", or \"dead\"",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.ContainerState"
+                        }
+                    ]
                 }
             }
         },
@@ -383,6 +1419,20 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string"
+                }
+            }
+        },
+        "container.Ulimit": {
+            "type": "object",
+            "properties": {
+                "hard": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "soft": {
+                    "type": "integer"
                 }
             }
         },
@@ -1200,22 +2250,28 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Docker": {
             "type": "object",
             "properties": {
-                "containers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/container.Summary"
-                    }
+                "containerInspect": {
+                    "$ref": "#/definitions/container.InspectResponse"
+                },
+                "containerSummary": {
+                    "$ref": "#/definitions/container.Summary"
+                },
+                "imageInspect": {
+                    "$ref": "#/definitions/image.InspectResponse"
                 }
             }
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Podman": {
             "type": "object",
             "properties": {
-                "containers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/container.Summary"
-                    }
+                "containerInspect": {
+                    "$ref": "#/definitions/container.InspectResponse"
+                },
+                "containerSummary": {
+                    "$ref": "#/definitions/container.Summary"
+                },
+                "imageInspect": {
+                    "$ref": "#/definitions/image.InspectResponse"
                 }
             }
         },
@@ -1270,16 +2326,375 @@ const docTemplate = `{
                     }
                 },
                 "docker": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Docker"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Docker"
+                    }
                 },
                 "podman": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Podman"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Podman"
+                    }
                 },
                 "rpm": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.RPM"
                     }
+                }
+            }
+        },
+        "image.AttestationProperties": {
+            "type": "object",
+            "properties": {
+                "For": {
+                    "description": "For is the digest of the image manifest that this attestation is for.",
+                    "type": "string"
+                }
+            }
+        },
+        "image.ImageProperties": {
+            "type": "object",
+            "properties": {
+                "Containers": {
+                    "description": "Containers is an array containing the IDs of the containers that are\nusing this image.\n\nRequired: true",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "Platform": {
+                    "description": "Platform is the OCI platform object describing the platform of the image.\n\nRequired: true",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1.Platform"
+                        }
+                    ]
+                },
+                "size": {
+                    "type": "object",
+                    "properties": {
+                        "Unpacked": {
+                            "description": "Unpacked is the size (in bytes) of the locally unpacked\n(uncompressed) image content that's directly usable by the containers\nrunning this image.\nIt's independent of the distributable content - e.g.\nthe image might still have an unpacked data that's still used by\nsome container even when the distributable/compressed content is\nalready gone.\n\nRequired: true",
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "image.InspectResponse": {
+            "type": "object",
+            "properties": {
+                "Descriptor": {
+                    "description": "Descriptor is the OCI descriptor of the image target.\nIt's only set if the daemon provides a multi-platform image store.\n\nWARNING: This is experimental and may change at any time without any backward\ncompatibility.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1.Descriptor"
+                        }
+                    ]
+                },
+                "Id": {
+                    "description": "ID is the content-addressable ID of an image.\n\nThis identifier is a content-addressable digest calculated from the\nimage's configuration (which includes the digests of layers used by\nthe image).\n\nNote that this digest differs from the ` + "`" + `RepoDigests` + "`" + ` below, which\nholds digests of image manifests that reference the image.",
+                    "type": "string"
+                },
+                "Manifests": {
+                    "description": "Manifests is a list of image manifests available in this image. It\nprovides a more detailed view of the platform-specific image manifests or\nother image-attached data like build attestations.\n\nOnly available if the daemon provides a multi-platform image store, the client\nrequests manifests AND does not request a specific platform.\n\nWARNING: This is experimental and may change at any time without any backward\ncompatibility.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/image.ManifestSummary"
+                    }
+                },
+                "VirtualSize": {
+                    "description": "VirtualSize is the total size of the image including all layers it is\ncomposed of.\n\nDeprecated: this field is omitted in API v1.44, but kept for backward compatibility. Use Size instead.",
+                    "type": "integer"
+                },
+                "architecture": {
+                    "description": "Architecture is the hardware CPU architecture that the image runs on.",
+                    "type": "string"
+                },
+                "author": {
+                    "description": "Author is the name of the author that was specified when committing the\nimage, or as specified through MAINTAINER (deprecated) in the Dockerfile.",
+                    "type": "string"
+                },
+                "comment": {
+                    "description": "Comment is an optional message that can be set when committing or\nimporting the image.",
+                    "type": "string"
+                },
+                "config": {
+                    "$ref": "#/definitions/v1.DockerOCIImageConfig"
+                },
+                "container": {
+                    "description": "Container is the ID of the container that was used to create the image.\n\nDepending on how the image was created, this field may be empty.\n\nDeprecated: this field is omitted in API v1.45, but kept for backward compatibility.",
+                    "type": "string"
+                },
+                "containerConfig": {
+                    "description": "ContainerConfig is an optional field containing the configuration of the\ncontainer that was last committed when creating the image.\n\nPrevious versions of Docker builder used this field to store build cache,\nand it is not in active use anymore.\n\nDeprecated: this field is omitted in API v1.45, but kept for backward compatibility.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.Config"
+                        }
+                    ]
+                },
+                "created": {
+                    "description": "Created is the date and time at which the image was created, formatted in\nRFC 3339 nano-seconds (time.RFC3339Nano).\n\nThis information is only available if present in the image,\nand omitted otherwise.",
+                    "type": "string"
+                },
+                "dockerVersion": {
+                    "description": "DockerVersion is the version of Docker that was used to build the image.\n\nDepending on how the image was created, this field may be empty.",
+                    "type": "string"
+                },
+                "graphDriver": {
+                    "description": "GraphDriver holds information about the storage driver used to store the\ncontainer's and image's filesystem.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/storage.DriverData"
+                        }
+                    ]
+                },
+                "metadata": {
+                    "description": "Metadata of the image in the local cache.\n\nThis information is local to the daemon, and not part of the image itself.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/image.Metadata"
+                        }
+                    ]
+                },
+                "os": {
+                    "description": "OS is the Operating System the image is built to run on.",
+                    "type": "string"
+                },
+                "osVersion": {
+                    "description": "OsVersion is the version of the Operating System the image is built to\nrun on (especially for Windows).",
+                    "type": "string"
+                },
+                "parent": {
+                    "description": "Parent is the ID of the parent image.\n\nDepending on how the image was created, this field may be empty and\nis only set for images that were built/created locally. This field\nis empty if the image was pulled from an image registry.",
+                    "type": "string"
+                },
+                "repoDigests": {
+                    "description": "RepoDigests is a list of content-addressable digests of locally available\nimage manifests that the image is referenced from. Multiple manifests can\nrefer to the same image.\n\nThese digests are usually only available if the image was either pulled\nfrom a registry, or if the image was pushed to a registry, which is when\nthe manifest is generated and its digest calculated.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "repoTags": {
+                    "description": "RepoTags is a list of image names/tags in the local image cache that\nreference this image.\n\nMultiple image tags can refer to the same image, and this list may be\nempty if no tags reference the image, in which case the image is\n\"untagged\", in which case it can still be referenced by its ID.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rootFS": {
+                    "description": "RootFS contains information about the image's RootFS, including the\nlayer IDs.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/image.RootFS"
+                        }
+                    ]
+                },
+                "size": {
+                    "description": "Size is the total size of the image including all layers it is composed of.",
+                    "type": "integer"
+                },
+                "variant": {
+                    "description": "Variant is the CPU architecture variant (presently ARM-only).",
+                    "type": "string"
+                }
+            }
+        },
+        "image.ManifestKind": {
+            "type": "string",
+            "enum": [
+                "image",
+                "attestation",
+                "unknown"
+            ],
+            "x-enum-varnames": [
+                "ManifestKindImage",
+                "ManifestKindAttestation",
+                "ManifestKindUnknown"
+            ]
+        },
+        "image.ManifestSummary": {
+            "type": "object",
+            "properties": {
+                "AttestationData": {
+                    "description": "Present only if Kind == ManifestKindAttestation.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/image.AttestationProperties"
+                        }
+                    ]
+                },
+                "Available": {
+                    "description": "Indicates whether all the child content (image config, layers) is\nfully available locally\n\nRequired: true",
+                    "type": "boolean"
+                },
+                "Descriptor": {
+                    "description": "Descriptor is the OCI descriptor of the image.\n\nRequired: true",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1.Descriptor"
+                        }
+                    ]
+                },
+                "ID": {
+                    "description": "ID is the content-addressable ID of an image and is the same as the\ndigest of the image manifest.\n\nRequired: true",
+                    "type": "string"
+                },
+                "ImageData": {
+                    "description": "Present only if Kind == ManifestKindImage.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/image.ImageProperties"
+                        }
+                    ]
+                },
+                "Kind": {
+                    "description": "Kind is the kind of the image manifest.\n\nRequired: true",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/image.ManifestKind"
+                        }
+                    ]
+                },
+                "Size": {
+                    "description": "Size is the size information of the content related to this manifest.\nNote: These sizes only take the locally available content into account.\n\nRequired: true",
+                    "type": "object",
+                    "properties": {
+                        "Content": {
+                            "description": "Content is the size (in bytes) of all the locally present\ncontent in the content store (e.g. image config, layers)\nreferenced by this manifest and its children.\nThis only includes blobs in the content store.",
+                            "type": "integer"
+                        },
+                        "Total": {
+                            "description": "Total is the total size (in bytes) of all the locally present\ndata (both distributable and non-distributable) that's related to\nthis manifest and its children.\nThis equal to the sum of [Content] size AND all the sizes in the\n[Size] struct present in the Kind-specific data struct.\nFor example, for an image kind (Kind == ManifestKindImage),\nthis would include the size of the image content and unpacked\nimage snapshots ([Size.Content] + [ImageData.Size.Unpacked]).",
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "image.Metadata": {
+            "type": "object",
+            "properties": {
+                "lastTagTime": {
+                    "description": "LastTagTime is the date and time at which the image was last tagged.",
+                    "type": "string"
+                }
+            }
+        },
+        "image.RootFS": {
+            "type": "object",
+            "properties": {
+                "layers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "mount.BindOptions": {
+            "type": "object",
+            "properties": {
+                "createMountpoint": {
+                    "type": "boolean"
+                },
+                "nonRecursive": {
+                    "type": "boolean"
+                },
+                "propagation": {
+                    "$ref": "#/definitions/mount.Propagation"
+                },
+                "readOnlyForceRecursive": {
+                    "description": "ReadOnlyForceRecursive raises an error if the mount cannot be made recursively read-only.",
+                    "type": "boolean"
+                },
+                "readOnlyNonRecursive": {
+                    "description": "ReadOnlyNonRecursive makes the mount non-recursively read-only, but still leaves the mount recursive\n(unless NonRecursive is set to true in conjunction).",
+                    "type": "boolean"
+                }
+            }
+        },
+        "mount.ClusterOptions": {
+            "type": "object"
+        },
+        "mount.Consistency": {
+            "type": "string",
+            "enum": [
+                "consistent",
+                "cached",
+                "delegated",
+                "default"
+            ],
+            "x-enum-varnames": [
+                "ConsistencyFull",
+                "ConsistencyCached",
+                "ConsistencyDelegated",
+                "ConsistencyDefault"
+            ]
+        },
+        "mount.Driver": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "mount.ImageOptions": {
+            "type": "object",
+            "properties": {
+                "subpath": {
+                    "type": "string"
+                }
+            }
+        },
+        "mount.Mount": {
+            "type": "object",
+            "properties": {
+                "bindOptions": {
+                    "$ref": "#/definitions/mount.BindOptions"
+                },
+                "clusterOptions": {
+                    "$ref": "#/definitions/mount.ClusterOptions"
+                },
+                "consistency": {
+                    "$ref": "#/definitions/mount.Consistency"
+                },
+                "imageOptions": {
+                    "$ref": "#/definitions/mount.ImageOptions"
+                },
+                "readOnly": {
+                    "description": "attempts recursive read-only if possible",
+                    "type": "boolean"
+                },
+                "source": {
+                    "description": "Source specifies the name of the mount. Depending on mount type, this\nmay be a volume name or a host path, or even ignored.\nSource is not supported for tmpfs (must be an empty value)",
+                    "type": "string"
+                },
+                "target": {
+                    "type": "string"
+                },
+                "tmpfsOptions": {
+                    "$ref": "#/definitions/mount.TmpfsOptions"
+                },
+                "type": {
+                    "$ref": "#/definitions/mount.Type"
+                },
+                "volumeOptions": {
+                    "$ref": "#/definitions/mount.VolumeOptions"
                 }
             }
         },
@@ -1302,6 +2717,33 @@ const docTemplate = `{
                 "PropagationSlave"
             ]
         },
+        "mount.TmpfsOptions": {
+            "type": "object",
+            "properties": {
+                "mode": {
+                    "description": "Mode of the tmpfs upon creation",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/os.FileMode"
+                        }
+                    ]
+                },
+                "options": {
+                    "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "sizeBytes": {
+                    "description": "Size sets the size of the tmpfs, in bytes.\n\nThis will be converted to an operating system specific value\ndepending on the host. For example, on linux, it will be converted to\nuse a 'k', 'm' or 'g' syntax. BSD, though not widely supported with\ndocker, uses a straight byte value.\n\nPercentages are not supported.",
+                    "type": "integer"
+                }
+            }
+        },
         "mount.Type": {
             "type": "string",
             "enum": [
@@ -1320,6 +2762,65 @@ const docTemplate = `{
                 "TypeCluster",
                 "TypeImage"
             ]
+        },
+        "mount.VolumeOptions": {
+            "type": "object",
+            "properties": {
+                "driverConfig": {
+                    "$ref": "#/definitions/mount.Driver"
+                },
+                "labels": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "noCopy": {
+                    "type": "boolean"
+                },
+                "subpath": {
+                    "type": "string"
+                }
+            }
+        },
+        "nat.PortBinding": {
+            "type": "object",
+            "properties": {
+                "HostIp": {
+                    "description": "HostIP is the host IP Address",
+                    "type": "string"
+                },
+                "hostPort": {
+                    "description": "HostPort is the host port number",
+                    "type": "string"
+                }
+            }
+        },
+        "nat.PortMap": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/nat.PortBinding"
+                }
+            }
+        },
+        "nat.PortSet": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object"
+            }
+        },
+        "network.Address": {
+            "type": "object",
+            "properties": {
+                "addr": {
+                    "type": "string"
+                },
+                "prefixLen": {
+                    "type": "integer"
+                }
+            }
         },
         "network.EndpointIPAMConfig": {
             "type": "object",
@@ -1410,6 +2911,74 @@ const docTemplate = `{
                 }
             }
         },
+        "os.FileMode": {
+            "type": "integer",
+            "enum": [
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511
+            ],
+            "x-enum-comments": {
+                "ModeAppend": "a: append-only",
+                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
+                "ModeDevice": "D: device file",
+                "ModeDir": "d: is a directory",
+                "ModeExclusive": "l: exclusive use",
+                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
+                "ModeNamedPipe": "p: named pipe (FIFO)",
+                "ModePerm": "Unix permission bits, 0o777",
+                "ModeSetgid": "g: setgid",
+                "ModeSetuid": "u: setuid",
+                "ModeSocket": "S: Unix domain socket",
+                "ModeSticky": "t: sticky",
+                "ModeSymlink": "L: symbolic link",
+                "ModeTemporary": "T: temporary file; Plan 9 only"
+            },
+            "x-enum-varnames": [
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm"
+            ]
+        },
         "pkg_api_rest_controller.SimpleMsg": {
             "type": "object",
             "properties": {
@@ -1417,6 +2986,61 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "storage.DriverData": {
+            "type": "object",
+            "properties": {
+                "Data": {
+                    "description": "Low-level storage metadata, provided as key/value pairs.\n\nThis information is driver-specific, and depends on the storage-driver\nin use, and should be used for informational purposes only.\n\nRequired: true",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "Name": {
+                    "description": "Name of the storage driver.\nRequired: true",
+                    "type": "string"
+                }
+            }
+        },
+        "time.Duration": {
+            "type": "integer",
+            "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000
+            ],
+            "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour"
+            ]
         },
         "v1.Descriptor": {
             "type": "object",
@@ -1465,6 +3089,139 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                }
+            }
+        },
+        "v1.DockerOCIImageConfig": {
+            "type": "object",
+            "properties": {
+                "ArgsEscaped": {
+                    "description": "ArgsEscaped\n\nDeprecated: This field is present only for legacy compatibility with\nDocker and should not be used by new image builders.  It is used by Docker\nfor Windows images to indicate that the ` + "`" + `Entrypoint` + "`" + ` or ` + "`" + `Cmd` + "`" + ` or both,\ncontains only a single element array, that is a pre-escaped, and combined\ninto a single string ` + "`" + `CommandLine` + "`" + `. If ` + "`" + `true` + "`" + ` the value in ` + "`" + `Entrypoint` + "`" + ` or\n` + "`" + `Cmd` + "`" + ` should be used as-is to avoid double escaping.\nhttps://github.com/opencontainers/image-spec/pull/892",
+                    "type": "boolean"
+                },
+                "Cmd": {
+                    "description": "Cmd defines the default arguments to the entrypoint of the container.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "Entrypoint": {
+                    "description": "Entrypoint defines a list of arguments to use as the command to execute when the container starts.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "Env": {
+                    "description": "Env is a list of environment variables to be used in a container.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ExposedPorts": {
+                    "description": "ExposedPorts a set of ports to expose from a container running this image.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object"
+                    }
+                },
+                "Labels": {
+                    "description": "Labels contains arbitrary metadata for the container.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "StopSignal": {
+                    "description": "StopSignal contains the system call signal that will be sent to the container to exit.",
+                    "type": "string"
+                },
+                "User": {
+                    "description": "User defines the username or UID which the process in the container should run as.",
+                    "type": "string"
+                },
+                "Volumes": {
+                    "description": "Volumes is a set of directories describing where the process is likely write data specific to a container instance.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object"
+                    }
+                },
+                "WorkingDir": {
+                    "description": "WorkingDir sets the current working directory of the entrypoint process in the container.",
+                    "type": "string"
+                },
+                "healthcheck": {
+                    "description": "Healthcheck describes how to check the container is healthy",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/v1.HealthcheckConfig"
+                        }
+                    ]
+                },
+                "onBuild": {
+                    "description": "ONBUILD metadata that were defined on the image Dockerfile",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "shell": {
+                    "description": "Shell for shell-form of RUN, CMD, ENTRYPOINT",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "v1.HealthcheckConfig": {
+            "type": "object",
+            "properties": {
+                "interval": {
+                    "description": "Zero means to inherit. Durations are expressed as integer nanoseconds.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "retries": {
+                    "description": "Retries is the number of consecutive failures needed to consider a container as unhealthy.\nZero means inherit.",
+                    "type": "integer"
+                },
+                "startInterval": {
+                    "description": "The interval to attempt healthchecks at during the start period",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "startPeriod": {
+                    "description": "The start period for the container to initialize before the retries starts to count down.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
+                },
+                "test": {
+                    "description": "Test is the test to perform to check that the container is healthy.\nAn empty slice means to inherit the default.\nThe options are:\n{} : inherit healthcheck\n{\"NONE\"} : disable healthcheck\n{\"CMD\", args...} : exec arguments directly\n{\"CMD-SHELL\", command} : run command with system's default shell",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "timeout": {
+                    "description": "Timeout is the time to wait before considering the check to have hung.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/time.Duration"
+                        }
+                    ]
                 }
             }
         },

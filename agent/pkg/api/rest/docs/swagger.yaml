@@ -1,5 +1,130 @@
 basePath: /honeybee-agent
 definitions:
+  blkiodev.ThrottleDevice:
+    properties:
+      path:
+        type: string
+      rate:
+        type: integer
+    type: object
+  blkiodev.WeightDevice:
+    properties:
+      path:
+        type: string
+      weight:
+        type: integer
+    type: object
+  container.CgroupnsMode:
+    enum:
+    - ""
+    - private
+    - host
+    type: string
+    x-enum-varnames:
+    - CgroupnsModeEmpty
+    - CgroupnsModePrivate
+    - CgroupnsModeHost
+  container.Config:
+    properties:
+      argsEscaped:
+        description: True if command is already escaped (meaning treat as a command
+          line) (Windows specific).
+        type: boolean
+      attachStderr:
+        description: Attach the standard error
+        type: boolean
+      attachStdin:
+        description: Attach the standard input, makes possible user interaction
+        type: boolean
+      attachStdout:
+        description: Attach the standard output
+        type: boolean
+      cmd:
+        description: Command to run when starting the container
+        items:
+          type: string
+        type: array
+      domainname:
+        description: Domainname
+        type: string
+      entrypoint:
+        description: Entrypoint to run when starting the container
+        items:
+          type: string
+        type: array
+      env:
+        description: List of environment variable to set in the container
+        items:
+          type: string
+        type: array
+      exposedPorts:
+        allOf:
+        - $ref: '#/definitions/nat.PortSet'
+        description: List of exposed ports
+      healthcheck:
+        allOf:
+        - $ref: '#/definitions/container.HealthConfig'
+        description: Healthcheck describes how to check the container is healthy
+      hostname:
+        description: Hostname
+        type: string
+      image:
+        description: Name of the image as it was passed by the operator (e.g. could
+          be symbolic)
+        type: string
+      labels:
+        additionalProperties:
+          type: string
+        description: List of labels set to this container
+        type: object
+      macAddress:
+        description: |-
+          Mac Address of the container.
+
+          Deprecated: this field is deprecated since API v1.44. Use EndpointSettings.MacAddress instead.
+        type: string
+      networkDisabled:
+        description: Is network disabled
+        type: boolean
+      onBuild:
+        description: ONBUILD metadata that were defined on the image Dockerfile
+        items:
+          type: string
+        type: array
+      openStdin:
+        description: Open stdin
+        type: boolean
+      shell:
+        description: Shell for shell-form of RUN, CMD, ENTRYPOINT
+        items:
+          type: string
+        type: array
+      stdinOnce:
+        description: If true, close stdin after the 1 attached client disconnects.
+        type: boolean
+      stopSignal:
+        description: Signal to stop a container
+        type: string
+      stopTimeout:
+        description: Timeout (in seconds) to stop a container
+        type: integer
+      tty:
+        description: Attach standard streams to a tty, including stdin if it is not
+          closed.
+        type: boolean
+      user:
+        description: User that will run the command(s) inside the container, also
+          support user:group
+        type: string
+      volumes:
+        additionalProperties:
+          type: object
+        description: List of volumes (mounts) used for the container
+        type: object
+      workingDir:
+        description: Current directory (PWD) in the command will be launched
+        type: string
+    type: object
   container.ContainerState:
     enum:
     - created
@@ -28,6 +153,515 @@ definitions:
     - StateRemoving
     - StateExited
     - StateDead
+  container.DeviceMapping:
+    properties:
+      cgroupPermissions:
+        type: string
+      pathInContainer:
+        type: string
+      pathOnHost:
+        type: string
+    type: object
+  container.DeviceRequest:
+    properties:
+      capabilities:
+        description: An OR list of AND lists of device capabilities (e.g. "gpu")
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+      count:
+        description: Number of devices to request (-1 = All)
+        type: integer
+      deviceIDs:
+        description: List of device IDs as recognizable by the device driver
+        items:
+          type: string
+        type: array
+      driver:
+        description: Name of device driver
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        description: Options to pass onto the device driver
+        type: object
+    type: object
+  container.Health:
+    properties:
+      failingStreak:
+        description: FailingStreak is the number of consecutive failures
+        type: integer
+      log:
+        description: Log contains the last few results (oldest first)
+        items:
+          $ref: '#/definitions/container.HealthcheckResult'
+        type: array
+      status:
+        allOf:
+        - $ref: '#/definitions/container.HealthStatus'
+        description: Status is one of [Starting], [Healthy] or [Unhealthy].
+    type: object
+  container.HealthConfig:
+    properties:
+      interval:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Zero means to inherit. Durations are expressed as integer nanoseconds.
+      retries:
+        description: |-
+          Retries is the number of consecutive failures needed to consider a container as unhealthy.
+          Zero means inherit.
+        type: integer
+      startInterval:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: The interval to attempt healthchecks at during the start period
+      startPeriod:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: The start period for the container to initialize before the retries
+          starts to count down.
+      test:
+        description: |-
+          Test is the test to perform to check that the container is healthy.
+          An empty slice means to inherit the default.
+          The options are:
+          {} : inherit healthcheck
+          {"NONE"} : disable healthcheck
+          {"CMD", args...} : exec arguments directly
+          {"CMD-SHELL", command} : run command with system's default shell
+        items:
+          type: string
+        type: array
+      timeout:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Timeout is the time to wait before considering the check to have
+          hung.
+    type: object
+  container.HealthStatus:
+    enum:
+    - none
+    - starting
+    - healthy
+    - unhealthy
+    type: string
+    x-enum-comments:
+      Healthy: Healthy indicates that the container is running correctly
+      NoHealthcheck: Indicates there is no healthcheck
+      Starting: Starting indicates that the container is not yet ready
+      Unhealthy: Unhealthy indicates that the container has a problem
+    x-enum-varnames:
+    - NoHealthcheck
+    - Starting
+    - Healthy
+    - Unhealthy
+  container.HealthcheckResult:
+    properties:
+      end:
+        description: End is the time this check ended
+        type: string
+      exitCode:
+        description: 'ExitCode meanings: 0=healthy, 1=unhealthy, 2=reserved (considered
+          unhealthy), else=error running probe'
+        type: integer
+      output:
+        description: Output from last check
+        type: string
+      start:
+        description: Start is the time this check started
+        type: string
+    type: object
+  container.HostConfig:
+    properties:
+      CpuCount:
+        description: Applicable to Windows
+        type: integer
+      CpuPercent:
+        description: CPU percent
+        type: integer
+      CpuPeriod:
+        description: CPU CFS (Completely Fair Scheduler) period
+        type: integer
+      CpuQuota:
+        description: CPU CFS (Completely Fair Scheduler) quota
+        type: integer
+      CpuRealtimePeriod:
+        description: CPU real-time period
+        type: integer
+      CpuRealtimeRuntime:
+        description: CPU real-time runtime
+        type: integer
+      CpuShares:
+        description: Applicable to all platforms
+        type: integer
+      Dns:
+        description: List of DNS server to lookup
+        items:
+          type: string
+        type: array
+      DnsOptions:
+        description: List of DNSOption to look for
+        items:
+          type: string
+        type: array
+      DnsSearch:
+        description: List of DNSSearch to look for
+        items:
+          type: string
+        type: array
+      NanoCpus:
+        description: CPU quota in units of 10<sup>-9</sup> CPUs.
+        type: integer
+      annotations:
+        additionalProperties:
+          type: string
+        description: Arbitrary non-identifying metadata attached to container and
+          provided to the runtime
+        type: object
+      autoRemove:
+        description: Automatically remove container when it exits
+        type: boolean
+      binds:
+        description: Applicable to all platforms
+        items:
+          type: string
+        type: array
+      blkioDeviceReadBps:
+        items:
+          $ref: '#/definitions/blkiodev.ThrottleDevice'
+        type: array
+      blkioDeviceReadIOps:
+        items:
+          $ref: '#/definitions/blkiodev.ThrottleDevice'
+        type: array
+      blkioDeviceWriteBps:
+        items:
+          $ref: '#/definitions/blkiodev.ThrottleDevice'
+        type: array
+      blkioDeviceWriteIOps:
+        items:
+          $ref: '#/definitions/blkiodev.ThrottleDevice'
+        type: array
+      blkioWeight:
+        description: Block IO weight (relative weight vs. other containers)
+        type: integer
+      blkioWeightDevice:
+        items:
+          $ref: '#/definitions/blkiodev.WeightDevice'
+        type: array
+      capAdd:
+        description: Applicable to UNIX platforms
+        items:
+          type: string
+        type: array
+      capDrop:
+        description: List of kernel capabilities to remove from the container
+        items:
+          type: string
+        type: array
+      cgroup:
+        description: Cgroup to use for the container
+        type: string
+      cgroupParent:
+        description: Applicable to UNIX platforms
+        type: string
+      cgroupnsMode:
+        allOf:
+        - $ref: '#/definitions/container.CgroupnsMode'
+        description: Cgroup namespace mode to use for the container
+      consoleSize:
+        description: Initial console size (height,width)
+        items:
+          type: integer
+        type: array
+      containerIDFile:
+        description: File (path) where the containerId is written
+        type: string
+      cpusetCpus:
+        description: CpusetCpus 0-2, 0,1
+        type: string
+      cpusetMems:
+        description: CpusetMems 0-2, 0,1
+        type: string
+      deviceCgroupRules:
+        description: List of rule to be added to the device cgroup
+        items:
+          type: string
+        type: array
+      deviceRequests:
+        description: List of device requests for device drivers
+        items:
+          $ref: '#/definitions/container.DeviceRequest'
+        type: array
+      devices:
+        description: List of devices to map inside the container
+        items:
+          $ref: '#/definitions/container.DeviceMapping'
+        type: array
+      extraHosts:
+        description: List of extra hosts
+        items:
+          type: string
+        type: array
+      groupAdd:
+        description: List of additional groups that the container process will run
+          as
+        items:
+          type: string
+        type: array
+      init:
+        description: Run a custom init inside the container, if null, use the daemon's
+          configured settings
+        type: boolean
+      iomaximumBandwidth:
+        description: Maximum IO in bytes per second for the container system drive
+        type: integer
+      iomaximumIOps:
+        description: Maximum IOps for the container system drive
+        type: integer
+      ipcMode:
+        allOf:
+        - $ref: '#/definitions/container.IpcMode'
+        description: IPC namespace to use for the container
+      isolation:
+        allOf:
+        - $ref: '#/definitions/container.Isolation'
+        description: Applicable to Windows
+      kernelMemory:
+        description: |-
+          KernelMemory specifies the kernel memory limit (in bytes) for the container.
+          Deprecated: kernel 5.4 deprecated kmem.limit_in_bytes.
+        type: integer
+      kernelMemoryTCP:
+        description: Hard limit for kernel TCP buffer memory (in bytes)
+        type: integer
+      links:
+        description: List of links (in the name:alias form)
+        items:
+          type: string
+        type: array
+      logConfig:
+        allOf:
+        - $ref: '#/definitions/container.LogConfig'
+        description: Configuration of the logs for this container
+      maskedPaths:
+        description: MaskedPaths is the list of paths to be masked inside the container
+          (this overrides the default set of paths)
+        items:
+          type: string
+        type: array
+      memory:
+        description: Memory limit (in bytes)
+        type: integer
+      memoryReservation:
+        description: Memory soft limit (in bytes)
+        type: integer
+      memorySwap:
+        description: Total memory usage (memory + swap); set `-1` to enable unlimited
+          swap
+        type: integer
+      memorySwappiness:
+        description: Tuning container memory swappiness behaviour
+        type: integer
+      mounts:
+        description: Mounts specs used by the container
+        items:
+          $ref: '#/definitions/mount.Mount'
+        type: array
+      networkMode:
+        description: Network mode to use for the container
+        type: string
+      oomKillDisable:
+        description: Whether to disable OOM Killer or not
+        type: boolean
+      oomScoreAdj:
+        description: Container preference for OOM-killing
+        type: integer
+      pidMode:
+        description: PID namespace to use for the container
+        type: string
+      pidsLimit:
+        description: Setting PIDs limit for a container; Set `0` or `-1` for unlimited,
+          or `null` to not change.
+        type: integer
+      portBindings:
+        allOf:
+        - $ref: '#/definitions/nat.PortMap'
+        description: Port mapping between the exposed port (container) and the host
+      privileged:
+        description: Is the container in privileged mode
+        type: boolean
+      publishAllPorts:
+        description: Should docker publish all exposed port for the container
+        type: boolean
+      readonlyPaths:
+        description: ReadonlyPaths is the list of paths to be set as read-only inside
+          the container (this overrides the default set of paths)
+        items:
+          type: string
+        type: array
+      readonlyRootfs:
+        description: Is the container root filesystem in read-only
+        type: boolean
+      restartPolicy:
+        allOf:
+        - $ref: '#/definitions/container.RestartPolicy'
+        description: Restart policy to be used for the container
+      runtime:
+        description: Runtime to use with this container
+        type: string
+      securityOpt:
+        description: List of string values to customize labels for MLS systems, such
+          as SELinux.
+        items:
+          type: string
+        type: array
+      shmSize:
+        description: Total shm memory usage
+        type: integer
+      storageOpt:
+        additionalProperties:
+          type: string
+        description: Storage driver options per container.
+        type: object
+      sysctls:
+        additionalProperties:
+          type: string
+        description: List of Namespaced sysctls used for the container
+        type: object
+      tmpfs:
+        additionalProperties:
+          type: string
+        description: List of tmpfs (mounts) used for the container
+        type: object
+      ulimits:
+        description: List of ulimits to be set in the container
+        items:
+          $ref: '#/definitions/container.Ulimit'
+        type: array
+      usernsMode:
+        description: The user namespace to use for the container
+        type: string
+      utsmode:
+        description: UTS namespace to use for the container
+        type: string
+      volumeDriver:
+        description: Name of the volume driver used to mount volumes
+        type: string
+      volumesFrom:
+        description: List of volumes to take from other container
+        items:
+          type: string
+        type: array
+    type: object
+  container.InspectResponse:
+    properties:
+      Id:
+        type: string
+      ImageManifestDescriptor:
+        allOf:
+        - $ref: '#/definitions/v1.Descriptor'
+        description: ImageManifestDescriptor is the descriptor of a platform-specific
+          manifest of the image used to create the container.
+      appArmorProfile:
+        type: string
+      args:
+        items:
+          type: string
+        type: array
+      config:
+        $ref: '#/definitions/container.Config'
+      created:
+        type: string
+      driver:
+        type: string
+      execIDs:
+        items:
+          type: string
+        type: array
+      graphDriver:
+        $ref: '#/definitions/storage.DriverData'
+      hostConfig:
+        $ref: '#/definitions/container.HostConfig'
+      hostnamePath:
+        type: string
+      hostsPath:
+        type: string
+      image:
+        type: string
+      logPath:
+        type: string
+      mountLabel:
+        type: string
+      mounts:
+        items:
+          $ref: '#/definitions/container.MountPoint'
+        type: array
+      name:
+        type: string
+      networkSettings:
+        $ref: '#/definitions/container.NetworkSettings'
+      path:
+        type: string
+      platform:
+        type: string
+      processLabel:
+        type: string
+      resolvConfPath:
+        type: string
+      restartCount:
+        type: integer
+      sizeRootFs:
+        type: integer
+      sizeRw:
+        type: integer
+      state:
+        $ref: '#/definitions/container.State'
+    type: object
+  container.IpcMode:
+    enum:
+    - none
+    - host
+    - container
+    - private
+    - shareable
+    type: string
+    x-enum-varnames:
+    - IPCModeNone
+    - IPCModeHost
+    - IPCModeContainer
+    - IPCModePrivate
+    - IPCModeShareable
+  container.Isolation:
+    enum:
+    - ""
+    - default
+    - process
+    - hyperv
+    type: string
+    x-enum-comments:
+      IsolationDefault: IsolationDefault is the default isolation mode on current
+        daemon
+      IsolationEmpty: IsolationEmpty is unspecified (same behavior as default)
+      IsolationHyperV: IsolationHyperV is HyperV isolation mode
+      IsolationProcess: IsolationProcess is process isolation mode
+    x-enum-varnames:
+    - IsolationEmpty
+    - IsolationDefault
+    - IsolationProcess
+    - IsolationHyperV
+  container.LogConfig:
+    properties:
+      config:
+        additionalProperties:
+          type: string
+        type: object
+      type:
+        type: string
+    type: object
   container.MountPoint:
     properties:
       destination:
@@ -80,6 +714,82 @@ definitions:
           Type is the type of mount, see `Type<foo>` definitions in
           github.com/docker/docker/api/types/mount.Type
     type: object
+  container.NetworkSettings:
+    properties:
+      bridge:
+        description: Bridge contains the name of the default bridge interface iff
+          it was set through the daemon --bridge flag.
+        type: string
+      endpointID:
+        description: EndpointID uniquely represents a service endpoint in a Sandbox
+        type: string
+      gateway:
+        description: Gateway holds the gateway address for the network
+        type: string
+      globalIPv6Address:
+        description: GlobalIPv6Address holds network's global IPv6 address
+        type: string
+      globalIPv6PrefixLen:
+        description: GlobalIPv6PrefixLen represents mask length of network's global
+          IPv6 address
+        type: integer
+      hairpinMode:
+        description: |-
+          HairpinMode specifies if hairpin NAT should be enabled on the virtual interface
+
+          Deprecated: This field is never set and will be removed in a future release.
+        type: boolean
+      ipaddress:
+        description: IPAddress holds the IPv4 address for the network
+        type: string
+      ipprefixLen:
+        description: IPPrefixLen represents mask length of network's IPv4 address
+        type: integer
+      ipv6Gateway:
+        description: IPv6Gateway holds gateway address specific for IPv6
+        type: string
+      linkLocalIPv6Address:
+        description: |-
+          LinkLocalIPv6Address is an IPv6 unicast address using the link-local prefix
+
+          Deprecated: This field is never set and will be removed in a future release.
+        type: string
+      linkLocalIPv6PrefixLen:
+        description: |-
+          LinkLocalIPv6PrefixLen is the prefix length of an IPv6 unicast address
+
+          Deprecated: This field is never set and will be removed in a future release.
+        type: integer
+      macAddress:
+        description: MacAddress holds the MAC address for the network
+        type: string
+      networks:
+        additionalProperties:
+          $ref: '#/definitions/network.EndpointSettings'
+        type: object
+      ports:
+        allOf:
+        - $ref: '#/definitions/nat.PortMap'
+        description: Ports is a collection of PortBinding indexed by Port
+      sandboxID:
+        description: SandboxID uniquely represents a container's network stack
+        type: string
+      sandboxKey:
+        description: SandboxKey identifies the sandbox
+        type: string
+      secondaryIPAddresses:
+        description: 'Deprecated: This field is never set and will be removed in a
+          future release.'
+        items:
+          $ref: '#/definitions/network.Address'
+        type: array
+      secondaryIPv6Addresses:
+        description: 'Deprecated: This field is never set and will be removed in a
+          future release.'
+        items:
+          $ref: '#/definitions/network.Address'
+        type: array
+    type: object
   container.NetworkSettingsSummary:
     properties:
       networks:
@@ -105,6 +815,55 @@ definitions:
           type
           Required: true
         type: string
+    type: object
+  container.RestartPolicy:
+    properties:
+      maximumRetryCount:
+        type: integer
+      name:
+        $ref: '#/definitions/container.RestartPolicyMode'
+    type: object
+  container.RestartPolicyMode:
+    enum:
+    - "no"
+    - always
+    - on-failure
+    - unless-stopped
+    type: string
+    x-enum-varnames:
+    - RestartPolicyDisabled
+    - RestartPolicyAlways
+    - RestartPolicyOnFailure
+    - RestartPolicyUnlessStopped
+  container.State:
+    properties:
+      dead:
+        type: boolean
+      error:
+        type: string
+      exitCode:
+        type: integer
+      finishedAt:
+        type: string
+      health:
+        $ref: '#/definitions/container.Health'
+      oomkilled:
+        type: boolean
+      paused:
+        type: boolean
+      pid:
+        type: integer
+      restarting:
+        type: boolean
+      running:
+        type: boolean
+      startedAt:
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/container.ContainerState'
+        description: String representation of the container state. Can be one of "created",
+          "running", "paused", "restarting", "removing", "exited", or "dead"
     type: object
   container.Summary:
     properties:
@@ -155,6 +914,15 @@ definitions:
         $ref: '#/definitions/container.ContainerState'
       status:
         type: string
+    type: object
+  container.Ulimit:
+    properties:
+      hard:
+        type: integer
+      name:
+        type: string
+      soft:
+        type: integer
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse:
     properties:
@@ -706,17 +1474,21 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Docker:
     properties:
-      containers:
-        items:
-          $ref: '#/definitions/container.Summary'
-        type: array
+      containerInspect:
+        $ref: '#/definitions/container.InspectResponse'
+      containerSummary:
+        $ref: '#/definitions/container.Summary'
+      imageInspect:
+        $ref: '#/definitions/image.InspectResponse'
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Podman:
     properties:
-      containers:
-        items:
-          $ref: '#/definitions/container.Summary'
-        type: array
+      containerInspect:
+        $ref: '#/definitions/container.InspectResponse'
+      containerSummary:
+        $ref: '#/definitions/container.Summary'
+      imageInspect:
+        $ref: '#/definitions/image.InspectResponse'
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.RPM:
     properties:
@@ -752,13 +1524,381 @@ definitions:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.DEB'
         type: array
       docker:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Docker'
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Docker'
+        type: array
       podman:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Podman'
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Podman'
+        type: array
       rpm:
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.RPM'
         type: array
+    type: object
+  image.AttestationProperties:
+    properties:
+      For:
+        description: For is the digest of the image manifest that this attestation
+          is for.
+        type: string
+    type: object
+  image.ImageProperties:
+    properties:
+      Containers:
+        description: |-
+          Containers is an array containing the IDs of the containers that are
+          using this image.
+
+          Required: true
+        items:
+          type: string
+        type: array
+      Platform:
+        allOf:
+        - $ref: '#/definitions/v1.Platform'
+        description: |-
+          Platform is the OCI platform object describing the platform of the image.
+
+          Required: true
+      size:
+        properties:
+          Unpacked:
+            description: |-
+              Unpacked is the size (in bytes) of the locally unpacked
+              (uncompressed) image content that's directly usable by the containers
+              running this image.
+              It's independent of the distributable content - e.g.
+              the image might still have an unpacked data that's still used by
+              some container even when the distributable/compressed content is
+              already gone.
+
+              Required: true
+            type: integer
+        type: object
+    type: object
+  image.InspectResponse:
+    properties:
+      Descriptor:
+        allOf:
+        - $ref: '#/definitions/v1.Descriptor'
+        description: |-
+          Descriptor is the OCI descriptor of the image target.
+          It's only set if the daemon provides a multi-platform image store.
+
+          WARNING: This is experimental and may change at any time without any backward
+          compatibility.
+      Id:
+        description: |-
+          ID is the content-addressable ID of an image.
+
+          This identifier is a content-addressable digest calculated from the
+          image's configuration (which includes the digests of layers used by
+          the image).
+
+          Note that this digest differs from the `RepoDigests` below, which
+          holds digests of image manifests that reference the image.
+        type: string
+      Manifests:
+        description: |-
+          Manifests is a list of image manifests available in this image. It
+          provides a more detailed view of the platform-specific image manifests or
+          other image-attached data like build attestations.
+
+          Only available if the daemon provides a multi-platform image store, the client
+          requests manifests AND does not request a specific platform.
+
+          WARNING: This is experimental and may change at any time without any backward
+          compatibility.
+        items:
+          $ref: '#/definitions/image.ManifestSummary'
+        type: array
+      VirtualSize:
+        description: |-
+          VirtualSize is the total size of the image including all layers it is
+          composed of.
+
+          Deprecated: this field is omitted in API v1.44, but kept for backward compatibility. Use Size instead.
+        type: integer
+      architecture:
+        description: Architecture is the hardware CPU architecture that the image
+          runs on.
+        type: string
+      author:
+        description: |-
+          Author is the name of the author that was specified when committing the
+          image, or as specified through MAINTAINER (deprecated) in the Dockerfile.
+        type: string
+      comment:
+        description: |-
+          Comment is an optional message that can be set when committing or
+          importing the image.
+        type: string
+      config:
+        $ref: '#/definitions/v1.DockerOCIImageConfig'
+      container:
+        description: |-
+          Container is the ID of the container that was used to create the image.
+
+          Depending on how the image was created, this field may be empty.
+
+          Deprecated: this field is omitted in API v1.45, but kept for backward compatibility.
+        type: string
+      containerConfig:
+        allOf:
+        - $ref: '#/definitions/container.Config'
+        description: |-
+          ContainerConfig is an optional field containing the configuration of the
+          container that was last committed when creating the image.
+
+          Previous versions of Docker builder used this field to store build cache,
+          and it is not in active use anymore.
+
+          Deprecated: this field is omitted in API v1.45, but kept for backward compatibility.
+      created:
+        description: |-
+          Created is the date and time at which the image was created, formatted in
+          RFC 3339 nano-seconds (time.RFC3339Nano).
+
+          This information is only available if present in the image,
+          and omitted otherwise.
+        type: string
+      dockerVersion:
+        description: |-
+          DockerVersion is the version of Docker that was used to build the image.
+
+          Depending on how the image was created, this field may be empty.
+        type: string
+      graphDriver:
+        allOf:
+        - $ref: '#/definitions/storage.DriverData'
+        description: |-
+          GraphDriver holds information about the storage driver used to store the
+          container's and image's filesystem.
+      metadata:
+        allOf:
+        - $ref: '#/definitions/image.Metadata'
+        description: |-
+          Metadata of the image in the local cache.
+
+          This information is local to the daemon, and not part of the image itself.
+      os:
+        description: OS is the Operating System the image is built to run on.
+        type: string
+      osVersion:
+        description: |-
+          OsVersion is the version of the Operating System the image is built to
+          run on (especially for Windows).
+        type: string
+      parent:
+        description: |-
+          Parent is the ID of the parent image.
+
+          Depending on how the image was created, this field may be empty and
+          is only set for images that were built/created locally. This field
+          is empty if the image was pulled from an image registry.
+        type: string
+      repoDigests:
+        description: |-
+          RepoDigests is a list of content-addressable digests of locally available
+          image manifests that the image is referenced from. Multiple manifests can
+          refer to the same image.
+
+          These digests are usually only available if the image was either pulled
+          from a registry, or if the image was pushed to a registry, which is when
+          the manifest is generated and its digest calculated.
+        items:
+          type: string
+        type: array
+      repoTags:
+        description: |-
+          RepoTags is a list of image names/tags in the local image cache that
+          reference this image.
+
+          Multiple image tags can refer to the same image, and this list may be
+          empty if no tags reference the image, in which case the image is
+          "untagged", in which case it can still be referenced by its ID.
+        items:
+          type: string
+        type: array
+      rootFS:
+        allOf:
+        - $ref: '#/definitions/image.RootFS'
+        description: |-
+          RootFS contains information about the image's RootFS, including the
+          layer IDs.
+      size:
+        description: Size is the total size of the image including all layers it is
+          composed of.
+        type: integer
+      variant:
+        description: Variant is the CPU architecture variant (presently ARM-only).
+        type: string
+    type: object
+  image.ManifestKind:
+    enum:
+    - image
+    - attestation
+    - unknown
+    type: string
+    x-enum-varnames:
+    - ManifestKindImage
+    - ManifestKindAttestation
+    - ManifestKindUnknown
+  image.ManifestSummary:
+    properties:
+      AttestationData:
+        allOf:
+        - $ref: '#/definitions/image.AttestationProperties'
+        description: Present only if Kind == ManifestKindAttestation.
+      Available:
+        description: |-
+          Indicates whether all the child content (image config, layers) is
+          fully available locally
+
+          Required: true
+        type: boolean
+      Descriptor:
+        allOf:
+        - $ref: '#/definitions/v1.Descriptor'
+        description: |-
+          Descriptor is the OCI descriptor of the image.
+
+          Required: true
+      ID:
+        description: |-
+          ID is the content-addressable ID of an image and is the same as the
+          digest of the image manifest.
+
+          Required: true
+        type: string
+      ImageData:
+        allOf:
+        - $ref: '#/definitions/image.ImageProperties'
+        description: Present only if Kind == ManifestKindImage.
+      Kind:
+        allOf:
+        - $ref: '#/definitions/image.ManifestKind'
+        description: |-
+          Kind is the kind of the image manifest.
+
+          Required: true
+      Size:
+        description: |-
+          Size is the size information of the content related to this manifest.
+          Note: These sizes only take the locally available content into account.
+
+          Required: true
+        properties:
+          Content:
+            description: |-
+              Content is the size (in bytes) of all the locally present
+              content in the content store (e.g. image config, layers)
+              referenced by this manifest and its children.
+              This only includes blobs in the content store.
+            type: integer
+          Total:
+            description: |-
+              Total is the total size (in bytes) of all the locally present
+              data (both distributable and non-distributable) that's related to
+              this manifest and its children.
+              This equal to the sum of [Content] size AND all the sizes in the
+              [Size] struct present in the Kind-specific data struct.
+              For example, for an image kind (Kind == ManifestKindImage),
+              this would include the size of the image content and unpacked
+              image snapshots ([Size.Content] + [ImageData.Size.Unpacked]).
+            type: integer
+        type: object
+    type: object
+  image.Metadata:
+    properties:
+      lastTagTime:
+        description: LastTagTime is the date and time at which the image was last
+          tagged.
+        type: string
+    type: object
+  image.RootFS:
+    properties:
+      layers:
+        items:
+          type: string
+        type: array
+      type:
+        type: string
+    type: object
+  mount.BindOptions:
+    properties:
+      createMountpoint:
+        type: boolean
+      nonRecursive:
+        type: boolean
+      propagation:
+        $ref: '#/definitions/mount.Propagation'
+      readOnlyForceRecursive:
+        description: ReadOnlyForceRecursive raises an error if the mount cannot be
+          made recursively read-only.
+        type: boolean
+      readOnlyNonRecursive:
+        description: |-
+          ReadOnlyNonRecursive makes the mount non-recursively read-only, but still leaves the mount recursive
+          (unless NonRecursive is set to true in conjunction).
+        type: boolean
+    type: object
+  mount.ClusterOptions:
+    type: object
+  mount.Consistency:
+    enum:
+    - consistent
+    - cached
+    - delegated
+    - default
+    type: string
+    x-enum-varnames:
+    - ConsistencyFull
+    - ConsistencyCached
+    - ConsistencyDelegated
+    - ConsistencyDefault
+  mount.Driver:
+    properties:
+      name:
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  mount.ImageOptions:
+    properties:
+      subpath:
+        type: string
+    type: object
+  mount.Mount:
+    properties:
+      bindOptions:
+        $ref: '#/definitions/mount.BindOptions'
+      clusterOptions:
+        $ref: '#/definitions/mount.ClusterOptions'
+      consistency:
+        $ref: '#/definitions/mount.Consistency'
+      imageOptions:
+        $ref: '#/definitions/mount.ImageOptions'
+      readOnly:
+        description: attempts recursive read-only if possible
+        type: boolean
+      source:
+        description: |-
+          Source specifies the name of the mount. Depending on mount type, this
+          may be a volume name or a host path, or even ignored.
+          Source is not supported for tmpfs (must be an empty value)
+        type: string
+      target:
+        type: string
+      tmpfsOptions:
+        $ref: '#/definitions/mount.TmpfsOptions'
+      type:
+        $ref: '#/definitions/mount.Type'
+      volumeOptions:
+        $ref: '#/definitions/mount.VolumeOptions'
     type: object
   mount.Propagation:
     enum:
@@ -776,6 +1916,35 @@ definitions:
     - PropagationShared
     - PropagationRSlave
     - PropagationSlave
+  mount.TmpfsOptions:
+    properties:
+      mode:
+        allOf:
+        - $ref: '#/definitions/os.FileMode'
+        description: Mode of the tmpfs upon creation
+      options:
+        description: |-
+          Options to be passed to the tmpfs mount. An array of arrays. Flag
+          options should be provided as 1-length arrays. Other types should be
+          provided as 2-length arrays, where the first item is the key and the
+          second the value.
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+      sizeBytes:
+        description: |-
+          Size sets the size of the tmpfs, in bytes.
+
+          This will be converted to an operating system specific value
+          depending on the host. For example, on linux, it will be converted to
+          use a 'k', 'm' or 'g' syntax. BSD, though not widely supported with
+          docker, uses a straight byte value.
+
+          Percentages are not supported.
+        type: integer
+    type: object
   mount.Type:
     enum:
     - bind
@@ -792,6 +1961,45 @@ definitions:
     - TypeNamedPipe
     - TypeCluster
     - TypeImage
+  mount.VolumeOptions:
+    properties:
+      driverConfig:
+        $ref: '#/definitions/mount.Driver'
+      labels:
+        additionalProperties:
+          type: string
+        type: object
+      noCopy:
+        type: boolean
+      subpath:
+        type: string
+    type: object
+  nat.PortBinding:
+    properties:
+      HostIp:
+        description: HostIP is the host IP Address
+        type: string
+      hostPort:
+        description: HostPort is the host port number
+        type: string
+    type: object
+  nat.PortMap:
+    additionalProperties:
+      items:
+        $ref: '#/definitions/nat.PortBinding'
+      type: array
+    type: object
+  nat.PortSet:
+    additionalProperties:
+      type: object
+    type: object
+  network.Address:
+    properties:
+      addr:
+        type: string
+      prefixLen:
+        type: integer
+    type: object
   network.EndpointIPAMConfig:
     properties:
       ipv4Address:
@@ -861,11 +2069,130 @@ definitions:
         description: Operational data
         type: string
     type: object
+  os.FileMode:
+    enum:
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    type: integer
+    x-enum-comments:
+      ModeAppend: 'a: append-only'
+      ModeCharDevice: 'c: Unix character device, when ModeDevice is set'
+      ModeDevice: 'D: device file'
+      ModeDir: 'd: is a directory'
+      ModeExclusive: 'l: exclusive use'
+      ModeIrregular: '?: non-regular file; nothing else is known about this file'
+      ModeNamedPipe: 'p: named pipe (FIFO)'
+      ModePerm: Unix permission bits, 0o777
+      ModeSetgid: 'g: setgid'
+      ModeSetuid: 'u: setuid'
+      ModeSocket: 'S: Unix domain socket'
+      ModeSticky: 't: sticky'
+      ModeSymlink: 'L: symbolic link'
+      ModeTemporary: 'T: temporary file; Plan 9 only'
+    x-enum-varnames:
+    - ModeDir
+    - ModeAppend
+    - ModeExclusive
+    - ModeTemporary
+    - ModeSymlink
+    - ModeDevice
+    - ModeNamedPipe
+    - ModeSocket
+    - ModeSetuid
+    - ModeSetgid
+    - ModeCharDevice
+    - ModeSticky
+    - ModeIrregular
+    - ModeType
+    - ModePerm
   pkg_api_rest_controller.SimpleMsg:
     properties:
       message:
         type: string
     type: object
+  storage.DriverData:
+    properties:
+      Data:
+        additionalProperties:
+          type: string
+        description: |-
+          Low-level storage metadata, provided as key/value pairs.
+
+          This information is driver-specific, and depends on the storage-driver
+          in use, and should be used for informational purposes only.
+
+          Required: true
+        type: object
+      Name:
+        description: |-
+          Name of the storage driver.
+          Required: true
+        type: string
+    type: object
+  time.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
   v1.Descriptor:
     properties:
       annotations:
@@ -907,6 +2234,118 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  v1.DockerOCIImageConfig:
+    properties:
+      ArgsEscaped:
+        description: |-
+          ArgsEscaped
+
+          Deprecated: This field is present only for legacy compatibility with
+          Docker and should not be used by new image builders.  It is used by Docker
+          for Windows images to indicate that the `Entrypoint` or `Cmd` or both,
+          contains only a single element array, that is a pre-escaped, and combined
+          into a single string `CommandLine`. If `true` the value in `Entrypoint` or
+          `Cmd` should be used as-is to avoid double escaping.
+          https://github.com/opencontainers/image-spec/pull/892
+        type: boolean
+      Cmd:
+        description: Cmd defines the default arguments to the entrypoint of the container.
+        items:
+          type: string
+        type: array
+      Entrypoint:
+        description: Entrypoint defines a list of arguments to use as the command
+          to execute when the container starts.
+        items:
+          type: string
+        type: array
+      Env:
+        description: Env is a list of environment variables to be used in a container.
+        items:
+          type: string
+        type: array
+      ExposedPorts:
+        additionalProperties:
+          type: object
+        description: ExposedPorts a set of ports to expose from a container running
+          this image.
+        type: object
+      Labels:
+        additionalProperties:
+          type: string
+        description: Labels contains arbitrary metadata for the container.
+        type: object
+      StopSignal:
+        description: StopSignal contains the system call signal that will be sent
+          to the container to exit.
+        type: string
+      User:
+        description: User defines the username or UID which the process in the container
+          should run as.
+        type: string
+      Volumes:
+        additionalProperties:
+          type: object
+        description: Volumes is a set of directories describing where the process
+          is likely write data specific to a container instance.
+        type: object
+      WorkingDir:
+        description: WorkingDir sets the current working directory of the entrypoint
+          process in the container.
+        type: string
+      healthcheck:
+        allOf:
+        - $ref: '#/definitions/v1.HealthcheckConfig'
+        description: Healthcheck describes how to check the container is healthy
+      onBuild:
+        description: ONBUILD metadata that were defined on the image Dockerfile
+        items:
+          type: string
+        type: array
+      shell:
+        description: Shell for shell-form of RUN, CMD, ENTRYPOINT
+        items:
+          type: string
+        type: array
+    type: object
+  v1.HealthcheckConfig:
+    properties:
+      interval:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Zero means to inherit. Durations are expressed as integer nanoseconds.
+      retries:
+        description: |-
+          Retries is the number of consecutive failures needed to consider a container as unhealthy.
+          Zero means inherit.
+        type: integer
+      startInterval:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: The interval to attempt healthchecks at during the start period
+      startPeriod:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: The start period for the container to initialize before the retries
+          starts to count down.
+      test:
+        description: |-
+          Test is the test to perform to check that the container is healthy.
+          An empty slice means to inherit the default.
+          The options are:
+          {} : inherit healthcheck
+          {"NONE"} : disable healthcheck
+          {"CMD", args...} : exec arguments directly
+          {"CMD-SHELL", command} : run command with system's default shell
+        items:
+          type: string
+        type: array
+      timeout:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
+        description: Timeout is the time to wait before considering the check to have
+          hung.
     type: object
   v1.Platform:
     properties:

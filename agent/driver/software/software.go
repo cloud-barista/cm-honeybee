@@ -52,14 +52,10 @@ func GetSoftwareInfo(showDefaultPackages bool) (*software2.Software, error) {
 	}
 
 	sw := software2.Software{
-		DEB: deb,
-		RPM: rpm,
-		Docker: software2.Docker{
-			Containers: dockerContainers,
-		},
-		Podman: software2.Podman{
-			Containers: podmanContainers,
-		},
+		DEB:    deb,
+		RPM:    rpm,
+		Docker: dockerContainers,
+		Podman: podmanContainers,
 	}
 
 	return &sw, nil

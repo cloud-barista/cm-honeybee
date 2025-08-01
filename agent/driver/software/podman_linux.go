@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	"github.com/jollaman999/utils/cmd"
@@ -107,16 +108,40 @@ func newPodmanClient() (*client.Client, error) {
 	return cli, nil
 }
 
-func GetPodmanContainers() ([]container.Summary, error) {
+func GetPodmanContainers() ([]software.Podman, error) {
+	var result []software.Podman
+
 	cli, err := newPodmanClient()
 	if err != nil {
-		return []container.Summary{}, err
+		return []software.Podman{}, err
 	}
 
 	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
-		return []container.Summary{}, err
+		logger.Println(logger.ERROR, true, "PODMAN: "+err.Error())
+		return []software.Podman{}, err
 	}
 
-	return containers, nil
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	for _, c := range containers {
+		containerInspect, err := cli.ContainerInspect(ctx, c.ID)
+		if err != nil {
+			logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
+		}
+
+		imageInspect, err := cli.ImageInspect(ctx, c.ImageID)
+		if err != nil {
+			logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
+		}
+
+		result = append(result, software.Podman{
+			ContainerSummary: c,
+			ContainerInspect: containerInspect,
+			ImageInspect:     imageInspect,
+		})
+	}
+
+	return result, nil
 }
