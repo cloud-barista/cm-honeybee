@@ -5,7 +5,7 @@ import (
 	"github.com/docker/docker/api/types/image"
 )
 
-type Podman struct {
+type Container struct {
 	ContainerSummary container.Summary
 	ContainerInspect container.InspectResponse
 	ImageInspect     image.InspectResponse

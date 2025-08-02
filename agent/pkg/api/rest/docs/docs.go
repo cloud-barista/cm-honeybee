@@ -2194,6 +2194,20 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Container": {
+            "type": "object",
+            "properties": {
+                "containerInspect": {
+                    "$ref": "#/definitions/container.InspectResponse"
+                },
+                "containerSummary": {
+                    "$ref": "#/definitions/container.Summary"
+                },
+                "imageInspect": {
+                    "$ref": "#/definitions/image.InspectResponse"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.DEB": {
             "type": "object",
             "properties": {
@@ -2244,34 +2258,6 @@ const docTemplate = `{
                 },
                 "version": {
                     "type": "string"
-                }
-            }
-        },
-        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Docker": {
-            "type": "object",
-            "properties": {
-                "containerInspect": {
-                    "$ref": "#/definitions/container.InspectResponse"
-                },
-                "containerSummary": {
-                    "$ref": "#/definitions/container.Summary"
-                },
-                "imageInspect": {
-                    "$ref": "#/definitions/image.InspectResponse"
-                }
-            }
-        },
-        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Podman": {
-            "type": "object",
-            "properties": {
-                "containerInspect": {
-                    "$ref": "#/definitions/container.InspectResponse"
-                },
-                "containerSummary": {
-                    "$ref": "#/definitions/container.Summary"
-                },
-                "imageInspect": {
-                    "$ref": "#/definitions/image.InspectResponse"
                 }
             }
         },
@@ -2328,13 +2314,13 @@ const docTemplate = `{
                 "docker": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Docker"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Container"
                     }
                 },
                 "podman": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Podman"
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Container"
                     }
                 },
                 "rpm": {
@@ -2958,22 +2944,54 @@ const docTemplate = `{
                 1048576,
                 524288,
                 2401763328,
-                511,
-                8388608,
-                4194304,
-                1048576,
                 511
             ],
             "x-enum-comments": {
+                "ModeAppend": "a: append-only",
+                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
+                "ModeDevice": "D: device file",
+                "ModeDir": "d: is a directory",
+                "ModeExclusive": "l: exclusive use",
+                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
+                "ModeNamedPipe": "p: named pipe (FIFO)",
                 "ModePerm": "Unix permission bits, 0o777",
                 "ModeSetgid": "g: setgid",
                 "ModeSetuid": "u: setuid",
-                "ModeSticky": "t: sticky"
+                "ModeSocket": "S: Unix domain socket",
+                "ModeSticky": "t: sticky",
+                "ModeSymlink": "L: symbolic link",
+                "ModeTemporary": "T: temporary file; Plan 9 only"
             },
             "x-enum-varnames": [
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
                 "ModeSetuid",
                 "ModeSetgid",
+                "ModeCharDevice",
                 "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm",
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
                 "ModePerm"
             ]
         },
@@ -3012,22 +3030,6 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
                 1,
                 1000,
                 1000000,
@@ -3036,22 +3038,6 @@ const docTemplate = `{
                 3600000000000
             ],
             "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
                 "minDuration",
                 "maxDuration",
                 "Nanosecond",

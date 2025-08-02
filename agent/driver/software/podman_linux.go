@@ -108,18 +108,18 @@ func newPodmanClient() (*client.Client, error) {
 	return cli, nil
 }
 
-func GetPodmanContainers() ([]software.Podman, error) {
-	var result []software.Podman
+func GetPodmanContainers() ([]software.Container, error) {
+	var result []software.Container
 
 	cli, err := newPodmanClient()
 	if err != nil {
-		return []software.Podman{}, err
+		return []software.Container{}, err
 	}
 
 	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
 	if err != nil {
 		logger.Println(logger.ERROR, true, "PODMAN: "+err.Error())
-		return []software.Podman{}, err
+		return []software.Container{}, err
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -136,7 +136,7 @@ func GetPodmanContainers() ([]software.Podman, error) {
 			logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
 		}
 
-		result = append(result, software.Podman{
+		result = append(result, software.Container{
 			ContainerSummary: c,
 			ContainerInspect: containerInspect,
 			ImageInspect:     imageInspect,

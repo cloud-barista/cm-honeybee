@@ -24,13 +24,13 @@ func isRealDocker(cli *client.Client) (bool, error) {
 	return false, nil
 }
 
-func GetDockerContainers() ([]software.Docker, error) {
-	var result []software.Docker
+func GetDockerContainers() ([]software.Container, error) {
+	var result []software.Container
 
 	cli, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		logger.Println(logger.DEBUG, true, "DOCKER: "+err.Error())
-		return []software.Docker{}, err
+		return []software.Container{}, err
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -40,17 +40,17 @@ func GetDockerContainers() ([]software.Docker, error) {
 	yes, err := isRealDocker(cli)
 	if err != nil {
 		logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
-		return []software.Docker{}, err
+		return []software.Container{}, err
 	}
 	if !yes {
 		logger.Println(logger.INFO, true, "DOCKER: Docker not found.")
-		return []software.Docker{}, nil
+		return []software.Container{}, nil
 	}
 
 	containers, err := cli.ContainerList(ctx, container.ListOptions{All: true})
 	if err != nil {
 		logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
-		return []software.Docker{}, err
+		return []software.Container{}, err
 	}
 
 	for _, c := range containers {
@@ -64,7 +64,7 @@ func GetDockerContainers() ([]software.Docker, error) {
 			logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
 		}
 
-		result = append(result, software.Docker{
+		result = append(result, software.Container{
 			ContainerSummary: c,
 			ContainerInspect: containerInspect,
 			ImageInspect:     imageInspect,
