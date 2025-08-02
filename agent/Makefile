@@ -87,7 +87,7 @@ build: lint swag ## Build the binary file
 	@git diff > .diff_last_build
 	@echo Build finished!
 
-build-only: ## Build the binary file without running linter and swag
+build-only: swag ## Build the binary file without running linter
 	@echo Building...
 	@kernel_name=`uname -s` && \
 	  if [[ $$kernel_name == "Linux" ]]; then \
