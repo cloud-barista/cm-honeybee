@@ -296,8 +296,20 @@ func convertMountPaths(mounts *[]container.MountPoint) []string {
 	var result []string
 
 	for _, mount := range *mounts {
-		if mount.Destination != "" {
-			result = append(result, mount.Destination)
+		var mountPath string
+
+		if mount.Source == mount.Destination {
+			mountPath = mount.Source
+		} else {
+			mountPath = mount.Source + ":" + mount.Destination
+		}
+
+		if mount.Mode != "" {
+			mountPath += ":" + mount.Mode
+		}
+
+		if mountPath != "" {
+			result = append(result, mountPath)
 		}
 	}
 
