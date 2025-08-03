@@ -2,8 +2,8 @@ github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
 github.com/apparentlymart/go-cidr v1.1.0 h1:2mAhrMoF+nhXqxTzSZMUzDHkLjmIHC+Zzn4tdgBZjnU=
 github.com/apparentlymart/go-cidr v1.1.0/go.mod h1:EBcsNrHc3zQeuaeCeCtQruQm+n9/YjEn/vI25Lg7Gwc=
-github.com/cloud-barista/cm-grasshopper v0.0.0-20250803101530-499093e98345 h1:lgxZB4wfgbXcih6Eqx/AHUzE26XTaLsAO8lVUDeIpSk=
-github.com/cloud-barista/cm-grasshopper v0.0.0-20250803101530-499093e98345/go.mod h1:+jrEfrmz1qTQZZfk5axferzifj1uOrwRLPWJNF71INw=
+github.com/cloud-barista/cm-grasshopper v0.0.0-20250803110852-06f7f0a06dc0 h1:z3xkP9pdc03nPO4THygp23T5sMVJfddvpCUfTJp9H/w=
+github.com/cloud-barista/cm-grasshopper v0.0.0-20250803110852-06f7f0a06dc0/go.mod h1:+jrEfrmz1qTQZZfk5axferzifj1uOrwRLPWJNF71INw=
 github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250803103810-0b3c4f1ff6f2 h1:eRHxkTYVy/1Pn12pyGUcIrduJvSNuWQe6MwkY3dOsDk=
 github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250803103810-0b3c4f1ff6f2/go.mod h1:3s3zWQ0GzVo1Em5QvJLHxj1Bv7LprF4gkJBrNVpTFfg=
 github.com/cloud-barista/cm-model v0.0.8 h1:bamjV1KlkliVkDTIC7MhNtaJH86hd0wpsST2nmm/ksQ=

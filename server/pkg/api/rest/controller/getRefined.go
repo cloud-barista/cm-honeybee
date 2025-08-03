@@ -370,8 +370,9 @@ func convertToContainers(containers *[]software.Container, runtime grasshoppermo
 
 	for _, c := range *containers {
 		result = append(result, grasshoppermodel.Container{
-			Name:    getContainerName(&c.ContainerSummary),
-			Runtime: runtime,
+			Name:        getContainerName(&c.ContainerSummary),
+			Runtime:     runtime,
+			ContainerId: c.ContainerSummary.ID,
 			ContainerImage: grasshoppermodel.ContainerImage{
 				ImageName:         getImageName(&c.ContainerSummary.Image),
 				ImageVersion:      getImageTag(&c.ContainerSummary.Image),

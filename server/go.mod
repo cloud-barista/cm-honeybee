@@ -14,7 +14,7 @@ require (
 )
 
 require (
-	github.com/cloud-barista/cm-grasshopper v0.0.0-20250803101530-499093e98345
+	github.com/cloud-barista/cm-grasshopper v0.0.0-20250803110852-06f7f0a06dc0
 	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250803103810-0b3c4f1ff6f2
 	github.com/cloud-barista/cm-model v0.0.8
 	github.com/docker/docker v28.3.3+incompatible
