@@ -2,8 +2,11 @@ package controller
 
 import (
 	"fmt"
+	grasshoppermodel "github.com/cloud-barista/cm-grasshopper/pkg/api/rest/model"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
+	"github.com/docker/docker/api/types/container"
 	"github.com/jollaman999/utils/logger"
 	"net"
 	"net/http"
@@ -219,6 +222,198 @@ func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, routes
 	}
 }
 
+func convertToPackages(packages interface{}) []grasshoppermodel.Package {
+	var result []grasshoppermodel.Package
+
+	switch p := packages.(type) {
+	case []software.DEB:
+		for _, pkg := range p {
+			result = append(result, grasshoppermodel.Package{
+				Name:    pkg.Package,
+				Type:    grasshoppermodel.SoftwarePackageTypeDEB,
+				Version: pkg.Version,
+			})
+		}
+	case []software.RPM:
+		for _, pkg := range p {
+			result = append(result, grasshoppermodel.Package{
+				Name:    pkg.Name,
+				Type:    grasshoppermodel.SoftwarePackageTypeRPM,
+				Version: pkg.Version,
+			})
+		}
+	}
+
+	return result
+}
+
+func getContainerName(summary *container.Summary) string {
+	if len(summary.Names) > 0 {
+		return strings.TrimPrefix(summary.Names[0], "/")
+	}
+	return ""
+}
+
+func getDockerComposePath(labels map[string]string) string {
+	if workingDir, ok := labels["com.docker.compose.project.config_files"]; ok {
+		return workingDir
+	}
+	return ""
+}
+
+func getImageName(image *string) string {
+	parts := strings.Split(*image, ":")
+	if len(parts) > 0 {
+		return parts[0]
+	}
+	return *image
+}
+
+func getImageTag(image *string) string {
+	parts := strings.Split(*image, ":")
+	if len(parts) > 1 {
+		return parts[1]
+	}
+	return "latest"
+}
+
+func convertPorts(ports *[]container.Port) []grasshoppermodel.ContainerPort {
+	var result []grasshoppermodel.ContainerPort
+
+	for _, port := range *ports {
+		result = append(result, grasshoppermodel.ContainerPort{
+			ContainerPort: int(port.PrivatePort),
+			HostPort:      int(port.PublicPort),
+			Protocol:      port.Type,
+			HostIP:        port.IP,
+		})
+	}
+
+	return result
+}
+
+func convertMountPaths(mounts *[]container.MountPoint) []string {
+	var result []string
+
+	for _, mount := range *mounts {
+		if mount.Destination != "" {
+			result = append(result, mount.Destination)
+		}
+	}
+
+	return result
+}
+
+func getArchitectureType(arch, variant string) grasshoppermodel.SoftwareArchitecture {
+	switch arch {
+	case "386":
+		return grasshoppermodel.SoftwareArchitectureX86
+	case "amd64":
+		return grasshoppermodel.SoftwareArchitectureX8664
+	case "arm":
+		switch variant {
+		case "v5":
+			return grasshoppermodel.SoftwareArchitectureARMv5
+		case "v6":
+			return grasshoppermodel.SoftwareArchitectureARMv6
+		case "v7":
+			return grasshoppermodel.SoftwareArchitectureARMv7
+		}
+	case "arm64":
+		switch variant {
+		case "v8":
+			return grasshoppermodel.SoftwareArchitectureARM64v8
+		}
+	}
+
+	return "Unknown"
+}
+
+func convertEnvs(env *[]string) []grasshoppermodel.Env {
+	var result []grasshoppermodel.Env
+
+	for _, e := range *env {
+		var name string
+		var value string
+
+		ee := strings.Split(e, "=")
+		if len(ee) >= 1 {
+			name = ee[0]
+		}
+		if len(ee) >= 2 {
+			value = ee[1]
+		}
+
+		result = append(result, grasshoppermodel.Env{
+			Name:  name,
+			Value: value,
+		})
+	}
+
+	return result
+}
+
+func convertToContainers(containers *[]software.Container, runtime grasshoppermodel.SoftwareContainerRuntimeType) []grasshoppermodel.Container {
+	var result []grasshoppermodel.Container
+
+	for _, c := range *containers {
+		result = append(result, grasshoppermodel.Container{
+			Name:    getContainerName(&c.ContainerSummary),
+			Runtime: runtime,
+			ContainerImage: grasshoppermodel.ContainerImage{
+				ImageName:         getImageName(&c.ContainerSummary.Image),
+				ImageVersion:      getImageTag(&c.ContainerSummary.Image),
+				ImageArchitecture: getArchitectureType(c.ImageInspect.Architecture, c.ImageInspect.Variant),
+				ImageHash:         c.ContainerInspect.Image,
+			},
+			ContainerPorts:    convertPorts(&c.ContainerSummary.Ports),
+			ContainerStatus:   c.ContainerInspect.State.Status,
+			DockerComposePath: getDockerComposePath(c.ContainerSummary.Labels),
+			MountPaths:        convertMountPaths(&c.ContainerSummary.Mounts),
+			Envs:              convertEnvs(&c.ContainerInspect.Config.Env),
+			NetworkMode:       c.ContainerSummary.HostConfig.NetworkMode,
+			RestartPolicy:     string(c.ContainerInspect.HostConfig.RestartPolicy.Name),
+		})
+	}
+
+	return result
+}
+
+func doGetRefinedSoftwareInfo(softwareInfo *software.Software) (*grasshoppermodel.SoftwareList, error) {
+	var binaries []grasshoppermodel.Binary
+
+	// TODO: Import binaries
+
+	var packages []grasshoppermodel.Package
+
+	debPackages := convertToPackages(softwareInfo.DEB)
+	rpmPackages := convertToPackages(softwareInfo.RPM)
+
+	packages = append(packages, debPackages...)
+	packages = append(packages, rpmPackages...)
+
+	var containers []grasshoppermodel.Container
+
+	dockerContainers := convertToContainers(&softwareInfo.Docker, "docker")
+	podmanContainers := convertToContainers(&softwareInfo.Podman, "podman")
+
+	containers = append(containers, dockerContainers...)
+	containers = append(containers, podmanContainers...)
+
+	var kubernetes []grasshoppermodel.Kubernetes
+
+	// TODO: Refine kubernetes resources
+
+	refinedSoftwareInfo := &grasshoppermodel.SoftwareList{
+		Binaries:   binaries,
+		Packages:   packages,
+		Containers: containers,
+		Kubernetes: kubernetes,
+	}
+
+	return refinedSoftwareInfo, nil
+}
+
 // GetInfraInfoRefined godoc
 //
 //	@ID				get-infra-info-refined
@@ -318,4 +513,102 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
 
 	return c.JSONPretty(http.StatusOK, onpremiseInfraModel, " ")
+}
+
+// GetSoftwareInfoRefined godoc
+//
+//	@ID				get-software-info-refined
+//	@Summary		Get Refined Software Information
+//	@Description	Get the refined software information of the connection information.
+//	@Tags			[Get] Get refined source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	grasshoppermodel.SourceConnectionInfoSoftwareProperty	"Successfully get refined information of softwares."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
+//	@Router			/source_group/{sgId}/connection_info/{connId}/software/refined [get]
+func GetSoftwareInfoRefined(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	softwareInfo, err := doGetSoftwareInfo(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	refinedSoftwareInfo, err := doGetRefinedSoftwareInfo(softwareInfo)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	sourceConnectionInfoSoftwareProperty := grasshoppermodel.SourceConnectionInfoSoftwareProperty{
+		ConnectionId: connID,
+		Softwares:    *refinedSoftwareInfo,
+	}
+
+	return c.JSONPretty(http.StatusOK, sourceConnectionInfoSoftwareProperty, " ")
+}
+
+// GetSoftwareInfoSourceGroupRefined godoc
+//
+//	@ID				get-software-info-source-group-refined
+//	@Summary		Get Refined Software Information Source Group
+//	@Description	Get the refined software information for all connections in the source group.
+//	@Tags			[Get] Get refined source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Success		200	{object}	grasshoppermodel.SourceGroupSoftwareProperty		"Successfully get refined information of softwares."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the software."
+//	@Router		/source_group/{sgId}/software/refined [get]
+func GetSoftwareInfoSourceGroupRefined(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	var sourceGroupSoftwareProperty grasshoppermodel.SourceGroupSoftwareProperty
+
+	for _, conn := range *list {
+		softwareInfo, err := doGetSoftwareInfo(conn.ID)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		refinedSoftwareInfo, err := doGetRefinedSoftwareInfo(softwareInfo)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		sourceGroupSoftwareProperty.SourceGroupId = sgID
+		sourceGroupSoftwareProperty.ConnectionInfoList = append(sourceGroupSoftwareProperty.ConnectionInfoList, grasshoppermodel.SourceConnectionInfoSoftwareProperty{
+			ConnectionId: conn.ID,
+			Softwares:    *refinedSoftwareInfo,
+		})
+	}
+
+	return c.JSONPretty(http.StatusOK, sourceGroupSoftwareProperty, " ")
 }

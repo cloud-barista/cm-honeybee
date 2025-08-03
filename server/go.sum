@@ -2,10 +2,10 @@ github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
 github.com/apparentlymart/go-cidr v1.1.0 h1:2mAhrMoF+nhXqxTzSZMUzDHkLjmIHC+Zzn4tdgBZjnU=
 github.com/apparentlymart/go-cidr v1.1.0/go.mod h1:EBcsNrHc3zQeuaeCeCtQruQm+n9/YjEn/vI25Lg7Gwc=
-github.com/cloud-barista/cm-grasshopper v0.0.0-20250802105135-4f4a23682e6d h1:ZzObkGuaEro9xWQyLOC72zTlHl0QP3h9uaVJiXM9tbY=
-github.com/cloud-barista/cm-grasshopper v0.0.0-20250802105135-4f4a23682e6d/go.mod h1:+jrEfrmz1qTQZZfk5axferzifj1uOrwRLPWJNF71INw=
-github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250802103109-14445581cdfc h1:ZboL5NkgT6aDLCgcuLQDY9hF8U0QQ/7eQdBPoHxxjh0=
-github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250802103109-14445581cdfc/go.mod h1:3s3zWQ0GzVo1Em5QvJLHxj1Bv7LprF4gkJBrNVpTFfg=
+github.com/cloud-barista/cm-grasshopper v0.0.0-20250803101530-499093e98345 h1:lgxZB4wfgbXcih6Eqx/AHUzE26XTaLsAO8lVUDeIpSk=
+github.com/cloud-barista/cm-grasshopper v0.0.0-20250803101530-499093e98345/go.mod h1:+jrEfrmz1qTQZZfk5axferzifj1uOrwRLPWJNF71INw=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250803103810-0b3c4f1ff6f2 h1:eRHxkTYVy/1Pn12pyGUcIrduJvSNuWQe6MwkY3dOsDk=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250803103810-0b3c4f1ff6f2/go.mod h1:3s3zWQ0GzVo1Em5QvJLHxj1Bv7LprF4gkJBrNVpTFfg=
 github.com/cloud-barista/cm-model v0.0.8 h1:bamjV1KlkliVkDTIC7MhNtaJH86hd0wpsST2nmm/ksQ=
 github.com/cloud-barista/cm-model v0.0.8/go.mod h1:gSuMhQxD813KIdSvkp8uGptYOeyDik749sYcICZjhj8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
