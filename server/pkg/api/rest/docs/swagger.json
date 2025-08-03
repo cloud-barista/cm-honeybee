@@ -4856,7 +4856,11 @@
             "properties": {
                 "mode": {
                     "description": "Mode of the tmpfs upon creation",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/os.FileMode"
+                        }
+                    ]
                 },
                 "options": {
                     "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
@@ -5674,6 +5678,59 @@
                 }
             }
         },
+        "os.FileMode": {
+            "type": "integer",
+            "enum": [
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511
+            ],
+            "x-enum-comments": {
+                "ModeAppend": "a: append-only",
+                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
+                "ModeDevice": "D: device file",
+                "ModeDir": "d: is a directory",
+                "ModeExclusive": "l: exclusive use",
+                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
+                "ModeNamedPipe": "p: named pipe (FIFO)",
+                "ModePerm": "Unix permission bits",
+                "ModeSetgid": "g: setgid",
+                "ModeSetuid": "u: setuid",
+                "ModeSocket": "S: Unix domain socket",
+                "ModeSticky": "t: sticky",
+                "ModeSymlink": "L: symbolic link",
+                "ModeTemporary": "T: temporary file; Plan 9 only"
+            },
+            "x-enum-varnames": [
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm"
+            ]
+        },
         "software.Container": {
             "type": "object",
             "properties": {
@@ -5830,8 +5887,12 @@
         "time.Duration": {
             "type": "integer",
             "enum": [
-                -9223372036854775808,
-                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
                 1,
                 1000,
                 1000000,
@@ -5840,8 +5901,12 @@
                 3600000000000
             ],
             "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
