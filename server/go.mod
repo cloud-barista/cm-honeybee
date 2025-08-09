@@ -16,7 +16,7 @@ require (
 require (
 	github.com/cloud-barista/cm-grasshopper v0.0.0-20250803111500-5cb36c6a2345
 	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20250803103810-0b3c4f1ff6f2
-	github.com/cloud-barista/cm-model v0.0.8
+	github.com/cloud-barista/cm-model v0.0.11-0.20250809102934-b833453c1866
 	github.com/docker/docker v28.3.3+incompatible
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.9

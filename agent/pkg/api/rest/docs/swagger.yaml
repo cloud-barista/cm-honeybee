@@ -2152,6 +2152,25 @@ definitions:
     - 524288
     - 2401763328
     - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 8388608
+    - 4194304
+    - 1048576
+    - 511
     type: integer
     x-enum-comments:
       ModeAppend: 'a: append-only'
@@ -2214,20 +2233,9 @@ definitions:
     - ModeIrregular
     - ModeType
     - ModePerm
-    - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
     - ModeSetuid
     - ModeSetgid
-    - ModeCharDevice
     - ModeSticky
-    - ModeIrregular
-    - ModeType
     - ModePerm
   pkg_api_rest_controller.SimpleMsg:
     properties:
@@ -2287,10 +2295,6 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
     type: integer
     x-enum-varnames:
     - minDuration
@@ -2325,10 +2329,6 @@ definitions:
     - Second
     - Minute
     - Hour
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
   v1.Descriptor:
     properties:
       annotations:

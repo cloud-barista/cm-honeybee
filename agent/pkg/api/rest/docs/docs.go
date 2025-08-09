@@ -2989,6 +2989,25 @@ const docTemplate = `{
                 1048576,
                 524288,
                 2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                8388608,
+                4194304,
+                1048576,
                 511
             ],
             "x-enum-comments": {
@@ -3053,20 +3072,9 @@ const docTemplate = `{
                 "ModeIrregular",
                 "ModeType",
                 "ModePerm",
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
                 "ModeSetuid",
                 "ModeSetgid",
-                "ModeCharDevice",
                 "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
                 "ModePerm"
             ]
         },
@@ -3128,11 +3136,7 @@ const docTemplate = `{
                 1000000,
                 1000000000,
                 60000000000,
-                3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000
+                3600000000000
             ],
             "x-enum-varnames": [
                 "minDuration",
@@ -3166,11 +3170,7 @@ const docTemplate = `{
                 "Millisecond",
                 "Second",
                 "Minute",
-                "Hour",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second"
+                "Hour"
             ]
         },
         "v1.Descriptor": {
