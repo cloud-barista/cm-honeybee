@@ -6,9 +6,10 @@ package software
 
 import (
 	"errors"
-	"github.com/docker/docker/api/types"
+
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 )
 
-func GetPodmanContainers() ([]types.Container, error) {
-	return []types.Container{}, errors.New("getting podman information is not supported in Windows")
+func GetPodmanContainers() ([]software.Container, error) {
+	return []software.Container{}, errors.New("getting podman information is not supported in Windows")
 }
