@@ -2,10 +2,11 @@ package dao
 
 import (
 	"errors"
+	"strconv"
+
 	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"gorm.io/gorm"
-	"strconv"
 )
 
 func ConnectionInfoRegister(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
@@ -87,6 +88,16 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 
 func ConnectionInfoUpdate(connectionInfo *model.ConnectionInfo) error {
 	result := db.DB.Model(&model.ConnectionInfo{}).Where("id = ?", connectionInfo.ID).Updates(connectionInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ConnectionInfoUpdateWithSelect(connectionInfo *model.ConnectionInfo, fields []string) error {
+	result := db.DB.Select(fields).Where("id = ?", connectionInfo.ID).Updates(connectionInfo)
 	err := result.Error
 	if err != nil {
 		return err

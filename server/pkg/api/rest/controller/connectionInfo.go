@@ -155,7 +155,12 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 			oldConnectionInfo.AgentFailedMessage = ""
 		}
 
-		err = dao.ConnectionInfoUpdate(oldConnectionInfo)
+		err = dao.ConnectionInfoUpdateWithSelect(oldConnectionInfo, []string{
+			"connection_status",
+			"connection_failed_message",
+			"agent_status",
+			"agent_failed_message",
+		})
 		if err != nil {
 			return nil, errors.New("Error occurred while updating the connection information. " +
 				"(ID: " + oldConnectionInfo.ID + ", Error: " + err.Error() + ")")
