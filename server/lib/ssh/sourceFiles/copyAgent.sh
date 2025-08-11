@@ -69,7 +69,7 @@ Copy() {
     fi
 
     if [ ! -f "/etc/systemd/system/cm-honeybee-agent.service" ]; then
-        wget --no-check-certificate --quiet "${AGENT_REPO}/scripts/systemd/cm-honeybee-agent.service" -P /etc/systemd/system
+        wget --no-check-certificate --quiet "${AGENT_REPO}/service_file/systemd/cm-honeybee-agent.service" -P /etc/systemd/system
     fi
 }
 
