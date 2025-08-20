@@ -1805,6 +1805,8 @@ definitions:
     type: object
   kubernetes.Kubernetes:
     properties:
+      node_count:
+        $ref: '#/definitions/kubernetes.NodeCount'
       nodes:
         items:
           $ref: '#/definitions/kubernetes.Node'
@@ -1818,8 +1820,41 @@ definitions:
       addresses: {}
       labels: {}
       name: {}
-      nodeinfo: {}
+      node_info: {}
+      node_spec:
+        $ref: '#/definitions/kubernetes.NodeSpec'
+      type:
+        $ref: '#/definitions/kubernetes.NodeType'
     type: object
+  kubernetes.NodeCount:
+    properties:
+      control_plane:
+        type: integer
+      total:
+        type: integer
+      worker:
+        type: integer
+    type: object
+  kubernetes.NodeSpec:
+    properties:
+      cpu:
+        description: cores
+        type: integer
+      ephemeral_storage:
+        description: MiB
+        type: integer
+      memory:
+        description: MiB
+        type: integer
+    type: object
+  kubernetes.NodeType:
+    enum:
+    - control-plane
+    - worker
+    type: string
+    x-enum-varnames:
+    - NodeTypeControlPlane
+    - NodeTypeWorker
   kubernetes.Release:
     properties:
       app_version:
@@ -1843,236 +1878,6 @@ definitions:
         type: string
       url:
         type: string
-    type: object
-  model.Binary:
-    properties:
-      binary_path:
-        type: string
-      custom_configs:
-        type: string
-      custom_data_paths:
-        items:
-          type: string
-        type: array
-      name:
-        type: string
-      needed_libraries:
-        items:
-          type: string
-        type: array
-      version:
-        type: string
-    required:
-    - name
-    - version
-    type: object
-  model.Container:
-    properties:
-      container_id:
-        type: string
-      container_image:
-        $ref: '#/definitions/model.ContainerImage'
-      container_ports:
-        items:
-          $ref: '#/definitions/model.ContainerPort'
-        type: array
-      container_status:
-        type: string
-      docker_compose_path:
-        type: string
-      envs:
-        items:
-          $ref: '#/definitions/model.Env'
-        type: array
-      mount_paths:
-        items:
-          type: string
-        type: array
-      name:
-        type: string
-      network_mode:
-        type: string
-      restart_policy:
-        type: string
-      runtime:
-        allOf:
-        - $ref: '#/definitions/model.SoftwareContainerRuntimeType'
-        description: Which runtime uses for the container (Docker, Podman)
-    required:
-    - container_id
-    - container_image
-    - container_status
-    - name
-    - network_mode
-    - restart_policy
-    - runtime
-    type: object
-  model.ContainerImage:
-    properties:
-      image_architecture:
-        $ref: '#/definitions/model.SoftwareArchitecture'
-      image_hash:
-        type: string
-      image_name:
-        type: string
-      image_version:
-        type: string
-    required:
-    - image_architecture
-    - image_hash
-    - image_name
-    - image_version
-    type: object
-  model.ContainerPort:
-    properties:
-      container_port:
-        description: NetworkSettings.Ports.{Port}/{Protocol} -> {Port}
-        type: integer
-      host_ip:
-        description: NetworkSettings.Ports.{Port}/{Protocol}.HostIp
-        type: string
-      host_port:
-        description: NetworkSettings.Ports.{Port}/{Protocol}.HostPort
-        type: integer
-      protocol:
-        description: NetworkSettings.Ports.{Port}/{Protocol} -> {Protocol}
-        type: string
-    required:
-    - container_port
-    - host_ip
-    - host_port
-    - protocol
-    type: object
-  model.Env:
-    properties:
-      name:
-        type: string
-      value:
-        type: string
-    required:
-    - name
-    type: object
-  model.Kubernetes:
-    properties:
-      kube_config:
-        type: string
-      resources:
-        additionalProperties: true
-        type: object
-      version:
-        description: Same as release
-        type: string
-    required:
-    - kube_config
-    - resources
-    - version
-    type: object
-  model.Package:
-    properties:
-      custom_configs:
-        type: string
-      custom_data_paths:
-        items:
-          type: string
-        type: array
-      gpg_key_url:
-        type: string
-      name:
-        type: string
-      need_to_delete_packages:
-        type: string
-      needed_packages:
-        type: string
-      repo_url:
-        type: string
-      repo_use_os_version_code:
-        default: false
-        type: boolean
-      type:
-        $ref: '#/definitions/model.SoftwarePackageType'
-      version:
-        type: string
-    required:
-    - name
-    - needed_packages
-    - type
-    - version
-    type: object
-  model.SoftwareArchitecture:
-    enum:
-    - common
-    - x86_64
-    - x86
-    - armv5
-    - armv6
-    - armv7
-    - arm64v8
-    type: string
-    x-enum-varnames:
-    - SoftwareArchitectureCommon
-    - SoftwareArchitectureX8664
-    - SoftwareArchitectureX86
-    - SoftwareArchitectureARMv5
-    - SoftwareArchitectureARMv6
-    - SoftwareArchitectureARMv7
-    - SoftwareArchitectureARM64v8
-  model.SoftwareContainerRuntimeType:
-    enum:
-    - docker
-    - podman
-    type: string
-    x-enum-varnames:
-    - SoftwareContainerRuntimeTypeDocker
-    - SoftwareContainerRuntimeTypePodman
-  model.SoftwareList:
-    properties:
-      binaries:
-        items:
-          $ref: '#/definitions/model.Binary'
-        type: array
-      containers:
-        items:
-          $ref: '#/definitions/model.Container'
-        type: array
-      kubernetes:
-        items:
-          $ref: '#/definitions/model.Kubernetes'
-        type: array
-      packages:
-        items:
-          $ref: '#/definitions/model.Package'
-        type: array
-    type: object
-  model.SoftwarePackageType:
-    enum:
-    - deb
-    - rpm
-    type: string
-    x-enum-comments:
-      SoftwarePackageTypeDEB: Debian based package type
-      SoftwarePackageTypeRPM: RHEL based package type
-    x-enum-varnames:
-    - SoftwarePackageTypeDEB
-    - SoftwarePackageTypeRPM
-  model.SourceConnectionInfoSoftwareProperty:
-    properties:
-      connection_id:
-        type: string
-      softwares:
-        $ref: '#/definitions/model.SoftwareList'
-    required:
-    - connection_id
-    type: object
-  model.SourceGroupSoftwareProperty:
-    properties:
-      connection_info_list:
-        items:
-          $ref: '#/definitions/model.SourceConnectionInfoSoftwareProperty'
-        type: array
-      source_group_id:
-        type: string
-    required:
-    - source_group_id
     type: object
   mount.BindOptions:
     properties:
@@ -2847,6 +2652,240 @@ definitions:
           $ref: '#/definitions/software.RPM'
         type: array
     type: object
+  softwaremodel.Binary:
+    properties:
+      binary_path:
+        type: string
+      custom_configs:
+        items:
+          type: string
+        type: array
+      custom_data_paths:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      needed_libraries:
+        items:
+          type: string
+        type: array
+      version:
+        type: string
+    required:
+    - name
+    - version
+    type: object
+  softwaremodel.Container:
+    properties:
+      container_id:
+        type: string
+      container_image:
+        $ref: '#/definitions/softwaremodel.ContainerImage'
+      container_ports:
+        items:
+          $ref: '#/definitions/softwaremodel.ContainerPort'
+        type: array
+      container_status:
+        type: string
+      docker_compose_path:
+        type: string
+      envs:
+        items:
+          $ref: '#/definitions/softwaremodel.Env'
+        type: array
+      mount_paths:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      network_mode:
+        type: string
+      restart_policy:
+        type: string
+      runtime:
+        allOf:
+        - $ref: '#/definitions/softwaremodel.SoftwareContainerRuntimeType'
+        description: Which runtime uses for the container (Docker, Podman)
+    required:
+    - container_id
+    - container_image
+    - container_status
+    - name
+    - network_mode
+    - restart_policy
+    - runtime
+    type: object
+  softwaremodel.ContainerImage:
+    properties:
+      image_architecture:
+        $ref: '#/definitions/softwaremodel.SoftwareArchitecture'
+      image_hash:
+        type: string
+      image_name:
+        type: string
+      image_version:
+        type: string
+    required:
+    - image_architecture
+    - image_hash
+    - image_name
+    - image_version
+    type: object
+  softwaremodel.ContainerPort:
+    properties:
+      container_port:
+        description: NetworkSettings.Ports.{Port}/{Protocol} -> {Port}
+        type: integer
+      host_ip:
+        description: NetworkSettings.Ports.{Port}/{Protocol}.HostIp
+        type: string
+      host_port:
+        description: NetworkSettings.Ports.{Port}/{Protocol}.HostPort
+        type: integer
+      protocol:
+        description: NetworkSettings.Ports.{Port}/{Protocol} -> {Protocol}
+        type: string
+    required:
+    - container_port
+    - host_ip
+    - host_port
+    - protocol
+    type: object
+  softwaremodel.Env:
+    properties:
+      name:
+        type: string
+      value:
+        type: string
+    required:
+    - name
+    type: object
+  softwaremodel.Kubernetes:
+    properties:
+      kube_config:
+        type: string
+      resources:
+        additionalProperties: true
+        type: object
+      version:
+        description: Same as release
+        type: string
+    required:
+    - kube_config
+    - resources
+    - version
+    type: object
+  softwaremodel.Package:
+    properties:
+      custom_configs:
+        items:
+          type: string
+        type: array
+      custom_data_paths:
+        items:
+          type: string
+        type: array
+      gpg_key_url:
+        type: string
+      name:
+        type: string
+      need_to_delete_packages:
+        type: string
+      needed_packages:
+        type: string
+      repo_url:
+        type: string
+      repo_use_os_version_code:
+        default: false
+        type: boolean
+      type:
+        $ref: '#/definitions/softwaremodel.SoftwarePackageType'
+      version:
+        type: string
+    required:
+    - name
+    - needed_packages
+    - type
+    - version
+    type: object
+  softwaremodel.SoftwareArchitecture:
+    enum:
+    - common
+    - x86_64
+    - x86
+    - armv5
+    - armv6
+    - armv7
+    - arm64v8
+    type: string
+    x-enum-varnames:
+    - SoftwareArchitectureCommon
+    - SoftwareArchitectureX8664
+    - SoftwareArchitectureX86
+    - SoftwareArchitectureARMv5
+    - SoftwareArchitectureARMv6
+    - SoftwareArchitectureARMv7
+    - SoftwareArchitectureARM64v8
+  softwaremodel.SoftwareContainerRuntimeType:
+    enum:
+    - docker
+    - podman
+    type: string
+    x-enum-varnames:
+    - SoftwareContainerRuntimeTypeDocker
+    - SoftwareContainerRuntimeTypePodman
+  softwaremodel.SoftwareList:
+    properties:
+      binaries:
+        items:
+          $ref: '#/definitions/softwaremodel.Binary'
+        type: array
+      containers:
+        items:
+          $ref: '#/definitions/softwaremodel.Container'
+        type: array
+      kubernetes:
+        items:
+          $ref: '#/definitions/softwaremodel.Kubernetes'
+        type: array
+      packages:
+        items:
+          $ref: '#/definitions/softwaremodel.Package'
+        type: array
+    type: object
+  softwaremodel.SoftwarePackageType:
+    enum:
+    - deb
+    - rpm
+    type: string
+    x-enum-comments:
+      SoftwarePackageTypeDEB: Debian based package type
+      SoftwarePackageTypeRPM: RHEL based package type
+    x-enum-varnames:
+    - SoftwarePackageTypeDEB
+    - SoftwarePackageTypeRPM
+  softwaremodel.SourceConnectionInfoSoftwareProperty:
+    properties:
+      connection_id:
+        type: string
+      softwares:
+        $ref: '#/definitions/softwaremodel.SoftwareList'
+    required:
+    - connection_id
+    type: object
+  softwaremodel.SourceGroupSoftwareProperty:
+    properties:
+      connection_info_list:
+        items:
+          $ref: '#/definitions/softwaremodel.SourceConnectionInfoSoftwareProperty'
+        type: array
+      source_group_id:
+        type: string
+    required:
+    - source_group_id
+    type: object
   storage.DriverData:
     properties:
       Data:
@@ -2876,24 +2915,8 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
     type: integer
     x-enum-varnames:
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
     - minDuration
     - maxDuration
     - Nanosecond
@@ -4020,7 +4043,7 @@ paths:
         "200":
           description: Successfully get refined information of softwares.
           schema:
-            $ref: '#/definitions/model.SourceConnectionInfoSoftwareProperty'
+            $ref: '#/definitions/softwaremodel.SourceConnectionInfoSoftwareProperty'
         "400":
           description: Sent bad request.
           schema:
@@ -4368,7 +4391,7 @@ paths:
         "200":
           description: Successfully get refined information of softwares.
           schema:
-            $ref: '#/definitions/model.SourceGroupSoftwareProperty'
+            $ref: '#/definitions/softwaremodel.SourceGroupSoftwareProperty'
         "400":
           description: Sent bad request.
           schema:
