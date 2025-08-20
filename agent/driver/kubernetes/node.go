@@ -3,14 +3,45 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/kubernetes"
 
 	"github.com/jollaman999/utils/logger"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func convertToMiB(q resource.Quantity) int {
+	bytes := q.Value()
+	return int(bytes / 1048576)
+}
+
+func parseNodeSpec(nodeData map[string]interface{}, index int) kubernetes.NodeSpec {
+	var nodeSpec kubernetes.NodeSpec
+
+	if cpuStr, ok := common.GoJq(nodeData, fmt.Sprintf(".items[%d].status.capacity.cpu", index)).(string); ok {
+		if cpu, err := strconv.Atoi(cpuStr); err == nil {
+			nodeSpec.CPU = cpu
+		}
+	}
+
+	if memStr, ok := common.GoJq(nodeData, fmt.Sprintf(".items[%d].status.capacity.memory", index)).(string); ok {
+		if memQuantity, err := resource.ParseQuantity(memStr); err == nil {
+			nodeSpec.Memory = convertToMiB(memQuantity)
+		}
+	}
+
+	if storageStr, ok := common.GoJq(nodeData, fmt.Sprintf(".items[%d].status.capacity[\"ephemeral-storage\"]", index)).(string); ok {
+		if storageQuantity, err := resource.ParseQuantity(storageStr); err == nil {
+			nodeSpec.EphemeralStorage = convertToMiB(storageQuantity)
+		}
+	}
+
+	return nodeSpec
+}
 
 func GetNodeInfo() (kubernetes.NodeCount, []kubernetes.Node, error) {
 	clientset, err := GetKubernetesClientSet()
@@ -41,6 +72,7 @@ func GetNodeInfo() (kubernetes.NodeCount, []kubernetes.Node, error) {
 			Name:      common.GoJq(nodeMap, fmt.Sprintf(".items[%d].metadata.name", i)),
 			Labels:    common.GoJq(nodeMap, fmt.Sprintf(".items[%d].metadata.labels", i)),
 			Addresses: common.GoJq(nodeMap, fmt.Sprintf(".items[%d].status.addresses[]", i)),
+			NodeSpec:  parseNodeSpec(nodeMap, i),
 			NodeInfo:  common.GoJq(nodeMap, fmt.Sprintf(".items[%d].status.nodeInfo", i)),
 		}
 

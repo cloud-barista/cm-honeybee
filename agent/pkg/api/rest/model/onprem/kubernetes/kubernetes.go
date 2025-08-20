@@ -1,6 +1,8 @@
 package kubernetes
 
-import "time"
+import (
+	"time"
+)
 
 type Kubernetes struct {
 	NodeCount NodeCount              `json:"node_count"`
@@ -26,7 +28,14 @@ type Node struct {
 	Name      interface{} `json:"name,omitempty"`
 	Labels    interface{} `json:"labels,omitempty"`
 	Addresses interface{} `json:"addresses,omitempty"`
-	NodeInfo  interface{} `json:"nodeinfo,omitempty"`
+	NodeSpec  NodeSpec    `json:"node_spec,omitempty"`
+	NodeInfo  interface{} `json:"node_info,omitempty"`
+}
+
+type NodeSpec struct {
+	CPU              int `json:"cpu"`               // cores
+	Memory           int `json:"memory"`            // MiB
+	EphemeralStorage int `json:"ephemeral_storage"` // MiB
 }
 
 type Helm struct {
