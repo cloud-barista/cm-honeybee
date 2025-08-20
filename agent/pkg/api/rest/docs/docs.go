@@ -1874,6 +1874,9 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Kubernetes": {
             "type": "object",
             "properties": {
+                "node_count": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.NodeCount"
+                },
                 "nodes": {
                     "type": "array",
                     "items": {
@@ -1892,8 +1895,36 @@ const docTemplate = `{
                 "addresses": {},
                 "labels": {},
                 "name": {},
-                "nodeinfo": {}
+                "nodeinfo": {},
+                "type": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.NodeType"
+                }
             }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.NodeCount": {
+            "type": "object",
+            "properties": {
+                "control_plane": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                },
+                "worker": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.NodeType": {
+            "type": "string",
+            "enum": [
+                "control-plane",
+                "worker"
+            ],
+            "x-enum-varnames": [
+                "NodeTypeControlPlane",
+                "NodeTypeWorker"
+            ]
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Release": {
             "type": "object",
@@ -2959,6 +2990,36 @@ const docTemplate = `{
                 1048576,
                 524288,
                 2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
                 511
             ],
             "x-enum-comments": {
@@ -2978,21 +3039,6 @@ const docTemplate = `{
                 "ModeTemporary": "T: temporary file; Plan 9 only"
             },
             "x-enum-varnames": [
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm",
                 "ModeDir",
                 "ModeAppend",
                 "ModeExclusive",
@@ -3053,18 +3099,30 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
                 1000000000,
+                60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
                 1000000000,
+                60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
-                1000000000
+                1000000000,
+                60000000000,
+                3600000000000
             ],
             "x-enum-varnames": [
                 "minDuration",
@@ -3083,18 +3141,30 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
                 "Second",
+                "Minute",
+                "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
                 "Second",
+                "Minute",
+                "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
-                "Second"
+                "Second",
+                "Minute",
+                "Hour"
             ]
         },
         "v1.Descriptor": {

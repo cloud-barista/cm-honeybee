@@ -21,7 +21,7 @@ func GetKubernetesInfo() (*kubernetes.Kubernetes, error) {
 	var i kubernetes.Kubernetes
 	var err error
 
-	i.Nodes, err = GetNodeInfo()
+	i.NodeCount, i.Nodes, err = GetNodeInfo()
 	if err != nil {
 		return nil, err
 	}

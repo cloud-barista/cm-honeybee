@@ -3,11 +3,26 @@ package kubernetes
 import "time"
 
 type Kubernetes struct {
+	NodeCount NodeCount              `json:"node_count"`
 	Nodes     []Node                 `json:"nodes"`
 	Workloads map[string]interface{} `json:"workloads"`
 }
 
+type NodeCount struct {
+	Total        int `json:"total"`
+	ControlPlane int `json:"control_plane"`
+	Worker       int `json:"worker"`
+}
+
+type NodeType string
+
+const (
+	NodeTypeControlPlane NodeType = "control-plane"
+	NodeTypeWorker       NodeType = "worker"
+)
+
 type Node struct {
+	Type      NodeType    `json:"type"`
 	Name      interface{} `json:"name,omitempty"`
 	Labels    interface{} `json:"labels,omitempty"`
 	Addresses interface{} `json:"addresses,omitempty"`
