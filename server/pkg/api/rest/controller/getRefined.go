@@ -574,7 +574,12 @@ func GetSoftwareInfoRefined(c echo.Context) error {
 		Softwares:    *refinedSoftwareInfo,
 	}
 
-	return c.JSONPretty(http.StatusOK, sourceConnectionInfoSoftwareProperty, " ")
+	var sourceSoftwareModel softwaremodel.SourceSoftwareModel
+	sourceSoftwareModel.SourceSoftwareModel.SourceGroupId = sgID
+	sourceSoftwareModel.SourceSoftwareModel.ConnectionInfoList =
+		append(sourceSoftwareModel.SourceSoftwareModel.ConnectionInfoList, sourceConnectionInfoSoftwareProperty)
+
+	return c.JSONPretty(http.StatusOK, sourceSoftwareModel, " ")
 }
 
 // GetSoftwareInfoSourceGroupRefined godoc
@@ -608,6 +613,8 @@ func GetSoftwareInfoSourceGroupRefined(c echo.Context) error {
 
 	var sourceGroupSoftwareProperty softwaremodel.SourceGroupSoftwareProperty
 
+	sourceGroupSoftwareProperty.SourceGroupId = sgID
+
 	for _, conn := range *list {
 		softwareInfo, err := doGetSoftwareInfo(conn.ID)
 		if err != nil {
@@ -617,12 +624,14 @@ func GetSoftwareInfoSourceGroupRefined(c echo.Context) error {
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
-		sourceGroupSoftwareProperty.SourceGroupId = sgID
 		sourceGroupSoftwareProperty.ConnectionInfoList = append(sourceGroupSoftwareProperty.ConnectionInfoList, softwaremodel.SourceConnectionInfoSoftwareProperty{
 			ConnectionId: conn.ID,
 			Softwares:    *refinedSoftwareInfo,
 		})
 	}
 
-	return c.JSONPretty(http.StatusOK, sourceGroupSoftwareProperty, " ")
+	var sourceSoftwareModel softwaremodel.SourceSoftwareModel
+	sourceSoftwareModel.SourceSoftwareModel = sourceGroupSoftwareProperty
+
+	return c.JSONPretty(http.StatusOK, sourceSoftwareModel, " ")
 }
