@@ -22,7 +22,7 @@ require (
 	github.com/swaggo/echo-swagger v1.4.1
 	github.com/swaggo/swag v1.16.6
 	github.com/taigrr/systemctl v1.0.10
-	github.com/ulikunitz/xz v0.5.12
+	github.com/ulikunitz/xz v0.5.14
 	github.com/vishvananda/netlink v1.3.1
 	github.com/yumaojun03/dmidecode v0.1.5-0.20231113021359-c053d91d9679
 	golang.org/x/sys v0.34.0
