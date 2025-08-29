@@ -20,7 +20,7 @@ import (
 	"github.com/jollaman999/utils/syscheck"
 )
 
-var version = "v0.3.3"
+var version = "v0.3.4"
 
 func init() {
 	argsWithoutProg := os.Args[1:]
