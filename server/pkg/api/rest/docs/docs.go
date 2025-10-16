@@ -2935,23 +2935,23 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "bridge": {
-                    "description": "Bridge contains the name of the default bridge interface iff it was set through the daemon --bridge flag.",
+                    "description": "Deprecated: This field is only set when the daemon is started with the --bridge flag specified.",
                     "type": "string"
                 },
                 "endpointID": {
-                    "description": "EndpointID uniquely represents a service endpoint in a Sandbox",
+                    "description": "EndpointID uniquely represents a service endpoint in a Sandbox\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
                     "type": "string"
                 },
                 "gateway": {
-                    "description": "Gateway holds the gateway address for the network",
+                    "description": "Gateway holds the gateway address for the network\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
                     "type": "string"
                 },
                 "globalIPv6Address": {
-                    "description": "GlobalIPv6Address holds network's global IPv6 address",
+                    "description": "GlobalIPv6Address holds network's global IPv6 address\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
                     "type": "string"
                 },
                 "globalIPv6PrefixLen": {
-                    "description": "GlobalIPv6PrefixLen represents mask length of network's global IPv6 address",
+                    "description": "GlobalIPv6PrefixLen represents mask length of network's global IPv6 address\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
                     "type": "integer"
                 },
                 "hairpinMode": {
@@ -2959,15 +2959,15 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "ipaddress": {
-                    "description": "IPAddress holds the IPv4 address for the network",
+                    "description": "IPAddress holds the IPv4 address for the network\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
                     "type": "string"
                 },
                 "ipprefixLen": {
-                    "description": "IPPrefixLen represents mask length of network's IPv4 address",
+                    "description": "IPPrefixLen represents mask length of network's IPv4 address\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
                     "type": "integer"
                 },
                 "ipv6Gateway": {
-                    "description": "IPv6Gateway holds gateway address specific for IPv6",
+                    "description": "IPv6Gateway holds gateway address specific for IPv6\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
                     "type": "string"
                 },
                 "linkLocalIPv6Address": {
@@ -2979,7 +2979,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "macAddress": {
-                    "description": "MacAddress holds the MAC address for the network",
+                    "description": "MacAddress holds the MAC address for the network\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
                     "type": "string"
                 },
                 "networks": {
@@ -5894,16 +5894,6 @@ const docTemplate = `{
         "time.Duration": {
             "type": "integer",
             "enum": [
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -5912,16 +5902,6 @@ const docTemplate = `{
                 3600000000000
             ],
             "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
