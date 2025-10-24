@@ -219,8 +219,14 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) error {
 	commands := "/tmp/copyAgent.sh"
 	logger.Printf(logger.DEBUG, true, "SSH: copyAgent Progressing...\n")
 	if _, err = o.RunCmd("sudo " + commands); err != nil {
-		logger.Println(logger.DEBUG, true, "Failed to run command : ", err)
+		logger.Println(logger.ERROR, true, "Failed to run command : ", err)
 		return err
+	}
+
+	commands = "rm -f /tmp/busybox && rm -f /tmp/copyAgent.sh"
+	logger.Printf(logger.DEBUG, true, "SSH: Removing temporary files...\n")
+	if _, err = o.RunCmd(commands); err != nil {
+		logger.Println(logger.ERROR, true, "Failed to remove temporary files : ", err)
 	}
 
 	return o.checkAgentStatus()
