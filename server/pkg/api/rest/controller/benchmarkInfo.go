@@ -1,7 +1,6 @@
 package controller
 
 import (
-	//	"encoding/json"
 	"net/http"
 	"time"
 
@@ -74,7 +73,6 @@ func RunBenchmarkInfo(c echo.Context) error {
 	}
 
 	oldSavedBenchmarkInfo, _ := dao.SavedBenchmarkInfoGet(connectionInfo.ID)
-
 	if oldSavedBenchmarkInfo == nil {
 		savedBenchmarkInfo := new(model.SavedBenchmarkInfo)
 		savedBenchmarkInfo.ConnectionID = connectionInfo.ID
@@ -139,9 +137,8 @@ func StopBenchmarkInfo(c echo.Context) error {
 	}
 
 	oldSavedBenchmarkInfo, _ := dao.SavedBenchmarkInfoGet(connectionInfo.ID)
-
 	if oldSavedBenchmarkInfo == nil {
-		return common.ReturnInternalError(c, err, "Error occurred while getting benchmark information.")
+		return common.ReturnErrorMsg(c, "Error occurred while getting benchmark information.")
 	}
 
 	s := &ssh.SSH{}
