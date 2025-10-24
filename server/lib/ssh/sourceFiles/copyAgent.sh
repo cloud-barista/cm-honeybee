@@ -1,5 +1,7 @@
 #!/bin/bash
 
+BUSYBOX_PATH="/tmp/busybox"
+
 # Repo
 AGENT_REPO="https://raw.githubusercontent.com/cloud-barista/cm-honeybee/main/agent"
 
@@ -26,27 +28,8 @@ is_root() {
 
 root_check() {
     if ! is_root; then
-        echo "Root 계정으로 실행해주세요."
+        echo "Please run as root!"
         exit 1
-    fi
-}
-Initializer() {
-    local NEEDED_DEPS=(curl wget iptables)
-
-    if [ -x "$(command -v curl)" ] && [ -x "$(command -v wget)" ] && [ -x "$(command -v iptables)" ]; then
-        sleep 1
-    else
-        # echo "패키지 설치 :" "${NEEDED_DEPS[@]}"
-        if [ -x "$(command -v apt-get)" ]
-        then
-            sudo -n apt-get install "${NEEDED_DEPS[@]}" -y
-        elif [ -x "$(command -v yum)" ]
-        then
-            sudo -n yum install "${NEEDED_DEPS[@]}" -y
-        else
-            # echo "패키지 매니저를 찾을 수 없어 설치에 실패하였습니다. 수동으로 다음 패키지 설치 :" "${NEEDED_DEPS[@]}"
-            exit 1
-        fi
     fi
 }
 
@@ -59,17 +42,17 @@ Copy() {
         rm -rf /usr/bin/cm-honeybee-agent
         LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
         DOWNLOAD_URL=https://github.com/cloud-barista/cm-honeybee/releases/download/${LATEST_RELEASE}/cm-honeybee-agent
-        wget --no-check-certificate --quiet "$DOWNLOAD_URL" -P /usr/bin
+        $BUSYBOX_PATH wget --no-check-certificate --quiet "$DOWNLOAD_URL" -P /usr/bin
         chmod a+x /usr/bin/cm-honeybee-agent
     fi
 
     if [ ! -f "/etc/cloud-migrator/cm-honeybee-agent/conf/cm-honeybee-agent.yaml" ]; then
         mkdir -p /etc/cloud-migrator/cm-honeybee-agent/conf
-        wget --no-check-certificate --quiet "${AGENT_REPO}/conf/cm-honeybee-agent.yaml" -P /etc/cloud-migrator/cm-honeybee-agent/conf
+        $BUSYBOX_PATH wget --no-check-certificate --quiet "${AGENT_REPO}/conf/cm-honeybee-agent.yaml" -P /etc/cloud-migrator/cm-honeybee-agent/conf
     fi
 
     if [ ! -f "/etc/systemd/system/cm-honeybee-agent.service" ]; then
-        wget --no-check-certificate --quiet "${AGENT_REPO}/service_file/systemd/cm-honeybee-agent.service" -P /etc/systemd/system
+        $BUSYBOX_PATH wget --no-check-certificate --quiet "${AGENT_REPO}/service_file/systemd/cm-honeybee-agent.service" -P /etc/systemd/system
     fi
 }
 
@@ -86,15 +69,7 @@ Start() {
 
 # Main Script
 ((
-    # root 체크
     root_check
-
-    # 초기 설정
-    Initializer
-
-    # Agent 복사
     Copy
-
-    # Agent 실행
     Start
 ) 2>&1) | tee -a /tmp/honeybee-agent-install.log

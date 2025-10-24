@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/cloud-barista/cm-honeybee/server/lib/config"
 	"strings"
 	"time"
+
+	"github.com/cloud-barista/cm-honeybee/server/lib/config"
 
 	"github.com/jollaman999/utils/logger"
 
@@ -209,9 +210,9 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) error {
 	}()
 
 	dstPath := "/tmp/"
-	file := "sourceFiles/copyAgent.sh"
+	files := []string{"sourceFiles/busybox", "sourceFiles/copyAgent.sh"}
 
-	if err = o.copyFileToSFTP(client, file, dstPath); err != nil {
+	if err = o.copyFilesToSFTP(client, files, dstPath); err != nil {
 		return err
 	}
 
