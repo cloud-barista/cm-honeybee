@@ -5,12 +5,13 @@ package network
 import (
 	"bufio"
 	"fmt"
-	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
-	"github.com/coreos/go-iptables/iptables"
-	"github.com/jollaman999/utils/logger"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
+	"github.com/coreos/go-iptables/iptables"
+	"github.com/jollaman999/utils/logger"
 )
 
 func parseIptablesRules(ipt *iptables.IPTables, rules []string, prevPriority *uint, direction string, isIPv6 bool) []network.FirewallRule {

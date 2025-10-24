@@ -2,10 +2,11 @@ package infra
 
 import (
 	"errors"
+	"sync"
+
 	"github.com/cloud-barista/cm-honeybee/agent/driver/network"
 	modelNet "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
 	"github.com/jollaman999/utils/logger"
-	"sync"
 )
 
 var networkInfoLock sync.Mutex
@@ -40,17 +41,13 @@ func GetNetworkInfo() (modelNet.Network, error) {
 	n.Host.FirewallRule, err = network.GetFirewallRules()
 	if err != nil {
 		errMsg := "FIREWALL RULE: " + err.Error()
-		logger.Println(logger.DEBUG, true, errMsg)
-
-		return n, errors.New(errMsg)
+		logger.Println(logger.ERROR, true, errMsg)
 	}
 
 	n.Host.DNS, err = network.GetDNS()
 	if err != nil {
 		errMsg := "DNS: " + err.Error()
-		logger.Println(logger.DEBUG, true, errMsg)
-
-		return n, errors.New(errMsg)
+		logger.Println(logger.ERROR, true, errMsg)
 	}
 
 	return n, nil
