@@ -72,4 +72,4 @@ Start() {
     root_check
     Copy
     Start
-) 2>&1) | tee -a /tmp/honeybee-agent-install.log
+) 2>&1) | sudo tee -a /tmp/honeybee-agent-install.log
