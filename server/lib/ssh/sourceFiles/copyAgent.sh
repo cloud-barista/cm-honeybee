@@ -51,8 +51,8 @@ Copy() {
         $BUSYBOX_PATH wget --no-check-certificate --quiet "${AGENT_REPO}/conf/cm-honeybee-agent.yaml" -P /etc/cloud-migrator/cm-honeybee-agent/conf
     fi
 
-    if [ ! -f "/etc/systemd/system/cm-honeybee-agent.service" ]; then
-        $BUSYBOX_PATH wget --no-check-certificate --quiet "${AGENT_REPO}/service_file/systemd/cm-honeybee-agent.service" -P /etc/systemd/system
+    if [ ! -f "/lib/systemd/system/cm-honeybee-agent.service" ]; then
+        $BUSYBOX_PATH wget --no-check-certificate --quiet "${AGENT_REPO}/service_file/systemd/cm-honeybee-agent.service" -P /lib/systemd/system
     fi
 }
 
