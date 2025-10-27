@@ -1603,6 +1603,136 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxy": {
+            "type": "object",
+            "properties": {
+                "backends": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyBackend"
+                    }
+                },
+                "config_path": {
+                    "type": "string"
+                },
+                "defaults": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "frontends": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyFrontend"
+                    }
+                },
+                "global": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "listens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyListen"
+                    }
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyBackend": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyServer"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyFrontend": {
+            "type": "object",
+            "properties": {
+                "bind": {
+                    "type": "string"
+                },
+                "default_backend": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyListen": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "string"
+                },
+                "bind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyServer"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyServer": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Infra": {
             "type": "object",
             "properties": {
@@ -1611,6 +1741,9 @@ const docTemplate = `{
                 },
                 "gpu": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.GPU"
+                },
+                "haproxy": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxy"
                 },
                 "network": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.Network"
@@ -3010,6 +3143,40 @@ const docTemplate = `{
                 1048576,
                 524288,
                 2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                8388608,
+                4194304,
+                1048576,
                 511
             ],
             "x-enum-comments": {
@@ -3044,20 +3211,9 @@ const docTemplate = `{
                 "ModeIrregular",
                 "ModeType",
                 "ModePerm",
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
                 "ModeSetuid",
                 "ModeSetgid",
-                "ModeCharDevice",
                 "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
                 "ModePerm"
             ]
         },
@@ -3111,7 +3267,19 @@ const docTemplate = `{
                 1000000,
                 1000000000,
                 60000000000,
-                3600000000000
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
+                1,
+                1000,
+                1000000,
+                1000000000
             ],
             "x-enum-varnames": [
                 "minDuration",
@@ -3137,7 +3305,19 @@ const docTemplate = `{
                 "Millisecond",
                 "Second",
                 "Minute",
-                "Hour"
+                "Hour",
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second"
             ]
         },
         "v1.Descriptor": {

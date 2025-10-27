@@ -2,8 +2,9 @@ package infra
 
 import (
 	"errors"
-	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"sync"
+
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 )
 
 var infraInfoLock sync.Mutex
@@ -32,6 +33,11 @@ func GetInfraInfo() (*infra.Infra, error) {
 	i.GPU, err = GetGPUInfo()
 	if err != nil {
 		return nil, err
+	}
+
+	haproxyInfo, err := GetHAProxyInfo()
+	if err == nil {
+		i.HAProxy = haproxyInfo
 	}
 
 	return &i, nil

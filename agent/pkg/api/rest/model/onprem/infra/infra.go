@@ -9,4 +9,5 @@ type Infra struct {
 	Network network.Network `json:"network"`
 	GPU     GPU             `json:"gpu"`
 	Storage Storage         `json:"storage"`
+	HAProxy HAProxy         `json:"haproxy"`
 }

@@ -1060,12 +1060,99 @@ definitions:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIA'
         type: array
     type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxy:
+    properties:
+      backends:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyBackend'
+        type: array
+      config_path:
+        type: string
+      defaults:
+        additionalProperties:
+          type: string
+        type: object
+      errors:
+        items:
+          type: string
+        type: array
+      frontends:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyFrontend'
+        type: array
+      global:
+        additionalProperties:
+          type: string
+        type: object
+      listens:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyListen'
+        type: array
+      version:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyBackend:
+    properties:
+      balance:
+        type: string
+      name:
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        type: object
+      servers:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyServer'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyFrontend:
+    properties:
+      bind:
+        type: string
+      default_backend:
+        type: string
+      name:
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyListen:
+    properties:
+      balance:
+        type: string
+      bind:
+        type: string
+      name:
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        type: object
+      servers:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyServer'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxyServer:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+      options:
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Infra:
     properties:
       compute:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Compute'
       gpu:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.GPU'
+      haproxy:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.HAProxy'
       network:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.Network'
       storage:
@@ -2180,6 +2267,40 @@ definitions:
     - 524288
     - 2401763328
     - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 8388608
+    - 4194304
+    - 1048576
+    - 511
     type: integer
     x-enum-comments:
       ModeAppend: 'a: append-only'
@@ -2212,20 +2333,9 @@ definitions:
     - ModeIrregular
     - ModeType
     - ModePerm
-    - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
     - ModeSetuid
     - ModeSetgid
-    - ModeCharDevice
     - ModeSticky
-    - ModeIrregular
-    - ModeType
     - ModePerm
   pkg_api_rest_controller.SimpleMsg:
     properties:
@@ -2277,6 +2387,18 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
     type: integer
     x-enum-varnames:
     - minDuration
@@ -2303,6 +2425,18 @@ definitions:
     - Second
     - Minute
     - Hour
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
   v1.Descriptor:
     properties:
       annotations:
