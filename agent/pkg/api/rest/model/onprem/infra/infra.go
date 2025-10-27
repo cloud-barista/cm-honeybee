@@ -10,4 +10,5 @@ type Infra struct {
 	GPU     GPU             `json:"gpu"`
 	Storage Storage         `json:"storage"`
 	HAProxy HAProxy         `json:"haproxy"`
+	MinIO   MinIO           `json:"minio"`
 }
