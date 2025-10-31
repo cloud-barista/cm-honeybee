@@ -1812,6 +1812,12 @@
                 "address": {
                     "type": "string"
                 },
+                "buckets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.MinioBucket"
+                    }
+                },
                 "config_path": {
                     "type": "string"
                 },
@@ -1836,11 +1842,8 @@
                 "root_user": {
                     "type": "string"
                 },
-                "storage_paths": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.MinIOStorage"
-                    }
+                "server_info": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.MinIOServerInfo"
                 },
                 "version": {
                     "type": "string"
@@ -1850,14 +1853,31 @@
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.MinIOStorage": {
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.MinIOServerInfo": {
+            "type": "object",
+            "properties": {
+                "disks": {
+                    "type": "integer"
+                },
+                "offline_disks": {
+                    "type": "integer"
+                },
+                "online_disks": {
+                    "type": "integer"
+                },
+                "servers": {
+                    "type": "integer"
+                },
+                "storage_info": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.MinIOStorageInfo"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.MinIOStorageInfo": {
             "type": "object",
             "properties": {
                 "free_gb": {
                     "type": "number"
-                },
-                "path": {
-                    "type": "string"
                 },
                 "total_gb": {
                     "type": "number"
@@ -1867,6 +1887,26 @@
                 },
                 "used_percent": {
                     "type": "number"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.MinioBucket": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "objects": {
+                    "type": "integer"
+                },
+                "replication": {
+                    "type": "boolean"
+                },
+                "size_gb": {
+                    "type": "number"
+                },
+                "versioned": {
+                    "type": "boolean"
                 }
             }
         },
@@ -3234,65 +3274,9 @@
                 524288,
                 2401763328,
                 511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
                 8388608,
                 4194304,
-                2097152,
                 1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
                 511
             ],
             "x-enum-comments": {
@@ -3342,50 +3326,9 @@
                 "ModeIrregular",
                 "ModeType",
                 "ModePerm",
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
                 "ModeSetuid",
                 "ModeSetgid",
-                "ModeCharDevice",
                 "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm",
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm",
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
                 "ModePerm"
             ]
         },
@@ -3455,25 +3398,9 @@
                 1000000,
                 1000000000,
                 60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
                 3600000000000
             ],
             "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
                 "minDuration",
                 "maxDuration",
                 "Nanosecond",
