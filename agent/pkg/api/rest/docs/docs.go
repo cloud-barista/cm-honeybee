@@ -19,6 +19,42 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/data": {
+            "get": {
+                "description": "Get data migration information (required fields only for data migration).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Data] Get data migration info"
+                ],
+                "summary": "Get data migration information",
+                "operationId": "get-data-info",
+                "responses": {
+                    "200": {
+                        "description": "Successfully get data migration information.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_data.DataInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get data migration information.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/helm": {
             "get": {
                 "description": "Get helm information.",
@@ -1444,6 +1480,120 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_data.DataInfo": {
+            "type": "object",
+            "properties": {
+                "minio": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_data.MinIOData"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_data.MinIOData": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "Required for connection",
+                    "type": "string"
+                },
+                "buckets": {
+                    "description": "Required",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_data.MinioBucket"
+                    }
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "root_user": {
+                    "description": "Required for authentication (sensitive)",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_data.MinIOObjectInfo": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "description": "Content type - Required",
+                    "type": "string"
+                },
+                "etag": {
+                    "description": "ETag for integrity check - Required",
+                    "type": "string"
+                },
+                "key": {
+                    "description": "Object key (path) - Required",
+                    "type": "string"
+                },
+                "last_modified": {
+                    "description": "Last modified timestamp - Required",
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "User metadata - Required",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "size": {
+                    "description": "Object size in bytes - Required",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_data.MinioBucket": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Required",
+                    "type": "string"
+                },
+                "object_list": {
+                    "description": "Required for migration",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_data.MinIOObjectInfo"
+                    }
+                },
+                "objects": {
+                    "description": "Required for planning",
+                    "type": "integer"
+                },
+                "versioned": {
+                    "description": "Required for migration planning",
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.BucketEncryption": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "description": "e.g., \"SSE-S3\", \"SSE-KMS\"",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.BucketLifecycle": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "rules_count": {
+                    "description": "Number of lifecycle rules",
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CPU": {
             "type": "object",
             "required": [
@@ -1831,6 +1981,13 @@ const docTemplate = `{
                 "console_address": {
                     "type": "string"
                 },
+                "cors_allow_origin": {
+                    "description": "Server-level CORS configuration",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "errors": {
                     "type": "array",
                     "items": {
@@ -1900,17 +2057,29 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.MinioBucket": {
             "type": "object",
             "properties": {
+                "encryption": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.BucketEncryption"
+                },
+                "lifecycle": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.BucketLifecycle"
+                },
                 "name": {
                     "type": "string"
                 },
-                "objects": {
-                    "type": "integer"
+                "object_lock": {
+                    "type": "boolean"
                 },
                 "replication": {
                     "type": "boolean"
                 },
                 "size_gb": {
                     "type": "number"
+                },
+                "tags": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
                 },
                 "versioned": {
                     "type": "boolean"
@@ -3220,6 +3389,126 @@ const docTemplate = `{
                 1048576,
                 524288,
                 2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
                 511
             ],
             "x-enum-comments": {
@@ -3239,6 +3528,66 @@ const docTemplate = `{
                 "ModeTemporary": "T: temporary file; Plan 9 only"
             },
             "x-enum-varnames": [
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm",
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm",
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm",
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm",
                 "ModeDir",
                 "ModeAppend",
                 "ModeExclusive",
@@ -3290,11 +3639,45 @@ const docTemplate = `{
                 1000000,
                 1000000000,
                 60000000000,
+                3600000000000,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
                 3600000000000
             ],
             "x-enum-varnames": [
                 "minDuration",
                 "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

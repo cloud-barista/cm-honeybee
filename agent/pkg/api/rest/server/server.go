@@ -60,6 +60,7 @@ func Init() {
 	e.HideBanner = true
 
 	route.RegisterInfra(e)
+	route.RegisterData(e)
 	route.RegisterSoftware(e)
 	route.RegisterKubernetes(e)
 	route.RegisterHelm(e)

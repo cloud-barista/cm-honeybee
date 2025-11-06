@@ -28,6 +28,9 @@ type minioConnectionInfo struct {
 	Version   string
 }
 
+// Global variable to store connection info for reuse by data driver
+var globalConnInfo *minioConnectionInfo
+
 // GetMinIOInfo collects MinIO information from the system
 func GetMinIOInfo() (infra.MinIO, error) {
 	var minioInfo infra.MinIO
@@ -124,9 +127,13 @@ func GetMinIOInfo() (infra.MinIO, error) {
 
 	// Connect to MinIO and get information
 	if connInfo != nil {
+		// Store connInfo globally for reuse by data driver
+		globalConnInfo = connInfo
+
 		var serverInfo *infra.MinIOServerInfo
 		var buckets []infra.MinioBucket
 		var lastServerErr, lastBucketsErr error
+		var corsAllowOrigin []string
 
 		// Try all endpoints
 		for _, endpoint := range connInfo.Endpoints {
@@ -138,6 +145,11 @@ func GetMinIOInfo() (infra.MinIO, error) {
 				} else {
 					lastServerErr = err
 				}
+			}
+
+			// Try to get CORS configuration (server-level)
+			if len(corsAllowOrigin) == 0 {
+				corsAllowOrigin = getMinIOCORSConfig(endpoint, connInfo.AccessKey, connInfo.SecretKey)
 			}
 
 			// Try to get bucket information (using same endpoint that worked for server info, or trying all)
@@ -152,11 +164,14 @@ func GetMinIOInfo() (infra.MinIO, error) {
 				}
 			}
 
-			// If both succeeded, no need to try other endpoints
-			if serverInfo != nil && buckets != nil {
+			// If all succeeded, no need to try other endpoints
+			if serverInfo != nil && buckets != nil && len(corsAllowOrigin) > 0 {
 				break
 			}
 		}
+
+		// Set CORS configuration
+		minioInfo.CORSAllowOrigin = corsAllowOrigin
 
 		// Set results
 		if serverInfo != nil {
@@ -603,6 +618,59 @@ func getMinIOServerInfo(endpoint, accessKey, secretKey string) (*infra.MinIOServ
 	return serverInfo, nil
 }
 
+// getMinIOCORSConfig retrieves server-level CORS configuration from MinIO
+func getMinIOCORSConfig(endpoint, accessKey, secretKey string) []string {
+	ctx := context.Background()
+
+	// Create admin client
+	madmClient, err := madmin.NewWithOptions(endpoint, &madmin.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: false,
+	})
+	if err != nil {
+		return nil
+	}
+
+	// Set timeout
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	// Get API configuration (contains CORS settings)
+	configData, err := madmClient.GetConfigKV(ctx, "api")
+	if err != nil {
+		return nil
+	}
+
+	// Parse the configuration to find cors_allow_origin
+	// The config is returned as space-separated key=value pairs
+	configStr := string(configData)
+
+	// Split by spaces and newlines to handle both single-line and multi-line configs
+	fields := strings.Fields(configStr)
+	for _, field := range fields {
+		// Look for cors_allow_origin=value
+		if strings.HasPrefix(field, "cors_allow_origin=") {
+			corsValue := strings.TrimPrefix(field, "cors_allow_origin=")
+			// Remove quotes if present
+			corsValue = strings.Trim(corsValue, `"'`)
+			if corsValue != "" && corsValue != "*" {
+				// Split by comma to get array of origins
+				origins := strings.Split(corsValue, ",")
+				var result []string
+				for _, origin := range origins {
+					origin = strings.TrimSpace(origin)
+					if origin != "" {
+						result = append(result, origin)
+					}
+				}
+				return result
+			}
+		}
+	}
+
+	return nil
+}
+
 // getMinioBuckets connects to MinIO and retrieves bucket information
 func getMinioBuckets(endpoint, accessKey, secretKey string) ([]infra.MinioBucket, error) {
 	ctx := context.Background()
@@ -649,28 +717,118 @@ func getMinioBuckets(endpoint, accessKey, secretKey string) ([]infra.MinioBucket
 			bucketInfo.Replication = true
 		}
 
-		// Calculate bucket size and object count
-		var totalSize int64
-		var objectCount int64
+		// Get bucket object lock configuration
+		lockCtx, lockCancel := context.WithTimeout(ctx, 5*time.Second)
+		_, _, _, _, err = minioClient.GetObjectLockConfig(lockCtx, bucket.Name)
+		lockCancel()
+		if err == nil {
+			bucketInfo.ObjectLock = true
+		}
 
-		objectsCtx, objectsCancel := context.WithTimeout(ctx, 30*time.Second)
+		// Get bucket encryption configuration
+		encCtx, encCancel := context.WithTimeout(ctx, 5*time.Second)
+		encConfig, err := minioClient.GetBucketEncryption(encCtx, bucket.Name)
+		encCancel()
+		if err == nil && encConfig != nil && len(encConfig.Rules) > 0 {
+			bucketInfo.Encryption = &infra.BucketEncryption{
+				Enabled: true,
+				Type:    "SSE-S3", // MinIO default
+			}
+		}
+
+		// Get bucket lifecycle configuration
+		lifecycleCtx, lifecycleCancel := context.WithTimeout(ctx, 5*time.Second)
+		lifecycleConfig, err := minioClient.GetBucketLifecycle(lifecycleCtx, bucket.Name)
+		lifecycleCancel()
+		if err == nil && lifecycleConfig != nil && len(lifecycleConfig.Rules) > 0 {
+			bucketInfo.Lifecycle = &infra.BucketLifecycle{
+				Enabled: true,
+				Rules:   len(lifecycleConfig.Rules),
+			}
+		}
+
+		// Get bucket tags
+		tagsCtx, tagsCancel := context.WithTimeout(ctx, 5*time.Second)
+		tags, err := minioClient.GetBucketTagging(tagsCtx, bucket.Name)
+		tagsCancel()
+		if err == nil && tags != nil && len(tags.ToMap()) > 0 {
+			bucketInfo.Tags = tags.ToMap()
+		}
+
+		// Calculate bucket size
+		var totalSize int64
+
+		objectsCtx, objectsCancel := context.WithTimeout(ctx, 60*time.Second)
 		objectCh := minioClient.ListObjects(objectsCtx, bucket.Name, minio.ListObjectsOptions{
-			Recursive: true,
+			Recursive:    true,
+			WithMetadata: false, // No need for metadata in infra endpoint
 		})
 
 		for object := range objectCh {
 			if object.Err == nil {
 				totalSize += object.Size
-				objectCount++
 			}
 		}
 		objectsCancel()
 
 		bucketInfo.SizeGB = float64(totalSize) / (1024 * 1024 * 1024)
-		bucketInfo.Objects = objectCount
 
 		result = append(result, bucketInfo)
 	}
 
 	return result, nil
+}
+
+// GetMinIOObjectsForBucket retrieves object list for a specific bucket (for data migration)
+func GetMinIOObjectsForBucket(bucketName string) ([]map[string]interface{}, error) {
+	if globalConnInfo == nil {
+		return nil, fmt.Errorf("MinIO connection info not available. Call GetMinIOInfo() first")
+	}
+
+	ctx := context.Background()
+
+	// Try all endpoints
+	for _, endpoint := range globalConnInfo.Endpoints {
+		minioClient, err := minio.New(endpoint, &minio.Options{
+			Creds:  credentials.NewStaticV4(globalConnInfo.AccessKey, globalConnInfo.SecretKey, ""),
+			Secure: false,
+		})
+		if err != nil {
+			continue
+		}
+
+		objectsCtx, objectsCancel := context.WithTimeout(ctx, 60*time.Second)
+		objectCh := minioClient.ListObjects(objectsCtx, bucketName, minio.ListObjectsOptions{
+			Recursive:    true,
+			WithMetadata: true,
+		})
+
+		var objectList []map[string]interface{}
+		for object := range objectCh {
+			if object.Err == nil {
+				// Convert minio.StringMap to map[string]string
+				metadata := make(map[string]string)
+				for k, v := range object.UserMetadata {
+					metadata[k] = v
+				}
+
+				objInfo := map[string]interface{}{
+					"key":           object.Key,
+					"etag":          strings.Trim(object.ETag, `"`),
+					"size":          object.Size,
+					"last_modified": object.LastModified.Format(time.RFC3339),
+					"content_type":  object.ContentType,
+					"metadata":      metadata,
+				}
+				objectList = append(objectList, objInfo)
+			}
+		}
+		objectsCancel()
+
+		if len(objectList) >= 0 { // Success even if empty
+			return objectList, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to get objects for bucket %s from all endpoints", bucketName)
 }
