@@ -33,14 +33,6 @@ func GetMinIOInfo() (infra.MinIO, error) {
 	var minioInfo infra.MinIO
 	var errors []string
 
-	// Get MinIO version
-	version, err := getMinIOVersion()
-	if err != nil {
-		errors = append(errors, fmt.Sprintf("Failed to get MinIO version: %v", err))
-	} else {
-		minioInfo.Version = version
-	}
-
 	// Check if MinIO is running and get process information
 	processInfo, err := getMinIOProcessInfo()
 	if err != nil {
@@ -51,14 +43,26 @@ func GetMinIOInfo() (infra.MinIO, error) {
 
 	// Try to get connection info from Docker first
 	var connInfo *minioConnectionInfo
+	var isDockerContainer bool
 	if dockerConnInfo, err := getMinIODockerInfo(processInfo); err == nil && dockerConnInfo != nil {
 		connInfo = dockerConnInfo
 		minioInfo.RootUser = dockerConnInfo.AccessKey
 		if dockerConnInfo.Version != "" {
-			minioInfo.Version = dockerConnInfo.Version
+			minioInfo.Version = dockerConnInfo.Version + " (Docker)"
 		}
+		isDockerContainer = true
 	} else if err != nil {
 		errors = append(errors, fmt.Sprintf("Failed to check Docker MinIO: %v", err))
+	}
+
+	// Get MinIO version from binary only if not running in Docker
+	if !isDockerContainer {
+		version, err := getMinIOVersion()
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("Failed to get MinIO version: %v", err))
+		} else {
+			minioInfo.Version = version
+		}
 	}
 
 	// If not found in Docker, try config files
@@ -294,24 +298,30 @@ func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
 			}
 		}
 
-		if accessKey == "" || secretKey == "" {
-			continue
+		// Use default credentials if not found in environment
+		if accessKey == "" {
+			accessKey = "minioadmin"
+		}
+		if secretKey == "" {
+			secretKey = "minioadmin"
 		}
 
 		// Extract endpoint from network settings
 		var endpoints []string
+		var internalEndpoints []string
 
-		// Check NetworkSettings for IP address
+		// Parse ports from process info for accurate port detection
+		apiPort, _ := parseMinIOPorts(processInfo)
+		if apiPort == 0 {
+			apiPort = 9000 // default
+		}
+
+		// Check NetworkSettings for IP address (these are internal Docker IPs, lower priority)
 		if containerInspect.NetworkSettings != nil {
 			// Try all networks (including default bridge network)
-			for networkName, network := range containerInspect.NetworkSettings.Networks {
+			for _, network := range containerInspect.NetworkSettings.Networks {
 				if network.IPAddress != "" {
-					endpoints = append(endpoints, fmt.Sprintf("%s:9000", network.IPAddress))
-					// If this is the bridge network, also try it first
-					if networkName == "bridge" && len(endpoints) > 1 {
-						// Move bridge network to front
-						endpoints[0], endpoints[len(endpoints)-1] = endpoints[len(endpoints)-1], endpoints[0]
-					}
+					internalEndpoints = append(internalEndpoints, fmt.Sprintf("%s:%d", network.IPAddress, apiPort))
 				}
 			}
 		}
@@ -323,24 +333,23 @@ func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
 		if containerInspect.HostConfig != nil && containerInspect.HostConfig.PortBindings != nil {
 			for containerPort, bindings := range containerInspect.HostConfig.PortBindings {
 				portNum := containerPort.Int()
-				if portNum >= 9000 && portNum <= 9010 {
-					for _, binding := range bindings {
-						hostIP := binding.HostIP
-						if hostIP == "" || hostIP == "0.0.0.0" || hostIP == "::" {
-							hostIP = "localhost"
-						}
-						hostPort := binding.HostPort
-						if hostPort != "" {
-							endpoint := fmt.Sprintf("%s:%s", hostIP, hostPort)
-							if !seenPorts[endpoint] {
-								// Prioritize port 9000 (API port) over others
-								if portNum == 9000 {
-									endpoints = append([]string{endpoint}, endpoints...)
-								} else {
-									endpoints = append(endpoints, endpoint)
-								}
-								seenPorts[endpoint] = true
+				// Accept any port (not just 9000-9010 range)
+				for _, binding := range bindings {
+					hostIP := binding.HostIP
+					if hostIP == "" || hostIP == "0.0.0.0" || hostIP == "::" {
+						hostIP = "localhost"
+					}
+					hostPort := binding.HostPort
+					if hostPort != "" {
+						endpoint := fmt.Sprintf("%s:%s", hostIP, hostPort)
+						if !seenPorts[endpoint] {
+							// Prioritize API port (from process info) over others
+							if portNum == apiPort {
+								endpoints = append([]string{endpoint}, endpoints...)
+							} else {
+								endpoints = append(endpoints, endpoint)
 							}
+							seenPorts[endpoint] = true
 						}
 					}
 				}
@@ -349,41 +358,51 @@ func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
 
 		// Also check container.Ports as fallback
 		for _, port := range c.Ports {
-			// Only interested in MinIO-related ports (typically 9000-9001, but could be custom)
-			if port.PrivatePort >= 9000 && port.PrivatePort <= 9010 {
-				var endpoint string
-				if port.PublicPort > 0 {
-					// Port is exposed to host
-					endpoint = fmt.Sprintf("localhost:%d", port.PublicPort)
-				} else if port.IP != "" {
-					// Port is bound to specific IP
-					endpoint = fmt.Sprintf("%s:%d", port.IP, port.PrivatePort)
-				}
+			// Accept any port exposed by the container
+			var endpoint string
+			if port.PublicPort > 0 {
+				// Port is exposed to host
+				endpoint = fmt.Sprintf("localhost:%d", port.PublicPort)
+			} else if port.IP != "" {
+				// Port is bound to specific IP
+				endpoint = fmt.Sprintf("%s:%d", port.IP, port.PrivatePort)
+			}
 
-				if endpoint != "" && !seenPorts[endpoint] {
-					// Prioritize port 9000 (API port) over others
-					if port.PrivatePort == 9000 || port.PublicPort == 9000 {
-						endpoints = append([]string{endpoint}, endpoints...)
-					} else {
-						endpoints = append(endpoints, endpoint)
-					}
+			if endpoint != "" && !seenPorts[endpoint] {
+				// Prioritize API port (from process info) over others
+				if int(port.PrivatePort) == apiPort || int(port.PublicPort) == apiPort {
+					endpoints = append([]string{endpoint}, endpoints...)
+				} else {
+					endpoints = append(endpoints, endpoint)
+				}
+				seenPorts[endpoint] = true
+			}
+		}
+
+		// Check for host network mode
+		isHostNetwork := containerInspect.HostConfig != nil && containerInspect.HostConfig.NetworkMode.IsHost()
+
+		// If host network mode or no port mappings found, use localhost with parsed port
+		if isHostNetwork || (len(endpoints) == 0 && len(internalEndpoints) == 0) {
+			if apiPort > 0 {
+				endpoint := fmt.Sprintf("localhost:%d", apiPort)
+				if !seenPorts[endpoint] {
+					endpoints = append(endpoints, endpoint)
 					seenPorts[endpoint] = true
 				}
 			}
+			// Add default port as fallback only if different from apiPort
+			if apiPort != 9000 {
+				defaultEndpoint := "localhost:9000"
+				if !seenPorts[defaultEndpoint] {
+					endpoints = append(endpoints, defaultEndpoint)
+					seenPorts[defaultEndpoint] = true
+				}
+			}
 		}
 
-		// Check for host network mode or if no endpoints found
-		if containerInspect.HostConfig != nil && containerInspect.HostConfig.NetworkMode.IsHost() || len(endpoints) == 0 {
-			// Parse ports from process info
-			apiPort, _ := parseMinIOPorts(processInfo)
-			if apiPort > 0 {
-				endpoints = append(endpoints, fmt.Sprintf("localhost:%d", apiPort))
-			}
-			// Always add default port as fallback
-			if apiPort != 9000 {
-				endpoints = append(endpoints, "localhost:9000")
-			}
-		}
+		// Append internal Docker IPs as fallback (after all localhost endpoints)
+		endpoints = append(endpoints, internalEndpoints...)
 
 		// Extract version from image tag
 		version := c.Image
@@ -409,7 +428,7 @@ func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
 // getMinIOVersion executes minio --version command to get version
 func getMinIOVersion() (string, error) {
 	// Try common MinIO binary locations
-	binaries := []string{"minio", "/usr/local/bin/minio", "/usr/bin/minio", "/opt/minio/minio"}
+	binaries := []string{"minio", "/usr/local/bin/minio", "/usr/bin/minio", "/opt/minio/minio", "/minio/bin/minio"}
 
 	for _, binary := range binaries {
 		cmd := exec.Command(binary, "--version")

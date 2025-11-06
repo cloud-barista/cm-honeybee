@@ -12,7 +12,7 @@ type MinIO struct {
 	ServerInfo     *MinIOServerInfo  `json:"server_info,omitempty"`
 	Buckets        []MinioBucket     `json:"buckets,omitempty"`
 	Opts           map[string]string `json:"opts,omitempty"`
-	Errors         []string          `json:"errors,omitempty"`
+	Errors         []string          `json:"errors"`
 }
 
 // MinIOServerInfo represents MinIO server disk information

@@ -2,14 +2,14 @@ package infra
 
 // HAProxy represents HAProxy load balancer information
 type HAProxy struct {
-	Version    string             `json:"version"`
-	ConfigPath string             `json:"config_path"`
-	Global     map[string]string  `json:"global"`
-	Defaults   map[string]string  `json:"defaults"`
-	Frontends  []HAProxyFrontend  `json:"frontends"`
-	Backends   []HAProxyBackend   `json:"backends"`
-	Listens    []HAProxyListen    `json:"listens"`
-	Errors     []string           `json:"errors,omitempty"`
+	Version    string            `json:"version"`
+	ConfigPath string            `json:"config_path"`
+	Global     map[string]string `json:"global"`
+	Defaults   map[string]string `json:"defaults"`
+	Frontends  []HAProxyFrontend `json:"frontends"`
+	Backends   []HAProxyBackend  `json:"backends"`
+	Listens    []HAProxyListen   `json:"listens"`
+	Errors     []string          `json:"errors"`
 }
 
 // HAProxyFrontend represents a frontend configuration

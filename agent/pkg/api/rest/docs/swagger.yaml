@@ -436,7 +436,12 @@ definitions:
           Deprecated: kernel 5.4 deprecated kmem.limit_in_bytes.
         type: integer
       kernelMemoryTCP:
-        description: Hard limit for kernel TCP buffer memory (in bytes)
+        description: |-
+          Hard limit for kernel TCP buffer memory (in bytes).
+
+          Deprecated: This field is deprecated and will be removed in the next release.
+          Starting with 6.12, the kernel has deprecated kernel memory tcp accounting
+          for cgroups v1.
         type: integer
       links:
         description: List of links (in the name:alias form)
@@ -1874,6 +1879,8 @@ definitions:
           DockerVersion is the version of Docker that was used to build the image.
 
           Depending on how the image was created, this field may be empty.
+
+          Deprecated: this field is deprecated, and will be removed in the next release.
         type: string
       graphDriver:
         allOf:
@@ -1903,6 +1910,8 @@ definitions:
           Depending on how the image was created, this field may be empty and
           is only set for images that were built/created locally. This field
           is empty if the image was pulled from an image registry.
+
+          Deprecated: this field is deprecated, and will be removed in the next release.
         type: string
       repoDigests:
         description: |-
@@ -2307,70 +2316,6 @@ definitions:
     - 524288
     - 2401763328
     - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 8388608
-    - 4194304
-    - 1048576
-    - 511
     type: integer
     x-enum-comments:
       ModeAppend: 'a: append-only'
@@ -2402,25 +2347,6 @@ definitions:
     - ModeSticky
     - ModeIrregular
     - ModeType
-    - ModePerm
-    - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
-    - ModeSetuid
-    - ModeSetgid
-    - ModeCharDevice
-    - ModeSticky
-    - ModeIrregular
-    - ModeType
-    - ModePerm
-    - ModeSetuid
-    - ModeSetgid
-    - ModeSticky
     - ModePerm
   pkg_api_rest_controller.SimpleMsg:
     properties:
@@ -2456,72 +2382,8 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
     type: integer
     x-enum-varnames:
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
     - minDuration
     - maxDuration
     - Nanosecond
