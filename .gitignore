@@ -9,4 +9,4 @@ vendor/
 
 *.log
 
-data/
+agent/data/
