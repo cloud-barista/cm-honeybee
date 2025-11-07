@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/data"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/kubernetes"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
@@ -421,4 +422,106 @@ func GetHelmInfoSourceGroup(c echo.Context) error {
 	}
 
 	return c.JSONPretty(http.StatusOK, helmInfoList, " ")
+}
+
+func doGetDataInfo(connID string) (*data.MinIOData, error) {
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return nil, err
+	}
+
+	savedDataInfo, err := dao.SavedDataInfoGet(connectionInfo.ID)
+	if err != nil {
+		errMsg := "Failed to get information of the data." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+	var dataInfo data.MinIOData
+	err = json.Unmarshal([]byte(savedDataInfo.DataData), &dataInfo)
+	if err != nil {
+		errMsg := "Error occurred while parsing data information." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return &dataInfo, nil
+}
+
+// GetDataInfo godoc
+//
+//	@ID				get-data-info
+//	@Summary		Get Data Information
+//	@Description	Get the data information of the connection information.
+//	@Tags			[Get] Get source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	data.MinIOData		"Successfully get information of the data."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the data."
+//	@Router			/source_group/{sgId}/connection_info/{connId}/data [get]
+func GetDataInfo(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	dataInfo, err := doGetDataInfo(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, dataInfo, " ")
+}
+
+// GetDataInfoSourceGroup godoc
+//
+//	@ID				get-data-info-source-group
+//	@Summary		Get Data Information Source Group
+//	@Description	Get the data information for all connections in the source group.
+//	@Tags			[Get] Get source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Success		200	{object}	model.DataInfoList	"Successfully get information of the data."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the data."
+//	@Router			/source_group/{sgId}/data [get]
+func GetDataInfoSourceGroup(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	var dataInfoList model.DataInfoList
+
+	for _, conn := range *list {
+		dataInfo, _ := doGetDataInfo(conn.ID)
+		dataInfoList.MinIOData = append(dataInfoList.MinIOData, *dataInfo)
+	}
+
+	return c.JSONPretty(http.StatusOK, dataInfoList, " ")
 }

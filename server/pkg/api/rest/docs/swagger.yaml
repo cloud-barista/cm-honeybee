@@ -436,7 +436,12 @@ definitions:
           Deprecated: kernel 5.4 deprecated kmem.limit_in_bytes.
         type: integer
       kernelMemoryTCP:
-        description: Hard limit for kernel TCP buffer memory (in bytes)
+        description: |-
+          Hard limit for kernel TCP buffer memory (in bytes).
+
+          Deprecated: This field is deprecated and will be removed in the next release.
+          Starting with 6.12, the kernel has deprecated kernel memory tcp accounting
+          for cgroups v1.
         type: integer
       links:
         description: List of links (in the name:alias form)
@@ -947,6 +952,61 @@ definitions:
       soft:
         type: integer
     type: object
+  data.MinIOData:
+    properties:
+      address:
+        description: Required for connection
+        type: string
+      buckets:
+        description: Required
+        items:
+          $ref: '#/definitions/data.MinioBucket'
+        type: array
+      errors:
+        items:
+          type: string
+        type: array
+      root_user:
+        description: Required for authentication (sensitive)
+        type: string
+    type: object
+  data.MinIOObjectInfo:
+    properties:
+      etag:
+        description: ETag for integrity check - Required
+        type: string
+      key:
+        description: Object key (path) - Required
+        type: string
+      last_modified:
+        description: Last modified timestamp - Required
+        type: string
+      metadata:
+        additionalProperties:
+          type: string
+        description: User metadata (includes content-type) - Required
+        type: object
+      size:
+        description: Object size in bytes - Required
+        type: integer
+    type: object
+  data.MinioBucket:
+    properties:
+      name:
+        description: Required
+        type: string
+      object_list:
+        description: Required for migration
+        items:
+          $ref: '#/definitions/data.MinIOObjectInfo'
+        type: array
+      objects:
+        description: Required for planning
+        type: integer
+      versioned:
+        description: Required for migration planning
+        type: boolean
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse:
     properties:
       error:
@@ -1058,6 +1118,15 @@ definitions:
     required:
     - name
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DataInfoList:
+    properties:
+      minio_data:
+        items:
+          $ref: '#/definitions/data.MinIOData'
+        type: array
+    required:
+    - minio_data
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.HelmInfoList:
     properties:
       servers:
@@ -1131,6 +1200,20 @@ definitions:
         type: string
       status:
         type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDataInfo:
+    properties:
+      connection_id:
+        type: string
+      data_data:
+        type: string
+      saved_time:
+        type: string
+      status:
+        type: string
+    required:
+    - connection_id
+    - data_data
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedHelmInfo:
     properties:
@@ -1378,6 +1461,8 @@ definitions:
           DockerVersion is the version of Docker that was used to build the image.
 
           Depending on how the image was created, this field may be empty.
+
+          Deprecated: this field is deprecated, and will be removed in the next release.
         type: string
       graphDriver:
         allOf:
@@ -1407,6 +1492,8 @@ definitions:
           Depending on how the image was created, this field may be empty and
           is only set for images that were built/created locally. This field
           is empty if the image was pulled from an image registry.
+
+          Deprecated: this field is deprecated, and will be removed in the next release.
         type: string
       repoDigests:
         description: |-
@@ -1536,6 +1623,22 @@ definitions:
       type:
         type: string
     type: object
+  infra.BucketEncryption:
+    properties:
+      enabled:
+        type: boolean
+      type:
+        description: e.g., "SSE-S3", "SSE-KMS"
+        type: string
+    type: object
+  infra.BucketLifecycle:
+    properties:
+      enabled:
+        type: boolean
+      rules_count:
+        description: Number of lifecycle rules
+        type: integer
+    type: object
   infra.CPU:
     properties:
       cache:
@@ -1644,12 +1747,101 @@ definitions:
           $ref: '#/definitions/infra.NVIDIA'
         type: array
     type: object
+  infra.HAProxy:
+    properties:
+      backends:
+        items:
+          $ref: '#/definitions/infra.HAProxyBackend'
+        type: array
+      config_path:
+        type: string
+      defaults:
+        additionalProperties:
+          type: string
+        type: object
+      errors:
+        items:
+          type: string
+        type: array
+      frontends:
+        items:
+          $ref: '#/definitions/infra.HAProxyFrontend'
+        type: array
+      global:
+        additionalProperties:
+          type: string
+        type: object
+      listens:
+        items:
+          $ref: '#/definitions/infra.HAProxyListen'
+        type: array
+      version:
+        type: string
+    type: object
+  infra.HAProxyBackend:
+    properties:
+      balance:
+        type: string
+      name:
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        type: object
+      servers:
+        items:
+          $ref: '#/definitions/infra.HAProxyServer'
+        type: array
+    type: object
+  infra.HAProxyFrontend:
+    properties:
+      bind:
+        type: string
+      default_backend:
+        type: string
+      name:
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  infra.HAProxyListen:
+    properties:
+      balance:
+        type: string
+      bind:
+        type: string
+      name:
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        type: object
+      servers:
+        items:
+          $ref: '#/definitions/infra.HAProxyServer'
+        type: array
+    type: object
+  infra.HAProxyServer:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+      options:
+        type: string
+    type: object
   infra.Infra:
     properties:
       compute:
         $ref: '#/definitions/infra.Compute'
       gpu:
         $ref: '#/definitions/infra.GPU'
+      haproxy:
+        $ref: '#/definitions/infra.HAProxy'
+      minio:
+        $ref: '#/definitions/infra.MinIO'
       network:
         $ref: '#/definitions/network.Network'
       storage:
@@ -1693,6 +1885,87 @@ definitions:
     - available
     - size
     - used
+    type: object
+  infra.MinIO:
+    properties:
+      address:
+        type: string
+      buckets:
+        items:
+          $ref: '#/definitions/infra.MinioBucket'
+        type: array
+      config_path:
+        type: string
+      console_address:
+        type: string
+      cors_allow_origin:
+        description: Server-level CORS configuration
+        items:
+          type: string
+        type: array
+      errors:
+        items:
+          type: string
+        type: array
+      opts:
+        additionalProperties:
+          type: string
+        type: object
+      process_info:
+        type: string
+      root_user:
+        type: string
+      server_info:
+        $ref: '#/definitions/infra.MinIOServerInfo'
+      version:
+        type: string
+      volumes:
+        type: string
+    type: object
+  infra.MinIOServerInfo:
+    properties:
+      disks:
+        type: integer
+      offline_disks:
+        type: integer
+      online_disks:
+        type: integer
+      servers:
+        type: integer
+      storage_info:
+        $ref: '#/definitions/infra.MinIOStorageInfo'
+    type: object
+  infra.MinIOStorageInfo:
+    properties:
+      free_gb:
+        type: number
+      total_gb:
+        type: number
+      used_gb:
+        type: number
+      used_percent:
+        type: number
+    type: object
+  infra.MinioBucket:
+    properties:
+      encryption:
+        $ref: '#/definitions/infra.BucketEncryption'
+      lifecycle:
+        $ref: '#/definitions/infra.BucketLifecycle'
+      name:
+        type: string
+      object_lock:
+        type: boolean
+      replication:
+        type: boolean
+      size_gb:
+        type: number
+      tags:
+        additionalProperties:
+          type: string
+        type: object
+      versioned:
+        type: boolean
     type: object
   infra.MountPoint:
     properties:
@@ -2930,6 +3203,14 @@ definitions:
     type: object
   time.Duration:
     enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
     - 1
     - 1000
     - 1000000
@@ -2938,6 +3219,14 @@ definitions:
     - 3600000000000
     type: integer
     x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -3684,6 +3973,41 @@ paths:
       summary: Update ConnectionInfo
       tags:
       - '[On-premise] ConnectionInfo'
+  /source_group/{sgId}/connection_info/{connId}/data:
+    get:
+      consumes:
+      - application/json
+      description: Get the data information of the connection information.
+      operationId: get-data-info
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the data.
+          schema:
+            $ref: '#/definitions/data.MinIOData'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the data.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Data Information
+      tags:
+      - '[Get] Get source info'
   /source_group/{sgId}/connection_info/{connId}/helm:
     get:
       consumes:
@@ -3719,6 +4043,41 @@ paths:
       summary: Get Helm Information
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/import/data:
+    post:
+      consumes:
+      - application/json
+      description: Import the data information.
+      operationId: import-data
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the data information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDataInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the data information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import data
+      tags:
+      - '[Import] Import source info'
   /source_group/{sgId}/connection_info/{connId}/import/helm:
     post:
       consumes:
@@ -4074,6 +4433,36 @@ paths:
       summary: Get Refined Software Information
       tags:
       - '[Get] Get refined source info'
+  /source_group/{sgId}/data:
+    get:
+      consumes:
+      - application/json
+      description: Get the data information for all connections in the source group.
+      operationId: get-data-info-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the data.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DataInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the data.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Data Information Source Group
+      tags:
+      - '[Get] Get source info'
   /source_group/{sgId}/helm:
     get:
       consumes:
@@ -4104,6 +4493,38 @@ paths:
       summary: Get helm Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/import/data:
+    post:
+      consumes:
+      - application/json
+      description: Import data information for all connections in the source group.
+      operationId: import-data-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the data information
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDataInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the data information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import Data Source Group
+      tags:
+      - '[Import] Import source info'
   /source_group/{sgId}/import/helm:
     post:
       consumes:

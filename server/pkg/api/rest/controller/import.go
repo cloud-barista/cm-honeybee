@@ -209,6 +209,55 @@ func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
 	return oldSavedHelmInfo, nil
 }
 
+func doImportData(connID string) (*model.SavedDataInfo, error) {
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return nil, err
+	}
+
+	oldSavedDataInfo, _ := dao.SavedDataInfoGet(connectionInfo.ID)
+
+	if oldSavedDataInfo == nil {
+		savedDataInfo := new(model.SavedDataInfo)
+		savedDataInfo.ConnectionID = connectionInfo.ID
+		savedDataInfo.DataData = ""
+		savedDataInfo.Status = "importing"
+		savedDataInfo.SavedTime = time.Now()
+		savedDataInfo, err = dao.SavedDataInfoRegister(savedDataInfo)
+		if err != nil {
+			errMsg := "Error occurred while getting data information." +
+				" (ConnectionID = " + connectionInfo.ID + ")"
+			logger.Println(logger.ERROR, false, errMsg)
+			return nil, errors.New(errMsg)
+		}
+		oldSavedDataInfo = savedDataInfo
+	}
+
+	s := &ssh.SSH{}
+	data, err := s.SendGetRequestToAgent(*connectionInfo, "/data")
+	if err != nil {
+		oldSavedDataInfo.Status = "failed"
+		_ = dao.SavedDataInfoUpdate(oldSavedDataInfo)
+		errMsg := "Error occurred while getting data information." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	oldSavedDataInfo.DataData = data
+	oldSavedDataInfo.Status = "success"
+	oldSavedDataInfo.SavedTime = time.Now()
+	err = dao.SavedDataInfoUpdate(oldSavedDataInfo)
+	if err != nil {
+		errMsg := "Error occurred while saving the data information." +
+			" (ConnectionID = " + connectionInfo.ID + ")"
+		logger.Println(logger.ERROR, false, errMsg)
+		return nil, errors.New(errMsg)
+	}
+
+	return oldSavedDataInfo, nil
+}
+
 // ImportInfra godoc
 //
 //	@ID				import-infra
@@ -526,4 +575,81 @@ func ImportHelmSourceGroup(c echo.Context) error {
 	}
 
 	return c.JSONPretty(http.StatusOK, savedHelmInfoList, " ")
+}
+
+// ImportData godoc
+//
+//	@ID				import-data
+//	@Summary		Import data
+//	@Description	Import the data information.
+//	@Tags			[Import] Import source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Param			connId path string true "ID of the connection info."
+//	@Success		200	{object}	model.SavedDataInfo	"Successfully saved the data information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to save the data information"
+//	@Router			/source_group/{sgId}/connection_info/{connId}/import/data [post]
+func ImportData(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	savedDataInfo, err := doImportData(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, savedDataInfo, " ")
+}
+
+// ImportDataSourceGroup godoc
+//
+//	@ID				import-data-source-group
+//	@Summary		Import Data Source Group
+//	@Description	Import data information for all connections in the source group.
+//	@Tags			[Import] Import source info
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the source group."
+//	@Success		200	{object}	[]model.SavedDataInfo	"Successfully saved the data information"
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to save the data information"
+//	@Router			/source_group/{sgId}/import/data [post]
+func ImportDataSourceGroup(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+
+	_, err := dao.SourceGroupGet(sgID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	var savedDataInfoList []model.SavedDataInfo
+
+	for _, conn := range *list {
+		savedDataInfo, _ := doImportData(conn.ID)
+		savedDataInfoList = append(savedDataInfoList, *savedDataInfo)
+	}
+
+	return c.JSONPretty(http.StatusOK, savedDataInfoList, " ")
 }

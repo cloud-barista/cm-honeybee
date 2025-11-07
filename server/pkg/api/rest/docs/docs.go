@@ -834,6 +834,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/source_group/{sgId}/connection_info/{connId}/data": {
+            "get": {
+                "description": "Get the data information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Data Information",
+                "operationId": "get-data-info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the data.",
+                        "schema": {
+                            "$ref": "#/definitions/data.MinIOData"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the data.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/connection_info/{connId}/helm": {
             "get": {
                 "description": "Get the helm information of the connection information.",
@@ -879,6 +931,58 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to get information of the kubernetes.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/import/data": {
+            "post": {
+                "description": "Import the data information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import data",
+                "operationId": "import-data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the data information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDataInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the data information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1412,6 +1516,51 @@ const docTemplate = `{
                 }
             }
         },
+        "/source_group/{sgId}/data": {
+            "get": {
+                "description": "Get the data information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Data Information Source Group",
+                "operationId": "get-data-info-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the data.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DataInfoList"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the data.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/helm": {
             "get": {
                 "description": "Get the helm information for all connections in the source group.",
@@ -1450,6 +1599,54 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to get information of the helm.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/import/data": {
+            "post": {
+                "description": "Import data information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import Data Source Group",
+                "operationId": "import-data-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the data information",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDataInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the data information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -2570,7 +2767,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "kernelMemoryTCP": {
-                    "description": "Hard limit for kernel TCP buffer memory (in bytes)",
+                    "description": "Hard limit for kernel TCP buffer memory (in bytes).\n\nDeprecated: This field is deprecated and will be removed in the next release.\nStarting with 6.12, the kernel has deprecated kernel memory tcp accounting\nfor cgroups v1.",
                     "type": "integer"
                 },
                 "links": {
@@ -3214,6 +3411,84 @@ const docTemplate = `{
                 }
             }
         },
+        "data.MinIOData": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "description": "Required for connection",
+                    "type": "string"
+                },
+                "buckets": {
+                    "description": "Required",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.MinioBucket"
+                    }
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "root_user": {
+                    "description": "Required for authentication (sensitive)",
+                    "type": "string"
+                }
+            }
+        },
+        "data.MinIOObjectInfo": {
+            "type": "object",
+            "properties": {
+                "etag": {
+                    "description": "ETag for integrity check - Required",
+                    "type": "string"
+                },
+                "key": {
+                    "description": "Object key (path) - Required",
+                    "type": "string"
+                },
+                "last_modified": {
+                    "description": "Last modified timestamp - Required",
+                    "type": "string"
+                },
+                "metadata": {
+                    "description": "User metadata (includes content-type) - Required",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "size": {
+                    "description": "Object size in bytes - Required",
+                    "type": "integer"
+                }
+            }
+        },
+        "data.MinioBucket": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "description": "Required",
+                    "type": "string"
+                },
+                "object_list": {
+                    "description": "Required for migration",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.MinIOObjectInfo"
+                    }
+                },
+                "objects": {
+                    "description": "Required for planning",
+                    "type": "integer"
+                },
+                "versioned": {
+                    "description": "Required for migration planning",
+                    "type": "boolean"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -3380,6 +3655,20 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DataInfoList": {
+            "type": "object",
+            "required": [
+                "minio_data"
+            ],
+            "properties": {
+                "minio_data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/data.MinIOData"
+                    }
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.HelmInfoList": {
             "type": "object",
             "required": [
@@ -3484,6 +3773,27 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "connection_id": {
+                    "type": "string"
+                },
+                "saved_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDataInfo": {
+            "type": "object",
+            "required": [
+                "connection_id",
+                "data_data"
+            ],
+            "properties": {
+                "connection_id": {
+                    "type": "string"
+                },
+                "data_data": {
                     "type": "string"
                 },
                 "saved_time": {
@@ -3763,7 +4073,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "dockerVersion": {
-                    "description": "DockerVersion is the version of Docker that was used to build the image.\n\nDepending on how the image was created, this field may be empty.",
+                    "description": "DockerVersion is the version of Docker that was used to build the image.\n\nDepending on how the image was created, this field may be empty.\n\nDeprecated: this field is deprecated, and will be removed in the next release.",
                     "type": "string"
                 },
                 "graphDriver": {
@@ -3791,7 +4101,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "parent": {
-                    "description": "Parent is the ID of the parent image.\n\nDepending on how the image was created, this field may be empty and\nis only set for images that were built/created locally. This field\nis empty if the image was pulled from an image registry.",
+                    "description": "Parent is the ID of the parent image.\n\nDepending on how the image was created, this field may be empty and\nis only set for images that were built/created locally. This field\nis empty if the image was pulled from an image registry.\n\nDeprecated: this field is deprecated, and will be removed in the next release.",
                     "type": "string"
                 },
                 "repoDigests": {
@@ -3918,6 +4228,30 @@ const docTemplate = `{
                 },
                 "type": {
                     "type": "string"
+                }
+            }
+        },
+        "infra.BucketEncryption": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "type": {
+                    "description": "e.g., \"SSE-S3\", \"SSE-KMS\"",
+                    "type": "string"
+                }
+            }
+        },
+        "infra.BucketLifecycle": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "rules_count": {
+                    "description": "Number of lifecycle rules",
+                    "type": "integer"
                 }
             }
         },
@@ -4080,6 +4414,136 @@ const docTemplate = `{
                 }
             }
         },
+        "infra.HAProxy": {
+            "type": "object",
+            "properties": {
+                "backends": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.HAProxyBackend"
+                    }
+                },
+                "config_path": {
+                    "type": "string"
+                },
+                "defaults": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "frontends": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.HAProxyFrontend"
+                    }
+                },
+                "global": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "listens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.HAProxyListen"
+                    }
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.HAProxyBackend": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.HAProxyServer"
+                    }
+                }
+            }
+        },
+        "infra.HAProxyFrontend": {
+            "type": "object",
+            "properties": {
+                "bind": {
+                    "type": "string"
+                },
+                "default_backend": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "infra.HAProxyListen": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "string"
+                },
+                "bind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.HAProxyServer"
+                    }
+                }
+            }
+        },
+        "infra.HAProxyServer": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "options": {
+                    "type": "string"
+                }
+            }
+        },
         "infra.Infra": {
             "type": "object",
             "properties": {
@@ -4088,6 +4552,12 @@ const docTemplate = `{
                 },
                 "gpu": {
                     "$ref": "#/definitions/infra.GPU"
+                },
+                "haproxy": {
+                    "$ref": "#/definitions/infra.HAProxy"
+                },
+                "minio": {
+                    "$ref": "#/definitions/infra.MinIO"
                 },
                 "network": {
                     "$ref": "#/definitions/network.Network"
@@ -4151,6 +4621,129 @@ const docTemplate = `{
                 "used": {
                     "description": "MB",
                     "type": "integer"
+                }
+            }
+        },
+        "infra.MinIO": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string"
+                },
+                "buckets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.MinioBucket"
+                    }
+                },
+                "config_path": {
+                    "type": "string"
+                },
+                "console_address": {
+                    "type": "string"
+                },
+                "cors_allow_origin": {
+                    "description": "Server-level CORS configuration",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "opts": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "process_info": {
+                    "type": "string"
+                },
+                "root_user": {
+                    "type": "string"
+                },
+                "server_info": {
+                    "$ref": "#/definitions/infra.MinIOServerInfo"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "volumes": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.MinIOServerInfo": {
+            "type": "object",
+            "properties": {
+                "disks": {
+                    "type": "integer"
+                },
+                "offline_disks": {
+                    "type": "integer"
+                },
+                "online_disks": {
+                    "type": "integer"
+                },
+                "servers": {
+                    "type": "integer"
+                },
+                "storage_info": {
+                    "$ref": "#/definitions/infra.MinIOStorageInfo"
+                }
+            }
+        },
+        "infra.MinIOStorageInfo": {
+            "type": "object",
+            "properties": {
+                "free_gb": {
+                    "type": "number"
+                },
+                "total_gb": {
+                    "type": "number"
+                },
+                "used_gb": {
+                    "type": "number"
+                },
+                "used_percent": {
+                    "type": "number"
+                }
+            }
+        },
+        "infra.MinioBucket": {
+            "type": "object",
+            "properties": {
+                "encryption": {
+                    "$ref": "#/definitions/infra.BucketEncryption"
+                },
+                "lifecycle": {
+                    "$ref": "#/definitions/infra.BucketLifecycle"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "object_lock": {
+                    "type": "boolean"
+                },
+                "replication": {
+                    "type": "boolean"
+                },
+                "size_gb": {
+                    "type": "number"
+                },
+                "tags": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "versioned": {
+                    "type": "boolean"
                 }
             }
         },
@@ -5894,6 +6487,14 @@ const docTemplate = `{
         "time.Duration": {
             "type": "integer",
             "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
                 1,
                 1000,
                 1000000,
@@ -5902,6 +6503,14 @@ const docTemplate = `{
                 3600000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

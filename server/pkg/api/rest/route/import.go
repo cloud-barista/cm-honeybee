@@ -16,4 +16,6 @@ func RegisterImport(e *echo.Echo) {
 	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/import/kubernetes", controller.ImportKubernetesSourceGroup)
 	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/import/helm", controller.ImportHelm)
 	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/import/helm", controller.ImportHelmSourceGroup)
+	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/import/data", controller.ImportData)
+	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/import/data", controller.ImportDataSourceGroup)
 }

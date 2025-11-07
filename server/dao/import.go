@@ -186,3 +186,48 @@ func SavedHelmInfoDelete(savedHelmInfo *model.SavedHelmInfo) error {
 
 	return nil
 }
+
+func SavedDataInfoGet(connectionID string) (*model.SavedDataInfo, error) {
+	savedDataInfo := &model.SavedDataInfo{}
+
+	result := db.DB.Where("connection_id = ?", connectionID).First(savedDataInfo)
+	err := result.Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("SavedDataInfo not found with the provided connection_id")
+		}
+		return nil, err
+	}
+
+	return savedDataInfo, nil
+}
+
+func SavedDataInfoRegister(savedDataInfo *model.SavedDataInfo) (*model.SavedDataInfo, error) {
+	result := db.DB.Create(savedDataInfo)
+	err := result.Error
+	if err != nil {
+		return nil, err
+	}
+
+	return savedDataInfo, nil
+}
+
+func SavedDataInfoUpdate(savedDataInfo *model.SavedDataInfo) error {
+	result := db.DB.Model(&model.SavedDataInfo{}).Where("connection_id = ?", savedDataInfo.ConnectionID).Updates(savedDataInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SavedDataInfoDelete(savedDataInfo *model.SavedDataInfo) error {
+	result := db.DB.Delete(savedDataInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

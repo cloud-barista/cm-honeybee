@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20251101100141-203bd3ca9afc
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20251107022948-df5f598894eb
 	github.com/cloud-barista/cm-model v0.0.14
 	github.com/docker/docker v28.5.1+incompatible
 	github.com/glebarez/sqlite v1.11.0
