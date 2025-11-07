@@ -22,6 +22,5 @@ type MinIOObjectInfo struct {
 	ETag         string            `json:"etag"`          // ETag for integrity check - Required
 	Size         int64             `json:"size"`          // Object size in bytes - Required
 	LastModified string            `json:"last_modified"` // Last modified timestamp - Required
-	ContentType  string            `json:"content_type"`  // Content type - Required
-	Metadata     map[string]string `json:"metadata"`      // User metadata - Required
+	Metadata     map[string]string `json:"metadata"`      // User metadata (includes content-type) - Required
 }

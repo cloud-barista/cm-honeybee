@@ -37,9 +37,8 @@ func GetMinIODataInfo() (data.MinIOData, error) {
 			objInfo := data.MinIOObjectInfo{
 				Key:          obj["key"].(string),
 				ETag:         obj["etag"].(string),
-				Size:          obj["size"].(int64),
+				Size:         obj["size"].(int64),
 				LastModified: obj["last_modified"].(string),
-				ContentType:  obj["content_type"].(string),
 				Metadata:     obj["metadata"].(map[string]string),
 			}
 			objectList = append(objectList, objInfo)

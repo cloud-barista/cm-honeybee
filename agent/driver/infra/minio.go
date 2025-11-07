@@ -812,12 +812,16 @@ func GetMinIOObjectsForBucket(bucketName string) ([]map[string]interface{}, erro
 					metadata[k] = v
 				}
 
+				// Add content-type to metadata if not already present
+				if _, exists := metadata["content-type"]; !exists && object.ContentType != "" {
+					metadata["content-type"] = object.ContentType
+				}
+
 				objInfo := map[string]interface{}{
 					"key":           object.Key,
 					"etag":          strings.Trim(object.ETag, `"`),
 					"size":          object.Size,
 					"last_modified": object.LastModified.Format(time.RFC3339),
-					"content_type":  object.ContentType,
 					"metadata":      metadata,
 				}
 				objectList = append(objectList, objInfo)
