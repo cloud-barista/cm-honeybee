@@ -7,6 +7,12 @@ package infra
 import (
 	"errors"
 	"fmt"
+	"io"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/jaypipes/ghw"
 	"github.com/jollaman999/utils/logger"
@@ -16,14 +22,7 @@ import (
 	"github.com/shirou/gopsutil/v3/mem"
 	"github.com/yumaojun03/dmidecode"
 	"github.com/yumaojun03/dmidecode/parser/memory"
-	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/registry"
-	"io"
-	"os"
-	"strconv"
-	"strings"
-	"syscall"
-	"time"
 )
 
 func readRegistryKey(baseKey registry.Key, path string, keyName string) (string, error) {
@@ -317,27 +316,6 @@ func getVirtualMachineType(dmidecode *dmidecode.Decoder) (string, error) {
 	return checkVirtualMachineRegistry(), nil
 }
 
-func getVolumeLabel(drive string) (string, error) {
-	volumeName := make([]uint16, syscall.MAX_PATH+1)
-
-	err := windows.GetVolumeInformation(
-		windows.StringToUTF16Ptr(drive+"\\"), // Drive path
-		&volumeName[0],                       // Volume name buffer
-		uint32(len(volumeName)),              // Size of the volume name buffer
-		nil,                                  // Volume serial number (not used)
-		nil,                                  // Maximum component length (not used)
-		nil,                                  // File system flags (not used)
-		nil,                                  // File system name (not used)
-		0,                                    // Size of the file system name (not used)
-	)
-	if err != nil {
-		return "", err
-	}
-
-	// Convert from Unicode to string
-	return syscall.UTF16ToString(volumeName), nil
-}
-
 func GetComputeInfo() (infra.Compute, error) {
 	var compute infra.Compute
 
@@ -443,15 +421,13 @@ func GetComputeInfo() (infra.Compute, error) {
 			if err != nil {
 				return compute, err
 			}
-			label, err := getVolumeLabel(part.Name)
-			if err != nil {
-				return compute, err
-			}
 
-			if strings.HasPrefix(systemRoot, part.Name) {
+			name := strings.ReplaceAll(part.MountPoint, "mounted@", "")
+
+			if strings.HasPrefix(systemRoot, name) {
 				rootDisk = infra.Disk{
-					Name:      part.Name,
-					Label:     label,
+					Name:      name,
+					Label:     part.Name,
 					Type:      d.DriveType.String(),
 					Size:      uint(dUsage.Total / 1024 / 1024 / 1024),
 					Used:      uint(dUsage.Used / 1024 / 1024 / 1024),
@@ -459,8 +435,8 @@ func GetComputeInfo() (infra.Compute, error) {
 				}
 			} else {
 				dataDisk = append(dataDisk, infra.Disk{
-					Name:      part.Name,
-					Label:     label,
+					Name:      name,
+					Label:     part.Name,
 					Type:      d.DriveType.String(),
 					Size:      uint(dUsage.Total / 1024 / 1024 / 1024),
 					Used:      uint(dUsage.Used / 1024 / 1024 / 1024),
