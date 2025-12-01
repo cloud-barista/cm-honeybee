@@ -2,10 +2,11 @@ package software
 
 import (
 	"errors"
+	"sync"
+
 	software2 "github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/host"
-	"sync"
 )
 
 var softwareInfoLock sync.Mutex
@@ -41,6 +42,11 @@ func GetSoftwareInfo(showDefaultPackages bool) (*software2.Software, error) {
 		}
 	}
 
+	legacySW, err := GetLegacySWs()
+	if err != nil {
+		logger.Println(logger.DEBUG, true, "LegacySW: "+err.Error())
+	}
+
 	dockerContainers, err := GetDockerContainers()
 	if err != nil {
 		logger.Println(logger.DEBUG, true, "DOCKER: "+err.Error())
@@ -54,6 +60,7 @@ func GetSoftwareInfo(showDefaultPackages bool) (*software2.Software, error) {
 	sw := software2.Software{
 		DEB:    deb,
 		RPM:    rpm,
+		Legacy: legacySW,
 		Docker: dockerContainers,
 		Podman: podmanContainers,
 	}
