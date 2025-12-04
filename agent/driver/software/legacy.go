@@ -19,14 +19,14 @@ type BinaryInfo struct {
 	LibraryPaths []string
 }
 
-func GetLegacySWs() ([]software.LegacySoftware, error) {
+func GetLegacySWs() ([]software.Binary, error) {
 	procs, err := process.Processes()
 
 	if err != nil {
-		return []software.LegacySoftware{}, err
+		return []software.Binary{}, err
 	}
 
-	var results []software.LegacySoftware
+	var results []software.Binary
 
 	var unavailablePID = map[int32]bool{}
 	var unavailableDetails []string
@@ -116,7 +116,7 @@ func GetLegacySWs() ([]software.LegacySoftware, error) {
 		dataDirs := detectDataDirs(openFiles)
 		isWine, winePrefix := detectWine(envs)
 
-		results = append(results, software.LegacySoftware{
+		results = append(results, software.Binary{
 			PID:              p.Pid,
 			Name:             name,
 			ConnectionStatus: connectionStatus,
@@ -449,7 +449,7 @@ func uniqueInt32(vals []int32) []int32 {
 	return out
 }
 
-func reportResults(failedPID map[int32]bool, results []software.LegacySoftware) ([]software.LegacySoftware, error) {
+func reportResults(failedPID map[int32]bool, results []software.Binary) ([]software.Binary, error) {
 	if len(failedPID) == 0 {
 		return results, nil
 	}

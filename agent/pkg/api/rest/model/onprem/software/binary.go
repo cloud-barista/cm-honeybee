@@ -5,7 +5,7 @@ type ConfigFile struct {
 	Source string `json:"source"` // flag | openfd
 }
 
-type LegacySoftware struct {
+type Binary struct {
 	PID              int32        `json:"pid"`
 	Name             string       `json:"name"`
 	ConnectionStatus string       `json:"connection_status"`
