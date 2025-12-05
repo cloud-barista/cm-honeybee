@@ -1746,6 +1746,69 @@ definitions:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.Subnet'
         type: array
     type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Binary:
+    properties:
+      cmdline:
+        type: string
+      cmdline_slice:
+        items:
+          type: string
+        type: array
+      config_files:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.ConfigFile'
+        type: array
+      connection_status:
+        type: string
+      data_dirs:
+        items:
+          type: string
+        type: array
+      environ:
+        items:
+          type: string
+        type: array
+      executable_path:
+        type: string
+      gids:
+        items:
+          type: integer
+        type: array
+      is_wine:
+        type: boolean
+      libraries:
+        items:
+          type: string
+        type: array
+      library_paths:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      open_file_paths:
+        items:
+          type: string
+        type: array
+      pid:
+        type: integer
+      static:
+        type: boolean
+      uids:
+        items:
+          type: integer
+        type: array
+      wine_prefix:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.ConfigFile:
+    properties:
+      path:
+        type: string
+      source:
+        description: flag | openfd
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Container:
     properties:
       containerInspect:
@@ -1826,6 +1889,10 @@ definitions:
       docker:
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Container'
+        type: array
+      legacy:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Binary'
         type: array
       podman:
         items:
@@ -2375,24 +2442,112 @@ definitions:
     type: object
   os.FileMode:
     enum:
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
     - 8388608
     - 4194304
+    - 2097152
     - 1048576
+    - 524288
+    - 2401763328
     - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
     - 8388608
     - 4194304
+    - 2097152
     - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
     - 511
     type: integer
     x-enum-comments:
+      ModeAppend: 'a: append-only'
+      ModeCharDevice: 'c: Unix character device, when ModeDevice is set'
+      ModeDevice: 'D: device file'
+      ModeDir: 'd: is a directory'
+      ModeExclusive: 'l: exclusive use'
+      ModeIrregular: '?: non-regular file; nothing else is known about this file'
+      ModeNamedPipe: 'p: named pipe (FIFO)'
       ModePerm: Unix permission bits, 0o777
       ModeSetgid: 'g: setgid'
       ModeSetuid: 'u: setuid'
+      ModeSocket: 'S: Unix domain socket'
       ModeSticky: 't: sticky'
+      ModeSymlink: 'L: symbolic link'
+      ModeTemporary: 'T: temporary file; Plan 9 only'
     x-enum-varnames:
+    - ModeDir
+    - ModeAppend
+    - ModeExclusive
+    - ModeTemporary
+    - ModeSymlink
+    - ModeDevice
+    - ModeNamedPipe
+    - ModeSocket
     - ModeSetuid
     - ModeSetgid
+    - ModeCharDevice
     - ModeSticky
+    - ModeIrregular
+    - ModeType
+    - ModePerm
+    - ModeDir
+    - ModeAppend
+    - ModeExclusive
+    - ModeTemporary
+    - ModeSymlink
+    - ModeDevice
+    - ModeNamedPipe
+    - ModeSocket
+    - ModeSetuid
+    - ModeSetgid
+    - ModeCharDevice
+    - ModeSticky
+    - ModeIrregular
+    - ModeType
     - ModePerm
   pkg_api_rest_controller.SimpleMsg:
     properties:
@@ -2428,12 +2583,16 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
     - 1
     - 1000
     - 1000000
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -2450,12 +2609,16 @@ definitions:
     - Second
     - Minute
     - Hour
+    - minDuration
+    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
     - Second
     - Minute
     - Hour
+    - minDuration
+    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
