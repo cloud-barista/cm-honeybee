@@ -6,13 +6,13 @@ require (
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
 	github.com/google/uuid v1.6.0
 	github.com/jollaman999/utils v1.0.10 // Original codes from https://github.com/hcloud-classic/hcc-harp
-	github.com/labstack/echo/v4 v4.13.4
+	github.com/labstack/echo/v4 v4.14.0
 	golang.org/x/sys v0.39.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20251205104528-7affab4a5330
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20251218050617-4ce4d0153449
 	github.com/cloud-barista/cm-model v0.0.15
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/glebarez/sqlite v1.11.0
