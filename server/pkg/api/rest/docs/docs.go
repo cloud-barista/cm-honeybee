@@ -5994,6 +5994,101 @@ const docTemplate = `{
                 }
             }
         },
+        "software.Binary": {
+            "type": "object",
+            "properties": {
+                "cmdline": {
+                    "type": "string"
+                },
+                "cmdline_slice": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "config_files": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/software.ConfigFile"
+                    }
+                },
+                "connection_status": {
+                    "type": "string"
+                },
+                "data_dirs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "environ": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "executable_path": {
+                    "type": "string"
+                },
+                "gids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "is_wine": {
+                    "type": "boolean"
+                },
+                "libraries": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "library_paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "open_file_paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pid": {
+                    "type": "integer"
+                },
+                "static": {
+                    "type": "boolean"
+                },
+                "uids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "wine_prefix": {
+                    "type": "string"
+                }
+            }
+        },
+        "software.ConfigFile": {
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string"
+                },
+                "source": {
+                    "description": "flag | openfd",
+                    "type": "string"
+                }
+            }
+        },
         "software.Container": {
             "type": "object",
             "properties": {
@@ -6117,6 +6212,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/software.Container"
                     }
                 },
+                "legacy": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/software.Binary"
+                    }
+                },
                 "podman": {
                     "type": "array",
                     "items": {
@@ -6134,12 +6235,21 @@ const docTemplate = `{
         "softwaremodel.Binary": {
             "type": "object",
             "required": [
+                "envs",
+                "gids",
                 "name",
+                "uids",
                 "version"
             ],
             "properties": {
                 "binary_path": {
                     "type": "string"
+                },
+                "cmdline_slice": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "custom_configs": {
                     "type": "array",
@@ -6153,6 +6263,21 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "envs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "gids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "is_wine": {
+                    "type": "boolean"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -6160,6 +6285,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "string"
+                    }
+                },
+                "uids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
                     }
                 },
                 "version": {
@@ -6495,6 +6626,8 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -6511,6 +6644,8 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

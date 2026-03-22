@@ -2858,6 +2858,69 @@ definitions:
           $ref: '#/definitions/onpremisemodel.RouteProperty'
         type: array
     type: object
+  software.Binary:
+    properties:
+      cmdline:
+        type: string
+      cmdline_slice:
+        items:
+          type: string
+        type: array
+      config_files:
+        items:
+          $ref: '#/definitions/software.ConfigFile'
+        type: array
+      connection_status:
+        type: string
+      data_dirs:
+        items:
+          type: string
+        type: array
+      environ:
+        items:
+          type: string
+        type: array
+      executable_path:
+        type: string
+      gids:
+        items:
+          type: integer
+        type: array
+      is_wine:
+        type: boolean
+      libraries:
+        items:
+          type: string
+        type: array
+      library_paths:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      open_file_paths:
+        items:
+          type: string
+        type: array
+      pid:
+        type: integer
+      static:
+        type: boolean
+      uids:
+        items:
+          type: integer
+        type: array
+      wine_prefix:
+        type: string
+    type: object
+  software.ConfigFile:
+    properties:
+      path:
+        type: string
+      source:
+        description: flag | openfd
+        type: string
+    type: object
   software.Container:
     properties:
       containerInspect:
@@ -2939,6 +3002,10 @@ definitions:
         items:
           $ref: '#/definitions/software.Container'
         type: array
+      legacy:
+        items:
+          $ref: '#/definitions/software.Binary'
+        type: array
       podman:
         items:
           $ref: '#/definitions/software.Container'
@@ -2952,6 +3019,10 @@ definitions:
     properties:
       binary_path:
         type: string
+      cmdline_slice:
+        items:
+          type: string
+        type: array
       custom_configs:
         items:
           type: string
@@ -2960,16 +3031,33 @@ definitions:
         items:
           type: string
         type: array
+      envs:
+        items:
+          type: string
+        type: array
+      gids:
+        items:
+          type: integer
+        type: array
+      is_wine:
+        type: boolean
       name:
         type: string
       needed_libraries:
         items:
           type: string
         type: array
+      uids:
+        items:
+          type: integer
+        type: array
       version:
         type: string
     required:
+    - envs
+    - gids
     - name
+    - uids
     - version
     type: object
   softwaremodel.Container:
@@ -3211,6 +3299,8 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -3227,6 +3317,8 @@ definitions:
     - Second
     - Minute
     - Hour
+    - minDuration
+    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
