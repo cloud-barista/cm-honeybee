@@ -4,8 +4,8 @@ github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
 github.com/apparentlymart/go-cidr v1.1.0 h1:2mAhrMoF+nhXqxTzSZMUzDHkLjmIHC+Zzn4tdgBZjnU=
 github.com/apparentlymart/go-cidr v1.1.0/go.mod h1:EBcsNrHc3zQeuaeCeCtQruQm+n9/YjEn/vI25Lg7Gwc=
-github.com/cloud-barista/cm-honeybee/agent v0.0.0-20251219053756-db31b74682dd h1:IZER+UPWAZMYoSBkY6NTYjq6hL/yEulxD0pJyIgydrw=
-github.com/cloud-barista/cm-honeybee/agent v0.0.0-20251219053756-db31b74682dd/go.mod h1:3zwLKAs5n0unOx0sPR+lbkqY6YDRxQMCox+P1ySE4kk=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260322082229-fdf294a1e290 h1:Nf4fKwWPbNLXa9dX+cC6VXRky5CmGrieLJPu5d7g+vY=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260322082229-fdf294a1e290/go.mod h1:kg82ZBxNFAdbO7VU4MaL9ZiRAyRKO6zHDlM0nElZ3B0=
 github.com/cloud-barista/cm-model v0.0.18 h1:t52saRMcfZvCFU/RszdVuGi3VaAYfLaSwMOnWYi+ELs=
 github.com/cloud-barista/cm-model v0.0.18/go.mod h1:gSuMhQxD813KIdSvkp8uGptYOeyDik749sYcICZjhj8=
 github.com/cyphar/filepath-securejoin v0.6.1 h1:5CeZ1jPXEiYt3+Z6zqprSAgSWiggmpVyciv8syjIpVE=
@@ -30,7 +30,7 @@ github.com/go-openapi/jsonreference v0.21.5 h1:6uCGVXU/aNF13AQNggxfysJ+5ZcU4nEAe
 github.com/go-openapi/jsonreference v0.21.5/go.mod h1:u25Bw85sX4E2jzFodh1FOKMTZLcfifd1Q+iKKOUxExw=
 github.com/go-openapi/spec v0.22.4 h1:4pxGjipMKu0FzFiu/DPwN3CTBRlVM2yLf/YTWorYfDQ=
 github.com/go-openapi/spec v0.22.4/go.mod h1:WQ6Ai0VPWMZgMT4XySjlRIE6GP1bGQOtEThn3gcWLtQ=
-github.com/go-openapi/swag v0.25.4 h1:OyUPUFYDPDBMkqyxOTkqDYFnrhuhi9NR6QVUvIochMU=
+github.com/go-openapi/swag v0.25.5 h1:pNkwbUEeGwMtcgxDr+2GBPAk4kT+kJ+AaB+TMKAg+TU=
 github.com/go-openapi/swag/conv v0.25.5 h1:wAXBYEXJjoKwE5+vc9YHhpQOFj2JYBMF2DUi+tGu97g=
 github.com/go-openapi/swag/conv v0.25.5/go.mod h1:CuJ1eWvh1c4ORKx7unQnFGyvBbNlRKbnRyAvDvzWA4k=
 github.com/go-openapi/swag/jsonname v0.25.5 h1:8p150i44rv/Drip4vWI3kGi9+4W9TdI3US3uUYSFhSo=
