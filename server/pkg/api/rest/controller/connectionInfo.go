@@ -3,6 +3,11 @@ package controller
 import (
 	"encoding/base64"
 	"errors"
+	"net/http"
+	"sort"
+	"strconv"
+	"strings"
+
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
@@ -13,10 +18,6 @@ import (
 	"github.com/jollaman999/utils/iputil"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
-	"net/http"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 func checkIPAddress(ipAddress string) error {
@@ -40,82 +41,95 @@ func checkPort(port string) error {
 	return nil
 }
 
+func encryptField(plaintext string, label string) (string, error) {
+	if plaintext == "" {
+		return "", nil
+	}
+	enc, err := rsautil.EncryptWithPublicKey([]byte(plaintext), serverCommon.PubKey)
+	if err != nil {
+		errMsg := "error occurred while encrypting the " + label + " (" + err.Error() + ")"
+		logger.Println(logger.ERROR, true, errMsg)
+		return "", errors.New(errMsg)
+	}
+	return base64.StdEncoding.EncodeToString(enc), nil
+}
+
 func encryptSecrets(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
-	rsaEncryptedUser, err := rsautil.EncryptWithPublicKey([]byte(connectionInfo.User), serverCommon.PubKey)
+	user, err := encryptField(connectionInfo.User, "user")
 	if err != nil {
-		errMsg := "error occurred while encrypting the user (" + err.Error() + ")"
-		logger.Println(logger.ERROR, true, errMsg)
-		return nil, errors.New(errMsg)
+		return nil, err
 	}
-	base64EncodedEncryptedUser := base64.StdEncoding.EncodeToString(rsaEncryptedUser)
-	connectionInfo.User = base64EncodedEncryptedUser
+	connectionInfo.User = user
 
-	rsaEncryptedPasswordBytes, err := rsautil.EncryptWithPublicKey([]byte(connectionInfo.Password), serverCommon.PubKey)
+	password, err := encryptField(connectionInfo.Password, "password")
 	if err != nil {
-		errMsg := "error occurred while encrypting the password (" + err.Error() + ")"
-		logger.Println(logger.ERROR, true, errMsg)
-		return nil, errors.New(errMsg)
+		return nil, err
 	}
-	base64EncodedEncryptedPassword := base64.StdEncoding.EncodeToString(rsaEncryptedPasswordBytes)
-	connectionInfo.Password = base64EncodedEncryptedPassword
+	connectionInfo.Password = password
 
-	rsaEncryptedPrivateKeyBytes, err := rsautil.EncryptWithPublicKey([]byte(connectionInfo.PrivateKey), serverCommon.PubKey)
+	privateKey, err := encryptField(connectionInfo.PrivateKey, "private key")
 	if err != nil {
-		errMsg := "error occurred while encrypting the private key (" + err.Error() + ")"
-		logger.Println(logger.ERROR, true, errMsg)
-		return nil, errors.New(errMsg)
+		return nil, err
 	}
-	base64EncodedEncryptedPrivateKey := base64.StdEncoding.EncodeToString(rsaEncryptedPrivateKeyBytes)
-	connectionInfo.PrivateKey = base64EncodedEncryptedPrivateKey
+	connectionInfo.PrivateKey = privateKey
 
 	return connectionInfo, nil
 }
 
-func checkCreateConnectionInfoReq(sourceGroupID string, createConnectionInfoReq *model.CreateConnectionInfoReq) (*model.ConnectionInfo, error) {
-	if sourceGroupID == "" {
-		return nil, errors.New("source group ID is empty")
+func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnectionInfoReq *model.CreateConnectionInfoReq) (*model.ConnectionInfo, error) {
+	if sourceGroup == nil || sourceGroup.ID == "" {
+		return nil, errors.New("source group is missing")
 	}
 
 	connectionInfo := &model.ConnectionInfo{
 		ID:            uuid.New().String(),
 		Name:          createConnectionInfoReq.Name,
 		Description:   createConnectionInfoReq.Description,
-		SourceGroupID: sourceGroupID,
-		IPAddress:     createConnectionInfoReq.IPAddress,
-		SSHPort:       createConnectionInfoReq.SSHPort,
-		User:          createConnectionInfoReq.User,
-		Password:      createConnectionInfoReq.Password,
-		PrivateKey:    createConnectionInfoReq.PrivateKey,
-	}
-
-	if connectionInfo.ID == "" {
-		return nil, errors.New("id is empty")
+		SourceGroupID: sourceGroup.ID,
 	}
 
 	if connectionInfo.Name == "" {
 		return nil, errors.New("name is empty")
 	}
 
-	err := checkIPAddress(connectionInfo.IPAddress)
-	if err != nil {
-		return nil, err
-	}
+	switch sourceGroup.Type {
+	case "", serverCommon.SourceGroupTypeSSH:
+		connectionInfo.IPAddress = createConnectionInfoReq.IPAddress
+		connectionInfo.SSHPort = createConnectionInfoReq.SSHPort
+		connectionInfo.User = createConnectionInfoReq.User
+		connectionInfo.Password = createConnectionInfoReq.Password
+		connectionInfo.PrivateKey = createConnectionInfoReq.PrivateKey
 
-	err = checkPort(connectionInfo.SSHPort)
-	if err != nil {
-		return nil, err
-	}
-
-	if connectionInfo.User == "" {
-		return nil, errors.New("user is empty")
-	}
-
-	if connectionInfo.Password == "" && connectionInfo.PrivateKey == "" {
-		return nil, errors.New("password or private_key must be provided")
-	}
-
-	if connectionInfo.PrivateKey == "" {
-		connectionInfo.PrivateKey = "-"
+		if err := checkIPAddress(connectionInfo.IPAddress); err != nil {
+			return nil, err
+		}
+		if err := checkPort(connectionInfo.SSHPort); err != nil {
+			return nil, err
+		}
+		if connectionInfo.User == "" {
+			return nil, errors.New("user is empty")
+		}
+		if connectionInfo.Password == "" && connectionInfo.PrivateKey == "" {
+			return nil, errors.New("password or private_key must be provided")
+		}
+		if connectionInfo.PrivateKey == "" {
+			connectionInfo.PrivateKey = "-"
+		}
+	case serverCommon.SourceGroupTypeCSP:
+		connectionInfo.ResourceType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.ResourceType))
+		connectionInfo.ResourceID = strings.TrimSpace(createConnectionInfoReq.ResourceID)
+		switch connectionInfo.ResourceType {
+		case serverCommon.ResourceTypeVM,
+			serverCommon.ResourceTypeK8s,
+			serverCommon.ResourceTypeObjectStorage:
+		default:
+			return nil, errors.New("resource_type must be one of vm | k8s | object_storage")
+		}
+		if connectionInfo.ResourceID == "" {
+			return nil, errors.New("resource_id is empty")
+		}
+	default:
+		return nil, errors.New("unsupported source group type: " + sourceGroup.Type)
 	}
 
 	return connectionInfo, nil
@@ -133,26 +147,44 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 	}
 
 	if refresh {
-		c := &ssh.SSH{}
-
-		err = c.NewClientConn(*connectionInfo)
+		sourceGroup, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
 		if err != nil {
-			oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
-			oldConnectionInfo.ConnectionFailedMessage = err.Error()
-		} else {
-			c.Close()
-			oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
-			oldConnectionInfo.ConnectionFailedMessage = ""
+			return nil, err
 		}
 
-		err = c.RunAgent(*connectionInfo)
-		if err != nil {
-			oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
-			oldConnectionInfo.AgentFailedMessage = err.Error()
-		} else {
-			c.Close()
-			oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
-			oldConnectionInfo.AgentFailedMessage = ""
+		switch sourceGroup.Type {
+		case serverCommon.SourceGroupTypeCSP:
+			if err := refreshCSPConnection(sourceGroup, connectionInfo); err != nil {
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.ConnectionFailedMessage = err.Error()
+				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.AgentFailedMessage = err.Error()
+			} else {
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
+				oldConnectionInfo.ConnectionFailedMessage = ""
+				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
+				oldConnectionInfo.AgentFailedMessage = ""
+			}
+		default:
+			c := &ssh.SSH{}
+
+			if err := c.NewClientConn(*connectionInfo); err != nil {
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.ConnectionFailedMessage = err.Error()
+			} else {
+				c.Close()
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
+				oldConnectionInfo.ConnectionFailedMessage = ""
+			}
+
+			if err := c.RunAgent(*connectionInfo); err != nil {
+				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.AgentFailedMessage = err.Error()
+			} else {
+				c.Close()
+				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
+				oldConnectionInfo.AgentFailedMessage = ""
+			}
 		}
 
 		err = dao.ConnectionInfoUpdateWithSelect(oldConnectionInfo, []string{
@@ -225,7 +257,7 @@ func CreateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	connectionInfo, err := checkCreateConnectionInfoReq(sourceGroup.ID, createConnectionInfoReq)
+	connectionInfo, err := checkCreateConnectionInfoReq(sourceGroup, createConnectionInfoReq)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -424,7 +456,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the connId.")
 	}
 
-	_, err := dao.SourceGroupGet(sgID)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -446,22 +478,41 @@ func UpdateConnectionInfo(c echo.Context) error {
 	if updateConnectionInfoReq.Description != "" {
 		oldConnectionInfo.Description = updateConnectionInfoReq.Description
 	}
-	err = checkIPAddress(updateConnectionInfoReq.IPAddress)
-	if err == nil {
-		oldConnectionInfo.IPAddress = updateConnectionInfoReq.IPAddress
-	}
-	err = checkPort(updateConnectionInfoReq.SSHPort)
-	if err == nil {
-		oldConnectionInfo.SSHPort = updateConnectionInfoReq.SSHPort
-	}
-	if updateConnectionInfoReq.User != "" {
-		oldConnectionInfo.User = updateConnectionInfoReq.User
-	}
-	if updateConnectionInfoReq.Password != "" {
-		oldConnectionInfo.Password = updateConnectionInfoReq.Password
-	}
-	if updateConnectionInfoReq.PrivateKey != "" {
-		oldConnectionInfo.PrivateKey = updateConnectionInfoReq.PrivateKey
+
+	switch sourceGroup.Type {
+	case serverCommon.SourceGroupTypeCSP:
+		if updateConnectionInfoReq.ResourceType != "" {
+			rt := strings.ToLower(strings.TrimSpace(updateConnectionInfoReq.ResourceType))
+			switch rt {
+			case serverCommon.ResourceTypeVM,
+				serverCommon.ResourceTypeK8s,
+				serverCommon.ResourceTypeObjectStorage:
+				oldConnectionInfo.ResourceType = rt
+			default:
+				return common.ReturnErrorMsg(c, "resource_type must be one of vm | k8s | object_storage")
+			}
+		}
+		if updateConnectionInfoReq.ResourceID != "" {
+			oldConnectionInfo.ResourceID = strings.TrimSpace(updateConnectionInfoReq.ResourceID)
+		}
+	default:
+		err = checkIPAddress(updateConnectionInfoReq.IPAddress)
+		if err == nil {
+			oldConnectionInfo.IPAddress = updateConnectionInfoReq.IPAddress
+		}
+		err = checkPort(updateConnectionInfoReq.SSHPort)
+		if err == nil {
+			oldConnectionInfo.SSHPort = updateConnectionInfoReq.SSHPort
+		}
+		if updateConnectionInfoReq.User != "" {
+			oldConnectionInfo.User = updateConnectionInfoReq.User
+		}
+		if updateConnectionInfoReq.Password != "" {
+			oldConnectionInfo.Password = updateConnectionInfoReq.Password
+		}
+		if updateConnectionInfoReq.PrivateKey != "" {
+			oldConnectionInfo.PrivateKey = updateConnectionInfoReq.PrivateKey
+		}
 	}
 
 	err = dao.ConnectionInfoUpdate(oldConnectionInfo)

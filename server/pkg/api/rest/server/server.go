@@ -61,6 +61,7 @@ func Init() {
 
 	route.RegisterConnectionInfo(e)
 	route.RegisterSourceGroup(e)
+	route.RegisterCSP(e)
 	route.RegisterImport(e)
 	route.RegisterGet(e)
 	route.RegisterGetRefined(e)

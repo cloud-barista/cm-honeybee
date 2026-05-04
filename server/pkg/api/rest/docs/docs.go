@@ -251,6 +251,81 @@ const docTemplate = `{
                 }
             }
         },
+        "/csp": {
+            "get": {
+                "description": "Return the list of CSPs supported by the connected cb-spider.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[CSP] Metadata"
+                ],
+                "summary": "List supported CSPs",
+                "operationId": "list-csp",
+                "responses": {
+                    "200": {
+                        "description": "List of CSP names",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListCSPRes"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to query cb-spider",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/csp/{name}": {
+            "get": {
+                "description": "Return the credential keys, regions, and other metadata for the given CSP. Name is matched case-insensitively.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[CSP] Metadata"
+                ],
+                "summary": "Get CSP metadata",
+                "operationId": "get-csp",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "CSP name (case-insensitive, e.g. aws or AWS)",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "CSP metadata",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Unsupported or missing CSP name",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to query cb-spider",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/readyz": {
             "get": {
                 "description": "Check Honeybee is ready",
@@ -1554,6 +1629,58 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Failed to get information of the data.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/discover": {
+            "get": {
+                "description": "Lists VMs / K8s clusters / object-storage buckets reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[CSP] Discovery"
+                ],
+                "summary": "Discover CSP resources for a SourceGroup",
+                "operationId": "discover-source-group-resources",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup (must be type=csp)",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Resource type to discover (vm | k8s | object_storage)",
+                        "name": "resource_type",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Discovered resources",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DiscoverRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Discovery failed",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -3528,15 +3655,36 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPInfo": {
+            "type": "object",
+            "properties": {
+                "credential_keys": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "default_region": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "AWS"
+                },
+                "regions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo": {
             "type": "object",
             "required": [
                 "id",
-                "ip_address",
                 "name",
-                "source_group_id",
-                "ssh_port",
-                "user"
+                "source_group_id"
             ],
             "properties": {
                 "agent_failed_message": {
@@ -3558,6 +3706,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ip_address": {
+                    "description": "SSH fields — required when parent SourceGroup.Type == \"ssh\".",
                     "type": "string"
                 },
                 "name": {
@@ -3570,6 +3719,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "public_key": {
+                    "type": "string"
+                },
+                "resource_id": {
+                    "type": "string"
+                },
+                "resource_type": {
+                    "description": "CSP fields — required when parent SourceGroup.Type == \"csp\".\nResourceType: \"vm\" | \"k8s\" | \"object_storage\".",
                     "type": "string"
                 },
                 "source_group_id": {
@@ -3606,16 +3762,14 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq": {
             "type": "object",
             "required": [
-                "ip_address",
-                "name",
-                "ssh_port",
-                "user"
+                "name"
             ],
             "properties": {
                 "description": {
                     "type": "string"
                 },
                 "ip_address": {
+                    "description": "SSH fields — required when parent SourceGroup.Type == \"ssh\".",
                     "type": "string"
                 },
                 "name": {
@@ -3625,6 +3779,13 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "private_key": {
+                    "type": "string"
+                },
+                "resource_id": {
+                    "type": "string"
+                },
+                "resource_type": {
+                    "description": "CSP fields — required when parent SourceGroup.Type == \"csp\".",
                     "type": "string"
                 },
                 "ssh_port": {
@@ -3647,10 +3808,26 @@ const docTemplate = `{
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq"
                     }
                 },
+                "credential": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "provider_name": {
+                    "type": "string"
+                },
+                "region_name": {
+                    "type": "string"
+                },
+                "type": {
+                    "description": "CSP fields — required when Type == \"csp\".",
                     "type": "string"
                 }
             }
@@ -3666,6 +3843,42 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/data.MinIOData"
                     }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DiscoverRes": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DiscoveredResource"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DiscoveredResource": {
+            "type": "object",
+            "properties": {
+                "extra": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "resource_id": {
+                    "type": "string",
+                    "example": "i-0abc..."
+                },
+                "resource_type": {
+                    "type": "string",
+                    "example": "vm"
                 }
             }
         },
@@ -3697,6 +3910,17 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KubernetesInfoList": {
             "type": "object",
             "required": [
@@ -3707,6 +3931,17 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/kubernetes.Kubernetes"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListCSPRes": {
+            "type": "object",
+            "properties": {
+                "csp": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 }
             }
@@ -3917,6 +4152,12 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "credential": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
@@ -3926,8 +4167,25 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
+                "provider_name": {
+                    "description": "CSP fields — populated only when Type == \"csp\".",
+                    "type": "string"
+                },
+                "region_name": {
+                    "type": "string"
+                },
+                "spider_connection_name": {
+                    "type": "string"
+                },
+                "spider_credential_name": {
+                    "type": "string"
+                },
                 "target_info": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo"
+                },
+                "type": {
+                    "description": "Type discriminates how this group's connections are collected.\nAllowed: \"ssh\" (default, on-prem) or \"csp\" (cb-spider backed).",
+                    "type": "string"
                 }
             }
         },
@@ -3949,6 +4207,18 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "provider_name": {
+                    "type": "string"
+                },
+                "region_name": {
+                    "type": "string"
+                },
+                "spider_connection_name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -3969,10 +4239,20 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "credential": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue"
+                    }
+                },
                 "description": {
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "region_name": {
+                    "description": "CSP fields — only honored for CSP groups.",
                     "type": "string"
                 }
             }

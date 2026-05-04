@@ -2,17 +2,19 @@ package controller
 
 import (
 	"errors"
+	"net/http"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+
+	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/google/uuid"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
-	"net/http"
-	"sort"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 func deleteSavedInfraInfo(connectionInfo *model.ConnectionInfo) {
@@ -70,6 +72,8 @@ func doDeleteSourceGroup(sourceGroupID string) error {
 		}
 	}
 
+	unregisterCSPFromSpider(sourceGroup)
+
 	err = dao.SourceGroupDelete(sourceGroup)
 	if err != nil {
 		return err
@@ -107,20 +111,45 @@ func CreateSourceGroup(c echo.Context) error {
 			" (Max: "+strconv.Itoa(model.ConnectionInfoMaxLength)+")")
 	}
 
+	sgType := strings.ToLower(strings.TrimSpace(createSourceGroupReq.Type))
+	if sgType == "" {
+		sgType = serverCommon.SourceGroupTypeSSH
+	}
+	if sgType != serverCommon.SourceGroupTypeSSH && sgType != serverCommon.SourceGroupTypeCSP {
+		return common.ReturnErrorMsg(c, "type must be 'ssh' or 'csp'.")
+	}
+
 	sourceGroup := &model.SourceGroup{
 		ID:          uuid.New().String(),
 		Name:        createSourceGroupReq.Name,
 		Description: createSourceGroupReq.Description,
+		Type:        sgType,
+	}
+
+	if sgType == serverCommon.SourceGroupTypeCSP {
+		sourceGroup.ProviderName = createSourceGroupReq.ProviderName
+		sourceGroup.RegionName = createSourceGroupReq.RegionName
+		if err := registerCSPOnSpider(sourceGroup, createSourceGroupReq.Credential); err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		// Encrypt credential values before persisting.
+		encrypted, encErr := encryptCredentialValues(sourceGroup.Credential)
+		if encErr != nil {
+			unregisterCSPFromSpider(sourceGroup)
+			return common.ReturnErrorMsg(c, encErr.Error())
+		}
+		sourceGroup.Credential = encrypted
 	}
 
 	var connectionInfoList []*model.ConnectionInfo
 	for i, connectionInfoCreateReq := range createSourceGroupReq.ConnectionInfo {
-		connectionInfo, err := checkCreateConnectionInfoReq(sourceGroup.ID, &connectionInfoCreateReq)
+		connectionInfo, err := checkCreateConnectionInfoReq(sourceGroup, &connectionInfoCreateReq)
 		if err != nil {
 			errMsg := "Error in provided connection info (Connection Info order: " + strconv.Itoa(i+1) +
 				", Error:" + err.Error() + ")"
 			logger.Println(logger.ERROR, true, errMsg)
 
+			unregisterCSPFromSpider(sourceGroup)
 			return common.ReturnErrorMsg(c, errMsg)
 		}
 
@@ -129,6 +158,7 @@ func CreateSourceGroup(c echo.Context) error {
 
 	sourceGroup, err = dao.SourceGroupRegister(sourceGroup)
 	if err != nil {
+		unregisterCSPFromSpider(sourceGroup)
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
@@ -136,6 +166,10 @@ func CreateSourceGroup(c echo.Context) error {
 		ID:                        sourceGroup.ID,
 		Name:                      sourceGroup.Name,
 		Description:               sourceGroup.Description,
+		Type:                      sourceGroup.Type,
+		ProviderName:              sourceGroup.ProviderName,
+		RegionName:                sourceGroup.RegionName,
+		SpiderConnectionName:      sourceGroup.SpiderConnectionName,
 		ConnectionInfoStatusCount: model.ConnectionInfoStatusCount{},
 	}
 
@@ -218,6 +252,10 @@ func GetSourceGroup(c echo.Context) error {
 	sourceGroupRes.ID = sourceGroup.ID
 	sourceGroupRes.Name = sourceGroup.Name
 	sourceGroupRes.Description = sourceGroup.Description
+	sourceGroupRes.Type = sourceGroup.Type
+	sourceGroupRes.ProviderName = sourceGroup.ProviderName
+	sourceGroupRes.RegionName = sourceGroup.RegionName
+	sourceGroupRes.SpiderConnectionName = sourceGroup.SpiderConnectionName
 
 	connectionInfo := &model.ConnectionInfo{
 		SourceGroupID: sourceGroup.ID,
@@ -288,9 +326,13 @@ func ListSourceGroup(c echo.Context) error {
 		}
 
 		var sourceGroupRes = model.SourceGroupRes{
-			ID:          sg.ID,
-			Name:        sg.Name,
-			Description: sg.Description,
+			ID:                   sg.ID,
+			Name:                 sg.Name,
+			Description:          sg.Description,
+			Type:                 sg.Type,
+			ProviderName:         sg.ProviderName,
+			RegionName:           sg.RegionName,
+			SpiderConnectionName: sg.SpiderConnectionName,
 		}
 
 		for _, ci := range *connectionInfos {
@@ -361,6 +403,36 @@ func UpdateSourceGroup(c echo.Context) error {
 
 	if updateSourceGroupReq.Description != "" {
 		oldSourceGroup.Description = updateSourceGroupReq.Description
+	}
+
+	// CSP-only: re-register region/credential on cb-spider when changed.
+	if oldSourceGroup.Type == serverCommon.SourceGroupTypeCSP &&
+		(updateSourceGroupReq.RegionName != "" || len(updateSourceGroupReq.Credential) > 0) {
+
+		newRegion := updateSourceGroupReq.RegionName
+		if newRegion == "" {
+			newRegion = oldSourceGroup.RegionName
+		}
+		newKV := updateSourceGroupReq.Credential
+		if len(newKV) == 0 {
+			// No KV change — keep existing canonical KV (still encrypted in DB; we'd
+			// need to decrypt to re-register, which we explicitly avoid). Reject the
+			// region-only update path for now.
+			return common.ReturnErrorMsg(c,
+				"region change requires re-supplying credential (RSA-encrypted values cannot be reused)")
+		}
+
+		// Best-effort: tear down spider state, then re-register.
+		unregisterCSPFromSpider(oldSourceGroup)
+		oldSourceGroup.RegionName = newRegion
+		if err := registerCSPOnSpider(oldSourceGroup, newKV); err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		encrypted, encErr := encryptCredentialValues(oldSourceGroup.Credential)
+		if encErr != nil {
+			return common.ReturnErrorMsg(c, encErr.Error())
+		}
+		oldSourceGroup.Credential = encrypted
 	}
 
 	err = dao.SourceGroupUpdate(oldSourceGroup)

@@ -19,22 +19,70 @@ type RegisterTargetInfoReq struct {
 	} `json:"label" validate:"required"`
 }
 
+// KeyValue mirrors cb-spider's KeyValue and is also used for CSP credential KV
+// stored on a SourceGroup. Values are stored RSA-encrypted (base64) for csp-type
+// SourceGroups.
+type KeyValue struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
+// KeyValueList is a JSON-serialized GORM column type.
+type KeyValueList []KeyValue
+
+func (k KeyValueList) Value() (driver.Value, error) {
+	return json.Marshal(k)
+}
+
+func (k *KeyValueList) Scan(value interface{}) error {
+	if value == nil {
+		*k = nil
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("invalid type for KeyValueList")
+	}
+	return json.Unmarshal(bytes, k)
+}
+
 type SourceGroup struct {
 	ID          string     `gorm:"primaryKey" json:"id" validate:"required"`
 	Name        string     `gorm:"index:,column:name,unique;type:text collate nocase" json:"name" validate:"required"`
 	Description string     `gorm:"column:description" json:"description"`
 	TargetInfo  TargetInfo `gorm:"column:target_info" json:"target_info"`
+
+	// Type discriminates how this group's connections are collected.
+	// Allowed: "ssh" (default, on-prem) or "csp" (cb-spider backed).
+	Type string `gorm:"column:type;default:ssh" json:"type"`
+
+	// CSP fields — populated only when Type == "csp".
+	ProviderName         string       `gorm:"column:provider_name" json:"provider_name,omitempty"`
+	RegionName           string       `gorm:"column:region_name" json:"region_name,omitempty"`
+	Credential           KeyValueList `gorm:"column:credential" json:"credential,omitempty"`
+	SpiderCredentialName string       `gorm:"column:spider_credential_name" json:"spider_credential_name,omitempty"`
+	SpiderConnectionName string       `gorm:"column:spider_connection_name" json:"spider_connection_name,omitempty"`
 }
 
 type CreateSourceGroupReq struct {
 	Name           string                    `json:"name" validate:"required"`
 	Description    string                    `json:"description"`
 	ConnectionInfo []CreateConnectionInfoReq `json:"connection_info"`
+
+	// CSP fields — required when Type == "csp".
+	Type         string     `json:"type"`
+	ProviderName string     `json:"provider_name,omitempty"`
+	RegionName   string     `json:"region_name,omitempty"`
+	Credential   []KeyValue `json:"credential,omitempty"`
 }
 
 type UpdateSourceGroupReq struct {
 	Name        string `json:"name" validate:"required"`
 	Description string `json:"description"`
+
+	// CSP fields — only honored for CSP groups.
+	RegionName string     `json:"region_name,omitempty"`
+	Credential []KeyValue `json:"credential,omitempty"`
 }
 
 type ConnectionInfoStatusCount struct {
@@ -49,6 +97,10 @@ type SourceGroupRes struct {
 	ID                        string                    `json:"id" validate:"required"`
 	Name                      string                    `json:"name" validate:"required"`
 	Description               string                    `json:"description"`
+	Type                      string                    `json:"type"`
+	ProviderName              string                    `json:"provider_name,omitempty"`
+	RegionName                string                    `json:"region_name,omitempty"`
+	SpiderConnectionName      string                    `json:"spider_connection_name,omitempty"`
 	ConnectionInfoStatusCount ConnectionInfoStatusCount `json:"connection_info_status_count"`
 }
 

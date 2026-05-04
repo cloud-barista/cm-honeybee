@@ -3,3 +3,5 @@ cm-honeybee:
         port: 8081
     agent:
         port: 8082
+    spider:
+        endpoint: http://localhost:1024/spider

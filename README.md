@@ -42,6 +42,8 @@ Collecting and Aggregating Information From Source Computing framework (codename
         - port : Listen port of the server's API.
     - agent
         - port : Port of the agent's API.
+    - spider
+        - endpoint : cb-spider REST endpoint, used by CSP-type source groups.
 - Configuration file example
   ```yaml
   cm-honeybee:
@@ -49,6 +51,8 @@ Collecting and Aggregating Information From Source Computing framework (codename
           port: 8081
       agent:
           port: 8082
+      spider:
+          endpoint: http://localhost:1024/spider
   ```
 
 1.2. Build and run the server binary
@@ -64,6 +68,12 @@ Or, you can run it within Docker by this command.
 
 ### 2. Register source group
 Check your source group ID (sgID) after register.
+
+A source group has a `type` field:
+- `ssh` (default) — collects from on-premise hosts via the agent over SSH.
+- `csp` — collects from cloud sources (VM / Kubernetes / Object Storage) through cb-spider.
+
+#### 2.1 SSH source group
 - Request
 ```shell
 curl -X 'POST' \
@@ -81,6 +91,7 @@ curl -X 'POST' \
  "id": "b9e86d53-9fbe-4a96-9e06-627f77fdd6b7",
  "name": "test-group",
  "description": "test migration group",
+ "type": "ssh",
   "connection_info_status_count": {
     "count_connection_success": 0,
     "count_connection_failed": 0,
@@ -90,8 +101,43 @@ curl -X 'POST' \
   }
 }
 ```
+
+#### 2.2 CSP source group
+A CSP group represents one cb-spider connection (provider + region + credential).
+Resources under the group (VMs, Kubernetes clusters, object-storage buckets) are
+registered as individual `connection_info` entries.
+
+Discover the credential keys required by the target CSP first:
+```shell
+curl 'http://127.0.0.1:8081/honeybee/csp'              # supported CSP names
+curl 'http://127.0.0.1:8081/honeybee/csp/aws'          # case-insensitive
+```
+The response includes `credential_keys` (e.g. `["ClientId", "ClientSecret"]` for AWS)
+and the available `regions`.
+
+Then create the group:
+```shell
+curl -X 'POST' \
+  'http://127.0.0.1:8081/honeybee/source_group' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "aws-prod-seoul",
+    "type": "csp",
+    "provider_name": "AWS",
+    "region_name": "ap-northeast-2",
+    "credential": [
+      {"key": "ClientId",     "value": "AKIA..."},
+      {"key": "ClientSecret", "value": "..."}
+    ]
+  }'
+```
+honeybee registers the credential and connection config in cb-spider on your
+behalf and stores the spider names back on the source group.
 ### 3. Register connection info
-Register the connection information to the source group.
+Register the connection information to the source group. The body shape
+depends on the group's `type`.
+
+#### 3.1 SSH connection info
 Agent will be installed automatically.
 - Request
 ```shell
@@ -120,6 +166,25 @@ curl -X 'POST' \
   "agent_failed_message": ""
 }
 ```
+
+#### 3.2 CSP connection info
+For CSP groups, each `connection_info` points at one cloud resource by id.
+You can list available resources first via the discovery endpoint:
+```shell
+curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=vm'
+curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=k8s'
+curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=object_storage'
+```
+Then register the picked resource:
+```shell
+curl -X 'POST' \
+ 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/connection_info' \
+ -H 'Content-Type: application/json' \
+ -d '{ "name": "vm-app01", "resource_type": "vm", "resource_id": "i-0abc..." }'
+```
+`resource_type` is one of `vm`, `k8s`, or `object_storage`. Refresh
+(`PUT .../refresh`) populates the relevant `Saved*Info` table by calling
+cb-spider through the connection bound to the source group.
 
 ### 4. Save current source information.
 Below example is saving infrastructure information of all connection in the source group.

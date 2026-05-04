@@ -1032,6 +1032,22 @@ definitions:
       unit:
         type: string
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPInfo:
+    properties:
+      credential_keys:
+        items:
+          type: string
+        type: array
+      default_region:
+        type: string
+      name:
+        example: AWS
+        type: string
+      regions:
+        items:
+          type: string
+        type: array
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfo:
     properties:
       agent_failed_message:
@@ -1047,6 +1063,7 @@ definitions:
       id:
         type: string
       ip_address:
+        description: SSH fields — required when parent SourceGroup.Type == "ssh".
         type: string
       name:
         type: string
@@ -1056,6 +1073,13 @@ definitions:
         type: string
       public_key:
         type: string
+      resource_id:
+        type: string
+      resource_type:
+        description: |-
+          CSP fields — required when parent SourceGroup.Type == "csp".
+          ResourceType: "vm" | "k8s" | "object_storage".
+        type: string
       source_group_id:
         type: string
       ssh_port:
@@ -1064,11 +1088,8 @@ definitions:
         type: string
     required:
     - id
-    - ip_address
     - name
     - source_group_id
-    - ssh_port
-    - user
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfoStatusCount:
     properties:
@@ -1088,6 +1109,7 @@ definitions:
       description:
         type: string
       ip_address:
+        description: SSH fields — required when parent SourceGroup.Type == "ssh".
         type: string
       name:
         type: string
@@ -1095,15 +1117,17 @@ definitions:
         type: string
       private_key:
         type: string
+      resource_id:
+        type: string
+      resource_type:
+        description: CSP fields — required when parent SourceGroup.Type == "csp".
+        type: string
       ssh_port:
         type: string
       user:
         type: string
     required:
-    - ip_address
     - name
-    - ssh_port
-    - user
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateSourceGroupReq:
     properties:
@@ -1111,9 +1135,20 @@ definitions:
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq'
         type: array
+      credential:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue'
+        type: array
       description:
         type: string
       name:
+        type: string
+      provider_name:
+        type: string
+      region_name:
+        type: string
+      type:
+        description: CSP fields — required when Type == "csp".
         type: string
     required:
     - name
@@ -1126,6 +1161,30 @@ definitions:
         type: array
     required:
     - minio_data
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DiscoverRes:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DiscoveredResource'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DiscoveredResource:
+    properties:
+      extra:
+        additionalProperties:
+          type: string
+        type: object
+      name:
+        type: string
+      region:
+        type: string
+      resource_id:
+        example: i-0abc...
+        type: string
+      resource_type:
+        example: vm
+        type: string
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.HelmInfoList:
     properties:
@@ -1145,6 +1204,13 @@ definitions:
     required:
     - servers
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue:
+    properties:
+      key:
+        type: string
+      value:
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KubernetesInfoList:
     properties:
       servers:
@@ -1153,6 +1219,13 @@ definitions:
         type: array
     required:
     - servers
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListCSPRes:
+    properties:
+      csp:
+        items:
+          type: string
+        type: array
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListConnectionInfoRes:
     properties:
@@ -1287,14 +1360,32 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup:
     properties:
+      credential:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue'
+        type: array
       description:
         type: string
       id:
         type: string
       name:
         type: string
+      provider_name:
+        description: CSP fields — populated only when Type == "csp".
+        type: string
+      region_name:
+        type: string
+      spider_connection_name:
+        type: string
+      spider_credential_name:
+        type: string
       target_info:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo'
+      type:
+        description: |-
+          Type discriminates how this group's connections are collected.
+          Allowed: "ssh" (default, on-prem) or "csp" (cb-spider backed).
+        type: string
     required:
     - id
     - name
@@ -1309,6 +1400,14 @@ definitions:
         type: string
       name:
         type: string
+      provider_name:
+        type: string
+      region_name:
+        type: string
+      spider_connection_name:
+        type: string
+      type:
+        type: string
     required:
     - id
     - name
@@ -1322,9 +1421,16 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.UpdateSourceGroupReq:
     properties:
+      credential:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue'
+        type: array
       description:
         type: string
       name:
+        type: string
+      region_name:
+        description: CSP fields — only honored for CSP groups.
         type: string
     required:
     - name
@@ -3674,6 +3780,57 @@ paths:
       summary: Refresh Connection Info Status Directly
       tags:
       - '[On-premise] ConnectionInfo'
+  /csp:
+    get:
+      consumes:
+      - application/json
+      description: Return the list of CSPs supported by the connected cb-spider.
+      operationId: list-csp
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of CSP names
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListCSPRes'
+        "500":
+          description: Failed to query cb-spider
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: List supported CSPs
+      tags:
+      - '[CSP] Metadata'
+  /csp/{name}:
+    get:
+      consumes:
+      - application/json
+      description: Return the credential keys, regions, and other metadata for the
+        given CSP. Name is matched case-insensitively.
+      operationId: get-csp
+      parameters:
+      - description: CSP name (case-insensitive, e.g. aws or AWS)
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: CSP metadata
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPInfo'
+        "400":
+          description: Unsupported or missing CSP name
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to query cb-spider
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get CSP metadata
+      tags:
+      - '[CSP] Metadata'
   /readyz:
     get:
       consumes:
@@ -4555,6 +4712,43 @@ paths:
       summary: Get Data Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/discover:
+    get:
+      consumes:
+      - application/json
+      description: Lists VMs / K8s clusters / object-storage buckets reachable through
+        the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo
+        selection.
+      operationId: discover-source-group-resources
+      parameters:
+      - description: ID of the SourceGroup (must be type=csp)
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: Resource type to discover (vm | k8s | object_storage)
+        in: query
+        name: resource_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Discovered resources
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DiscoverRes'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Discovery failed
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Discover CSP resources for a SourceGroup
+      tags:
+      - '[CSP] Discovery'
   /source_group/{sgId}/helm:
     get:
       consumes:

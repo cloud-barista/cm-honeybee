@@ -21,6 +21,9 @@ type cmHoneybeeConfig struct {
 		Agent struct {
 			Port string `yaml:"port"`
 		} `yaml:"agent"`
+		Spider struct {
+			Endpoint string `yaml:"endpoint"`
+		} `yaml:"spider"`
 	} `yaml:"cm-honeybee"`
 }
 
@@ -44,6 +47,10 @@ func checkCMHoneybeeConfigFile() error {
 		return errors.New("config error: cm-honeybee.agent.port has invalid value")
 	}
 
+	if CMHoneybeeConfig.CMHoneybee.Spider.Endpoint == "" {
+		return errors.New("config error: cm-honeybee.spider.endpoint is empty")
+	}
+
 	return nil
 }
 
@@ -52,6 +59,7 @@ func getCMHoneybeeDefaultConfig() cmHoneybeeConfig {
 
 	defaultConfig.CMHoneybee.Listen.Port = "8081"
 	defaultConfig.CMHoneybee.Agent.Port = "8082"
+	defaultConfig.CMHoneybee.Spider.Endpoint = "http://localhost:1024/spider"
 
 	return defaultConfig
 }
