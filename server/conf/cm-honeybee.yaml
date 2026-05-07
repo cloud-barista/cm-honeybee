@@ -5,3 +5,5 @@ cm-honeybee:
         port: 8082
     spider:
         endpoint: http://localhost:1024/spider
+        username: default
+        password: default

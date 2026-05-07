@@ -44,6 +44,8 @@ Collecting and Aggregating Information From Source Computing framework (codename
         - port : Port of the agent's API.
     - spider
         - endpoint : cb-spider REST endpoint, used by CSP-type source groups.
+        - username : Basic auth user for cb-spider (default: `default`).
+        - password : Basic auth password for cb-spider (default: `default`).
 - Configuration file example
   ```yaml
   cm-honeybee:
@@ -53,6 +55,8 @@ Collecting and Aggregating Information From Source Computing framework (codename
           port: 8082
       spider:
           endpoint: http://localhost:1024/spider
+          username: default
+          password: default
   ```
 
 1.2. Build and run the server binary

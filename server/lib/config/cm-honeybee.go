@@ -23,6 +23,8 @@ type cmHoneybeeConfig struct {
 		} `yaml:"agent"`
 		Spider struct {
 			Endpoint string `yaml:"endpoint"`
+			Username string `yaml:"username"`
+			Password string `yaml:"password"`
 		} `yaml:"spider"`
 	} `yaml:"cm-honeybee"`
 }
@@ -60,6 +62,8 @@ func getCMHoneybeeDefaultConfig() cmHoneybeeConfig {
 	defaultConfig.CMHoneybee.Listen.Port = "8081"
 	defaultConfig.CMHoneybee.Agent.Port = "8082"
 	defaultConfig.CMHoneybee.Spider.Endpoint = "http://localhost:1024/spider"
+	defaultConfig.CMHoneybee.Spider.Username = "default"
+	defaultConfig.CMHoneybee.Spider.Password = "default"
 
 	return defaultConfig
 }

@@ -45,6 +45,10 @@ func do(method, path string, body, out any) error {
 	}
 	req.Header.Set("Accept", "application/json")
 
+	if user := config.CMHoneybeeConfig.CMHoneybee.Spider.Username; user != "" {
+		req.SetBasicAuth(user, config.CMHoneybeeConfig.CMHoneybee.Spider.Password)
+	}
+
 	resp, err := newHTTPClient().Do(req)
 	if err != nil {
 		return fmt.Errorf("spider request failed (%s %s): %w", method, u, err)
