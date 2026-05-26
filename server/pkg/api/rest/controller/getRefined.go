@@ -383,7 +383,7 @@ func convertToContainers(containers *[]software.Container, runtime softwaremodel
 			ContainerPorts:    convertPorts(&c.ContainerSummary.Ports),
 			ContainerStatus:   c.ContainerInspect.State.Status,
 			DockerComposePath: getDockerComposePath(c.ContainerSummary.Labels),
-			MountPaths:        convertMountPaths(&c.ContainerSummary.Mounts),
+			MountPaths:        convertMountPaths(&c.ContainerInspect.Mounts),
 			Envs:              convertEnvs(&c.ContainerInspect.Config.Env),
 			NetworkMode:       c.ContainerSummary.HostConfig.NetworkMode,
 			RestartPolicy:     string(c.ContainerInspect.HostConfig.RestartPolicy.Name),
