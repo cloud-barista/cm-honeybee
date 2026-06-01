@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"strings"
 
+	softwaremodel "github.com/cloud-barista/cm-grasshopper/smdl"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
-	softwaremodel "github.com/cloud-barista/cm-grasshopper/smdl"
 	"github.com/docker/docker/api/types/container"
 	"github.com/jollaman999/utils/logger"
 
@@ -248,14 +249,68 @@ func convertToPackages(packages interface{}) []softwaremodel.Package {
 	return result
 }
 
+// appendUniquePath appends p to paths if it is a non-empty absolute path not
+// already present.
+func appendUniquePath(paths []string, p string) []string {
+	p = strings.TrimSpace(p)
+	if p == "" || !strings.HasPrefix(p, "/") {
+		return paths
+	}
+	for _, existing := range paths {
+		if existing == p {
+			return paths
+		}
+	}
+	return append(paths, p)
+}
+
+// extractCatalinaPaths derives Tomcat's install (catalina.home) and instance
+// (catalina.base) directories from a JVM process command line. Either may be "".
+func extractCatalinaPaths(cmdline []string) (home string, base string) {
+	for _, arg := range cmdline {
+		if v, ok := strings.CutPrefix(arg, "-Dcatalina.home="); ok {
+			home = strings.TrimSpace(v)
+		} else if v, ok := strings.CutPrefix(arg, "-Dcatalina.base="); ok {
+			base = strings.TrimSpace(v)
+		}
+	}
+	return home, base
+}
+
+// extractJavaHome derives the JDK/JRE home directory backing a JVM process. It
+// prefers the JAVA_HOME environment variable and falls back to deriving it from
+// the java executable path (<javaHome>/bin/java). Returns "" when not a JVM.
+func extractJavaHome(environ []string, exePath string) string {
+	for _, e := range environ {
+		if v, ok := strings.CutPrefix(e, "JAVA_HOME="); ok {
+			if v = strings.TrimSpace(v); v != "" {
+				return v
+			}
+		}
+	}
+
+	if exePath != "" {
+		switch filepath.Base(exePath) {
+		case "java", "java.exe":
+			binDir := filepath.Dir(exePath) // <home>/bin
+			if filepath.Base(binDir) == "bin" {
+				return filepath.Dir(binDir) // <home>
+			}
+		}
+	}
+
+	return ""
+}
+
 // convertToBinaries maps the raw collected legacy binaries (process-level info
 // gathered on the source host) into the refined software model consumed by the
 // migration tools. Launch provenance (systemd vs command) is carried through so
 // the target can faithfully reproduce how the software was started.
 //
-// NOTE: BinaryPath is set to the collected executable path and dependencies to the
-// loaded library paths. Higher-level install-root derivation (e.g. a JVM app's
-// catalina.home, the JDK home, software version) is a future collection enhancement.
+// For JVM applications (e.g. Tomcat) the install root and runtime dependency are
+// derived rather than left as the raw executable: BinaryPath becomes the Tomcat
+// install dir (catalina.home), the JDK home is added as a needed dependency, and a
+// distinct catalina.base instance dir (if any) is carried as a data directory.
 func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 	var result []softwaremodel.Binary
 
@@ -267,6 +322,25 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 			}
 		}
 
+		binaryPath := b.ExecutablePath
+		neededLibraries := append([]string{}, b.LibraryPaths...)
+		dataDirs := append([]string{}, b.DataDirs...)
+
+		// JVM application: derive the real install root and JDK dependency.
+		catalinaHome, catalinaBase := extractCatalinaPaths(b.CmdlineSlice)
+		if catalinaHome != "" {
+			binaryPath = catalinaHome
+		} else if catalinaBase != "" {
+			binaryPath = catalinaBase
+		}
+		if catalinaBase != "" && catalinaBase != catalinaHome {
+			// Separate instance directory (multi-instance Tomcat) holds conf/webapps/logs.
+			dataDirs = appendUniquePath(dataDirs, catalinaBase)
+		}
+		if javaHome := extractJavaHome(b.Environ, b.ExecutablePath); javaHome != "" {
+			neededLibraries = appendUniquePath(neededLibraries, javaHome)
+		}
+
 		result = append(result, softwaremodel.Binary{
 			Name:             b.Name,
 			Version:          "",
@@ -274,9 +348,9 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 			GIDs:             b.GIDs,
 			CmdlineSlice:     b.CmdlineSlice,
 			Envs:             b.Environ,
-			NeededLibraries:  b.LibraryPaths,
-			BinaryPath:       b.ExecutablePath,
-			CustomDataPaths:  b.DataDirs,
+			NeededLibraries:  neededLibraries,
+			BinaryPath:       binaryPath,
+			CustomDataPaths:  dataDirs,
 			CustomConfigs:    configs,
 			IsWine:           b.IsWine,
 			LaunchType:       b.LaunchType,
