@@ -23,4 +23,10 @@ type Binary struct {
 	DataDirs         []string     `json:"data_dirs"`
 	IsWine           bool         `json:"is_wine"`
 	WinePrefix       string       `json:"wine_prefix"`
+	// Launch provenance: how the process was started on this host.
+	LaunchType       string `json:"launch_type"` // "systemd" | "command" | "unknown"
+	SystemdUnitName  string `json:"systemd_unit_name"`
+	SystemdUnitPath  string `json:"systemd_unit_path"`
+	SystemdEnabled   bool   `json:"systemd_enabled"`
+	WorkingDirectory string `json:"working_directory"`
 }

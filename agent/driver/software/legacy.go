@@ -18,6 +18,17 @@ type BinaryInfo struct {
 	LibraryPaths []string
 }
 
+// launchProvenance describes how a process was started on the host. It is filled
+// by the platform-specific getLaunchProvenance (see provenance_linux.go /
+// provenance_windows.go).
+type launchProvenance struct {
+	LaunchType       string // "systemd" | "command" | "unknown"
+	SystemdUnitName  string
+	SystemdUnitPath  string
+	SystemdEnabled   bool
+	WorkingDirectory string
+}
+
 func GetLegacySWs() ([]software.Binary, error) {
 	procs, err := process.Processes()
 
@@ -114,6 +125,7 @@ func GetLegacySWs() ([]software.Binary, error) {
 		configFiles := extractConfigFiles(cmdSlice, openFiles)
 		dataDirs := detectDataDirs(openFiles)
 		isWine, winePrefix := detectWine(envs)
+		prov := getLaunchProvenance(p.Pid)
 
 		results = append(results, software.Binary{
 			PID:              p.Pid,
@@ -133,6 +145,11 @@ func GetLegacySWs() ([]software.Binary, error) {
 			DataDirs:         dataDirs,
 			IsWine:           isWine,
 			WinePrefix:       winePrefix,
+			LaunchType:       prov.LaunchType,
+			SystemdUnitName:  prov.SystemdUnitName,
+			SystemdUnitPath:  prov.SystemdUnitPath,
+			SystemdEnabled:   prov.SystemdEnabled,
+			WorkingDirectory: prov.WorkingDirectory,
 		})
 	}
 
