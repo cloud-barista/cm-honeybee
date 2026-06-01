@@ -10,7 +10,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
-	softwaremodel "github.com/cloud-barista/cm-model/sw"
+	softwaremodel "github.com/cloud-barista/cm-grasshopper/smdl"
 	"github.com/docker/docker/api/types/container"
 	"github.com/jollaman999/utils/logger"
 
@@ -248,6 +248,48 @@ func convertToPackages(packages interface{}) []softwaremodel.Package {
 	return result
 }
 
+// convertToBinaries maps the raw collected legacy binaries (process-level info
+// gathered on the source host) into the refined software model consumed by the
+// migration tools. Launch provenance (systemd vs command) is carried through so
+// the target can faithfully reproduce how the software was started.
+//
+// NOTE: BinaryPath is set to the collected executable path and dependencies to the
+// loaded library paths. Higher-level install-root derivation (e.g. a JVM app's
+// catalina.home, the JDK home, software version) is a future collection enhancement.
+func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
+	var result []softwaremodel.Binary
+
+	for _, b := range legacy {
+		var configs []string
+		for _, cf := range b.ConfigFiles {
+			if cf.Path != "" {
+				configs = append(configs, cf.Path)
+			}
+		}
+
+		result = append(result, softwaremodel.Binary{
+			Name:             b.Name,
+			Version:          "",
+			UIDs:             b.UIDs,
+			GIDs:             b.GIDs,
+			CmdlineSlice:     b.CmdlineSlice,
+			Envs:             b.Environ,
+			NeededLibraries:  b.LibraryPaths,
+			BinaryPath:       b.ExecutablePath,
+			CustomDataPaths:  b.DataDirs,
+			CustomConfigs:    configs,
+			IsWine:           b.IsWine,
+			LaunchType:       b.LaunchType,
+			SystemdUnitName:  b.SystemdUnitName,
+			SystemdUnitPath:  b.SystemdUnitPath,
+			SystemdEnabled:   b.SystemdEnabled,
+			WorkingDirectory: b.WorkingDirectory,
+		})
+	}
+
+	return result
+}
+
 func getContainerName(summary *container.Summary) string {
 	if len(summary.Names) > 0 {
 		return strings.TrimPrefix(summary.Names[0], "/")
@@ -394,9 +436,7 @@ func convertToContainers(containers *[]software.Container, runtime softwaremodel
 }
 
 func doGetRefinedSoftwareInfo(softwareInfo *software.Software) (*softwaremodel.SoftwareList, error) {
-	var binaries []softwaremodel.Binary
-
-	// TODO: Import binaries
+	binaries := convertToBinaries(softwareInfo.Legacy)
 
 	var packages []softwaremodel.Package
 
