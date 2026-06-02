@@ -30,4 +30,6 @@ type Binary struct {
 	SystemdUnitPath  string `json:"systemd_unit_path"`
 	SystemdEnabled   bool   `json:"systemd_enabled"`
 	WorkingDirectory string `json:"working_directory"`
+	ServiceType      string `json:"service_type"` // systemd Type= ("simple"|"forking"|...)
+	PIDFile          string `json:"pid_file"`
 }

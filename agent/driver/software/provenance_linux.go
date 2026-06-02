@@ -13,7 +13,8 @@ import (
 // inspecting its cgroup (the most reliable signal: the cgroup names the systemd
 // unit actually managing the process) and its working directory.
 func getLaunchProvenance(pid int32) launchProvenance {
-	p := launchProvenance{LaunchType: "command"}
+	// Command-started processes are reproduced as a Type=simple unit by default.
+	p := launchProvenance{LaunchType: "command", ServiceType: "simple"}
 
 	if cwd, err := os.Readlink(fmt.Sprintf("/proc/%d/cwd", pid)); err == nil {
 		p.WorkingDirectory = cwd
@@ -44,6 +45,16 @@ func getLaunchProvenance(pid int32) launchProvenance {
 		if strings.TrimSpace(string(out)) == "enabled" {
 			p.SystemdEnabled = true
 		}
+	}
+
+	// Authoritative service Type / PIDFile from the running unit.
+	if out, err := exec.Command("systemctl", "show", "-p", "Type", "--value", unit).Output(); err == nil {
+		if t := strings.TrimSpace(string(out)); t != "" {
+			p.ServiceType = t
+		}
+	}
+	if out, err := exec.Command("systemctl", "show", "-p", "PIDFile", "--value", unit).Output(); err == nil {
+		p.PIDFile = strings.TrimSpace(string(out))
 	}
 
 	return p

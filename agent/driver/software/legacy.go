@@ -27,6 +27,8 @@ type launchProvenance struct {
 	SystemdUnitPath  string
 	SystemdEnabled   bool
 	WorkingDirectory string
+	ServiceType      string // systemd Type= ("simple"|"forking"|...); "simple" for command-started
+	PIDFile          string
 }
 
 func GetLegacySWs() ([]software.Binary, error) {
@@ -124,7 +126,7 @@ func GetLegacySWs() ([]software.Binary, error) {
 
 		configFiles := extractConfigFiles(cmdSlice, openFiles)
 		dataDirs := detectDataDirs(openFiles)
-		isWine, winePrefix := detectWine(envs)
+		isWine, winePrefix := detectWine(cmdSlice, envs, exe)
 		prov := getLaunchProvenance(p.Pid)
 		version := detectBinaryVersion(exe, cmdSlice, envs)
 
@@ -152,6 +154,8 @@ func GetLegacySWs() ([]software.Binary, error) {
 			SystemdUnitPath:  prov.SystemdUnitPath,
 			SystemdEnabled:   prov.SystemdEnabled,
 			WorkingDirectory: prov.WorkingDirectory,
+			ServiceType:      prov.ServiceType,
+			PIDFile:          prov.PIDFile,
 		})
 	}
 
@@ -311,13 +315,52 @@ func getListenStatus(p *process.Process) (bool, string) {
 	return true, ""
 }
 
-func detectWine(envs []string) (bool, string) {
+// detectWine reports whether a process runs under Wine and its WINEPREFIX bottle.
+// An explicit WINEPREFIX env wins; otherwise it falls back to a heuristic (a Wine
+// loader in the executable/command line, or a .exe argument) and defaults the
+// bottle to the user's ~/.wine.
+func detectWine(cmdSlice []string, envs []string, exePath string) (bool, string) {
 	for _, e := range envs {
-		if strings.HasPrefix(e, "WINEPREFIX=") {
-			return true, strings.TrimPrefix(e, "WINEPREFIX=")
+		if v, ok := strings.CutPrefix(e, "WINEPREFIX="); ok {
+			return true, strings.TrimSpace(v)
 		}
 	}
-	return false, ""
+
+	if !looksLikeWine(exePath, cmdSlice) {
+		return false, ""
+	}
+
+	// Default Wine bottle is $HOME/.wine.
+	for _, e := range envs {
+		if home, ok := strings.CutPrefix(e, "HOME="); ok {
+			if home = strings.TrimSpace(home); home != "" {
+				return true, filepath.Join(home, ".wine")
+			}
+		}
+	}
+	return true, ""
+}
+
+var wineLoaders = map[string]bool{
+	"wine": true, "wine64": true, "wine-preloader": true,
+	"wine64-preloader": true, "wineserver": true,
+}
+
+// looksLikeWine detects a Wine process from its executable / argv[0] being a Wine
+// loader, or any argument being a Windows .exe.
+func looksLikeWine(exePath string, cmdSlice []string) bool {
+	if exePath != "" && wineLoaders[filepath.Base(exePath)] {
+		return true
+	}
+	for i, arg := range cmdSlice {
+		if i == 0 && wineLoaders[filepath.Base(arg)] {
+			return true
+		}
+		if strings.HasSuffix(strings.ToLower(arg), ".exe") {
+			return true
+		}
+	}
+	return false
 }
 
 func filterLibNames(libs []string) []string {
