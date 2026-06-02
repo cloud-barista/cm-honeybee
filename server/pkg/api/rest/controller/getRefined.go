@@ -367,6 +367,8 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 			SystemdUnitPath:  b.SystemdUnitPath,
 			SystemdEnabled:   b.SystemdEnabled,
 			WorkingDirectory: b.WorkingDirectory,
+			ServiceType:      b.ServiceType,
+			PIDFile:          b.PIDFile,
 		})
 	}
 
