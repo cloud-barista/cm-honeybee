@@ -126,10 +126,12 @@ func GetLegacySWs() ([]software.Binary, error) {
 		dataDirs := detectDataDirs(openFiles)
 		isWine, winePrefix := detectWine(envs)
 		prov := getLaunchProvenance(p.Pid)
+		version := detectBinaryVersion(exe, cmdSlice, envs)
 
 		results = append(results, software.Binary{
 			PID:              p.Pid,
 			Name:             name,
+			Version:          version,
 			ConnectionStatus: connectionStatus,
 			CmdlineSlice:     cmdSlice,
 			Cmdline:          cmdline,

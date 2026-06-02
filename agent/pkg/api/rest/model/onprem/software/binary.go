@@ -8,6 +8,7 @@ type ConfigFile struct {
 type Binary struct {
 	PID              int32        `json:"pid"`
 	Name             string       `json:"name"`
+	Version          string       `json:"version"`
 	ConnectionStatus string       `json:"connection_status"`
 	Cmdline          string       `json:"cmdline"`
 	CmdlineSlice     []string     `json:"cmdline_slice"`
