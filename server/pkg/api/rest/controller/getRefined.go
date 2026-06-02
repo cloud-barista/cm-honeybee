@@ -341,6 +341,14 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 			neededLibraries = appendUniquePath(neededLibraries, javaHome)
 		}
 
+		// Wine application: the WINEPREFIX bottle holds the app, registry and config,
+		// so it becomes the path to copy. The Wine runtime is installed on the target
+		// rather than copied, so host library paths are dropped.
+		if b.IsWine && b.WinePrefix != "" {
+			binaryPath = b.WinePrefix
+			neededLibraries = nil
+		}
+
 		result = append(result, softwaremodel.Binary{
 			Name:             b.Name,
 			Version:          b.Version,
@@ -353,6 +361,7 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 			CustomDataPaths:  dataDirs,
 			CustomConfigs:    configs,
 			IsWine:           b.IsWine,
+			WinePrefix:       b.WinePrefix,
 			LaunchType:       b.LaunchType,
 			SystemdUnitName:  b.SystemdUnitName,
 			SystemdUnitPath:  b.SystemdUnitPath,
