@@ -6,8 +6,8 @@ github.com/apparentlymart/go-cidr v1.1.0 h1:2mAhrMoF+nhXqxTzSZMUzDHkLjmIHC+Zzn4t
 github.com/apparentlymart/go-cidr v1.1.0/go.mod h1:EBcsNrHc3zQeuaeCeCtQruQm+n9/YjEn/vI25Lg7Gwc=
 github.com/cloud-barista/cm-grasshopper/smdl v0.1.1-0.20260601172714-d7ee71cf5d9c h1:Kux0Tu7vg6Otlqv4tTEmbX46uWRrIfAlhTFKoGv/gXQ=
 github.com/cloud-barista/cm-grasshopper/smdl v0.1.1-0.20260601172714-d7ee71cf5d9c/go.mod h1:5bC1RZTSTuQo1YdlOTf+H7Zz2x8TpQrOPpdnG/2y/Hk=
-github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260601172727-ffd81a132cae h1:Aid9d5xxPSc1KXAvXwysdZEDgbF4IRomkVCKd0IFVqE=
-github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260601172727-ffd81a132cae/go.mod h1:lX/KXLW7xhtQnEwhdVc31vQp0QFoRBEaPe6fHa0qWFs=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260602135237-5b61a8bb886f h1:0D7Qo87WdJ9lqZnyZx2cp7Iw80javxiJMl+ckAbSiAQ=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260602135237-5b61a8bb886f/go.mod h1:lX/KXLW7xhtQnEwhdVc31vQp0QFoRBEaPe6fHa0qWFs=
 github.com/cloud-barista/cm-model v0.0.18 h1:t52saRMcfZvCFU/RszdVuGi3VaAYfLaSwMOnWYi+ELs=
 github.com/cloud-barista/cm-model v0.0.18/go.mod h1:gSuMhQxD813KIdSvkp8uGptYOeyDik749sYcICZjhj8=
 github.com/cyphar/filepath-securejoin v0.6.1 h1:5CeZ1jPXEiYt3+Z6zqprSAgSWiggmpVyciv8syjIpVE=

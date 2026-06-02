@@ -343,7 +343,7 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 
 		result = append(result, softwaremodel.Binary{
 			Name:             b.Name,
-			Version:          "",
+			Version:          b.Version,
 			UIDs:             b.UIDs,
 			GIDs:             b.GIDs,
 			CmdlineSlice:     b.CmdlineSlice,
