@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -277,31 +276,6 @@ func extractCatalinaPaths(cmdline []string) (home string, base string) {
 	return home, base
 }
 
-// extractJavaHome derives the JDK/JRE home directory backing a JVM process. It
-// prefers the JAVA_HOME environment variable and falls back to deriving it from
-// the java executable path (<javaHome>/bin/java). Returns "" when not a JVM.
-func extractJavaHome(environ []string, exePath string) string {
-	for _, e := range environ {
-		if v, ok := strings.CutPrefix(e, "JAVA_HOME="); ok {
-			if v = strings.TrimSpace(v); v != "" {
-				return v
-			}
-		}
-	}
-
-	if exePath != "" {
-		switch filepath.Base(exePath) {
-		case "java", "java.exe":
-			binDir := filepath.Dir(exePath) // <home>/bin
-			if filepath.Base(binDir) == "bin" {
-				return filepath.Dir(binDir) // <home>
-			}
-		}
-	}
-
-	return ""
-}
-
 // convertToBinaries maps the raw collected legacy binaries (process-level info
 // gathered on the source host) into the refined software model consumed by the
 // migration tools. Launch provenance (systemd vs command) is carried through so
@@ -323,10 +297,12 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 		}
 
 		binaryPath := b.ExecutablePath
-		neededLibraries := append([]string{}, b.LibraryPaths...)
+		// Dependencies are already filtered to non-package-owned paths by the agent
+		// (package-provided runtimes are handled by package migration).
+		neededLibraries := append([]string{}, b.Dependencies...)
 		dataDirs := append([]string{}, b.DataDirs...)
 
-		// JVM application: derive the real install root and JDK dependency.
+		// JVM application: derive the real install root (catalina.home).
 		catalinaHome, catalinaBase := extractCatalinaPaths(b.CmdlineSlice)
 		if catalinaHome != "" {
 			binaryPath = catalinaHome
@@ -337,16 +313,11 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 			// Separate instance directory (multi-instance Tomcat) holds conf/webapps/logs.
 			dataDirs = appendUniquePath(dataDirs, catalinaBase)
 		}
-		if javaHome := extractJavaHome(b.Environ, b.ExecutablePath); javaHome != "" {
-			neededLibraries = appendUniquePath(neededLibraries, javaHome)
-		}
 
 		// Wine application: the WINEPREFIX bottle holds the app, registry and config,
-		// so it becomes the path to copy. The Wine runtime is installed on the target
-		// rather than copied, so host library paths are dropped.
+		// so it becomes the path to copy.
 		if b.IsWine && b.WinePrefix != "" {
 			binaryPath = b.WinePrefix
-			neededLibraries = nil
 		}
 
 		result = append(result, softwaremodel.Binary{
