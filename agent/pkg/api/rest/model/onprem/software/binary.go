@@ -19,6 +19,7 @@ type Binary struct {
 	Static           bool         `json:"static"`
 	Libraries        []string     `json:"libraries"`
 	LibraryPaths     []string     `json:"library_paths"`
+	Dependencies     []string     `json:"dependencies"` // non-package-owned runtime paths to copy
 	OpenFilePaths    []string     `json:"open_file_paths"`
 	ConfigFiles      []ConfigFile `json:"config_files"`
 	DataDirs         []string     `json:"data_dirs"`

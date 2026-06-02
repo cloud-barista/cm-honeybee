@@ -3,6 +3,7 @@ package software
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -104,6 +105,17 @@ func GetLegacySWs() ([]software.Binary, error) {
 			continue
 		}
 
+		isWine, winePrefix := detectWine(cmdSlice, envs, exe)
+
+		// Package-managed services are migrated as packages, not as legacy binaries.
+		// Skip a candidate whose representative install path is owned by an OS package
+		// (the app dir for JVM/Wine apps, otherwise the executable).
+		if isPackageOwned(representativeInstallPath(exe, cmdSlice, isWine, winePrefix)) {
+			logger.Println(logger.DEBUG, true,
+				fmt.Sprintf("LegacySW: skipping package-managed process: %s (pid %d)", name, p.Pid))
+			continue
+		}
+
 		binInfo, err := analyzeBinary(p)
 		if err != nil {
 			markUnavailable(p.Pid, "AnalyzeBinary", err)
@@ -126,7 +138,7 @@ func GetLegacySWs() ([]software.Binary, error) {
 
 		configFiles := extractConfigFiles(cmdSlice, openFiles)
 		dataDirs := detectDataDirs(openFiles)
-		isWine, winePrefix := detectWine(cmdSlice, envs, exe)
+		dependencies := collectDependencies(libPaths, envs, exe)
 		prov := getLaunchProvenance(p.Pid)
 		version := detectBinaryVersion(exe, cmdSlice, envs)
 
@@ -144,6 +156,7 @@ func GetLegacySWs() ([]software.Binary, error) {
 			Static:           isStatic,
 			Libraries:        libs,
 			LibraryPaths:     libPaths,
+			Dependencies:     dependencies,
 			OpenFilePaths:    openFiles,
 			ConfigFiles:      configFiles,
 			DataDirs:         dataDirs,
@@ -313,6 +326,71 @@ func getListenStatus(p *process.Process) (bool, string) {
 		}
 	}
 	return true, ""
+}
+
+// representativeInstallPath returns the path that best identifies the software for
+// package-ownership checks: the app directory for JVM (catalina.home) and Wine
+// (WINEPREFIX) apps, otherwise the executable. This avoids misclassifying e.g.
+// Tomcat (manually installed in /opt) just because it runs on a packaged JDK.
+func representativeInstallPath(exePath string, cmdSlice []string, isWine bool, winePrefix string) string {
+	if home := catalinaHomeFrom(cmdSlice); home != "" {
+		return home
+	}
+	if isWine && winePrefix != "" {
+		return winePrefix
+	}
+	return exePath
+}
+
+// isPackageOwned reports whether path is provided by an installed OS package
+// (dpkg on Debian/Ubuntu, rpm on RHEL/Fedora). Such software is migrated by the
+// package path, not as a legacy binary.
+func isPackageOwned(path string) bool {
+	if path == "" {
+		return false
+	}
+
+	real := path
+	if r, err := filepath.EvalSymlinks(path); err == nil {
+		real = r
+	}
+
+	if _, err := exec.LookPath("dpkg"); err == nil {
+		return exec.Command("dpkg", "-S", real).Run() == nil
+	}
+	if _, err := exec.LookPath("rpm"); err == nil {
+		return exec.Command("rpm", "-qf", real).Run() == nil
+	}
+	return false
+}
+
+// collectDependencies returns the non-package-owned runtime paths that must be
+// copied for a legacy binary: linked libraries outside any OS package, plus a
+// manually-installed JDK home. Package-provided runtimes (apt/dnf JDK, system
+// libs) are installed by package migration instead, so they are excluded.
+func collectDependencies(libPaths []string, environ []string, exePath string) []string {
+	var deps []string
+
+	for _, lp := range libPaths {
+		if lp != "" && !isPackageOwned(lp) {
+			deps = append(deps, lp)
+		}
+	}
+
+	if jh := javaHomeFrom(environ, exePath); jh != "" && !isPackageOwned(jh) {
+		found := false
+		for _, d := range deps {
+			if d == jh {
+				found = true
+				break
+			}
+		}
+		if !found {
+			deps = append(deps, jh)
+		}
+	}
+
+	return deps
 }
 
 // detectWine reports whether a process runs under Wine and its WINEPREFIX bottle.
