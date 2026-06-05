@@ -5204,6 +5204,35 @@ const docTemplate = `{
                 }
             }
         },
+        "kubernetes.Cluster": {
+            "type": "object",
+            "properties": {
+                "cni_plugin": {
+                    "description": "CNI plugin name (e.g., \"calico\", \"flannel\", \"cilium\")",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Cluster name (e.g., kubeadm ClusterConfiguration clusterName)",
+                    "type": "string"
+                },
+                "node_port_range": {
+                    "description": "NodePort range (e.g., \"30000-32767\")",
+                    "type": "string"
+                },
+                "pod_cidr": {
+                    "description": "Pod network CIDR (e.g., \"10.244.0.0/16\")",
+                    "type": "string"
+                },
+                "service_cidr": {
+                    "description": "Service network CIDR (e.g., \"10.96.0.0/12\")",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "Kubernetes version (e.g., \"1.29.3\")",
+                    "type": "string"
+                }
+            }
+        },
         "kubernetes.Helm": {
             "type": "object",
             "properties": {
@@ -5224,6 +5253,9 @@ const docTemplate = `{
         "kubernetes.Kubernetes": {
             "type": "object",
             "properties": {
+                "cluster": {
+                    "$ref": "#/definitions/kubernetes.Cluster"
+                },
                 "node_count": {
                     "$ref": "#/definitions/kubernetes.NodeCount"
                 },
@@ -6026,6 +6058,39 @@ const docTemplate = `{
                 }
             }
         },
+        "onpremisemodel.K8sClusterProperty": {
+            "type": "object",
+            "required": [
+                "name",
+                "version"
+            ],
+            "properties": {
+                "cniPlugin": {
+                    "description": "[Reference] CNI plugin name (e.g., \"calico\", \"flannel\", \"cilium\")",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "[Required] Cluster name",
+                    "type": "string"
+                },
+                "nodePortRange": {
+                    "description": "[Reference] NodePort range (e.g., \"30000-32767\")",
+                    "type": "string"
+                },
+                "podCIDR": {
+                    "description": "[Reference] Pod network CIDR (e.g., \"10.244.0.0/16\")",
+                    "type": "string"
+                },
+                "serviceCIDR": {
+                    "description": "[Reference] Service network CIDR (e.g., \"10.96.0.0/12\")",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "[Required] Kubernetes version (e.g., \"1.29.3\")",
+                    "type": "string"
+                }
+            }
+        },
         "onpremisemodel.MemoryProperty": {
             "type": "object",
             "required": [
@@ -6123,19 +6188,80 @@ const docTemplate = `{
                 }
             }
         },
+        "onpremisemodel.NodeProperty": {
+            "type": "object",
+            "properties": {
+                "cpu": {
+                    "$ref": "#/definitions/onpremisemodel.CpuProperty"
+                },
+                "dataDisks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.DiskProperty"
+                    }
+                },
+                "firewallTable": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.FirewallRuleProperty"
+                    }
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "interfaces": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.NetworkInterfaceProperty"
+                    }
+                },
+                "machineId": {
+                    "description": "Unique identifier for the node (e.g., UUID)",
+                    "type": "string"
+                },
+                "memory": {
+                    "$ref": "#/definitions/onpremisemodel.MemoryProperty"
+                },
+                "os": {
+                    "$ref": "#/definitions/onpremisemodel.OsProperty"
+                },
+                "role": {
+                    "description": "Node role (e.g., \"control-plane\", \"worker\", \"standalone\")",
+                    "type": "string",
+                    "example": "control-plane"
+                },
+                "rootDisk": {
+                    "$ref": "#/definitions/onpremisemodel.DiskProperty"
+                },
+                "routingTable": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.RouteProperty"
+                    }
+                }
+            }
+        },
         "onpremisemodel.OnpremInfra": {
             "type": "object",
             "required": [
-                "servers"
+                "nodes"
             ],
             "properties": {
+                "k8sCluster": {
+                    "description": "TODO: Extend to a general ClusterProperty if other orchestrators (e.g., OpenShift, Rancher) are needed.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/onpremisemodel.K8sClusterProperty"
+                        }
+                    ]
+                },
                 "network": {
                     "$ref": "#/definitions/onpremisemodel.NetworkProperty"
                 },
-                "servers": {
+                "nodes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/onpremisemodel.ServerProperty"
+                        "$ref": "#/definitions/onpremisemodel.NodeProperty"
                     }
                 }
             }
@@ -6226,54 +6352,6 @@ const docTemplate = `{
                 }
             }
         },
-        "onpremisemodel.ServerProperty": {
-            "type": "object",
-            "properties": {
-                "cpu": {
-                    "$ref": "#/definitions/onpremisemodel.CpuProperty"
-                },
-                "dataDisks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/onpremisemodel.DiskProperty"
-                    }
-                },
-                "firewallTable": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/onpremisemodel.FirewallRuleProperty"
-                    }
-                },
-                "hostname": {
-                    "type": "string"
-                },
-                "interfaces": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/onpremisemodel.NetworkInterfaceProperty"
-                    }
-                },
-                "machineId": {
-                    "description": "Unique identifier for the server (e.g., UUID)",
-                    "type": "string"
-                },
-                "memory": {
-                    "$ref": "#/definitions/onpremisemodel.MemoryProperty"
-                },
-                "os": {
-                    "$ref": "#/definitions/onpremisemodel.OsProperty"
-                },
-                "rootDisk": {
-                    "$ref": "#/definitions/onpremisemodel.DiskProperty"
-                },
-                "routingTable": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/onpremisemodel.RouteProperty"
-                    }
-                }
-            }
-        },
         "software.Binary": {
             "type": "object",
             "properties": {
@@ -6301,6 +6379,13 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "dependencies": {
+                    "description": "non-package-owned runtime paths to copy",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "environ": {
                     "type": "array",
                     "items": {
@@ -6318,6 +6403,10 @@ const docTemplate = `{
                 },
                 "is_wine": {
                     "type": "boolean"
+                },
+                "launch_type": {
+                    "description": "Launch provenance: how the process was started on this host.",
+                    "type": "string"
                 },
                 "libraries": {
                     "type": "array",
@@ -6343,8 +6432,24 @@ const docTemplate = `{
                 "pid": {
                     "type": "integer"
                 },
+                "pid_file": {
+                    "type": "string"
+                },
+                "service_type": {
+                    "description": "systemd Type= (\"simple\"|\"forking\"|...)",
+                    "type": "string"
+                },
                 "static": {
                     "type": "boolean"
+                },
+                "systemd_enabled": {
+                    "type": "boolean"
+                },
+                "systemd_unit_name": {
+                    "type": "string"
+                },
+                "systemd_unit_path": {
+                    "type": "string"
                 },
                 "uids": {
                     "type": "array",
@@ -6352,7 +6457,13 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "version": {
+                    "type": "string"
+                },
                 "wine_prefix": {
+                    "type": "string"
+                },
+                "working_directory": {
                     "type": "string"
                 }
             }
@@ -6558,6 +6669,10 @@ const docTemplate = `{
                 "is_wine": {
                     "type": "boolean"
                 },
+                "launch_type": {
+                    "description": "Launch provenance: how the software was started on the source host.",
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -6567,6 +6682,24 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "pid_file": {
+                    "description": "PIDFile= for forking services",
+                    "type": "string"
+                },
+                "service_type": {
+                    "description": "systemd Type= (\"simple\"|\"forking\"|...)",
+                    "type": "string"
+                },
+                "systemd_enabled": {
+                    "type": "boolean"
+                },
+                "systemd_unit_name": {
+                    "type": "string"
+                },
+                "systemd_unit_path": {
+                    "description": "source unit file path (to copy)",
+                    "type": "string"
+                },
                 "uids": {
                     "type": "array",
                     "items": {
@@ -6574,6 +6707,14 @@ const docTemplate = `{
                     }
                 },
                 "version": {
+                    "type": "string"
+                },
+                "wine_prefix": {
+                    "description": "WINEPREFIX bottle dir (Wine apps)",
+                    "type": "string"
+                },
+                "working_directory": {
+                    "description": "used to synthesize a unit",
                     "type": "string"
                 }
             }
@@ -6906,8 +7047,6 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -6924,8 +7063,6 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
-                "minDuration",
-                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

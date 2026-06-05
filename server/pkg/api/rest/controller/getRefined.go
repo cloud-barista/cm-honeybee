@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
@@ -9,15 +10,16 @@ import (
 
 	softwaremodel "github.com/cloud-barista/cm-grasshopper/smdl"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/kubernetes"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 	"github.com/docker/docker/api/types/container"
 	"github.com/jollaman999/utils/logger"
 
+	inframodel "github.com/cloud-barista/cm-beetle/imdl/on-premise-model"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
-	inframodel "github.com/cloud-barista/cm-model/infra/on-premise-model"
 	"github.com/labstack/echo/v4"
 )
 
@@ -67,7 +69,7 @@ func convertRouteToRefinedRoute(route *network.Route, gateway string) (*inframod
 	return &routeProperty, nil
 }
 
-func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, error) {
+func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.NodeProperty, error) {
 	var dataDisks []inframodel.DiskProperty
 
 	for _, dataDisk := range infraInfo.Compute.ComputeResource.DataDisk {
@@ -149,7 +151,7 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, 
 		})
 	}
 
-	refinedInfraInfo := inframodel.ServerProperty{
+	refinedInfraInfo := inframodel.NodeProperty{
 		Hostname:  infraInfo.Compute.OS.Node.Hostname,
 		MachineId: infraInfo.Compute.OS.Node.Machineid,
 		CPU: inframodel.CpuProperty{
@@ -190,6 +192,85 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.ServerProperty, 
 	}
 
 	return &refinedInfraInfo, nil
+}
+
+// tryGetKubernetesInfo returns the collected Kubernetes information of the
+// connection, or nil if the connection has no Kubernetes data. Unlike
+// doGetKubernetesInfo, missing data is not treated as an error because most
+// connections are not Kubernetes nodes.
+func tryGetKubernetesInfo(connID string) *kubernetes.Kubernetes {
+	savedKubernetesInfo, err := dao.SavedKubernetesInfoGet(connID)
+	if err != nil {
+		return nil
+	}
+
+	var kubernetesInfo kubernetes.Kubernetes
+	err = json.Unmarshal([]byte(savedKubernetesInfo.KubernetesData), &kubernetesInfo)
+	if err != nil {
+		logger.Println(logger.WARN, false, "Error occurred while parsing kubernetes information."+
+			" (ConnectionID = "+connID+")")
+		return nil
+	}
+
+	return &kubernetesInfo
+}
+
+// buildRefinedK8sInfo derives the node role map (machine-id → role) and the
+// refined cluster property from the collected Kubernetes information.
+func buildRefinedK8sInfo(k8sInfo *kubernetes.Kubernetes) (map[string]string, *inframodel.K8sClusterProperty) {
+	roles := make(map[string]string)
+	var nodeVersion string
+
+	for _, node := range k8sInfo.Nodes {
+		nodeInfo, ok := node.NodeInfo.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		if machineID, ok := nodeInfo["machineID"].(string); ok && machineID != "" {
+			roles[machineID] = string(node.Type)
+		}
+
+		if nodeVersion == "" {
+			if kubeletVersion, ok := nodeInfo["kubeletVersion"].(string); ok {
+				nodeVersion = strings.TrimPrefix(kubeletVersion, "v")
+			}
+		}
+	}
+
+	version := k8sInfo.Cluster.Version
+	if version == "" {
+		version = nodeVersion
+	}
+
+	name := k8sInfo.Cluster.Name
+	if name == "" {
+		name = "kubernetes" // kubeadm default cluster name
+	}
+
+	k8sCluster := &inframodel.K8sClusterProperty{
+		Name:          name,
+		Version:       version,
+		PodCIDR:       k8sInfo.Cluster.PodCIDR,
+		ServiceCIDR:   k8sInfo.Cluster.ServiceCIDR,
+		CNIPlugin:     k8sInfo.Cluster.CNIPlugin,
+		NodePortRange: k8sInfo.Cluster.NodePortRange,
+	}
+
+	return roles, k8sCluster
+}
+
+// applyRefinedK8sNodeRoles sets the role of each node by matching its machine
+// ID against the collected Kubernetes nodes. Nodes not belonging to the
+// cluster are marked as standalone.
+func applyRefinedK8sNodeRoles(nodes []inframodel.NodeProperty, roles map[string]string) {
+	for i := range nodes {
+		if role, ok := roles[nodes[i].MachineId]; ok {
+			nodes[i].Role = role
+		} else {
+			nodes[i].Role = "standalone"
+		}
+	}
 }
 
 func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, routes *[]network.Route, machineID *string) {
@@ -567,8 +648,16 @@ func GetInfraInfoRefined(c echo.Context) error {
 	var onpremiseInfraModel inframodel.OnpremiseInfraModel
 	var onpremiseInfra inframodel.OnpremInfra
 
-	onpremiseInfra.Servers = append(onpremiseInfra.Servers, *refinedInfraInfo)
+	onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
 	doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
+
+	// Reflect the Kubernetes cluster information and node roles if this
+	// connection is a node of a collected Kubernetes cluster.
+	if k8sInfo := tryGetKubernetesInfo(connID); k8sInfo != nil {
+		roles, k8sCluster := buildRefinedK8sInfo(k8sInfo)
+		onpremiseInfra.K8sCluster = k8sCluster
+		applyRefinedK8sNodeRoles(onpremiseInfra.Nodes, roles)
+	}
 
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
 
@@ -606,6 +695,7 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 
 	var onpremiseInfraModel inframodel.OnpremiseInfraModel
 	var onpremiseInfra inframodel.OnpremInfra
+	var k8sRoles map[string]string
 
 	for _, conn := range *list {
 		infraInfo, err := doGetInfraInfo(conn.ID)
@@ -616,8 +706,22 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
-		onpremiseInfra.Servers = append(onpremiseInfra.Servers, *refinedInfraInfo)
+		onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
 		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
+
+		// The Kubernetes cluster is collected once per source group, from the
+		// connection of a control plane node that holds the cluster data.
+		if k8sRoles == nil {
+			if k8sInfo := tryGetKubernetesInfo(conn.ID); k8sInfo != nil {
+				k8sRoles, onpremiseInfra.K8sCluster = buildRefinedK8sInfo(k8sInfo)
+			}
+		}
+	}
+
+	// Assign node roles after gathering all connections so that nodes
+	// appended before the cluster data was found are also covered.
+	if k8sRoles != nil {
+		applyRefinedK8sNodeRoles(onpremiseInfra.Nodes, k8sRoles)
 	}
 
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
