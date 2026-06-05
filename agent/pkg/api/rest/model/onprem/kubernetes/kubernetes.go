@@ -5,9 +5,20 @@ import (
 )
 
 type Kubernetes struct {
+	Cluster   Cluster                `json:"cluster"`
 	NodeCount NodeCount              `json:"node_count"`
 	Nodes     []Node                 `json:"nodes"`
 	Workloads map[string]interface{} `json:"workloads"`
+}
+
+// Cluster holds cluster-wide metadata used by the refined on-premise model.
+type Cluster struct {
+	Name          string `json:"name,omitempty"`            // Cluster name (e.g., kubeadm ClusterConfiguration clusterName)
+	Version       string `json:"version,omitempty"`         // Kubernetes version (e.g., "1.29.3")
+	PodCIDR       string `json:"pod_cidr,omitempty"`        // Pod network CIDR (e.g., "10.244.0.0/16")
+	ServiceCIDR   string `json:"service_cidr,omitempty"`    // Service network CIDR (e.g., "10.96.0.0/12")
+	CNIPlugin     string `json:"cni_plugin,omitempty"`      // CNI plugin name (e.g., "calico", "flannel", "cilium")
+	NodePortRange string `json:"node_port_range,omitempty"` // NodePort range (e.g., "30000-32767")
 }
 
 type NodeCount struct {

@@ -14,9 +14,17 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+// getKubeConfigPath prefers the KUBECONFIG environment variable and falls back
+// to the kubeadm admin config available on control plane nodes.
+func getKubeConfigPath() string {
+	if kubeConfigPath := os.Getenv("KUBECONFIG"); kubeConfigPath != "" {
+		return kubeConfigPath
+	}
+	return "/etc/kubernetes/admin.conf"
+}
+
 var (
-	//KubeConfigPath = os.Getenv("KUBECONFIG")
-	KubeConfigPath = "/etc/kubernetes/admin.conf"
+	KubeConfigPath = getKubeConfigPath()
 	settings       = cli.New()
 )
 

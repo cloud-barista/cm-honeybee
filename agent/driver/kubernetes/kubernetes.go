@@ -26,6 +26,11 @@ func GetKubernetesInfo() (*kubernetes.Kubernetes, error) {
 		return nil, err
 	}
 
+	i.Cluster, err = GetClusterInfo()
+	if err != nil {
+		return nil, err
+	}
+
 	i.Workloads, err = GetWorkloadInfo()
 	if err != nil {
 		return nil, err

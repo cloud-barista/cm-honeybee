@@ -2259,6 +2259,35 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Cluster": {
+            "type": "object",
+            "properties": {
+                "cni_plugin": {
+                    "description": "CNI plugin name (e.g., \"calico\", \"flannel\", \"cilium\")",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Cluster name (e.g., kubeadm ClusterConfiguration clusterName)",
+                    "type": "string"
+                },
+                "node_port_range": {
+                    "description": "NodePort range (e.g., \"30000-32767\")",
+                    "type": "string"
+                },
+                "pod_cidr": {
+                    "description": "Pod network CIDR (e.g., \"10.244.0.0/16\")",
+                    "type": "string"
+                },
+                "service_cidr": {
+                    "description": "Service network CIDR (e.g., \"10.96.0.0/12\")",
+                    "type": "string"
+                },
+                "version": {
+                    "description": "Kubernetes version (e.g., \"1.29.3\")",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Helm": {
             "type": "object",
             "properties": {
@@ -2279,6 +2308,9 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Kubernetes": {
             "type": "object",
             "properties": {
+                "cluster": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.Cluster"
+                },
                 "node_count": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_kubernetes.NodeCount"
                 },
@@ -2677,6 +2709,13 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "dependencies": {
+                    "description": "non-package-owned runtime paths to copy",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "environ": {
                     "type": "array",
                     "items": {
@@ -2694,6 +2733,10 @@ const docTemplate = `{
                 },
                 "is_wine": {
                     "type": "boolean"
+                },
+                "launch_type": {
+                    "description": "Launch provenance: how the process was started on this host.",
+                    "type": "string"
                 },
                 "libraries": {
                     "type": "array",
@@ -2719,8 +2762,24 @@ const docTemplate = `{
                 "pid": {
                     "type": "integer"
                 },
+                "pid_file": {
+                    "type": "string"
+                },
+                "service_type": {
+                    "description": "systemd Type= (\"simple\"|\"forking\"|...)",
+                    "type": "string"
+                },
                 "static": {
                     "type": "boolean"
+                },
+                "systemd_enabled": {
+                    "type": "boolean"
+                },
+                "systemd_unit_name": {
+                    "type": "string"
+                },
+                "systemd_unit_path": {
+                    "type": "string"
                 },
                 "uids": {
                     "type": "array",
@@ -2728,7 +2787,13 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "version": {
+                    "type": "string"
+                },
                 "wine_prefix": {
+                    "type": "string"
+                },
+                "working_directory": {
                     "type": "string"
                 }
             }
@@ -3486,6 +3551,36 @@ const docTemplate = `{
                 1048576,
                 524288,
                 2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
                 511
             ],
             "x-enum-comments": {
@@ -3505,6 +3600,21 @@ const docTemplate = `{
                 "ModeTemporary": "T: temporary file; Plan 9 only"
             },
             "x-enum-varnames": [
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm",
                 "ModeDir",
                 "ModeAppend",
                 "ModeExclusive",
@@ -3557,6 +3667,16 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -3573,6 +3693,16 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

@@ -10,3 +10,7 @@ vendor/
 *.log
 
 agent/data/
+
+# Go workspace (local build of server against local agent)
+go.work
+go.work.sum
