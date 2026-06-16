@@ -1,6 +1,6 @@
 SHELL = /bin/bash
 
-.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build linux windows run run_docker stop stop_docker clean help
+.PHONY: all dependency lint test race coverage coverhtml gofmt update swag swagger build linux linux-arm64 windows run run_docker stop stop_docker clean help
 
 all: build
 
@@ -51,6 +51,10 @@ build-only: ## Build binary files without running linter
 linux: ## Build binary files for Linux
 	@"$(MAKE)" -C ./agent linux
 	@"$(MAKE)" -C ./server linux
+
+linux-arm64: ## Build binary files for Linux (arm64)
+	@"$(MAKE)" -C ./agent linux-arm64
+	@"$(MAKE)" -C ./server linux-arm64
 
 windows: ## Build binary files for Windows
 	@"$(MAKE)" -C ./agent windows

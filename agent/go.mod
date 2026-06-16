@@ -1,6 +1,6 @@
 module github.com/cloud-barista/cm-honeybee/agent
 
-go 1.25.0
+go 1.26.2
 
 replace github.com/knqyf263/go-rpmdb v0.1.1 => ./go-rpmdb
 

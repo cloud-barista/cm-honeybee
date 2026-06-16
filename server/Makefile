@@ -8,7 +8,7 @@ GOPROXY_OPTION := GOPROXY=direct
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
 
-.PHONY: all milkyway dependency lint test race coverage coverhtml gofmt update swag swagger build build-only linux windows run run_docker stop stop_docker clean help
+.PHONY: all milkyway dependency lint test race coverage coverhtml gofmt update swag swagger build build-only linux linux-arm64 windows run run_docker stop stop_docker clean help
 
 all: build
 
@@ -109,6 +109,13 @@ build-only: swag ## Build the binary file without running linter
 linux: lint swag ## Build the binary file for Linux
 	@echo Building...
 	@cd cmd/${MODULE_NAME} && GOOS=linux CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
+	@git diff > .diff_last_build
+	@git rev-parse HEAD > .git_hash_last_build
+	@echo Build finished!
+
+linux-arm64: lint swag ## Build the binary file for Linux (arm64)
+	@echo Building...
+	@cd cmd/${MODULE_NAME} && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
 	@git diff > .diff_last_build
 	@git rev-parse HEAD > .git_hash_last_build
 	@echo Build finished!
