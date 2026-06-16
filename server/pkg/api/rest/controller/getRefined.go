@@ -215,32 +215,29 @@ func tryGetKubernetesInfo(connID string) *kubernetes.Kubernetes {
 	return &kubernetesInfo
 }
 
-// buildRefinedK8sInfo derives the node role map (machine-id → role) and the
-// refined cluster property from the collected Kubernetes information.
-func buildRefinedK8sInfo(k8sInfo *kubernetes.Kubernetes) (map[string]string, *inframodel.K8sClusterProperty) {
-	roles := make(map[string]string)
-	var nodeVersion string
-
-	for _, node := range k8sInfo.Nodes {
-		nodeInfo, ok := node.NodeInfo.(map[string]interface{})
-		if !ok {
-			continue
-		}
-
-		if machineID, ok := nodeInfo["machineID"].(string); ok && machineID != "" {
-			roles[machineID] = string(node.Type)
-		}
-
-		if nodeVersion == "" {
-			if kubeletVersion, ok := nodeInfo["kubeletVersion"].(string); ok {
-				nodeVersion = strings.TrimPrefix(kubeletVersion, "v")
-			}
-		}
+// k8sNodeInfoString reads a string field from a Kubernetes node's NodeInfo
+// (the raw status.nodeInfo map), returning "" when absent.
+func k8sNodeInfoString(nodeInfo interface{}, key string) string {
+	m, ok := nodeInfo.(map[string]interface{})
+	if !ok {
+		return ""
 	}
+	s, _ := m[key].(string)
+	return s
+}
 
+// buildK8sCluster builds the refined cluster property from the collected
+// Kubernetes information, falling back to a node's kubelet version when the
+// cluster version was not collected directly.
+func buildK8sCluster(k8sInfo *kubernetes.Kubernetes) *inframodel.K8sClusterProperty {
 	version := k8sInfo.Cluster.Version
 	if version == "" {
-		version = nodeVersion
+		for _, node := range k8sInfo.Nodes {
+			if kubeletVersion := k8sNodeInfoString(node.NodeInfo, "kubeletVersion"); kubeletVersion != "" {
+				version = strings.TrimPrefix(kubeletVersion, "v")
+				break
+			}
+		}
 	}
 
 	name := k8sInfo.Cluster.Name
@@ -248,7 +245,7 @@ func buildRefinedK8sInfo(k8sInfo *kubernetes.Kubernetes) (map[string]string, *in
 		name = "kubernetes" // kubeadm default cluster name
 	}
 
-	k8sCluster := &inframodel.K8sClusterProperty{
+	return &inframodel.K8sClusterProperty{
 		Name:          name,
 		Version:       version,
 		PodCIDR:       k8sInfo.Cluster.PodCIDR,
@@ -256,21 +253,69 @@ func buildRefinedK8sInfo(k8sInfo *kubernetes.Kubernetes) (map[string]string, *in
 		CNIPlugin:     k8sInfo.Cluster.CNIPlugin,
 		NodePortRange: k8sInfo.Cluster.NodePortRange,
 	}
-
-	return roles, k8sCluster
 }
 
-// applyRefinedK8sNodeRoles sets the role of each node by matching its machine
-// ID against the collected Kubernetes nodes. Nodes not belonging to the
+// buildNodeFromK8s maps a single Kubernetes node (enumerated via the cluster
+// API) into a refined NodeProperty. It is used for cluster nodes that have no
+// matching host-level (SSH) collection, so only the K8s-derived fields are
+// populated; node_spec sizes are collected in MiB and converted to GiB.
+func buildNodeFromK8s(node kubernetes.Node) inframodel.NodeProperty {
+	hostname, _ := node.Name.(string)
+
+	return inframodel.NodeProperty{
+		Hostname:  hostname,
+		MachineId: k8sNodeInfoString(node.NodeInfo, "machineID"),
+		Role:      string(node.Type),
+		CPU: inframodel.CpuProperty{
+			Architecture: k8sNodeInfoString(node.NodeInfo, "architecture"),
+			Threads:      uint32(node.NodeSpec.CPU),
+		},
+		Memory: inframodel.MemoryProperty{
+			TotalSize: uint64(node.NodeSpec.Memory / 1024), // MiB -> GiB
+		},
+		RootDisk: inframodel.DiskProperty{
+			TotalSize: uint64(node.NodeSpec.EphemeralStorage / 1024), // MiB -> GiB
+		},
+	}
+}
+
+// mergeK8sNodes reflects the collected Kubernetes cluster nodes into the refined
+// node list. A node whose machine ID matches a host-level (SSH) collected node
+// only contributes its role (the richer host data is kept); cluster nodes
+// without a host-level counterpart (e.g. workers reachable only via the API)
+// are appended from the K8s data. Host-level nodes that are not part of the
 // cluster are marked as standalone.
-func applyRefinedK8sNodeRoles(nodes []inframodel.NodeProperty, roles map[string]string) {
+func mergeK8sNodes(nodes []inframodel.NodeProperty, k8sInfo *kubernetes.Kubernetes) []inframodel.NodeProperty {
+	index := make(map[string]int)
 	for i := range nodes {
-		if role, ok := roles[nodes[i].MachineId]; ok {
-			nodes[i].Role = role
-		} else {
+		if nodes[i].MachineId != "" {
+			index[nodes[i].MachineId] = i
+		}
+	}
+
+	for _, node := range k8sInfo.Nodes {
+		machineID := k8sNodeInfoString(node.NodeInfo, "machineID")
+		if machineID != "" {
+			if i, ok := index[machineID]; ok {
+				nodes[i].Role = string(node.Type)
+				if nodes[i].CPU.Architecture == "" {
+					nodes[i].CPU.Architecture = k8sNodeInfoString(node.NodeInfo, "architecture")
+				}
+				continue
+			}
+		}
+
+		nodes = append(nodes, buildNodeFromK8s(node))
+	}
+
+	// Host-level nodes that did not match any cluster node are standalone.
+	for i := range nodes {
+		if nodes[i].Role == "" {
 			nodes[i].Role = "standalone"
 		}
 	}
+
+	return nodes
 }
 
 func doGetRefinedNetworkInfo(networkProperty *inframodel.NetworkProperty, routes *[]network.Route, machineID *string) {
@@ -651,12 +696,11 @@ func GetInfraInfoRefined(c echo.Context) error {
 	onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
 	doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
 
-	// Reflect the Kubernetes cluster information and node roles if this
-	// connection is a node of a collected Kubernetes cluster.
+	// Reflect the collected Kubernetes cluster: its metadata, the node roles,
+	// and any cluster nodes (e.g. workers) only visible through the API.
 	if k8sInfo := tryGetKubernetesInfo(connID); k8sInfo != nil {
-		roles, k8sCluster := buildRefinedK8sInfo(k8sInfo)
-		onpremiseInfra.K8sCluster = k8sCluster
-		applyRefinedK8sNodeRoles(onpremiseInfra.Nodes, roles)
+		onpremiseInfra.K8sCluster = buildK8sCluster(k8sInfo)
+		onpremiseInfra.Nodes = mergeK8sNodes(onpremiseInfra.Nodes, k8sInfo)
 	}
 
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
@@ -695,7 +739,7 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 
 	var onpremiseInfraModel inframodel.OnpremiseInfraModel
 	var onpremiseInfra inframodel.OnpremInfra
-	var k8sRoles map[string]string
+	var k8sInfo *kubernetes.Kubernetes
 
 	for _, conn := range *list {
 		infraInfo, err := doGetInfraInfo(conn.ID)
@@ -710,18 +754,18 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
 
 		// The Kubernetes cluster is collected once per source group, from the
-		// connection of a control plane node that holds the cluster data.
-		if k8sRoles == nil {
-			if k8sInfo := tryGetKubernetesInfo(conn.ID); k8sInfo != nil {
-				k8sRoles, onpremiseInfra.K8sCluster = buildRefinedK8sInfo(k8sInfo)
-			}
+		// connection of a control plane node whose kubeconfig enumerates the
+		// whole cluster.
+		if k8sInfo == nil {
+			k8sInfo = tryGetKubernetesInfo(conn.ID)
 		}
 	}
 
-	// Assign node roles after gathering all connections so that nodes
-	// appended before the cluster data was found are also covered.
-	if k8sRoles != nil {
-		applyRefinedK8sNodeRoles(onpremiseInfra.Nodes, k8sRoles)
+	// Reflect the cluster once all host-level nodes are gathered, so the merge
+	// covers nodes appended before the cluster data was found.
+	if k8sInfo != nil {
+		onpremiseInfra.K8sCluster = buildK8sCluster(k8sInfo)
+		onpremiseInfra.Nodes = mergeK8sNodes(onpremiseInfra.Nodes, k8sInfo)
 	}
 
 	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
