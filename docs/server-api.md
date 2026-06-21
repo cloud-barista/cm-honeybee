@@ -320,8 +320,8 @@ curl $BASE/source_group/$SG/infra
 
 ## 정제된 소스 모델
 
-이 엔드포인트들은 다운스트림 마이그레이션 도구가 사용하는 정규화 모델을 반환합니다. 아래 ETRI-INNO
-요청에 따라 정제 모델은 `github.com/cloud-barista/cm-beetle/imdl/on-premise-model`입니다.
+이 엔드포인트들은 다운스트림 마이그레이션 도구가 사용하는 정규화 모델을 반환합니다. 정제 모델은
+`github.com/cloud-barista/cm-beetle/imdl/on-premise-model`입니다.
 
 ```bash
 # 노드 1개
@@ -334,12 +334,11 @@ curl $BASE/source_group/$SG/connection_info/$CONN/software/refined
 curl $BASE/source_group/$SG/software/refined
 ```
 
-### 쿠버네티스 소스 모델 (ETRI 요청)
+### 쿠버네티스 소스 모델
 
 정제 인프라 모델은 소스 K8s 클러스터를 하나의 단위로 마이그레이션할 수 있도록 쿠버네티스 소스 정보를
-포함합니다. 이는 2026-06-05 ETRI-INNO 세미나에서 요청된 모델입니다
-("Honeybee에 소스 사용자 K8s 모델 API 제공 요청 (Refined)"). 구현 위치는
-`server/pkg/api/rest/controller/getRefined.go`이며 핵심은 다음과 같습니다.
+포함합니다. 별도의 `/kubernetes/refined` 엔드포인트는 없으며, K8s 정보는 `/infra/refined` 응답에
+함께 실립니다. 구현 위치는 `server/pkg/api/rest/controller/getRefined.go`이며 핵심은 다음과 같습니다.
 
 - **모델 출처 변경:** 더 이상 사용하지 않는 `cloud-barista/cm-model/infra/on-premise-model`에서
   `cloud-barista/cm-beetle/imdl/on-premise-model`로 전환(커밋 `a2f2b05`).

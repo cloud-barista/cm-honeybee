@@ -89,7 +89,7 @@ curl http://localhost:8082/honeybee-agent/kubernetes
 ```
 
 Server는 이 출력을 정제 소스 모델로 매핑합니다 —
-[Server API → 쿠버네티스 소스 모델](./server-api.md#쿠버네티스-소스-모델-etri-요청) 참고.
+[Server API → 쿠버네티스 소스 모델](./server-api.md#쿠버네티스-소스-모델) 참고.
 
 ---
 
