@@ -10,6 +10,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
 	"github.com/cloud-barista/cm-honeybee/server/lib/spider"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
+	"github.com/google/uuid"
 	"github.com/jollaman999/utils/logger"
 )
 
@@ -99,21 +100,35 @@ func encryptCredentialValues(in []model.KeyValue) ([]model.KeyValue, error) {
 	return out, nil
 }
 
-// spiderNamesForSourceGroup returns the deterministic spider Credential and
-// ConnectionConfig names tied to the given SourceGroup ID.
-func spiderNamesForSourceGroup(sgID string) (credName, connName string) {
-	return "honeybee-cred-" + sgID, "honeybee-conn-" + sgID
+// decryptCredentialValues reverses encryptCredentialValues: each base64-encoded,
+// RSA-encrypted value is decrypted back to plaintext. Keys are left untouched.
+func decryptCredentialValues(in []model.KeyValue) ([]model.KeyValue, error) {
+	if serverCommon.PrivKey == nil {
+		return nil, errors.New("server private key is not loaded; cannot decrypt CSP credential")
+	}
+	out := make([]model.KeyValue, 0, len(in))
+	for _, kv := range in {
+		raw, err := base64.StdEncoding.DecodeString(kv.Value)
+		if err != nil {
+			return nil, errors.New("failed to base64-decode credential value for key " + kv.Key + ": " + err.Error())
+		}
+		dec, err := rsautil.DecryptWithPrivateKey(raw, serverCommon.PrivKey)
+		if err != nil {
+			return nil, errors.New("failed to decrypt credential value for key " + kv.Key + ": " + err.Error())
+		}
+		out = append(out, model.KeyValue{Key: kv.Key, Value: string(dec)})
+	}
+	return out, nil
 }
 
-// registerCSPOnSpider provisions Credential + ConnectionConfig for a CSP
-// SourceGroup in cb-spider. On any failure it cleans up partially-created
-// spider resources.
+// validateAndCanonicalizeCSP validates the supplied plaintext credential and
+// region against the CSP metainfo and records canonical provider/region/credential
+// on sg. It performs NO writes to cb-spider — credentials are registered only
+// transiently at discovery/collection time (see withSpiderConnection).
 //
-// Returns plaintext credential KV (canonical-cased) — the caller is expected to
-// encrypt it before persisting to honeybee's DB.
-//
-// sg is mutated in-place to record the spider names, canonical provider/region.
-func registerCSPOnSpider(sg *model.SourceGroup, plainKV []model.KeyValue) error {
+// sg.Credential is left as canonical-cased plaintext; the caller must encrypt it
+// before persisting to honeybee's DB.
+func validateAndCanonicalizeCSP(sg *model.SourceGroup, plainKV []model.KeyValue) error {
 	provider, err := spider.NormalizeProvider(sg.ProviderName)
 	if err != nil {
 		return err
@@ -131,67 +146,79 @@ func registerCSPOnSpider(sg *model.SourceGroup, plainKV []model.KeyValue) error 
 		return errors.New("region_name is empty")
 	}
 
+	sg.ProviderName = provider
+	sg.RegionName = region
+	sg.Credential = canonicalKV
+	return nil
+}
+
+// withSpiderConnection registers a TEMPORARY cb-spider credential + region +
+// connection for the given CSP SourceGroup, invokes fn with the resulting
+// ConnectionName, and unregisters everything before returning. Credentials are
+// therefore never persisted in cb-spider — honeybee remains the only store
+// (encrypted at rest). Per-call unique names make concurrent calls collision-free.
+func withSpiderConnection(sg *model.SourceGroup, fn func(connName string) error) error {
+	if sg == nil || sg.Type != serverCommon.SourceGroupTypeCSP {
+		return errors.New("source group is not a csp-type group")
+	}
+	provider, err := spider.NormalizeProvider(sg.ProviderName)
+	if err != nil {
+		return err
+	}
+	region := strings.TrimSpace(sg.RegionName)
+	if region == "" {
+		return errors.New("source group has no region")
+	}
+
+	plainKV, err := decryptCredentialValues(sg.Credential)
+	if err != nil {
+		return err
+	}
+
 	driverName, err := spider.EnsureDriver(provider)
 	if err != nil {
 		return errors.New("failed to ensure driver: " + err.Error())
 	}
 
-	credName, connName := spiderNamesForSourceGroup(sg.ID)
+	token := uuid.New().String()
+	credName := "honeybee-tmp-cred-" + token
+	regionName := "honeybee-tmp-region-" + token
+	connName := "honeybee-tmp-conn-" + token
 
-	// Credential
-	if _, err := spider.RegisterCredential(credName, provider, toSpiderKV(canonicalKV)); err != nil {
-		return errors.New("failed to register credential on cb-spider: " + err.Error())
+	if _, err := spider.RegisterCredential(credName, provider, toSpiderKV(plainKV)); err != nil {
+		return errors.New("failed to register temporary credential on cb-spider: " + err.Error())
 	}
+	defer func() {
+		if err := spider.UnregisterCredential(credName); err != nil {
+			logger.Println(logger.WARN, true, "failed to unregister temporary spider credential: "+err.Error())
+		}
+	}()
 
-	// Region (some drivers reuse a single region row; we name it after the SG too)
-	regionEntry := credName // reuse name for simplicity; region row name is opaque
 	regionKV := []spider.KeyValue{{Key: "Region", Value: region}}
-	if _, err := spider.RegisterRegion(regionEntry, provider, regionKV); err != nil {
-		_ = spider.UnregisterCredential(credName)
-		return errors.New("failed to register region on cb-spider: " + err.Error())
+	if _, err := spider.RegisterRegion(regionName, provider, regionKV); err != nil {
+		return errors.New("failed to register temporary region on cb-spider: " + err.Error())
 	}
+	defer func() {
+		if err := spider.UnregisterRegion(regionName); err != nil {
+			logger.Println(logger.WARN, true, "failed to unregister temporary spider region: "+err.Error())
+		}
+	}()
 
-	// ConnectionConfig
 	cfg := spider.ConnectionConfigInfo{
 		ConfigName:     connName,
 		ProviderName:   provider,
 		DriverName:     driverName,
 		CredentialName: credName,
-		RegionName:     regionEntry,
+		RegionName:     regionName,
 	}
 	if _, err := spider.RegisterConnectionConfig(cfg); err != nil {
-		_ = spider.UnregisterRegion(regionEntry)
-		_ = spider.UnregisterCredential(credName)
-		return errors.New("failed to register connectionconfig on cb-spider: " + err.Error())
+		return errors.New("failed to register temporary connectionconfig on cb-spider: " + err.Error())
 	}
+	defer func() {
+		if err := spider.UnregisterConnectionConfig(connName); err != nil {
+			logger.Println(logger.WARN, true, "failed to unregister temporary spider connectionconfig: "+err.Error())
+		}
+	}()
 
-	// Mutate sg with canonical values + spider names. The caller writes them to DB.
-	sg.ProviderName = provider
-	sg.RegionName = region
-	sg.SpiderCredentialName = credName
-	sg.SpiderConnectionName = connName
-	// Canonical-cased KV stored on the SourceGroup. Caller encrypts.
-	sg.Credential = canonicalKV
-	return nil
-}
-
-// unregisterCSPFromSpider removes the spider resources tied to the SourceGroup.
-// Failures are logged but do not block deletion of the local SourceGroup.
-func unregisterCSPFromSpider(sg *model.SourceGroup) {
-	if sg == nil || sg.Type != serverCommon.SourceGroupTypeCSP {
-		return
-	}
-	if sg.SpiderConnectionName != "" {
-		if err := spider.UnregisterConnectionConfig(sg.SpiderConnectionName); err != nil {
-			logger.Println(logger.WARN, true, "failed to unregister spider connectionconfig: "+err.Error())
-		}
-	}
-	if sg.SpiderCredentialName != "" {
-		if err := spider.UnregisterRegion(sg.SpiderCredentialName); err != nil {
-			logger.Println(logger.WARN, true, "failed to unregister spider region: "+err.Error())
-		}
-		if err := spider.UnregisterCredential(sg.SpiderCredentialName); err != nil {
-			logger.Println(logger.WARN, true, "failed to unregister spider credential: "+err.Error())
-		}
-	}
+	return fn(connName)
 }

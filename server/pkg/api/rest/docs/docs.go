@@ -4168,16 +4168,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "provider_name": {
-                    "description": "CSP fields — populated only when Type == \"csp\".",
+                    "description": "CSP fields — populated only when Type == \"csp\".\nCredential is stored RSA-encrypted at rest. It is decrypted on demand and\nregistered to cb-spider only transiently (per discovery/collection call);\nhoneybee is the single source of truth, so no spider connection name is kept.",
                     "type": "string"
                 },
                 "region_name": {
-                    "type": "string"
-                },
-                "spider_connection_name": {
-                    "type": "string"
-                },
-                "spider_credential_name": {
                     "type": "string"
                 },
                 "target_info": {
@@ -4212,9 +4206,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "region_name": {
-                    "type": "string"
-                },
-                "spider_connection_name": {
                     "type": "string"
                 },
                 "type": {
@@ -7047,6 +7038,8 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -7063,6 +7056,8 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

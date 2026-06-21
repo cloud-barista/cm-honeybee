@@ -40,16 +40,20 @@ func DiscoverSourceGroupResources(c echo.Context) error {
 	if sg.Type != serverCommon.SourceGroupTypeCSP {
 		return common.ReturnErrorMsg(c, "discovery is only supported for csp-type source groups.")
 	}
-	if sg.SpiderConnectionName == "" {
-		return common.ReturnErrorMsg(c, "source group is not registered with cb-spider.")
-	}
 
 	resourceType := strings.ToLower(strings.TrimSpace(c.QueryParam("resource_type")))
 	if resourceType == "" {
 		return common.ReturnErrorMsg(c, "resource_type query is required (vm | k8s | object_storage).")
 	}
 
-	items, err := discoverByType(sg.SpiderConnectionName, resourceType)
+	// Register a temporary cb-spider connection for the duration of the discovery
+	// call only — credentials are never persisted in cb-spider.
+	var items []model.DiscoveredResource
+	err = withSpiderConnection(sg, func(connName string) error {
+		var derr error
+		items, derr = discoverByType(connName, resourceType)
+		return derr
+	})
 	if err != nil {
 		return common.ReturnInternalError(c, err, "discovery failed")
 	}

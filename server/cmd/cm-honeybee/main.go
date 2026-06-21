@@ -85,6 +85,18 @@ func init() {
 		logger.Panicln(logger.ERROR, true, "error occurred while reading public key")
 	}
 
+	// The private key is required to decrypt secrets stored encrypted at rest
+	// (CSP credentials). It is optional for SSH-only deployments, so a missing or
+	// unreadable key is logged rather than fatal — CSP features report it on use.
+	if fileutil.IsExist(privateKeyPath) {
+		common.PrivKey, err = rsautil.ReadPrivateKey(privateKeyPath)
+		if err != nil {
+			logger.Println(logger.WARN, true, "error occurred while reading private key; CSP credential decryption will be unavailable: "+err.Error())
+		}
+	} else {
+		logger.Println(logger.WARN, true, "private key not found ("+privateKeyPath+"); CSP credential decryption will be unavailable")
+	}
+
 	controller.OkMessage.Message = "CM-Honeybee API server is ready"
 	controller.IsReady = true
 

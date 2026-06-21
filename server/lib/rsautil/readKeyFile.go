@@ -18,3 +18,17 @@ func ReadPublicKey(publicKeyFilePath string) (*rsa.PublicKey, error) {
 
 	return pubKey, nil
 }
+
+func ReadPrivateKey(privateKeyFilePath string) (*rsa.PrivateKey, error) {
+	bytes, err := os.ReadFile(privateKeyFilePath)
+	if err != nil {
+		return nil, err
+	}
+
+	privKey, err := BytesToPrivateKey(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return privKey, nil
+}

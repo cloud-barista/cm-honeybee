@@ -46,6 +46,21 @@ func PublicKeyToBytes(pub *rsa.PublicKey) ([]byte, error) {
 	return pubBytes, nil
 }
 
+// BytesToPrivateKey bytes to private key (PKCS#1, matching PrivateKeyToBytes)
+func BytesToPrivateKey(priv []byte) (*rsa.PrivateKey, error) {
+	block, _ := pem.Decode(priv)
+	if block == nil {
+		return nil, errors.New("failed to decode PEM block containing private key")
+	}
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return key, nil
+}
+
 // BytesToPublicKey bytes to public key
 func BytesToPublicKey(pub []byte) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(pub)
@@ -93,4 +108,38 @@ func EncryptWithPublicKey(msg []byte, pub *rsa.PublicKey) ([]byte, error) {
 	}
 
 	return encryptedData.Bytes(), nil
+}
+
+// DecryptWithPrivateKey decrypts data with private key. It mirrors the chunked
+// OAEP scheme used by EncryptWithPublicKey: ciphertext is a concatenation of
+// fixed-size blocks (each priv.Size() bytes).
+func DecryptWithPrivateKey(ciphertext []byte, priv *rsa.PrivateKey) ([]byte, error) {
+	hash := sha512.New()
+
+	keySize := priv.Size()
+
+	var decryptedData bytes.Buffer
+	offset := 0
+
+	for offset < len(ciphertext) {
+		end := offset + keySize
+		if end > len(ciphertext) {
+			end = len(ciphertext)
+		}
+
+		chunk := ciphertext[offset:end]
+		plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, priv, chunk, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = decryptedData.Write(plaintext)
+		if err != nil {
+			return nil, err
+		}
+
+		offset = end
+	}
+
+	return decryptedData.Bytes(), nil
 }

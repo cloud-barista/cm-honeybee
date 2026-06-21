@@ -10,6 +10,7 @@ import (
 
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
+	"github.com/cloud-barista/cm-honeybee/server/lib/spider"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/google/uuid"
@@ -72,8 +73,6 @@ func doDeleteSourceGroup(sourceGroupID string) error {
 		}
 	}
 
-	unregisterCSPFromSpider(sourceGroup)
-
 	err = dao.SourceGroupDelete(sourceGroup)
 	if err != nil {
 		return err
@@ -129,13 +128,15 @@ func CreateSourceGroup(c echo.Context) error {
 	if sgType == serverCommon.SourceGroupTypeCSP {
 		sourceGroup.ProviderName = createSourceGroupReq.ProviderName
 		sourceGroup.RegionName = createSourceGroupReq.RegionName
-		if err := registerCSPOnSpider(sourceGroup, createSourceGroupReq.Credential); err != nil {
+		// Validate against CSP metainfo and record canonical values. No cb-spider
+		// writes happen here — credentials are registered only transiently at
+		// discovery/collection time (see withSpiderConnection).
+		if err := validateAndCanonicalizeCSP(sourceGroup, createSourceGroupReq.Credential); err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
-		// Encrypt credential values before persisting.
+		// Encrypt credential values before persisting (honeybee is the only store).
 		encrypted, encErr := encryptCredentialValues(sourceGroup.Credential)
 		if encErr != nil {
-			unregisterCSPFromSpider(sourceGroup)
 			return common.ReturnErrorMsg(c, encErr.Error())
 		}
 		sourceGroup.Credential = encrypted
@@ -149,7 +150,6 @@ func CreateSourceGroup(c echo.Context) error {
 				", Error:" + err.Error() + ")"
 			logger.Println(logger.ERROR, true, errMsg)
 
-			unregisterCSPFromSpider(sourceGroup)
 			return common.ReturnErrorMsg(c, errMsg)
 		}
 
@@ -158,7 +158,6 @@ func CreateSourceGroup(c echo.Context) error {
 
 	sourceGroup, err = dao.SourceGroupRegister(sourceGroup)
 	if err != nil {
-		unregisterCSPFromSpider(sourceGroup)
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
@@ -169,7 +168,6 @@ func CreateSourceGroup(c echo.Context) error {
 		Type:                      sourceGroup.Type,
 		ProviderName:              sourceGroup.ProviderName,
 		RegionName:                sourceGroup.RegionName,
-		SpiderConnectionName:      sourceGroup.SpiderConnectionName,
 		ConnectionInfoStatusCount: model.ConnectionInfoStatusCount{},
 	}
 
@@ -255,7 +253,6 @@ func GetSourceGroup(c echo.Context) error {
 	sourceGroupRes.Type = sourceGroup.Type
 	sourceGroupRes.ProviderName = sourceGroup.ProviderName
 	sourceGroupRes.RegionName = sourceGroup.RegionName
-	sourceGroupRes.SpiderConnectionName = sourceGroup.SpiderConnectionName
 
 	connectionInfo := &model.ConnectionInfo{
 		SourceGroupID: sourceGroup.ID,
@@ -326,13 +323,12 @@ func ListSourceGroup(c echo.Context) error {
 		}
 
 		var sourceGroupRes = model.SourceGroupRes{
-			ID:                   sg.ID,
-			Name:                 sg.Name,
-			Description:          sg.Description,
-			Type:                 sg.Type,
-			ProviderName:         sg.ProviderName,
-			RegionName:           sg.RegionName,
-			SpiderConnectionName: sg.SpiderConnectionName,
+			ID:           sg.ID,
+			Name:         sg.Name,
+			Description:  sg.Description,
+			Type:         sg.Type,
+			ProviderName: sg.ProviderName,
+			RegionName:   sg.RegionName,
 		}
 
 		for _, ci := range *connectionInfos {
@@ -405,34 +401,44 @@ func UpdateSourceGroup(c echo.Context) error {
 		oldSourceGroup.Description = updateSourceGroupReq.Description
 	}
 
-	// CSP-only: re-register region/credential on cb-spider when changed.
+	// CSP-only: validate & persist region/credential changes. No cb-spider writes —
+	// credentials are registered only transiently at discovery/collection time.
 	if oldSourceGroup.Type == serverCommon.SourceGroupTypeCSP &&
 		(updateSourceGroupReq.RegionName != "" || len(updateSourceGroupReq.Credential) > 0) {
 
-		newRegion := updateSourceGroupReq.RegionName
-		if newRegion == "" {
-			newRegion = oldSourceGroup.RegionName
-		}
-		newKV := updateSourceGroupReq.Credential
-		if len(newKV) == 0 {
-			// No KV change — keep existing canonical KV (still encrypted in DB; we'd
-			// need to decrypt to re-register, which we explicitly avoid). Reject the
-			// region-only update path for now.
-			return common.ReturnErrorMsg(c,
-				"region change requires re-supplying credential (RSA-encrypted values cannot be reused)")
+		if updateSourceGroupReq.RegionName != "" {
+			oldSourceGroup.RegionName = updateSourceGroupReq.RegionName
 		}
 
-		// Best-effort: tear down spider state, then re-register.
-		unregisterCSPFromSpider(oldSourceGroup)
-		oldSourceGroup.RegionName = newRegion
-		if err := registerCSPOnSpider(oldSourceGroup, newKV); err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
+		if len(updateSourceGroupReq.Credential) > 0 {
+			// New credential supplied: validate keys + region, then re-encrypt. The
+			// stored (encrypted) credential never needs to be decrypted here.
+			if err := validateAndCanonicalizeCSP(oldSourceGroup, updateSourceGroupReq.Credential); err != nil {
+				return common.ReturnErrorMsg(c, err.Error())
+			}
+			encrypted, encErr := encryptCredentialValues(oldSourceGroup.Credential)
+			if encErr != nil {
+				return common.ReturnErrorMsg(c, encErr.Error())
+			}
+			oldSourceGroup.Credential = encrypted
+		} else {
+			// Region-only change: validate the region against metainfo without
+			// touching the stored credential (no re-supply required).
+			provider, err := spider.NormalizeProvider(oldSourceGroup.ProviderName)
+			if err != nil {
+				return common.ReturnErrorMsg(c, err.Error())
+			}
+			meta, err := spider.GetCloudOSMetaInfo(provider)
+			if err != nil {
+				return common.ReturnErrorMsg(c, "failed to load CSP metainfo: "+err.Error())
+			}
+			region := normalizeRegion(meta, oldSourceGroup.RegionName)
+			if region == "" {
+				return common.ReturnErrorMsg(c, "region_name is empty")
+			}
+			oldSourceGroup.ProviderName = provider
+			oldSourceGroup.RegionName = region
 		}
-		encrypted, encErr := encryptCredentialValues(oldSourceGroup.Credential)
-		if encErr != nil {
-			return common.ReturnErrorMsg(c, encErr.Error())
-		}
-		oldSourceGroup.Credential = encrypted
 	}
 
 	err = dao.SourceGroupUpdate(oldSourceGroup)

@@ -57,11 +57,12 @@ type SourceGroup struct {
 	Type string `gorm:"column:type;default:ssh" json:"type"`
 
 	// CSP fields — populated only when Type == "csp".
-	ProviderName         string       `gorm:"column:provider_name" json:"provider_name,omitempty"`
-	RegionName           string       `gorm:"column:region_name" json:"region_name,omitempty"`
-	Credential           KeyValueList `gorm:"column:credential" json:"credential,omitempty"`
-	SpiderCredentialName string       `gorm:"column:spider_credential_name" json:"spider_credential_name,omitempty"`
-	SpiderConnectionName string       `gorm:"column:spider_connection_name" json:"spider_connection_name,omitempty"`
+	// Credential is stored RSA-encrypted at rest. It is decrypted on demand and
+	// registered to cb-spider only transiently (per discovery/collection call);
+	// honeybee is the single source of truth, so no spider connection name is kept.
+	ProviderName string       `gorm:"column:provider_name" json:"provider_name,omitempty"`
+	RegionName   string       `gorm:"column:region_name" json:"region_name,omitempty"`
+	Credential   KeyValueList `gorm:"column:credential" json:"credential,omitempty"`
 }
 
 type CreateSourceGroupReq struct {
@@ -100,7 +101,6 @@ type SourceGroupRes struct {
 	Type                      string                    `json:"type"`
 	ProviderName              string                    `json:"provider_name,omitempty"`
 	RegionName                string                    `json:"region_name,omitempty"`
-	SpiderConnectionName      string                    `json:"spider_connection_name,omitempty"`
 	ConnectionInfoStatusCount ConnectionInfoStatusCount `json:"connection_info_status_count"`
 }
 

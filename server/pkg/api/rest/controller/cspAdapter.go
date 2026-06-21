@@ -147,33 +147,34 @@ func upsertSavedData(connID string, payload any) error {
 // refreshCSPConnection contacts cb-spider for the resource described by ci and
 // stores the adapted result in the relevant Saved*Info table.
 func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
-	if sg.SpiderConnectionName == "" {
-		return errors.New("source group is not registered with cb-spider")
-	}
 	if ci.ResourceID == "" {
 		return errors.New("resource_id is empty")
 	}
 
-	switch ci.ResourceType {
-	case "vm":
-		vm, err := spider.GetVM(sg.SpiderConnectionName, ci.ResourceID)
-		if err != nil {
-			return err
+	// Register a temporary cb-spider connection for the duration of this call only —
+	// credentials are never persisted in cb-spider.
+	return withSpiderConnection(sg, func(connName string) error {
+		switch ci.ResourceType {
+		case "vm":
+			vm, err := spider.GetVM(connName, ci.ResourceID)
+			if err != nil {
+				return err
+			}
+			return upsertSavedInfra(ci.ID, vmInfoToInfra(vm))
+		case "k8s":
+			cl, err := spider.GetCluster(connName, ci.ResourceID)
+			if err != nil {
+				return err
+			}
+			return upsertSavedK8s(ci.ID, clusterInfoToK8s(cl))
+		case "object_storage":
+			b, err := spider.GetS3BucketLocation(connName, ci.ResourceID)
+			if err != nil {
+				return err
+			}
+			return upsertSavedData(ci.ID, bucketToData(b))
+		default:
+			return errors.New("unsupported resource_type: " + ci.ResourceType)
 		}
-		return upsertSavedInfra(ci.ID, vmInfoToInfra(vm))
-	case "k8s":
-		cl, err := spider.GetCluster(sg.SpiderConnectionName, ci.ResourceID)
-		if err != nil {
-			return err
-		}
-		return upsertSavedK8s(ci.ID, clusterInfoToK8s(cl))
-	case "object_storage":
-		b, err := spider.GetS3BucketLocation(sg.SpiderConnectionName, ci.ResourceID)
-		if err != nil {
-			return err
-		}
-		return upsertSavedData(ci.ID, bucketToData(b))
-	default:
-		return errors.New("unsupported resource_type: " + ci.ResourceType)
-	}
+	})
 }
