@@ -6426,6 +6426,13 @@ const docTemplate = `{
                 "pid_file": {
                     "type": "string"
                 },
+                "required_packages": {
+                    "description": "OS packages providing the linked libs the target must install",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "service_type": {
                     "description": "systemd Type= (\"simple\"|\"forking\"|...)",
                     "type": "string"
@@ -6676,6 +6683,13 @@ const docTemplate = `{
                 "pid_file": {
                     "description": "PIDFile= for forking services",
                     "type": "string"
+                },
+                "required_packages": {
+                    "description": "OS packages the target must install (package-provided linked libs)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "service_type": {
                     "description": "systemd Type= (\"simple\"|\"forking\"|...)",
@@ -7030,16 +7044,6 @@ const docTemplate = `{
         "time.Duration": {
             "type": "integer",
             "enum": [
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -7048,16 +7052,6 @@ const docTemplate = `{
                 3600000000000
             ],
             "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

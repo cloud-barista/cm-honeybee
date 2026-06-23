@@ -3074,6 +3074,11 @@ definitions:
         type: integer
       pid_file:
         type: string
+      required_packages:
+        description: OS packages providing the linked libs the target must install
+        items:
+          type: string
+        type: array
       service_type:
         description: systemd Type= ("simple"|"forking"|...)
         type: string
@@ -3237,6 +3242,12 @@ definitions:
       pid_file:
         description: PIDFile= for forking services
         type: string
+      required_packages:
+        description: OS packages the target must install (package-provided linked
+          libs)
+        items:
+          type: string
+        type: array
       service_type:
         description: systemd Type= ("simple"|"forking"|...)
         type: string
@@ -3497,16 +3508,6 @@ definitions:
     type: object
   time.Duration:
     enum:
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -3515,16 +3516,6 @@ definitions:
     - 3600000000000
     type: integer
     x-enum-varnames:
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - minDuration
-    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
