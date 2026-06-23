@@ -389,6 +389,57 @@ func appendUniquePath(paths []string, p string) []string {
 	return append(paths, p)
 }
 
+// appRefinement is the migration target re-derived for a recognized application:
+// a friendly name, the install root to copy, and any extra data directories. Empty
+// fields leave the corresponding raw value (process name / executable) unchanged.
+type appRefinement struct {
+	name       string
+	binaryPath string
+	dataDirs   []string
+}
+
+// appRefiner inspects a raw collected binary and, if it recognizes the
+// application it belongs to, returns how to refine it (ok == true).
+type appRefiner func(b software.Binary) (appRefinement, bool)
+
+// appRefiners is the ordered list of application detectors. The first one that
+// matches a process wins. Support a new interpreter-hosted application (e.g. a
+// Python/Node service) by adding a refiner here — convertToBinaries needs no
+// change.
+var appRefiners = []appRefiner{
+	tomcatRefiner,
+	wineRefiner,
+}
+
+// tomcatRefiner recognizes a Tomcat instance (raw process name is just "java")
+// from its catalina.home/base, and migrates the install dir. A separate
+// catalina.base instance dir (multi-instance Tomcat) is carried as a data dir.
+func tomcatRefiner(b software.Binary) (appRefinement, bool) {
+	home, base := extractCatalinaPaths(b.CmdlineSlice)
+	if home == "" && base == "" {
+		return appRefinement{}, false
+	}
+
+	root := home
+	if root == "" {
+		root = base
+	}
+	r := appRefinement{name: "tomcat", binaryPath: root}
+	if base != "" && base != home {
+		r.dataDirs = []string{base}
+	}
+	return r, true
+}
+
+// wineRefiner migrates a Wine application by its WINEPREFIX bottle, which holds
+// the app, registry and config.
+func wineRefiner(b software.Binary) (appRefinement, bool) {
+	if b.IsWine && b.WinePrefix != "" {
+		return appRefinement{binaryPath: b.WinePrefix}, true
+	}
+	return appRefinement{}, false
+}
+
 // extractCatalinaPaths derives Tomcat's install (catalina.home) and instance
 // (catalina.base) directories from a JVM process command line. Either may be "".
 func extractCatalinaPaths(cmdline []string) (home string, base string) {
@@ -407,10 +458,11 @@ func extractCatalinaPaths(cmdline []string) (home string, base string) {
 // migration tools. Launch provenance (systemd vs command) is carried through so
 // the target can faithfully reproduce how the software was started.
 //
-// For JVM applications (e.g. Tomcat) the install root and runtime dependency are
-// derived rather than left as the raw executable: BinaryPath becomes the Tomcat
-// install dir (catalina.home), the JDK home is added as a needed dependency, and a
-// distinct catalina.base instance dir (if any) is carried as a data directory.
+// When a process is an interpreter/runtime hosting an application (e.g. a JVM
+// running Tomcat, or Wine), the raw executable is not the right migration target.
+// The per-application refiners in appRefiners re-derive the real install root,
+// a recognizable name and any extra data directories; convertToBinaries itself
+// stays generic. The runtime (JDK, Wine, ...) is carried as a dependency.
 func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 	var result []softwaremodel.Binary
 
@@ -423,32 +475,30 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 		}
 
 		binaryPath := b.ExecutablePath
+		name := b.Name
 		// Dependencies are already filtered to non-package-owned paths by the agent
 		// (package-provided runtimes are handled by package migration).
 		neededLibraries := append([]string{}, b.Dependencies...)
 		dataDirs := append([]string{}, b.DataDirs...)
 
-		// JVM application: derive the real install root (catalina.home). The raw
-		// process name for a Tomcat instance is just "java", so rename it to the
-		// recognizable service name once we know it is Tomcat.
-		name := b.Name
-		catalinaHome, catalinaBase := extractCatalinaPaths(b.CmdlineSlice)
-		if catalinaHome != "" {
-			binaryPath = catalinaHome
-			name = "tomcat"
-		} else if catalinaBase != "" {
-			binaryPath = catalinaBase
-			name = "tomcat"
-		}
-		if catalinaBase != "" && catalinaBase != catalinaHome {
-			// Separate instance directory (multi-instance Tomcat) holds conf/webapps/logs.
-			dataDirs = appendUniquePath(dataDirs, catalinaBase)
-		}
-
-		// Wine application: the WINEPREFIX bottle holds the app, registry and config,
-		// so it becomes the path to copy.
-		if b.IsWine && b.WinePrefix != "" {
-			binaryPath = b.WinePrefix
+		// Apply the first application refiner that recognizes this process, so an
+		// interpreter-hosted app (Tomcat, Wine, ...) is migrated by its install
+		// root rather than the interpreter binary.
+		for _, refine := range appRefiners {
+			r, ok := refine(b)
+			if !ok {
+				continue
+			}
+			if r.name != "" {
+				name = r.name
+			}
+			if r.binaryPath != "" {
+				binaryPath = r.binaryPath
+			}
+			for _, d := range r.dataDirs {
+				dataDirs = appendUniquePath(dataDirs, d)
+			}
+			break
 		}
 
 		result = append(result, softwaremodel.Binary{
