@@ -13,7 +13,7 @@ require (
 
 require (
 	github.com/cloud-barista/cm-beetle/imdl v0.1.6
-	github.com/cloud-barista/cm-grasshopper/smdl v0.1.1-0.20260602160332-9a020823f2f8
+	github.com/cloud-barista/cm-grasshopper/smdl v0.1.1
 	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260605103945-1d73b05bea43
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/glebarez/sqlite v1.11.0

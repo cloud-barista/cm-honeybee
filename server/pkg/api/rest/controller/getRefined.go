@@ -428,12 +428,17 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 		neededLibraries := append([]string{}, b.Dependencies...)
 		dataDirs := append([]string{}, b.DataDirs...)
 
-		// JVM application: derive the real install root (catalina.home).
+		// JVM application: derive the real install root (catalina.home). The raw
+		// process name for a Tomcat instance is just "java", so rename it to the
+		// recognizable service name once we know it is Tomcat.
+		name := b.Name
 		catalinaHome, catalinaBase := extractCatalinaPaths(b.CmdlineSlice)
 		if catalinaHome != "" {
 			binaryPath = catalinaHome
+			name = "tomcat"
 		} else if catalinaBase != "" {
 			binaryPath = catalinaBase
+			name = "tomcat"
 		}
 		if catalinaBase != "" && catalinaBase != catalinaHome {
 			// Separate instance directory (multi-instance Tomcat) holds conf/webapps/logs.
@@ -447,13 +452,14 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 		}
 
 		result = append(result, softwaremodel.Binary{
-			Name:             b.Name,
+			Name:             name,
 			Version:          b.Version,
 			UIDs:             b.UIDs,
 			GIDs:             b.GIDs,
 			CmdlineSlice:     b.CmdlineSlice,
 			Envs:             b.Environ,
 			NeededLibraries:  neededLibraries,
+			RequiredPackages: b.RequiredPackages,
 			BinaryPath:       binaryPath,
 			CustomDataPaths:  dataDirs,
 			CustomConfigs:    configs,
