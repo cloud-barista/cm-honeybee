@@ -2765,6 +2765,13 @@ const docTemplate = `{
                 "pid_file": {
                     "type": "string"
                 },
+                "required_packages": {
+                    "description": "OS packages providing the linked libs the target must install",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "service_type": {
                     "description": "systemd Type= (\"simple\"|\"forking\"|...)",
                     "type": "string"
@@ -3330,11 +3337,7 @@ const docTemplate = `{
             "properties": {
                 "mode": {
                     "description": "Mode of the tmpfs upon creation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/os.FileMode"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "options": {
                     "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
@@ -3519,74 +3522,6 @@ const docTemplate = `{
                 }
             }
         },
-        "os.FileMode": {
-            "type": "integer",
-            "enum": [
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511
-            ],
-            "x-enum-comments": {
-                "ModeAppend": "a: append-only",
-                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
-                "ModeDevice": "D: device file",
-                "ModeDir": "d: is a directory",
-                "ModeExclusive": "l: exclusive use",
-                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
-                "ModeNamedPipe": "p: named pipe (FIFO)",
-                "ModePerm": "Unix permission bits, 0o777",
-                "ModeSetgid": "g: setgid",
-                "ModeSetuid": "u: setuid",
-                "ModeSocket": "S: Unix domain socket",
-                "ModeSticky": "t: sticky",
-                "ModeSymlink": "L: symbolic link",
-                "ModeTemporary": "T: temporary file; Plan 9 only"
-            },
-            "x-enum-varnames": [
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm"
-            ]
-        },
         "pkg_api_rest_controller.SimpleMsg": {
             "type": "object",
             "properties": {
@@ -3622,8 +3557,6 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -3640,8 +3573,6 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
-                "minDuration",
-                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
