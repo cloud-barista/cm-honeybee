@@ -19,7 +19,8 @@ type Binary struct {
 	Static           bool         `json:"static"`
 	Libraries        []string     `json:"libraries"`
 	LibraryPaths     []string     `json:"library_paths"`
-	Dependencies     []string     `json:"dependencies"` // non-package-owned runtime paths to copy
+	Dependencies     []string     `json:"dependencies"`      // non-package-owned runtime paths to copy
+	RequiredPackages []string     `json:"required_packages"` // OS packages providing the linked libs the target must install
 	OpenFilePaths    []string     `json:"open_file_paths"`
 	ConfigFiles      []ConfigFile `json:"config_files"`
 	DataDirs         []string     `json:"data_dirs"`

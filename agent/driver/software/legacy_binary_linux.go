@@ -5,6 +5,7 @@ package software
 import (
 	"debug/elf"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
@@ -47,10 +48,19 @@ func analyzeBinary(p *process.Process) (*BinaryInfo, error) {
 
 	mmaps, _ := p.MemoryMaps(false)
 	var mmFiles []string
+	var mappedLibs []string
 	if mmaps != nil {
 		for _, m := range *mmaps {
-			if strings.HasPrefix(m.Path, "/") {
-				mmFiles = append(mmFiles, m.Path)
+			if !strings.HasPrefix(m.Path, "/") {
+				continue
+			}
+			mmFiles = append(mmFiles, m.Path)
+			// The memory maps are the full set of shared objects actually loaded
+			// into the process, i.e. the transitive runtime closure (a copied
+			// non-package lib still pulls its own package-provided deps). This is
+			// what determines which OS packages the target must have installed.
+			if strings.Contains(filepath.Base(m.Path), ".so") {
+				mappedLibs = append(mappedLibs, m.Path)
 			}
 		}
 	}
@@ -59,10 +69,12 @@ func analyzeBinary(p *process.Process) (*BinaryInfo, error) {
 
 	sort.Strings(neededLibs)
 	sort.Strings(libPaths)
+	sort.Strings(mappedLibs)
 
 	return &BinaryInfo{
 		Static:       isStatic,
 		Libraries:    uniqueStr(neededLibs),
 		LibraryPaths: uniqueStr(libPaths),
+		MappedLibs:   uniqueStr(mappedLibs),
 	}, nil
 }

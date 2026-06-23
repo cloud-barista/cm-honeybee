@@ -17,6 +17,7 @@ type BinaryInfo struct {
 	Static       bool
 	Libraries    []string
 	LibraryPaths []string
+	MappedLibs   []string // all shared objects loaded into the process (transitive closure)
 }
 
 // launchProvenance describes how a process was started on the host. It is filled
@@ -41,6 +42,15 @@ func GetLegacySWs() ([]software.Binary, error) {
 
 	var results []software.Binary
 
+	// ppidByPID records the parent PID of every kept process so multi-process
+	// services (e.g. an Apache master plus its prefork workers, which all inherit
+	// and report the same listening socket) can be collapsed to a single entry.
+	ppidByPID := map[int32]int32{}
+
+	// The agent itself is a listening, non-package process, so it would otherwise
+	// be collected as a migration candidate. Skip its own process.
+	selfPID := int32(os.Getpid())
+
 	var unavailablePID = map[int32]bool{}
 	var unavailableDetails []string
 	var unavailableCount = map[string]int{}
@@ -57,6 +67,10 @@ func GetLegacySWs() ([]software.Binary, error) {
 	}
 
 	for _, p := range procs {
+		if p.Pid == selfPID {
+			continue
+		}
+
 		name, err := p.Name()
 		if err != nil || name == "" {
 			markUnavailable(p.Pid, "Name", err)
@@ -67,6 +81,8 @@ func GetLegacySWs() ([]software.Binary, error) {
 		if !hasListen {
 			continue
 		}
+
+		ppid, _ := p.Ppid()
 
 		uids, err := p.Uids()
 		if err != nil {
@@ -124,10 +140,12 @@ func GetLegacySWs() ([]software.Binary, error) {
 		isStatic := binInfo != nil && binInfo.Static
 		var libs []string
 		var libPaths []string
+		var mappedLibs []string
 
 		if binInfo != nil {
 			libs = binInfo.Libraries
 			libPaths = binInfo.LibraryPaths
+			mappedLibs = binInfo.MappedLibs
 		}
 
 		openFiles, err := extractOpenFilePaths(p)
@@ -139,6 +157,7 @@ func GetLegacySWs() ([]software.Binary, error) {
 		configFiles := extractConfigFiles(cmdSlice, openFiles)
 		dataDirs := detectDataDirs(openFiles)
 		dependencies := collectDependencies(libPaths, envs, exe)
+		requiredPackages := collectRequiredPackages(mappedLibs)
 		prov := getLaunchProvenance(p.Pid)
 		version := detectBinaryVersion(exe, cmdSlice, envs)
 
@@ -157,6 +176,7 @@ func GetLegacySWs() ([]software.Binary, error) {
 			Libraries:        libs,
 			LibraryPaths:     libPaths,
 			Dependencies:     dependencies,
+			RequiredPackages: requiredPackages,
 			OpenFilePaths:    openFiles,
 			ConfigFiles:      configFiles,
 			DataDirs:         dataDirs,
@@ -170,7 +190,10 @@ func GetLegacySWs() ([]software.Binary, error) {
 			ServiceType:      prov.ServiceType,
 			PIDFile:          prov.PIDFile,
 		})
+		ppidByPID[p.Pid] = ppid
 	}
+
+	results = dedupeServiceWorkers(results, ppidByPID)
 
 	logger.Println(logger.DEBUG, true, fmt.Sprintf("LegacySW : Total process (%d)", len(results)))
 
@@ -180,6 +203,69 @@ func GetLegacySWs() ([]software.Binary, error) {
 	}
 
 	return reportResults(unavailablePID, results)
+}
+
+// dedupeServiceWorkers collapses processes that belong to the same service into a
+// single entry. A service like Apache (prefork/worker MPM) runs one master plus
+// several worker processes that all share the same executable and inherit the
+// master's listening socket, so each worker is otherwise reported as a duplicate.
+// Entries are grouped by executable path; within a group the "master" (a process
+// whose parent is not itself part of the group) is kept and the workers dropped.
+// Processes without a resolved executable path are never merged.
+func dedupeServiceWorkers(results []software.Binary, ppidByPID map[int32]int32) []software.Binary {
+	type group struct {
+		members []software.Binary
+		pids    map[int32]bool
+	}
+
+	groups := map[string]*group{}
+	var order []string
+
+	for _, b := range results {
+		key := b.ExecutablePath
+		if key == "" {
+			key = fmt.Sprintf("\x00pid:%d", b.PID) // keep exe-less processes distinct
+		}
+		g, ok := groups[key]
+		if !ok {
+			g = &group{pids: map[int32]bool{}}
+			groups[key] = g
+			order = append(order, key)
+		}
+		g.members = append(g.members, b)
+		g.pids[b.PID] = true
+	}
+
+	var deduped []software.Binary
+	for _, key := range order {
+		g := groups[key]
+		if len(g.members) == 1 {
+			deduped = append(deduped, g.members[0])
+			continue
+		}
+
+		var kept []software.Binary
+		for _, b := range g.members {
+			if !g.pids[ppidByPID[b.PID]] {
+				kept = append(kept, b)
+			}
+		}
+
+		// No in-group parent found (unexpected): fall back to the lowest PID.
+		if len(kept) == 0 {
+			lowest := g.members[0]
+			for _, b := range g.members[1:] {
+				if b.PID < lowest.PID {
+					lowest = b
+				}
+			}
+			kept = []software.Binary{lowest}
+		}
+
+		deduped = append(deduped, kept...)
+	}
+
+	return deduped
 }
 
 func normalizeProcessName(name string, cmd []string) string {
@@ -318,6 +404,10 @@ func filterValidDataDirs(cands map[string]int) []string {
 	return uniqueStr(result)
 }
 
+// getListenStatus reports whether the process owns a listening socket and the
+// status string to record. Legacy SW migration targets network-serving software,
+// so a process with no LISTEN socket is not a migration candidate and is skipped
+// by the caller.
 func getListenStatus(p *process.Process) (bool, string) {
 	conns, _ := p.Connections()
 	for _, c := range conns {
@@ -325,7 +415,7 @@ func getListenStatus(p *process.Process) (bool, string) {
 			return true, c.Status
 		}
 	}
-	return true, ""
+	return false, ""
 }
 
 // representativeInstallPath returns the path that best identifies the software for
@@ -362,6 +452,79 @@ func isPackageOwned(path string) bool {
 		return exec.Command("rpm", "-qf", real).Run() == nil
 	}
 	return false
+}
+
+// collectRequiredPackages returns the OS packages that provide the package-owned
+// shared objects loaded by the process (e.g. libpcre2-8 for a source-built
+// Apache, plus transitive deps such as libexpat pulled in by a copied non-package
+// lib). These are NOT copied (collectDependencies excludes package-owned paths);
+// instead the target must install them via its package manager, otherwise the
+// migrated binary would be missing its runtime libraries. Non-package libs map to
+// no package and are skipped here (they are copied instead).
+func collectRequiredPackages(mappedLibs []string) []string {
+	seen := map[string]bool{}
+	var pkgs []string
+
+	for _, lp := range mappedLibs {
+		if lp == "" {
+			continue
+		}
+		name := packageNameOwning(lp)
+		if name != "" && !seen[name] {
+			seen[name] = true
+			pkgs = append(pkgs, name)
+		}
+	}
+
+	sort.Strings(pkgs)
+	return pkgs
+}
+
+// packageNameOwning returns the name of the OS package that provides path, or ""
+// if none (or no package manager). It mirrors isPackageOwned but extracts the
+// package name (dpkg on Debian/Ubuntu, rpm on RHEL/Fedora).
+func packageNameOwning(path string) string {
+	candidates := []string{path}
+	if r, err := filepath.EvalSymlinks(path); err == nil && r != path {
+		candidates = append(candidates, r)
+	}
+
+	if _, err := exec.LookPath("dpkg"); err == nil {
+		for _, c := range candidates {
+			out, err := exec.Command("dpkg", "-S", c).Output()
+			if err != nil {
+				continue
+			}
+			// "pkg:arch: /path" or "pkg: /path"; multiple providers are newline-separated.
+			line := strings.SplitN(strings.TrimSpace(string(out)), "\n", 2)[0]
+			idx := strings.LastIndex(line, ": ")
+			if idx < 0 {
+				continue
+			}
+			pkg := strings.TrimSpace(line[:idx])
+			if c := strings.IndexByte(pkg, ':'); c >= 0 { // strip multiarch suffix
+				pkg = pkg[:c]
+			}
+			if pkg != "" {
+				return pkg
+			}
+		}
+		return ""
+	}
+
+	if _, err := exec.LookPath("rpm"); err == nil {
+		for _, c := range candidates {
+			out, err := exec.Command("rpm", "-qf", "--queryformat", "%{NAME}", c).Output()
+			if err != nil {
+				continue
+			}
+			if name := strings.TrimSpace(string(out)); name != "" {
+				return name
+			}
+		}
+	}
+
+	return ""
 }
 
 // collectDependencies returns the non-package-owned runtime paths that must be
