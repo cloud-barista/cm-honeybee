@@ -5,6 +5,7 @@ definitions:
       path:
         type: string
       rate:
+        format: int64
         type: integer
     type: object
   blkiodev.WeightDevice:
@@ -12,6 +13,7 @@ definitions:
       path:
         type: string
       weight:
+        format: int32
         type: integer
     type: object
   container.CgroupnsMode:
@@ -145,6 +147,15 @@ definitions:
       StateRemoving: StateRemoving indicates that the container is being removed.
       StateRestarting: StateRestarting indicates that the container is currently restarting.
       StateRunning: StateRunning indicates that the container is running.
+    x-enum-descriptions:
+    - StateCreated indicates the container is created, but not (yet) started.
+    - StateRunning indicates that the container is running.
+    - StatePaused indicates that the container's current state is paused.
+    - StateRestarting indicates that the container is currently restarting.
+    - StateRemoving indicates that the container is being removed.
+    - StateExited indicates that the container exited.
+    - StateDead indicates that the container failed to be deleted. Containers in this
+      state are attempted to be cleaned up when the daemon restarts.
     x-enum-varnames:
     - StateCreated
     - StateRunning
@@ -253,6 +264,11 @@ definitions:
       NoHealthcheck: Indicates there is no healthcheck
       Starting: Starting indicates that the container is not yet ready
       Unhealthy: Unhealthy indicates that the container has a problem
+    x-enum-descriptions:
+    - Indicates there is no healthcheck
+    - Starting indicates that the container is not yet ready
+    - Healthy indicates that the container is running correctly
+    - Unhealthy indicates that the container has a problem
     x-enum-varnames:
     - NoHealthcheck
     - Starting
@@ -347,6 +363,7 @@ definitions:
         type: array
       blkioWeight:
         description: Block IO weight (relative weight vs. other containers)
+        format: int32
         type: integer
       blkioWeightDevice:
         items:
@@ -418,9 +435,11 @@ definitions:
         type: boolean
       iomaximumBandwidth:
         description: Maximum IO in bytes per second for the container system drive
+        format: int64
         type: integer
       iomaximumIOps:
         description: Maximum IOps for the container system drive
+        format: int64
         type: integer
       ipcMode:
         allOf:
@@ -460,16 +479,20 @@ definitions:
         type: array
       memory:
         description: Memory limit (in bytes)
+        format: int64
         type: integer
       memoryReservation:
         description: Memory soft limit (in bytes)
+        format: int64
         type: integer
       memorySwap:
         description: Total memory usage (memory + swap); set `-1` to enable unlimited
           swap
+        format: int64
         type: integer
       memorySwappiness:
         description: Tuning container memory swappiness behaviour
+        format: int64
         type: integer
       mounts:
         description: Mounts specs used by the container
@@ -491,6 +514,7 @@ definitions:
       pidsLimit:
         description: Setting PIDs limit for a container; Set `0` or `-1` for unlimited,
           or `null` to not change.
+        format: int64
         type: integer
       portBindings:
         allOf:
@@ -526,6 +550,7 @@ definitions:
         type: array
       shmSize:
         description: Total shm memory usage
+        format: int64
         type: integer
       storageOpt:
         additionalProperties:
@@ -653,6 +678,11 @@ definitions:
       IsolationEmpty: IsolationEmpty is unspecified (same behavior as default)
       IsolationHyperV: IsolationHyperV is HyperV isolation mode
       IsolationProcess: IsolationProcess is process isolation mode
+    x-enum-descriptions:
+    - IsolationEmpty is unspecified (same behavior as default)
+    - IsolationDefault is the default isolation mode on current daemon
+    - IsolationProcess is process isolation mode
+    - IsolationHyperV is HyperV isolation mode
     x-enum-varnames:
     - IsolationEmpty
     - IsolationDefault
@@ -902,6 +932,7 @@ definitions:
       command:
         type: string
       created:
+        format: int64
         type: integer
       hostConfig:
         properties:
@@ -946,10 +977,12 @@ definitions:
   container.Ulimit:
     properties:
       hard:
+        format: int64
         type: integer
       name:
         type: string
       soft:
+        format: int64
         type: integer
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse:
@@ -2152,6 +2185,7 @@ definitions:
       size:
         description: Size is the total size of the image including all layers it is
           composed of.
+        format: int64
         type: integer
       variant:
         description: Variant is the CPU architecture variant (presently ARM-only).
@@ -2341,8 +2375,9 @@ definitions:
   mount.TmpfsOptions:
     properties:
       mode:
+        allOf:
+        - $ref: '#/definitions/os.FileMode'
         description: Mode of the tmpfs upon creation
-        type: integer
       options:
         description: |-
           Options to be passed to the tmpfs mount. An array of arrays. Flag
@@ -2490,6 +2525,147 @@ definitions:
         description: Operational data
         type: string
     type: object
+  os.FileMode:
+    enum:
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    format: int32
+    type: integer
+    x-enum-comments:
+      ModeAppend: 'a: append-only'
+      ModeCharDevice: 'c: Unix character device, when ModeDevice is set'
+      ModeDevice: 'D: device file'
+      ModeDir: 'd: is a directory'
+      ModeExclusive: 'l: exclusive use'
+      ModeIrregular: '?: non-regular file; nothing else is known about this file'
+      ModeNamedPipe: 'p: named pipe (FIFO)'
+      ModePerm: Unix permission bits, 0o777
+      ModeSetgid: 'g: setgid'
+      ModeSetuid: 'u: setuid'
+      ModeSocket: 'S: Unix domain socket'
+      ModeSticky: 't: sticky'
+      ModeSymlink: 'L: symbolic link'
+      ModeTemporary: 'T: temporary file; Plan 9 only'
+    x-enum-descriptions:
+    - 'd: is a directory'
+    - 'a: append-only'
+    - 'l: exclusive use'
+    - 'T: temporary file; Plan 9 only'
+    - 'L: symbolic link'
+    - 'D: device file'
+    - 'p: named pipe (FIFO)'
+    - 'S: Unix domain socket'
+    - 'u: setuid'
+    - 'g: setgid'
+    - 'c: Unix character device, when ModeDevice is set'
+    - 't: sticky'
+    - '?: non-regular file; nothing else is known about this file'
+    - ""
+    - Unix permission bits, 0o777
+    x-enum-varnames:
+    - ModeDir
+    - ModeAppend
+    - ModeExclusive
+    - ModeTemporary
+    - ModeSymlink
+    - ModeDevice
+    - ModeNamedPipe
+    - ModeSocket
+    - ModeSetuid
+    - ModeSetgid
+    - ModeCharDevice
+    - ModeSticky
+    - ModeIrregular
+    - ModeType
+    - ModePerm
   pkg_api_rest_controller.SimpleMsg:
     properties:
       message:
@@ -2524,14 +2700,78 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
     - 1
     - 1000
     - 1000000
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    format: int64
     type: integer
     x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
     - minDuration
     - maxDuration
     - Nanosecond
@@ -2545,7 +2785,6 @@ definitions:
     - Millisecond
     - Second
     - Minute
-    - Hour
   v1.Descriptor:
     properties:
       annotations:

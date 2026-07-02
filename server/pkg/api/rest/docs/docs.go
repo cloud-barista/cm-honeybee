@@ -2312,7 +2312,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rate": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },
@@ -2323,7 +2324,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "weight": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int32"
                 }
             }
         },
@@ -2494,6 +2496,15 @@ const docTemplate = `{
                 "StateRestarting": "StateRestarting indicates that the container is currently restarting.",
                 "StateRunning": "StateRunning indicates that the container is running."
             },
+            "x-enum-descriptions": [
+                "StateCreated indicates the container is created, but not (yet) started.",
+                "StateRunning indicates that the container is running.",
+                "StatePaused indicates that the container's current state is paused.",
+                "StateRestarting indicates that the container is currently restarting.",
+                "StateRemoving indicates that the container is being removed.",
+                "StateExited indicates that the container exited.",
+                "StateDead indicates that the container failed to be deleted. Containers in this state are attempted to be cleaned up when the daemon restarts."
+            ],
             "x-enum-varnames": [
                 "StateCreated",
                 "StateRunning",
@@ -2641,6 +2652,12 @@ const docTemplate = `{
                 "Starting": "Starting indicates that the container is not yet ready",
                 "Unhealthy": "Unhealthy indicates that the container has a problem"
             },
+            "x-enum-descriptions": [
+                "Indicates there is no healthcheck",
+                "Starting indicates that the container is not yet ready",
+                "Healthy indicates that the container is running correctly",
+                "Unhealthy indicates that the container has a problem"
+            ],
             "x-enum-varnames": [
                 "NoHealthcheck",
                 "Starting",
@@ -2769,7 +2786,8 @@ const docTemplate = `{
                 },
                 "blkioWeight": {
                     "description": "Block IO weight (relative weight vs. other containers)",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int32"
                 },
                 "blkioWeightDevice": {
                     "type": "array",
@@ -2867,11 +2885,13 @@ const docTemplate = `{
                 },
                 "iomaximumBandwidth": {
                     "description": "Maximum IO in bytes per second for the container system drive",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "iomaximumIOps": {
                     "description": "Maximum IOps for the container system drive",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "ipcMode": {
                     "description": "IPC namespace to use for the container",
@@ -2921,19 +2941,23 @@ const docTemplate = `{
                 },
                 "memory": {
                     "description": "Memory limit (in bytes)",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "memoryReservation": {
                     "description": "Memory soft limit (in bytes)",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "memorySwap": {
                     "description": "Total memory usage (memory + swap); set ` + "`" + `-1` + "`" + ` to enable unlimited swap",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "memorySwappiness": {
                     "description": "Tuning container memory swappiness behaviour",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "mounts": {
                     "description": "Mounts specs used by the container",
@@ -2960,7 +2984,8 @@ const docTemplate = `{
                 },
                 "pidsLimit": {
                     "description": "Setting PIDs limit for a container; Set ` + "`" + `0` + "`" + ` or ` + "`" + `-1` + "`" + ` for unlimited, or ` + "`" + `null` + "`" + ` to not change.",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "portBindings": {
                     "description": "Port mapping between the exposed port (container) and the host",
@@ -3010,7 +3035,8 @@ const docTemplate = `{
                 },
                 "shmSize": {
                     "description": "Total shm memory usage",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "storageOpt": {
                     "description": "Storage driver options per container.",
@@ -3189,6 +3215,12 @@ const docTemplate = `{
                 "IsolationHyperV": "IsolationHyperV is HyperV isolation mode",
                 "IsolationProcess": "IsolationProcess is process isolation mode"
             },
+            "x-enum-descriptions": [
+                "IsolationEmpty is unspecified (same behavior as default)",
+                "IsolationDefault is the default isolation mode on current daemon",
+                "IsolationProcess is process isolation mode",
+                "IsolationHyperV is HyperV isolation mode"
+            ],
             "x-enum-varnames": [
                 "IsolationEmpty",
                 "IsolationDefault",
@@ -3461,7 +3493,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "hostConfig": {
                     "type": "object",
@@ -3528,13 +3561,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "hard": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "name": {
                     "type": "string"
                 },
                 "soft": {
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 }
             }
         },
@@ -4399,7 +4434,8 @@ const docTemplate = `{
                 },
                 "size": {
                     "description": "Size is the total size of the image including all layers it is composed of.",
-                    "type": "integer"
+                    "type": "integer",
+                    "format": "int64"
                 },
                 "variant": {
                     "description": "Variant is the CPU architecture variant (presently ARM-only).",
@@ -5479,7 +5515,11 @@ const docTemplate = `{
             "properties": {
                 "mode": {
                     "description": "Mode of the tmpfs upon creation",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/os.FileMode"
+                        }
+                    ]
                 },
                 "options": {
                     "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
@@ -6179,6 +6219,116 @@ const docTemplate = `{
                 }
             }
         },
+        "onpremisemodel.NlbBackendProperty": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "description": "\"roundrobin\" | \"leastconn\" | \"source\" (note only)",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "Backend section name",
+                    "type": "string"
+                },
+                "protocol": {
+                    "description": "\"tcp\" | \"http\"",
+                    "type": "string"
+                },
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.NlbServerProperty"
+                    }
+                }
+            }
+        },
+        "onpremisemodel.NlbHealthCheckProperty": {
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "interval": {
+                    "description": "seconds; default 10",
+                    "type": "integer"
+                },
+                "port": {
+                    "description": "0 = same as server port",
+                    "type": "integer"
+                },
+                "protocol": {
+                    "description": "\"tcp\" | \"http\"",
+                    "type": "string"
+                },
+                "threshold": {
+                    "description": "default 3",
+                    "type": "integer"
+                },
+                "timeout": {
+                    "description": "seconds; default 10",
+                    "type": "integer"
+                }
+            }
+        },
+        "onpremisemodel.NlbListenerProperty": {
+            "type": "object",
+            "properties": {
+                "bindAddress": {
+                    "description": "\"*\" = all interfaces (→ PUBLIC), specific IP = INTERNAL",
+                    "type": "string"
+                },
+                "port": {
+                    "description": "Listener port (1–65535)",
+                    "type": "integer"
+                },
+                "protocol": {
+                    "description": "\"tcp\" | \"udp\"",
+                    "type": "string"
+                }
+            }
+        },
+        "onpremisemodel.NlbProperty": {
+            "type": "object",
+            "properties": {
+                "backend": {
+                    "$ref": "#/definitions/onpremisemodel.NlbBackendProperty"
+                },
+                "healthCheck": {
+                    "$ref": "#/definitions/onpremisemodel.NlbHealthCheckProperty"
+                },
+                "hostMachineId": {
+                    "description": "MachineId of the node running HAProxy",
+                    "type": "string"
+                },
+                "listener": {
+                    "$ref": "#/definitions/onpremisemodel.NlbListenerProperty"
+                },
+                "software": {
+                    "description": "\"haproxy\"",
+                    "type": "string"
+                }
+            }
+        },
+        "onpremisemodel.NlbServerProperty": {
+            "type": "object",
+            "properties": {
+                "ip": {
+                    "description": "Server IP; used for IP correlation at recommendation time",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "port": {
+                    "description": "Server port",
+                    "type": "integer"
+                },
+                "weight": {
+                    "description": "Traffic weight (reference only)",
+                    "type": "integer"
+                }
+            }
+        },
         "onpremisemodel.NodeProperty": {
             "type": "object",
             "properties": {
@@ -6248,6 +6398,13 @@ const docTemplate = `{
                 },
                 "network": {
                     "$ref": "#/definitions/onpremisemodel.NetworkProperty"
+                },
+                "nlbs": {
+                    "description": "NLBs holds on-premise NLB instances (HAProxy-based), one entry per frontend-backend pair.\nPopulated by cm-honeybee when HAProxy is detected on a node.\nUsed exclusively by POST /recommendation/infraWithNlb; ignored by POST /recommendation/infra.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.NlbProperty"
+                    }
                 },
                 "nodes": {
                     "type": "array",
@@ -6342,6 +6499,92 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "os.FileMode": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511
+            ],
+            "x-enum-comments": {
+                "ModeAppend": "a: append-only",
+                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
+                "ModeDevice": "D: device file",
+                "ModeDir": "d: is a directory",
+                "ModeExclusive": "l: exclusive use",
+                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
+                "ModeNamedPipe": "p: named pipe (FIFO)",
+                "ModePerm": "Unix permission bits, 0o777",
+                "ModeSetgid": "g: setgid",
+                "ModeSetuid": "u: setuid",
+                "ModeSocket": "S: Unix domain socket",
+                "ModeSticky": "t: sticky",
+                "ModeSymlink": "L: symbolic link",
+                "ModeTemporary": "T: temporary file; Plan 9 only"
+            },
+            "x-enum-descriptions": [
+                "d: is a directory",
+                "a: append-only",
+                "l: exclusive use",
+                "T: temporary file; Plan 9 only",
+                "L: symbolic link",
+                "D: device file",
+                "p: named pipe (FIFO)",
+                "S: Unix domain socket",
+                "u: setuid",
+                "g: setgid",
+                "c: Unix character device, when ModeDevice is set",
+                "t: sticky",
+                "?: non-regular file; nothing else is known about this file",
+                "",
+                "Unix permission bits, 0o777"
+            ],
+            "x-enum-varnames": [
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm"
+            ]
         },
         "software.Binary": {
             "type": "object",
@@ -6989,6 +7232,10 @@ const docTemplate = `{
                 "SoftwarePackageTypeDEB": "Debian based package type",
                 "SoftwarePackageTypeRPM": "RHEL based package type"
             },
+            "x-enum-descriptions": [
+                "Debian based package type",
+                "RHEL based package type"
+            ],
             "x-enum-varnames": [
                 "SoftwarePackageTypeDEB",
                 "SoftwarePackageTypeRPM"
@@ -7043,7 +7290,18 @@ const docTemplate = `{
         },
         "time.Duration": {
             "type": "integer",
+            "format": "int64",
             "enum": [
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -7052,6 +7310,16 @@ const docTemplate = `{
                 3600000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
