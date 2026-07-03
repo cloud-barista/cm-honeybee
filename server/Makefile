@@ -69,7 +69,7 @@ swag swagger: ## Generate Swagger Documentation
 	    go_path=`echo $$cygdrive_prefix/$$drive/$$path | sed 's@\/\/@\/@g'`; \
 	  fi; \
 	  if [ ! -f "$$go_path/bin/swag" ]; then \
-	    ${GO_COMMAND} install github.com/swaggo/swag/cmd/swag@latest; \
+	    GOOS= GOARCH= ${GO_COMMAND} install github.com/swaggo/swag/cmd/swag@latest; \
 	  fi; \
 	  $$go_path/bin/swag init -g ./pkg/api/rest/server/server.go --pd -o ./pkg/api/rest/docs/ > /dev/null
 
