@@ -173,7 +173,11 @@ func GetComputeInfo() (infra.Compute, error) {
 	}
 
 	memUsed := uint(v.Used / 1024 / 1024)
-	memAvailable := memSize - memUsed
+	// Use the OS-reported available memory (matches `free`'s "available"
+	// column, i.e. MemAvailable including reclaimable cache) rather than
+	// physicalSize - used, which ignores buff/cache and the reserved gap
+	// between the physical DIMM total and OS-visible memory.
+	memAvailable := uint(v.Available / 1024 / 1024)
 
 	// storage information
 	block, err := ghw.Block()
