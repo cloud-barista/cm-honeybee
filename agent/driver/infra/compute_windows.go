@@ -381,10 +381,13 @@ func GetComputeInfo() (infra.Compute, error) {
 
 	var memType = memory.MemoryDeviceTypeUnknown
 	var memSpeed = uint(0)
-	var memSize = uint(0)
+	var memSizeKB = uint(0)
 
 	for _, m := range memoryDevice {
-		memSize += uint(m.Size)
+		// ActualSize() decodes the SMBIOS size field (unit bit, extended size)
+		// and returns the value in KB. Summing the raw m.Size instead would
+		// mis-count devices encoded in KB units (bit 0x8000 set).
+		memSizeKB += uint(m.ActualSize())
 		if m.Type != memory.MemoryDeviceTypeUnknown {
 			memType = m.Type
 		}
@@ -393,9 +396,18 @@ func GetComputeInfo() (infra.Compute, error) {
 		}
 	}
 
+	memSize := memSizeKB / 1024 // MB
+
 	v, err := mem.VirtualMemory()
 	if err != nil {
 		return compute, err
+	}
+
+	// Fall back to the OS-reported total when dmidecode exposes no usable
+	// memory devices, which also prevents the memSize - memUsed subtraction
+	// below from underflowing.
+	if memSize == 0 {
+		memSize = uint(v.Total / 1024 / 1024)
 	}
 
 	memUsed := uint(v.Used / 1024 / 1024)
