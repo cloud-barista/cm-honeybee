@@ -210,9 +210,26 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) error {
 	}()
 
 	dstPath := "/tmp/"
-	files := []string{"sourceFiles/busybox", "sourceFiles/copyAgent.sh"}
 
-	if err = o.copyFilesToSFTP(client, files, dstPath); err != nil {
+	// Pick the busybox helper that matches the remote host's architecture.
+	// copyAgent.sh always invokes it as /tmp/busybox, so copy it to that
+	// fixed path regardless of the embedded source file name.
+	busyboxFile := "sourceFiles/busybox"
+	archOut, err := o.RunCmd("uname -m")
+	if err != nil {
+		logger.Println(logger.ERROR, true, "SSH: Failed to detect remote architecture: "+err.Error())
+		return err
+	}
+	switch strings.TrimSpace(archOut) {
+	case "aarch64", "arm64":
+		busyboxFile = "sourceFiles/busybox-arm64"
+	}
+
+	if err = o.copyFileToSFTPAs(client, busyboxFile, "/tmp/busybox"); err != nil {
+		return err
+	}
+
+	if err = o.copyFileToSFTP(client, "sourceFiles/copyAgent.sh", dstPath); err != nil {
 		return err
 	}
 
@@ -242,13 +259,17 @@ func (o *SSH) copyFilesToSFTP(client *sftp.Client, files []string, dstPath strin
 }
 
 func (o *SSH) copyFileToSFTP(client *sftp.Client, file, dstPath string) error {
+	dstFilePath := filepath.Join(dstPath, filepath.Base(file))
+	return o.copyFileToSFTPAs(client, file, dstFilePath)
+}
+
+func (o *SSH) copyFileToSFTPAs(client *sftp.Client, file, dstFilePath string) error {
 	fileContents, err := sourceFiles.ReadFile(file)
 	if err != nil {
 		logger.Println(logger.ERROR, true, "SSH: Failed to read source file: "+err.Error())
 		return err
 	}
 
-	dstFilePath := filepath.Join(dstPath, filepath.Base(file))
 	dstFile, err := client.Create(dstFilePath)
 	if err != nil {
 		logger.Println(logger.ERROR, true, "SSH: Failed to create destination file: "+err.Error())

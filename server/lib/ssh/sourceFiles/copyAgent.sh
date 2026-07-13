@@ -5,6 +5,21 @@ BUSYBOX_PATH="/tmp/busybox"
 # Repo
 AGENT_REPO="https://raw.githubusercontent.com/cloud-barista/cm-honeybee/main/agent"
 
+# Select the agent release asset that matches the host architecture.
+# amd64 keeps the historical unsuffixed name; other arches use a suffix.
+case "$(uname -m)" in
+    x86_64|amd64)
+        AGENT_ASSET="cm-honeybee-agent"
+        ;;
+    aarch64|arm64)
+        AGENT_ASSET="cm-honeybee-agent-arm64"
+        ;;
+    *)
+        echo "Unsupported architecture: $(uname -m)"
+        exit 1
+        ;;
+esac
+
 get_latest_release() {
     curl --silent "https://api.github.com/repos/$1/releases/latest" | # Get latest release from GitHub api
     grep '"tag_name":' |                                            # Get tag line
@@ -41,8 +56,8 @@ Copy() {
         systemctl stop cm-honeybee-agent > /dev/null 2>&1
         rm -rf /usr/bin/cm-honeybee-agent
         LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
-        DOWNLOAD_URL=https://github.com/cloud-barista/cm-honeybee/releases/download/${LATEST_RELEASE}/cm-honeybee-agent
-        $BUSYBOX_PATH wget --no-check-certificate --quiet "$DOWNLOAD_URL" -P /usr/bin
+        DOWNLOAD_URL=https://github.com/cloud-barista/cm-honeybee/releases/download/${LATEST_RELEASE}/${AGENT_ASSET}
+        $BUSYBOX_PATH wget --no-check-certificate --quiet "$DOWNLOAD_URL" -O /usr/bin/cm-honeybee-agent
         chmod a+x /usr/bin/cm-honeybee-agent
     fi
 

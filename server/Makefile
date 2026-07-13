@@ -115,7 +115,7 @@ linux: lint swag ## Build the binary file for Linux
 
 linux-arm64: lint swag ## Build the binary file for Linux (arm64)
 	@echo Building...
-	@cd cmd/${MODULE_NAME} && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME} main.go
+	@cd cmd/${MODULE_NAME} && GOOS=linux GOARCH=arm64 CGO_ENABLED=0 ${GO_COMMAND} build -o ${MODULE_NAME}-arm64 main.go
 	@git diff > .diff_last_build
 	@git rev-parse HEAD > .git_hash_last_build
 	@echo Build finished!
