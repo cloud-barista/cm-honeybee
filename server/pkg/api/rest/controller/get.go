@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/data"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
@@ -30,12 +31,30 @@ func doGetInfraInfo(connID string) (*infra.Infra, error) {
 		return nil, errors.New(errMsg)
 	}
 	var infraInfo infra.Infra
-	err = json.Unmarshal([]byte(savedInfraInfo.InfraData), &infraInfo)
-	if err != nil {
-		errMsg := "Error occurred while parsing infra information." +
-			" (ConnectionID = " + connectionInfo.ID + ")"
-		logger.Println(logger.ERROR, false, errMsg)
-		return nil, errors.New(errMsg)
+	// InfraData holds the agent-collected data. It is empty for a CSP source that
+	// has not been imported via the agent yet — in that case only the CSP section
+	// below is populated.
+	if strings.TrimSpace(savedInfraInfo.InfraData) != "" {
+		err = json.Unmarshal([]byte(savedInfraInfo.InfraData), &infraInfo)
+		if err != nil {
+			errMsg := "Error occurred while parsing infra information." +
+				" (ConnectionID = " + connectionInfo.ID + ")"
+			logger.Println(logger.ERROR, false, errMsg)
+			return nil, errors.New(errMsg)
+		}
+	}
+
+	// CSPData holds the provider-side VM info (cb-spider), stored separately so
+	// the agent import does not overwrite it. Surface it under the "csp" section.
+	if strings.TrimSpace(savedInfraInfo.CSPData) != "" {
+		var cspInfo infra.CSPInfo
+		if err := json.Unmarshal([]byte(savedInfraInfo.CSPData), &cspInfo); err != nil {
+			errMsg := "Error occurred while parsing CSP information." +
+				" (ConnectionID = " + connectionInfo.ID + ")"
+			logger.Println(logger.ERROR, false, errMsg)
+			return nil, errors.New(errMsg)
+		}
+		infraInfo.CSP = &cspInfo
 	}
 
 	return &infraInfo, nil

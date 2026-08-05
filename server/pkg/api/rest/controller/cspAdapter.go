@@ -24,14 +24,14 @@ func keyValueListToMap(in []spider.KeyValue) map[string]string {
 	return out
 }
 
-// vmInfoToInfra maps a spider VMInfo into the on-prem infra.Infra shape so
-// downstream consumers get a uniform structure. Fields that have no equivalent
-// in the CSP world are left zero.
-func vmInfoToInfra(vm *spider.VMInfo) infra.Infra {
+// buildCSPInfo maps cb-spider's VMInfo into the CSP-side infra.CSPInfo: the
+// provider-observable VM facts (spec, image, region/zone, public/private IP,
+// disks, tags) plus the names of the attached VPC/subnet/security groups.
+func buildCSPInfo(sg *model.SourceGroup, vm *spider.VMInfo) infra.CSPInfo {
 	kvMap := keyValueListToMap(vm.KeyValueList)
-	osName := vm.Platform
-	if osName == "" {
-		osName = kvMap["Architecture"]
+	platform := vm.Platform
+	if platform == "" {
+		platform = kvMap["Architecture"]
 	}
 
 	rootDiskSize := uint(0)
@@ -39,26 +39,54 @@ func vmInfoToInfra(vm *spider.VMInfo) infra.Infra {
 		rootDiskSize = uint(v)
 	}
 
-	return infra.Infra{
-		Compute: infra.Compute{
-			OS: infra.System{
-				OS: infra.OS{
-					PrettyName: vm.VMSpecName,
-					Name:       osName,
-				},
-				Node: infra.Node{
-					Hostname: vm.IId.NameId,
-				},
-			},
-			ComputeResource: infra.ComputeResource{
-				RootDisk: infra.Disk{
-					Name: vm.RootDeviceName,
-					Type: vm.RootDiskType,
-					Size: rootDiskSize,
-				},
-			},
+	dataDisks := make([]string, 0, len(vm.DataDiskIIDs))
+	for _, d := range vm.DataDiskIIDs {
+		dataDisks = append(dataDisks, d.NameId)
+	}
+
+	tags := map[string]string{}
+	for _, t := range vm.TagList {
+		tags[t.Key] = t.Value
+	}
+
+	csp := infra.CSPInfo{
+		Provider:  sg.ProviderName,
+		Region:    vm.Region.Region,
+		Zone:      vm.Region.Zone,
+		Name:      vm.IId.NameId,
+		ID:        vm.IId.SystemId,
+		VMSpec:    vm.VMSpecName,
+		Image:     vm.ImageIId.NameId,
+		Platform:  platform,
+		PublicIP:  vm.PublicIP,
+		PrivateIP: vm.PrivateIP,
+		RootDisk: infra.Disk{
+			Name: vm.RootDeviceName,
+			Type: vm.RootDiskType,
+			Size: rootDiskSize,
+		},
+		DataDisks: dataDisks,
+		Tags:      tags,
+		StartTime: vm.StartTime,
+		Network: infra.CSPNetwork{
+			Subnet: vm.SubnetIID.NameId,
 		},
 	}
+
+	// VPC/subnet/security-group names come from the VM info. Their full detail
+	// (VPC CIDR/subnets, SG rules) is NOT fetched here: cb-spider has no live
+	// "get" for an existing, unmanaged VPC/SG (GetCSPResourceInfo supports only
+	// VM/DISK), so obtaining detail would require a register→get→unregister dance
+	// against cb-spider. Tracked as a follow-up.
+	csp.Network.VPC.Name = vm.VpcIID.NameId
+	for _, sgIID := range vm.SecurityGroupIIds {
+		if sgIID.NameId == "" {
+			continue
+		}
+		csp.Network.SecurityGroups = append(csp.Network.SecurityGroups, infra.CSPSecurityGroup{Name: sgIID.NameId})
+	}
+
+	return csp
 }
 
 // clusterInfoToK8s maps spider.ClusterInfo into the agent's kubernetes.Kubernetes
@@ -87,20 +115,26 @@ func bucketToData(b *spider.S3BucketInfo) data.DataInfo {
 	}
 }
 
-// upsertSavedInfra writes (or replaces) SavedInfraInfo for a connection.
-func upsertSavedInfra(connID string, payload any) error {
-	raw, err := json.Marshal(payload)
+// upsertSavedCSPData writes the CSP-side VM info into SavedInfraInfo.csp_data,
+// leaving infra_data (the agent-collected data) untouched. gorm's Updates skips
+// zero-value fields, so preserving the loaded record's InfraData means an
+// existing agent import is not overwritten.
+func upsertSavedCSPData(connID string, csp infra.CSPInfo) error {
+	raw, err := json.Marshal(csp)
 	if err != nil {
 		return err
 	}
+	if existing, _ := dao.SavedInfraInfoGet(connID); existing != nil {
+		existing.CSPData = string(raw)
+		existing.Status = model.ConnectionInfoStatusSuccess
+		existing.SavedTime = time.Now()
+		return dao.SavedInfraInfoUpdate(existing)
+	}
 	rec := &model.SavedInfraInfo{
 		ConnectionID: connID,
-		InfraData:    string(raw),
+		CSPData:      string(raw),
 		Status:       model.ConnectionInfoStatusSuccess,
 		SavedTime:    time.Now(),
-	}
-	if existing, _ := dao.SavedInfraInfoGet(connID); existing != nil {
-		return dao.SavedInfraInfoUpdate(rec)
 	}
 	_, err = dao.SavedInfraInfoRegister(rec)
 	return err
@@ -175,7 +209,7 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error
 			if err != nil {
 				return err
 			}
-			return upsertSavedInfra(ci.ID, vmInfoToInfra(vm))
+			return upsertSavedCSPData(ci.ID, buildCSPInfo(sg, vm))
 		case "k8s":
 			cl, err := spider.GetCluster(connName, ci.ResourceID)
 			if err != nil {

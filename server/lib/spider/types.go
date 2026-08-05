@@ -38,6 +38,11 @@ type RegionInfo struct {
 	ProviderName      string     `json:"ProviderName"`
 	AvailableZoneList []string   `json:"AvailableZoneList,omitempty"`
 	KeyValueInfoList  []KeyValue `json:"KeyValueInfoList"`
+	// Region/Zone are the driver-level fields present in VMInfo.Region
+	// (e.g. {"Region":"koreacentral","Zone":"1"}); they are empty in the
+	// region-registration/list shape that uses RegionName/KeyValueInfoList.
+	Region string `json:"Region,omitempty"`
+	Zone   string `json:"Zone,omitempty"`
 }
 
 // ConnectionConfigInfo mirrors spider.cim.ConnectionConfigInfo.
@@ -61,6 +66,7 @@ type VMInfo struct {
 	PublicDNS        string     `json:"PublicDNS"`
 	PrivateIP        string     `json:"PrivateIP"`
 	PrivateDNS       string     `json:"PrivateDNS"`
+	SecurityGroupIIds []IID     `json:"SecurityGroupIIds"`
 	RootDiskType     string     `json:"RootDiskType"`
 	RootDiskSize     string     `json:"RootDiskSize"`
 	RootDeviceName   string     `json:"RootDeviceName"`
