@@ -144,6 +144,21 @@ func upsertSavedData(connID string, payload any) error {
 	return err
 }
 
+// cspVMIdentifier returns the identifier cb-spider expects for a VM lookup.
+// cb-spider's "GET /cspvm/:Id" path param is not URL-decoded, so a full CSP
+// resource ID that contains "/" (e.g. an Azure ARM ID) gets mangled into a
+// double-encoded request. cb-spider's drivers identify a VM by its name within
+// the connection's region/resource-group anyway, so we send the last path
+// segment (the VM name) — ".../virtualMachines/ish-test" -> "ish-test".
+// Slash-less IDs (e.g. an AWS instance id) pass through unchanged.
+func cspVMIdentifier(resourceID string) string {
+	id := strings.TrimRight(strings.TrimSpace(resourceID), "/")
+	if i := strings.LastIndex(id, "/"); i >= 0 {
+		return id[i+1:]
+	}
+	return id
+}
+
 // refreshCSPConnection contacts cb-spider for the resource described by ci and
 // stores the adapted result in the relevant Saved*Info table.
 func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
@@ -156,7 +171,7 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error
 	return withSpiderConnection(sg, func(connName string) error {
 		switch ci.ResourceType {
 		case "vm":
-			vm, err := spider.GetVM(connName, ci.ResourceID)
+			vm, err := spider.GetCSPVM(connName, cspVMIdentifier(ci.ResourceID))
 			if err != nil {
 				return err
 			}
