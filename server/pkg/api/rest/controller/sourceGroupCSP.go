@@ -152,6 +152,48 @@ func validateAndCanonicalizeCSP(sg *model.SourceGroup, plainKV []model.KeyValue)
 	return nil
 }
 
+// buildRegionKV builds the cb-spider RegionInfo key/values for a source group's
+// region. cb-spider requires exactly the keys listed in the provider's CloudOS
+// metainfo — Azure/AWS/GCP require both "Region" and "Zone", so sending only
+// "Region" makes cb-spider reject the registration ("want [Region Zone]").
+//
+// The zone may be supplied by writing region_name as "<region>/<zone>"
+// (e.g. "koreacentral/1"). When a Zone key is required but no zone is given, it
+// defaults to "1": the value is not used for resource lookups by ID (Get by
+// resource_id), but the key must be present for cb-spider to accept the region.
+func buildRegionKV(provider, regionName string) ([]spider.KeyValue, error) {
+	region := strings.TrimSpace(regionName)
+	zone := ""
+	if i := strings.Index(region, "/"); i >= 0 {
+		zone = strings.TrimSpace(region[i+1:])
+		region = strings.TrimSpace(region[:i])
+	}
+	if region == "" {
+		return nil, errors.New("source group has no region")
+	}
+
+	meta, err := spider.GetCloudOSMetaInfo(provider)
+	if err != nil || meta == nil || len(meta.Region) == 0 {
+		// Metainfo unavailable — fall back to a bare Region key.
+		return []spider.KeyValue{{Key: "Region", Value: region}}, nil
+	}
+
+	kv := make([]spider.KeyValue, 0, len(meta.Region))
+	for _, key := range meta.Region {
+		if strings.EqualFold(key, "Zone") {
+			z := zone
+			if z == "" {
+				z = "1"
+			}
+			kv = append(kv, spider.KeyValue{Key: key, Value: z})
+			continue
+		}
+		kv = append(kv, spider.KeyValue{Key: key, Value: region})
+	}
+
+	return kv, nil
+}
+
 // withSpiderConnection registers a TEMPORARY cb-spider credential + region +
 // connection for the given CSP SourceGroup, invokes fn with the resulting
 // ConnectionName, and unregisters everything before returning. Credentials are
@@ -165,9 +207,10 @@ func withSpiderConnection(sg *model.SourceGroup, fn func(connName string) error)
 	if err != nil {
 		return err
 	}
-	region := strings.TrimSpace(sg.RegionName)
-	if region == "" {
-		return errors.New("source group has no region")
+
+	regionKV, err := buildRegionKV(provider, sg.RegionName)
+	if err != nil {
+		return err
 	}
 
 	plainKV, err := decryptCredentialValues(sg.Credential)
@@ -194,7 +237,6 @@ func withSpiderConnection(sg *model.SourceGroup, fn func(connName string) error)
 		}
 	}()
 
-	regionKV := []spider.KeyValue{{Key: "Region", Value: region}}
 	if _, err := spider.RegisterRegion(regionName, provider, regionKV); err != nil {
 		return errors.New("failed to register temporary region on cb-spider: " + err.Error())
 	}
