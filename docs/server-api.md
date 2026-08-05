@@ -263,17 +263,25 @@ VM 리소스는 `GET /cspvm/{id}`로 조회합니다. cb-spider는 관리하지 
   "root_disk": { "type": "PremiumSSD", "size": 30 },
   "data_disks": [],
   "network": {
-    "vpc": { "name": "vm-1-vnet", "cidr": "", "subnets": null },
+    "vpc": {
+      "name": "vm-1-vnet", "cidr": "10.0.0.0/16",
+      "subnets": [ { "name": "default", "cidr": "10.0.0.0/24", "zone": "" } ]
+    },
     "subnet": "default",
-    "security_groups": [ { "name": "vm-1-nsg", "rules": null } ]
+    "security_groups": [ {
+      "name": "vm-1-nsg",
+      "rules": [ { "direction": "inbound", "protocol": "tcp", "from_port": "22", "to_port": "22", "cidr": "0.0.0.0/0" } ]
+    } ]
   },
   "tags": {}
 }
 ```
 
-> **한계:** VPC/서브넷/보안그룹은 **이름**까지만 채워집니다. `cidr`·`subnets`·`rules` 상세는
-> cb-spider가 *관리하지 않는* VPC/SG를 live 조회하는 API를 제공하지 않아 비어 있습니다
-> (필요 시 register→get→unregister 우회가 필요 — 향후 과제).
+> **VPC/SG 상세 해석:** VM 조회는 VPC/SG의 **이름(IID)** 만 주므로, honeybee는
+> `GET /allvpcinfo`·`GET /allsecuritygroupinfo`로 해당 연결의 **모든** VPC/SG를 상세 포함해 조회한 뒤
+> VM의 `VpcIID`/`SecurityGroupIIds`와 **이름으로 매칭**해 `cidr`·`subnets`·`rules`를 채웁니다.
+> 이 all-info 목록은 CSP를 live 질의하므로 cb-spider가 관리하지 않는(기존) VPC/SG도
+> `OnlyCSPInfoList`로 상세가 반환됩니다(별도 등록 불필요).
 
 ### 3) 에이전트로 수집하는 것 (→ `compute`/`network.host`/소프트웨어 등)
 

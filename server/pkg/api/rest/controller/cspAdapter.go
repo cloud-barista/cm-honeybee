@@ -13,6 +13,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/spider"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
+	"github.com/jollaman999/utils/logger"
 )
 
 // keyValueListToMap flattens a spider KeyValue list into a map for easy lookup.
@@ -26,8 +27,10 @@ func keyValueListToMap(in []spider.KeyValue) map[string]string {
 
 // buildCSPInfo maps cb-spider's VMInfo into the CSP-side infra.CSPInfo: the
 // provider-observable VM facts (spec, image, region/zone, public/private IP,
-// disks, tags) plus the names of the attached VPC/subnet/security groups.
-func buildCSPInfo(sg *model.SourceGroup, vm *spider.VMInfo) infra.CSPInfo {
+// disks, tags) plus the attached VPC/subnet/security groups. VPC and SG detail
+// (CIDR, subnets, rules) are resolved by listing all resources with full info
+// and matching the VM's VpcIID/SecurityGroupIIds by name.
+func buildCSPInfo(connName string, sg *model.SourceGroup, vm *spider.VMInfo) infra.CSPInfo {
 	kvMap := keyValueListToMap(vm.KeyValueList)
 	platform := vm.Platform
 	if platform == "" {
@@ -73,17 +76,59 @@ func buildCSPInfo(sg *model.SourceGroup, vm *spider.VMInfo) infra.CSPInfo {
 		},
 	}
 
-	// VPC/subnet/security-group names come from the VM info. Their full detail
-	// (VPC CIDR/subnets, SG rules) is NOT fetched here: cb-spider has no live
-	// "get" for an existing, unmanaged VPC/SG (GetCSPResourceInfo supports only
-	// VM/DISK), so obtaining detail would require a register→get→unregister dance
-	// against cb-spider. Tracked as a follow-up.
+	// VPC detail: list all VPCs (with full info, incl. unmanaged) and match the
+	// VM's VPC by name. Best-effort — a lookup failure leaves detail empty.
 	csp.Network.VPC.Name = vm.VpcIID.NameId
-	for _, sgIID := range vm.SecurityGroupIIds {
-		if sgIID.NameId == "" {
-			continue
+	if vm.VpcIID.NameId != "" {
+		if vpcs, err := spider.ListAllVPCInfo(connName); err == nil {
+			for _, v := range vpcs {
+				if v.IId.NameId != vm.VpcIID.NameId {
+					continue
+				}
+				csp.Network.VPC.CIDR = v.IPv4_CIDR
+				for _, sn := range v.SubnetInfoList {
+					csp.Network.VPC.Subnets = append(csp.Network.VPC.Subnets, infra.CSPSubnet{
+						Name: sn.IId.NameId,
+						CIDR: sn.IPv4_CIDR,
+						Zone: sn.Zone,
+					})
+				}
+				break
+			}
+		} else {
+			logger.Println(logger.WARN, true, "CSP: failed to list VPC info: "+err.Error())
 		}
-		csp.Network.SecurityGroups = append(csp.Network.SecurityGroups, infra.CSPSecurityGroup{Name: sgIID.NameId})
+	}
+
+	// Security group detail: list all SGs (with full info) and match the VM's SGs
+	// by name, carrying over their rules.
+	if len(vm.SecurityGroupIIds) > 0 {
+		sgAll, err := spider.ListAllSecurityGroupInfo(connName)
+		if err != nil {
+			logger.Println(logger.WARN, true, "CSP: failed to list security group info: "+err.Error())
+		}
+		byName := make(map[string]spider.SecurityGroupInfo, len(sgAll))
+		for _, g := range sgAll {
+			byName[g.IId.NameId] = g
+		}
+		for _, sgIID := range vm.SecurityGroupIIds {
+			if sgIID.NameId == "" {
+				continue
+			}
+			out := infra.CSPSecurityGroup{Name: sgIID.NameId}
+			if g, ok := byName[sgIID.NameId]; ok {
+				for _, r := range g.SecurityRules {
+					out.Rules = append(out.Rules, infra.CSPSecurityRule{
+						Direction: r.Direction,
+						Protocol:  r.IPProtocol,
+						FromPort:  r.FromPort,
+						ToPort:    r.ToPort,
+						CIDR:      r.CIDR,
+					})
+				}
+			}
+			csp.Network.SecurityGroups = append(csp.Network.SecurityGroups, out)
+		}
 	}
 
 	return csp
@@ -209,7 +254,7 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error
 			if err != nil {
 				return err
 			}
-			return upsertSavedCSPData(ci.ID, buildCSPInfo(sg, vm))
+			return upsertSavedCSPData(ci.ID, buildCSPInfo(connName, sg, vm))
 		case "k8s":
 			cl, err := spider.GetCluster(connName, ci.ResourceID)
 			if err != nil {
