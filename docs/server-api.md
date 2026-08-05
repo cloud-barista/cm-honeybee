@@ -308,6 +308,78 @@ SSH로 접속해 **에이전트(`cm-honeybee-agent`)를 설치·기동**하고, 
 
 한쪽을 갱신해도 다른 칼럼은 보존되므로, **에이전트 import가 CSP 정보를 덮어쓰지 않고 함께 조회**됩니다.
 
+### 6) 통합 조회 예시 (`GET /source_group/{sgId}/infra`)
+
+SSH 정보를 함께 준 CSP(Azure) VM 소스의 실제 응답 예시입니다. `compute`/`network.host`는 **에이전트**가
+게스트 내부에서 수집한 값, `csp`는 **cb-spider**가 클라우드에서 수집한 값입니다(반복되는 배열은 `…`로 축약).
+
+```jsonc
+{
+  "servers": [
+    {
+      // ── 에이전트(SSH) 수집: 게스트 내부 ──
+      "compute": {
+        "os": {
+          "os": { "pretty_name": "Ubuntu 24.04.4 LTS", "name": "Ubuntu", "version_id": "24.04",
+                  "id": "ubuntu", "id_like": "debian" },
+          "kernel": { "release": "6.17.0-1021-azure", "architecture": "x86_64" },
+          "node": { "hostname": "ish-test", "machineid": "ac427abe-…", "timezone": "UTC" }
+        },
+        "compute_resource": {
+          "cpu": { "vendor": "GenuineIntel", "model": "Intel(R) Xeon(R) Platinum 8171M CPU @ 2.60GHz",
+                   "max_speed": 2100, "cache": 36608, "cpus": 1, "cores": 1, "threads": 2 },
+          "memory": { "type": "Unknown", "size": 8142, "used": 362, "available": 7270 },
+          "root_disk": { "name": "", "type": "", "size": 0 },
+          "data_disk": [ { "name": "sdb1", "type": "HDD", "size": 15, "available": 14 }, … ]
+        }
+      },
+      "network": {
+        "host": {
+          "network_interface": [
+            { "interface": "eth0", "address": ["10.0.0.4/24", "fe80::…/64"],
+              "gateway": "10.0.0.1", "mac_address": "60:45:bd:45:65:a5", "mtu": 1500 }, …
+          ],
+          "dns": { "dns_server": ["168.63.129.16"] },
+          "route": [ { "interface": "eth0", "destination": "0.0.0.0", "next_hop": "10.0.0.1", … }, … ],
+          "firewall_rule": []
+        },
+        "csp": { "name": "", "vpc": null, "nlb": null, "security_group": null }
+      },
+      "gpu": { "nvidia": [], "drm": [ { "driver_name": "hyperv_drm", … } ],
+               "errors": ["NVIDIA: nvidia-smi command is not available"] },
+      "storage": { "mount_point": { "mounted_information": null } },
+      "haproxy": { "version": "", … },
+      "minio": { "version": "", "errors": ["… MinIO process not found", …] },
+
+      // ── cb-spider 수집: 클라우드 관점 (별도 저장, 덮어쓰이지 않음) ──
+      "csp": {
+        "provider": "AZURE", "region": "koreacentral", "zone": "1",
+        "name": "ish-test",
+        "id": "/subscriptions/…/resourceGroups/koreacentral/providers/Microsoft.Compute/virtualMachines/ish-test",
+        "vm_spec": "Standard_D2s_v3", "image": "canonical:ubuntu-24_04-lts:ubuntu-pro:latest",
+        "platform": "LINUX/UNIX", "public_ip": "40.82.136.176", "private_ip": "10.0.0.4",
+        "root_disk": { "name": "Not visible in Azure", "type": "PremiumSSD", "size": 30 },
+        "data_disks": [],
+        "network": {
+          "vpc": { "name": "ish-test-vnet", "cidr": "10.0.0.0/16",
+                   "subnets": [ { "name": "default", "cidr": "10.0.0.0/24", "zone": "" } ] },
+          "subnet": "default",
+          "security_groups": [ { "name": "ish-test-nsg",
+            "rules": [ { "direction": "inbound", "protocol": "tcp",
+                         "from_port": "22", "to_port": "22", "cidr": "0.0.0.0/0" } ] } ]
+        },
+        "tags": {},
+        "start_time": "2026-08-05T10:22:47Z"
+      }
+    }
+  ]
+}
+```
+
+> 위 예시에서 `network.host.csp`(에이전트가 채우지 못하는 스텁)는 `null`이고, CSP 네트워크는
+> 최상위 `csp.network`에 상세히 담깁니다. `csp` 섹션은 SSH 없이 CSP만으로도 채워지며,
+> `compute`/`network.host`는 SSH+에이전트가 있어야 채워집니다.
+
 ---
 
 ## SourceGroup
