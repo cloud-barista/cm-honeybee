@@ -128,6 +128,34 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 		if connectionInfo.ResourceID == "" {
 			return nil, errors.New("resource_id is empty")
 		}
+
+		// Optional SSH access. cb-spider gives us the CSP-level VM metadata, but
+		// OS-level details (CPU/memory/kernel/software) need the in-guest agent.
+		// When SSH credentials are provided, honeybee installs and queries that
+		// agent just like an SSH source; without them, only CSP metadata is
+		// available.
+		connectionInfo.IPAddress = strings.TrimSpace(createConnectionInfoReq.IPAddress)
+		connectionInfo.SSHPort = strings.TrimSpace(createConnectionInfoReq.SSHPort)
+		connectionInfo.User = createConnectionInfoReq.User
+		connectionInfo.Password = createConnectionInfoReq.Password
+		connectionInfo.PrivateKey = createConnectionInfoReq.PrivateKey
+		if connectionInfo.IPAddress != "" {
+			if connectionInfo.SSHPort == "" {
+				connectionInfo.SSHPort = "22"
+			}
+			if err := checkPort(connectionInfo.SSHPort); err != nil {
+				return nil, err
+			}
+			if connectionInfo.User == "" {
+				return nil, errors.New("user is empty (required when ip_address is provided)")
+			}
+			if connectionInfo.Password == "" && connectionInfo.PrivateKey == "" {
+				return nil, errors.New("password or private_key must be provided when ip_address is provided")
+			}
+		}
+		if connectionInfo.PrivateKey == "" {
+			connectionInfo.PrivateKey = "-"
+		}
 	default:
 		return nil, errors.New("unsupported source group type: " + sourceGroup.Type)
 	}
@@ -154,16 +182,34 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 
 		switch sourceGroup.Type {
 		case serverCommon.SourceGroupTypeCSP:
+			// connection_status reflects CSP reachability: whether cb-spider can
+			// identify this VM. The CSP metadata it returns is stored separately.
 			if err := refreshCSPConnection(sourceGroup, connectionInfo); err != nil {
 				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
 				oldConnectionInfo.ConnectionFailedMessage = err.Error()
-				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
-				oldConnectionInfo.AgentFailedMessage = err.Error()
 			} else {
 				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
 				oldConnectionInfo.ConnectionFailedMessage = ""
-				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
-				oldConnectionInfo.AgentFailedMessage = ""
+			}
+
+			// agent_status reflects the REAL in-guest agent: it requires SSH
+			// access, so it is only attempted when credentials were provided.
+			// Previously this was faked to "success" from the cb-spider result
+			// even though no agent was installed.
+			if connectionInfo.IPAddress == "" {
+				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.AgentFailedMessage = "no SSH access configured for this CSP connection; " +
+					"provide ip_address/user (and password or private_key) to install the agent"
+			} else {
+				c := &ssh.SSH{}
+				if err := c.RunAgent(*connectionInfo); err != nil {
+					oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+					oldConnectionInfo.AgentFailedMessage = err.Error()
+				} else {
+					c.Close()
+					oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
+					oldConnectionInfo.AgentFailedMessage = ""
+				}
 			}
 		default:
 			c := &ssh.SSH{}
