@@ -183,8 +183,9 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 		switch sourceGroup.Type {
 		case serverCommon.SourceGroupTypeCSP:
 			// connection_status reflects CSP reachability: whether cb-spider can
-			// identify this VM. The CSP metadata it returns is stored separately.
-			if err := refreshCSPConnection(sourceGroup, connectionInfo); err != nil {
+			// identify this resource. This is a status-only check — CSP data is
+			// collected/persisted by import/infra, not here (refresh/registration).
+			if err := checkCSPConnection(sourceGroup, connectionInfo); err != nil {
 				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
 				oldConnectionInfo.ConnectionFailedMessage = err.Error()
 			} else {

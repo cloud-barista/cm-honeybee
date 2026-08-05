@@ -238,8 +238,35 @@ func cspVMIdentifier(resourceID string) string {
 	return id
 }
 
+// checkCSPConnection verifies that cb-spider can identify the resource described
+// by ci, WITHOUT persisting anything. This backs connection_status on
+// registration/refresh — those paths only report reachability. Actual data
+// collection + persistence is done by import (refreshCSPConnection).
+func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
+	if ci.ResourceID == "" {
+		return errors.New("resource_id is empty")
+	}
+
+	return withSpiderConnection(sg, func(connName string) error {
+		switch ci.ResourceType {
+		case "vm":
+			_, err := spider.GetCSPVM(connName, cspVMIdentifier(ci.ResourceID))
+			return err
+		case "k8s":
+			_, err := spider.GetCluster(connName, ci.ResourceID)
+			return err
+		case "object_storage":
+			_, err := spider.GetS3BucketLocation(connName, ci.ResourceID)
+			return err
+		default:
+			return errors.New("unsupported resource_type: " + ci.ResourceType)
+		}
+	})
+}
+
 // refreshCSPConnection contacts cb-spider for the resource described by ci and
-// stores the adapted result in the relevant Saved*Info table.
+// stores the adapted result in the relevant Saved*Info table. Used by import
+// (collection + persistence), not by the status-only refresh path.
 func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 	if ci.ResourceID == "" {
 		return errors.New("resource_id is empty")

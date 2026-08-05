@@ -211,13 +211,13 @@ SG=$(curl -s -X POST $BASE/source_group \
           "ip_address":"40.82.136.176", "user":"ubuntu", "password":"...", "ssh_port":"22"
         }]
       }' | jq -r '.id')
-#   등록 즉시 honeybee가 (1) cb-spider로 VM 메타데이터 수집 → csp_data 저장,
-#   (2) SSH 정보가 있으면 게스트에 에이전트 설치까지 수행.
+#   등록 시 honeybee는 상태만 확인합니다: (1) cb-spider가 VM을 식별하는지(connection_status),
+#   (2) SSH 정보가 있으면 게스트에 에이전트 설치(agent_status). 이 단계에선 데이터를 저장하지 않음.
 #   응답의 connection_info_status_count로 connection/agent 성공 수를 확인.
 
-# 4. 게스트 내부 수집(에이전트) 저장 — SSH 정보를 준 경우
-curl -s -X POST $BASE/source_group/$SG/import/infra
-curl -s -X POST $BASE/source_group/$SG/import/software
+# 4. 수집 + 저장 (csp_data + infra_data) — import 단계에서 수행
+curl -s -X POST $BASE/source_group/$SG/import/infra      # CSP 메타 + (SSH 있으면)게스트 내부
+curl -s -X POST $BASE/source_group/$SG/import/software    # 게스트 소프트웨어(SSH 필요)
 
 # 5. 통합 조회: compute/network(에이전트) + csp(cb-spider)가 함께 반환됨
 curl -s $BASE/source_group/$SG/infra | jq '.servers[0] | {compute, csp}'
@@ -251,8 +251,9 @@ honeybee는 조회 때마다 per-call 유니크 이름으로 **credential → re
 
 VM 리소스는 `GET /cspvm/{id}`로 조회합니다. cb-spider는 관리하지 않는(기존) VM도 CSP에 직접 질의해
 정보를 돌려줍니다. 전체 ARM ID는 경로 인코딩 문제로 깨지므로 honeybee는 **VM 이름(리소스 ID의 마지막
-세그먼트)** 을 넘깁니다. 수집 결과는 `SavedInfraInfo.csp_data`에 저장되고 `GET /.../infra`의 `csp`
-섹션으로 노출됩니다:
+세그먼트)** 을 넘깁니다. 이 **수집·저장은 `POST /import/infra`에서** 이뤄지며(등록/`refresh`는
+연결 상태만 확인하고 저장하지 않음), 결과는 `SavedInfraInfo.csp_data`에 저장되어 `GET /.../infra`의
+`csp` 섹션으로 노출됩니다:
 
 ```jsonc
 "csp": {
@@ -303,12 +304,14 @@ SSH로 접속해 **에이전트(`cm-honeybee-agent`)를 설치·기동**하고, 
 
 | 칼럼 | 채우는 주체 | 노출 위치 |
 |------|-------------|-----------|
-| `csp_data` | cb-spider 수집(등록 / `refresh` / `import/infra` 시) | `infra.csp` |
+| `csp_data` | cb-spider 수집(`import/infra` 시) | `infra.csp` |
 | `infra_data` | 에이전트 수집(`import/infra` 시) | `infra.compute`/`infra.network.host` 등 |
 
-한쪽을 갱신해도 다른 칼럼은 보존되므로, **에이전트 import가 CSP 정보를 덮어쓰지 않고 함께 조회**됩니다.
-`POST /import/infra`는 CSP 소스면 **csp_data(cb-spider)와 infra_data(에이전트)를 함께 갱신**합니다
-(SSH 정보가 없는 CSP 소스는 csp_data만 갱신하고 성공 처리).
+- **등록 / `refresh`**: 연결 상태만 확인합니다(저장 없음). `connection_status`는 cb-spider가 리소스를
+  식별하는지, `agent_status`는 실제 SSH+에이전트 설치 결과.
+- **`POST /import/infra`**: 실제 수집·저장 단계. CSP 소스면 **csp_data(cb-spider)와 infra_data(에이전트)를
+  함께 갱신**합니다(SSH 정보가 없는 CSP 소스는 csp_data만 갱신하고 성공 처리).
+- 한쪽을 갱신해도 다른 칼럼은 보존되므로, **에이전트 import가 CSP 정보를 덮어쓰지 않고 함께 조회**됩니다.
 
 ### 6) 통합 조회 예시 (`GET /source_group/{sgId}/infra`)
 
