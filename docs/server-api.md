@@ -303,10 +303,12 @@ SSH로 접속해 **에이전트(`cm-honeybee-agent`)를 설치·기동**하고, 
 
 | 칼럼 | 채우는 주체 | 노출 위치 |
 |------|-------------|-----------|
-| `csp_data` | cb-spider 수집(`refresh`/등록 시) | `infra.csp` |
-| `infra_data` | 에이전트 수집(`import/infra`) | `infra.compute`/`infra.network.host` 등 |
+| `csp_data` | cb-spider 수집(등록 / `refresh` / `import/infra` 시) | `infra.csp` |
+| `infra_data` | 에이전트 수집(`import/infra` 시) | `infra.compute`/`infra.network.host` 등 |
 
 한쪽을 갱신해도 다른 칼럼은 보존되므로, **에이전트 import가 CSP 정보를 덮어쓰지 않고 함께 조회**됩니다.
+`POST /import/infra`는 CSP 소스면 **csp_data(cb-spider)와 infra_data(에이전트)를 함께 갱신**합니다
+(SSH 정보가 없는 CSP 소스는 csp_data만 갱신하고 성공 처리).
 
 ### 6) 통합 조회 예시 (`GET /source_group/{sgId}/infra`)
 

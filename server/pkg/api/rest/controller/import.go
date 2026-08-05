@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
@@ -15,6 +16,11 @@ import (
 
 func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return nil, err
+	}
+
+	sourceGroup, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +41,29 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 			return nil, errors.New(errMsg)
 		}
 		oldSavedInfraInfo = savedInfraInfo
+	}
+
+	// For CSP sources, (re)collect the CSP-side VM info (csp_data) as part of the
+	// import — mirroring the agent-side collection below. refreshCSPConnection
+	// updates csp_data in place, separate from infra_data.
+	if sourceGroup.Type == serverCommon.SourceGroupTypeCSP {
+		if err := refreshCSPConnection(sourceGroup, connectionInfo); err != nil {
+			oldSavedInfraInfo.Status = "failed"
+			_ = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
+			errMsg := "Error occurred while getting CSP infra information." +
+				" (ConnectionID=" + connectionInfo.ID + ", Error=" + err.Error() + ")"
+			logger.Println(logger.ERROR, false, errMsg)
+			return nil, errors.New(errMsg)
+		}
+		// Reload so the record carries the freshly-written csp_data (avoids the
+		// stale in-memory copy overwriting it on the update below).
+		oldSavedInfraInfo, _ = dao.SavedInfraInfoGet(connectionInfo.ID)
+
+		// Without SSH access there is no in-guest agent to query; the CSP data is
+		// the whole result, so finish here instead of failing on the agent call.
+		if connectionInfo.IPAddress == "" {
+			return oldSavedInfraInfo, nil
+		}
 	}
 
 	s := &ssh.SSH{}
