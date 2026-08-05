@@ -68,6 +68,52 @@ func getCMHoneybeeDefaultConfig() cmHoneybeeConfig {
 	return defaultConfig
 }
 
+// resolveEnvRef expands a "${VAR}" reference to the value of the environment
+// variable VAR (process environment). A non-reference literal is returned
+// unchanged. When s IS a "${VAR}" reference but VAR is unset or empty, it
+// returns "" with refUnset=true so the caller can warn instead of silently
+// using a default. Mirrors cm-mayfly's common.ResolveEnvRef.
+func resolveEnvRef(s string) (value string, refUnset bool) {
+	trimmed := strings.TrimSpace(s)
+	if strings.HasPrefix(trimmed, "${") && strings.HasSuffix(trimmed, "}") {
+		name := strings.TrimSpace(trimmed[2 : len(trimmed)-1])
+		if name != "" {
+			if v := os.Getenv(name); v != "" {
+				return v, false
+			}
+			return "", true
+		}
+	}
+
+	return s, false
+}
+
+// expandConfigEnvRefs expands ${VAR} references in the loaded config values from
+// the process environment. Applied after unmarshal so operators can inject
+// endpoints and credentials from the environment (e.g. SPIDER_USERNAME) instead
+// of committing them to cm-honeybee.yaml. Literals are left unchanged.
+func expandConfigEnvRefs() {
+	fields := []struct {
+		name string
+		ptr  *string
+	}{
+		{"cm-honeybee.listen.port", &CMHoneybeeConfig.CMHoneybee.Listen.Port},
+		{"cm-honeybee.agent.port", &CMHoneybeeConfig.CMHoneybee.Agent.Port},
+		{"cm-honeybee.spider.endpoint", &CMHoneybeeConfig.CMHoneybee.Spider.Endpoint},
+		{"cm-honeybee.spider.username", &CMHoneybeeConfig.CMHoneybee.Spider.Username},
+		{"cm-honeybee.spider.password", &CMHoneybeeConfig.CMHoneybee.Spider.Password},
+	}
+
+	for _, f := range fields {
+		value, refUnset := resolveEnvRef(*f.ptr)
+		if refUnset {
+			logger.Println(logger.WARN, false, "config: "+f.name+
+				" references an unset environment variable; using empty value")
+		}
+		*f.ptr = value
+	}
+}
+
 func readCMHoneybeeConfigFile() error {
 	ex, err := os.Executable()
 	if err != nil {
@@ -93,17 +139,14 @@ func readCMHoneybeeConfigFile() error {
 		if err != nil {
 			return err
 		}
-
-		err = checkCMHoneybeeConfigFile()
-		if err != nil {
-			return err
-		}
 	}
 
-	err = yaml.Unmarshal(data, &CMHoneybeeConfig)
-	if err != nil {
-		return err
-	}
+	// Expand ${VAR} references from the process environment before validation so
+	// endpoints and credentials can be injected via env (e.g. SPIDER_USERNAME /
+	// SPIDER_PASSWORD) instead of being committed to the config file. Plain
+	// literals are left unchanged, keeping existing configs working. Mirrors
+	// cm-mayfly's ${VAR} resolution.
+	expandConfigEnvRefs()
 
 	err = checkCMHoneybeeConfigFile()
 	if err != nil {
