@@ -579,6 +579,12 @@ func UpdateConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	// Load existing SSH secrets (OpenBao) so fields not present in the update
+	// request keep their current values when re-stored below.
+	if err := hydrateConnectionSecrets(oldConnectionInfo); err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
 	updateConnectionInfoReq := new(model.CreateConnectionInfoReq)
 	err = c.Bind(updateConnectionInfoReq)
 	if err != nil {
@@ -626,6 +632,11 @@ func UpdateConnectionInfo(c echo.Context) error {
 		if updateConnectionInfoReq.PrivateKey != "" {
 			oldConnectionInfo.PrivateKey = updateConnectionInfoReq.PrivateKey
 		}
+	}
+
+	// Persist SSH secrets to OpenBao (when enabled), clearing them from the row.
+	if err := storeConnectionSecrets(oldConnectionInfo); err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	err = dao.ConnectionInfoUpdate(oldConnectionInfo)

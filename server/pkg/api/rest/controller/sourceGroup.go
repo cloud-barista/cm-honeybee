@@ -418,16 +418,16 @@ func UpdateSourceGroup(c echo.Context) error {
 		}
 
 		if len(updateSourceGroupReq.Credential) > 0 {
-			// New credential supplied: validate keys + region, then re-encrypt. The
-			// stored (encrypted) credential never needs to be decrypted here.
+			// New credential supplied: validate keys + region, then persist it via
+			// OpenBao (when enabled) or RSA-encrypted in the DB row.
 			if err := validateAndCanonicalizeCSP(oldSourceGroup, updateSourceGroupReq.Credential); err != nil {
 				return common.ReturnErrorMsg(c, err.Error())
 			}
-			encrypted, encErr := encryptCredentialValues(oldSourceGroup.Credential)
-			if encErr != nil {
-				return common.ReturnErrorMsg(c, encErr.Error())
+			stored, storeErr := storeCSPCredential(oldSourceGroup.ID, oldSourceGroup.Credential)
+			if storeErr != nil {
+				return common.ReturnErrorMsg(c, storeErr.Error())
 			}
-			oldSourceGroup.Credential = encrypted
+			oldSourceGroup.Credential = stored
 		} else {
 			// Region-only change: validate the region against metainfo without
 			// touching the stored credential (no re-supply required).
