@@ -16,3 +16,10 @@ cm-honeybee:
         #   password: ${SPIDER_PASSWORD}
         username: default
         password: default
+    # Optional OpenBao secrets backend. When address is set, SSH access info and
+    # CSP credentials are stored in OpenBao (KV v2) instead of the local DB.
+    # Empty address (default) keeps the local storage behaviour.
+    openbao:
+        address: ${HONEYBEE_VAULT_ADDR}
+        token: ${HONEYBEE_VAULT_TOKEN}
+        token_file: ${HONEYBEE_VAULT_TOKEN_FILE}

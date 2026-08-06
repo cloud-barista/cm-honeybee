@@ -5,6 +5,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/lib/config"
+	"github.com/cloud-barista/cm-honeybee/server/lib/openbao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/controller"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/server"
@@ -49,6 +50,9 @@ func init() {
 	if err != nil {
 		logger.Panicln(logger.ERROR, false, err.Error())
 	}
+
+	// Wire the optional OpenBao secrets backend (no-op when not configured).
+	openbao.Init()
 
 	controller.OkMessage.Message = "API server is not ready"
 

@@ -26,6 +26,14 @@ type cmHoneybeeConfig struct {
 			Username string `yaml:"username"`
 			Password string `yaml:"password"`
 		} `yaml:"spider"`
+		OpenBao struct {
+			// Address of the OpenBao server, e.g. http://openbao:8200. Empty
+			// disables OpenBao — secrets stay in the local (SQLite) store.
+			Address string `yaml:"address"`
+			// Token, or TokenFile to read it from (TokenFile wins if Token empty).
+			Token     string `yaml:"token"`
+			TokenFile string `yaml:"token_file"`
+		} `yaml:"openbao"`
 	} `yaml:"cm-honeybee"`
 }
 
@@ -94,19 +102,23 @@ func resolveEnvRef(s string) (value string, refUnset bool) {
 // of committing them to cm-honeybee.yaml. Literals are left unchanged.
 func expandConfigEnvRefs() {
 	fields := []struct {
-		name string
-		ptr  *string
+		name     string
+		ptr      *string
+		optional bool // optional fields resolve an unset ${VAR} to "" silently
 	}{
-		{"cm-honeybee.listen.port", &CMHoneybeeConfig.CMHoneybee.Listen.Port},
-		{"cm-honeybee.agent.port", &CMHoneybeeConfig.CMHoneybee.Agent.Port},
-		{"cm-honeybee.spider.endpoint", &CMHoneybeeConfig.CMHoneybee.Spider.Endpoint},
-		{"cm-honeybee.spider.username", &CMHoneybeeConfig.CMHoneybee.Spider.Username},
-		{"cm-honeybee.spider.password", &CMHoneybeeConfig.CMHoneybee.Spider.Password},
+		{"cm-honeybee.listen.port", &CMHoneybeeConfig.CMHoneybee.Listen.Port, false},
+		{"cm-honeybee.agent.port", &CMHoneybeeConfig.CMHoneybee.Agent.Port, false},
+		{"cm-honeybee.spider.endpoint", &CMHoneybeeConfig.CMHoneybee.Spider.Endpoint, false},
+		{"cm-honeybee.spider.username", &CMHoneybeeConfig.CMHoneybee.Spider.Username, false},
+		{"cm-honeybee.spider.password", &CMHoneybeeConfig.CMHoneybee.Spider.Password, false},
+		{"cm-honeybee.openbao.address", &CMHoneybeeConfig.CMHoneybee.OpenBao.Address, true},
+		{"cm-honeybee.openbao.token", &CMHoneybeeConfig.CMHoneybee.OpenBao.Token, true},
+		{"cm-honeybee.openbao.token_file", &CMHoneybeeConfig.CMHoneybee.OpenBao.TokenFile, true},
 	}
 
 	for _, f := range fields {
 		value, refUnset := resolveEnvRef(*f.ptr)
-		if refUnset {
+		if refUnset && !f.optional {
 			logger.Println(logger.WARN, false, "config: "+f.name+
 				" references an unset environment variable; using empty value")
 		}
