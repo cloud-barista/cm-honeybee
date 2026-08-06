@@ -67,6 +67,7 @@ func doDeleteSourceGroup(sourceGroupID string) error {
 		deleteSavedInfraInfo(&connectionInfo)
 		deleteSavedSoftwareInfo(&connectionInfo)
 		deleteSavedKubernetesInfo(&connectionInfo)
+		deleteConnectionSecrets(connectionInfo.ID)
 		err = dao.ConnectionInfoDelete(&connectionInfo)
 		if err != nil {
 			logger.Println(logger.ERROR, true, err)

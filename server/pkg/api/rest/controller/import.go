@@ -66,6 +66,9 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 		}
 	}
 
+	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+		return nil, err
+	}
 	s := &ssh.SSH{}
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/infra")
 	if err != nil {
@@ -115,6 +118,9 @@ func doImportSoftware(connID string, showDefaultPackages bool) (*model.SavedSoft
 		oldSavedSoftwareInfo = savedSoftwareInfo
 	}
 
+	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+		return nil, err
+	}
 	s := &ssh.SSH{}
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/software?show_default_packages="+strconv.FormatBool(showDefaultPackages))
 	if err != nil {
@@ -164,6 +170,9 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 		oldSavedKubernetesInfo = savedKubernetesInfo
 	}
 
+	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+		return nil, err
+	}
 	s := &ssh.SSH{}
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/kubernetes")
 	if err != nil {
@@ -213,6 +222,9 @@ func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
 		oldSavedHelmInfo = savedHelmInfo
 	}
 
+	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+		return nil, err
+	}
 	s := &ssh.SSH{}
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/helm")
 	if err != nil {
@@ -262,6 +274,9 @@ func doImportData(connID string) (*model.SavedDataInfo, error) {
 		oldSavedDataInfo = savedDataInfo
 	}
 
+	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+		return nil, err
+	}
 	s := &ssh.SSH{}
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/data")
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
+	"github.com/cloud-barista/cm-honeybee/server/lib/openbao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
 	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
@@ -74,6 +75,60 @@ func encryptSecrets(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo
 	connectionInfo.PrivateKey = privateKey
 
 	return connectionInfo, nil
+}
+
+// sshSecretPath is the OpenBao KV path for a connection's SSH secrets.
+func sshSecretPath(connID string) string { return "honeybee/ssh/" + connID }
+
+// storeConnectionSecrets moves the SSH secrets (password, private key) into
+// OpenBao when enabled, clearing them from ci so the DB row holds no secrets.
+// No-op when OpenBao is off (secrets stay on ci for DB storage).
+func storeConnectionSecrets(ci *model.ConnectionInfo) error {
+	if !openbao.Enabled() {
+		return nil
+	}
+	if ci.Password == "" && (ci.PrivateKey == "" || ci.PrivateKey == "-") {
+		return nil // nothing sensitive to store (e.g. CSP connection without SSH)
+	}
+	data := map[string]string{"password": ci.Password, "private_key": ci.PrivateKey}
+	if err := openbao.Put(sshSecretPath(ci.ID), data); err != nil {
+		return err
+	}
+	ci.Password = ""
+	ci.PrivateKey = ""
+	return nil
+}
+
+// hydrateConnectionSecrets loads the SSH secrets from OpenBao into ci before an
+// SSH operation. Falls back to whatever is already on ci (DB values) when
+// OpenBao is off or the connection predates OpenBao.
+func hydrateConnectionSecrets(ci *model.ConnectionInfo) error {
+	if !openbao.Enabled() {
+		return nil
+	}
+	data, err := openbao.Get(sshSecretPath(ci.ID))
+	if err != nil {
+		if errors.Is(err, openbao.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+	ci.Password = data["password"]
+	ci.PrivateKey = data["private_key"]
+	if ci.PrivateKey == "" {
+		ci.PrivateKey = "-"
+	}
+	return nil
+}
+
+// deleteConnectionSecrets removes a connection's SSH secrets from OpenBao.
+func deleteConnectionSecrets(connID string) {
+	if !openbao.Enabled() {
+		return
+	}
+	if err := openbao.Delete(sshSecretPath(connID)); err != nil {
+		logger.Println(logger.WARN, true, "OpenBao: failed to delete SSH secrets ("+connID+"): "+err.Error())
+	}
 }
 
 func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnectionInfoReq *model.CreateConnectionInfoReq) (*model.ConnectionInfo, error) {
@@ -176,6 +231,11 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 	}
 
 	if refresh {
+		// Load SSH secrets from OpenBao (when enabled) before any SSH operation.
+		if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+			return nil, err
+		}
+
 		sourceGroup, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
 		if err != nil {
 			return nil, err
@@ -258,6 +318,11 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 func doCreateConnectionInfo(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
 	_, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
 	if err != nil {
+		return nil, err
+	}
+
+	// Move SSH secrets into OpenBao (when enabled) before persisting the row.
+	if err := storeConnectionSecrets(connectionInfo); err != nil {
 		return nil, err
 	}
 
@@ -610,6 +675,8 @@ func DeleteConnectionInfo(c echo.Context) error {
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
+
+	deleteConnectionSecrets(connectionInfo.ID)
 
 	err = dao.ConnectionInfoDelete(connectionInfo)
 	if err != nil {
