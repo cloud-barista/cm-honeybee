@@ -134,6 +134,23 @@
 
 ---
 
+## 비밀 정보 저장 (OpenBao / 로컬)
+
+SSH 접속 시크릿(비밀번호/개인키)과 CSP credential은 **OpenBao**(KV v2) 또는 로컬 SQLite에
+저장됩니다. `cm-honeybee.openbao.address`(또는 `HONEYBEE_VAULT_ADDR`)가 설정되면 OpenBao를 사용합니다.
+
+| 종류 | OpenBao 경로 | 미설정 시(로컬) |
+|------|--------------|------------------|
+| CSP credential | `secret/csp/{sgId}` | DB에 RSA 암호화 저장 |
+| SSH 시크릿(password/private_key) | `secret/ssh/{connId}` | DB에 저장 |
+
+- **설정**: `cm-honeybee.yaml`의 `openbao.address`/`openbao.token`(또는 `token_file`). 값은 `${VAR}`로
+  주입 가능. address가 비면 기존(로컬) 동작 — 하위호환.
+- **읽기 폴백**: OpenBao에 없으면 DB 값을 사용(OpenBao 도입 前 생성된 소스에도 안전).
+- OpenBao를 컨테이너로 함께 띄우는 구성은 [`deployments/docker-compose`](../deployments/docker-compose/README.md) 참고.
+
+---
+
 ## 전형적인 워크플로우 (SSH 타입 — v0.6.0 권장)
 
 ```bash
