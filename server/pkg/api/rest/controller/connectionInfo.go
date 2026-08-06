@@ -118,6 +118,7 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 	case serverCommon.SourceGroupTypeCSP:
 		connectionInfo.ResourceType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.ResourceType))
 		connectionInfo.ResourceID = strings.TrimSpace(createConnectionInfoReq.ResourceID)
+		connectionInfo.Zone = strings.TrimSpace(createConnectionInfoReq.Zone)
 		switch connectionInfo.ResourceType {
 		case serverCommon.ResourceTypeVM,
 			serverCommon.ResourceTypeK8s,

@@ -2,6 +2,8 @@ package spider
 
 import (
 	"errors"
+	"fmt"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -62,7 +64,22 @@ func NormalizeProvider(in string) (string, error) {
 			return c, nil
 		}
 	}
-	return "", errors.New("unsupported CSP: " + in)
+	return "", fmt.Errorf("unsupported CSP: %q. Supported CSPs: %s",
+		in, strings.Join(SupportedProviders(), ", "))
+}
+
+// SupportedProviders returns the canonical CSP names currently known to
+// cb-spider, sorted. Loads the provider cache if needed.
+func SupportedProviders() []string {
+	_ = loadProviderCache(false)
+	providerCacheInstance.mu.Lock()
+	defer providerCacheInstance.mu.Unlock()
+	names := make([]string, 0, len(providerCacheInstance.m))
+	for _, canonical := range providerCacheInstance.m {
+		names = append(names, canonical)
+	}
+	sort.Strings(names)
+	return names
 }
 
 // CanonicalKeyFromMeta returns the canonical credential key (case-corrected)

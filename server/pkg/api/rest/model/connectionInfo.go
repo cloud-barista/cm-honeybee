@@ -25,6 +25,9 @@ type ConnectionInfo struct {
 	// ResourceType: "vm" | "k8s" | "object_storage".
 	ResourceType string `gorm:"column:resource_type" json:"resource_type,omitempty"`
 	ResourceID   string `gorm:"column:resource_id" json:"resource_id,omitempty"`
+	// Zone overrides the CSP zone for this connection's cb-spider lookups.
+	// Empty → provider default (see buildRegionKV).
+	Zone string `gorm:"column:zone" json:"zone,omitempty"`
 
 	ConnectionStatus        string `gorm:"column:connection_status" json:"connection_status"`
 	ConnectionFailedMessage string `gorm:"column:connection_failed_message" json:"connection_failed_message"`
@@ -46,6 +49,8 @@ type CreateConnectionInfoReq struct {
 	// CSP fields — required when parent SourceGroup.Type == "csp".
 	ResourceType string `json:"resource_type,omitempty"`
 	ResourceID   string `json:"resource_id,omitempty"`
+	// Zone (optional) overrides the CSP zone for this connection. Empty → default.
+	Zone string `json:"zone,omitempty"`
 }
 
 type ListConnectionInfoRes struct {

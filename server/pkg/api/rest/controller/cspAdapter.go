@@ -247,7 +247,7 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 		return errors.New("resource_id is empty")
 	}
 
-	return withSpiderConnection(sg, func(connName string) error {
+	return withSpiderConnection(sg, ci.Zone, func(connName string) error {
 		switch ci.ResourceType {
 		case "vm":
 			_, err := spider.GetCSPVM(connName, cspVMIdentifier(ci.ResourceID))
@@ -274,7 +274,7 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error
 
 	// Register a temporary cb-spider connection for the duration of this call only —
 	// credentials are never persisted in cb-spider.
-	return withSpiderConnection(sg, func(connName string) error {
+	return withSpiderConnection(sg, ci.Zone, func(connName string) error {
 		switch ci.ResourceType {
 		case "vm":
 			vm, err := spider.GetCSPVM(connName, cspVMIdentifier(ci.ResourceID))

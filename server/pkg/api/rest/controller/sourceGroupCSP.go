@@ -161,11 +161,15 @@ func validateAndCanonicalizeCSP(sg *model.SourceGroup, plainKV []model.KeyValue)
 // (e.g. "koreacentral/1"). When a Zone key is required but no zone is given, it
 // defaults to "1": the value is not used for resource lookups by ID (Get by
 // resource_id), but the key must be present for cb-spider to accept the region.
-func buildRegionKV(provider, regionName string) ([]spider.KeyValue, error) {
+func buildRegionKV(provider, regionName, zoneOverride string) ([]spider.KeyValue, error) {
 	region := strings.TrimSpace(regionName)
-	zone := ""
+	// Zone precedence: explicit override (connection_info.zone) > "<region>/<zone>"
+	// embedded in region_name > provider default ("1") applied below.
+	zone := strings.TrimSpace(zoneOverride)
 	if i := strings.Index(region, "/"); i >= 0 {
-		zone = strings.TrimSpace(region[i+1:])
+		if zone == "" {
+			zone = strings.TrimSpace(region[i+1:])
+		}
 		region = strings.TrimSpace(region[:i])
 	}
 	if region == "" {
@@ -194,12 +198,47 @@ func buildRegionKV(provider, regionName string) ([]spider.KeyValue, error) {
 	return kv, nil
 }
 
+// withSpiderCredential registers a TEMPORARY cb-spider credential (+ ensures the
+// driver) for the given CSP SourceGroup, invokes fn with the driver and
+// credential names, and unregisters the credential before returning. Unlike
+// withSpiderConnection it registers NO region/connection — used for lookups that
+// only need a credential + driver (e.g. listing the CSP's regions).
+func withSpiderCredential(sg *model.SourceGroup, fn func(driverName, credName string) error) error {
+	if sg == nil || sg.Type != serverCommon.SourceGroupTypeCSP {
+		return errors.New("source group is not a csp-type group")
+	}
+	provider, err := spider.NormalizeProvider(sg.ProviderName)
+	if err != nil {
+		return err
+	}
+	plainKV, err := decryptCredentialValues(sg.Credential)
+	if err != nil {
+		return err
+	}
+	driverName, err := spider.EnsureDriver(provider)
+	if err != nil {
+		return errors.New("failed to ensure driver: " + err.Error())
+	}
+
+	credName := "honeybee-tmp-cred-" + uuid.New().String()
+	if _, err := spider.RegisterCredential(credName, provider, toSpiderKV(plainKV)); err != nil {
+		return errors.New("failed to register temporary credential on cb-spider: " + err.Error())
+	}
+	defer func() {
+		if err := spider.UnregisterCredential(credName); err != nil {
+			logger.Println(logger.WARN, true, "failed to unregister temporary spider credential: "+err.Error())
+		}
+	}()
+
+	return fn(driverName, credName)
+}
+
 // withSpiderConnection registers a TEMPORARY cb-spider credential + region +
 // connection for the given CSP SourceGroup, invokes fn with the resulting
 // ConnectionName, and unregisters everything before returning. Credentials are
 // therefore never persisted in cb-spider — honeybee remains the only store
 // (encrypted at rest). Per-call unique names make concurrent calls collision-free.
-func withSpiderConnection(sg *model.SourceGroup, fn func(connName string) error) error {
+func withSpiderConnection(sg *model.SourceGroup, zoneOverride string, fn func(connName string) error) error {
 	if sg == nil || sg.Type != serverCommon.SourceGroupTypeCSP {
 		return errors.New("source group is not a csp-type group")
 	}
@@ -208,7 +247,7 @@ func withSpiderConnection(sg *model.SourceGroup, fn func(connName string) error)
 		return err
 	}
 
-	regionKV, err := buildRegionKV(provider, sg.RegionName)
+	regionKV, err := buildRegionKV(provider, sg.RegionName, zoneOverride)
 	if err != nil {
 		return err
 	}

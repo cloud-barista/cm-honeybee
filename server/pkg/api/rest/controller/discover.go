@@ -49,7 +49,7 @@ func DiscoverSourceGroupResources(c echo.Context) error {
 	// Register a temporary cb-spider connection for the duration of the discovery
 	// call only — credentials are never persisted in cb-spider.
 	var items []model.DiscoveredResource
-	err = withSpiderConnection(sg, func(connName string) error {
+	err = withSpiderConnection(sg, "", func(connName string) error {
 		var derr error
 		items, derr = discoverByType(connName, resourceType)
 		return derr
