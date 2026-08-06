@@ -16,9 +16,9 @@ cm-honeybee:
         #   password: ${SPIDER_PASSWORD}
         username: default
         password: default
-    # Optional OpenBao secrets backend. When address is set, SSH access info and
-    # CSP credentials are stored in OpenBao (KV v2) instead of the local DB.
-    # Empty address (default) keeps the local storage behaviour.
+    # OpenBao secrets backend. SSH access secrets and CSP credentials are stored
+    # ONLY in OpenBao (KV v2) — SQLite no longer stores secrets. If address is
+    # empty, creating sources that carry a credential/SSH secret will fail.
     openbao:
         address: ${HONEYBEE_VAULT_ADDR}
         token: ${HONEYBEE_VAULT_TOKEN}

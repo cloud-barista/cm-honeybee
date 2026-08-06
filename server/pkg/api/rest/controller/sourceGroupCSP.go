@@ -1,14 +1,12 @@
 package controller
 
 import (
-	"encoding/base64"
 	"errors"
 	"sort"
 	"strings"
 
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/lib/openbao"
-	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
 	"github.com/cloud-barista/cm-honeybee/server/lib/spider"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/google/uuid"
@@ -92,44 +90,6 @@ func toSpiderKV(in []model.KeyValue) []spider.KeyValue {
 	return out
 }
 
-// encryptCredentialValues encrypts each KV value with the server's RSA public
-// key, base64-encoded. The keys are left in plaintext.
-func encryptCredentialValues(in []model.KeyValue) ([]model.KeyValue, error) {
-	out := make([]model.KeyValue, 0, len(in))
-	for _, kv := range in {
-		enc, err := rsautil.EncryptWithPublicKey([]byte(kv.Value), serverCommon.PubKey)
-		if err != nil {
-			return nil, errors.New("failed to encrypt credential value for key " + kv.Key + ": " + err.Error())
-		}
-		out = append(out, model.KeyValue{
-			Key:   kv.Key,
-			Value: base64.StdEncoding.EncodeToString(enc),
-		})
-	}
-	return out, nil
-}
-
-// decryptCredentialValues reverses encryptCredentialValues: each base64-encoded,
-// RSA-encrypted value is decrypted back to plaintext. Keys are left untouched.
-func decryptCredentialValues(in []model.KeyValue) ([]model.KeyValue, error) {
-	if serverCommon.PrivKey == nil {
-		return nil, errors.New("server private key is not loaded; cannot decrypt CSP credential")
-	}
-	out := make([]model.KeyValue, 0, len(in))
-	for _, kv := range in {
-		raw, err := base64.StdEncoding.DecodeString(kv.Value)
-		if err != nil {
-			return nil, errors.New("failed to base64-decode credential value for key " + kv.Key + ": " + err.Error())
-		}
-		dec, err := rsautil.DecryptWithPrivateKey(raw, serverCommon.PrivKey)
-		if err != nil {
-			return nil, errors.New("failed to decrypt credential value for key " + kv.Key + ": " + err.Error())
-		}
-		out = append(out, model.KeyValue{Key: kv.Key, Value: string(dec)})
-	}
-	return out, nil
-}
-
 // cspCredentialPath is the OpenBao KV path for a source group's CSP credential.
 func cspCredentialPath(sgID string) string { return "honeybee/csp/" + sgID }
 
@@ -149,35 +109,28 @@ func mapToKV(m map[string]string) []model.KeyValue {
 	return out
 }
 
-// storeCSPCredential persists a source group's canonical plaintext credential.
-// With OpenBao it writes to the vault and returns nil (nothing kept in the DB
-// row); otherwise it returns the RSA-encrypted KV to store in the DB.
+// storeCSPCredential writes a source group's canonical plaintext credential to
+// OpenBao. OpenBao is the only secret store — no credential is kept in the DB.
 func storeCSPCredential(sgID string, plain []model.KeyValue) (model.KeyValueList, error) {
-	if openbao.Enabled() {
-		if err := openbao.Put(cspCredentialPath(sgID), kvToMap(plain)); err != nil {
-			return nil, err
-		}
-		return nil, nil
+	if !openbao.Enabled() {
+		return nil, errors.New("OpenBao is required to store CSP credentials (set cm-honeybee.openbao.address)")
 	}
-	enc, err := encryptCredentialValues(plain)
-	return enc, err
+	if err := openbao.Put(cspCredentialPath(sgID), kvToMap(plain)); err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
-// loadCSPCredential returns the plaintext CSP credential for a source group,
-// reading from OpenBao when enabled and falling back to the DB (RSA-encrypted)
-// — e.g. for source groups created before OpenBao was configured.
+// loadCSPCredential returns a source group's plaintext credential from OpenBao.
 func loadCSPCredential(sg *model.SourceGroup) ([]model.KeyValue, error) {
-	if openbao.Enabled() {
-		data, err := openbao.Get(cspCredentialPath(sg.ID))
-		if err == nil {
-			return mapToKV(data), nil
-		}
-		if !errors.Is(err, openbao.ErrNotFound) {
-			return nil, err
-		}
-		// Not in OpenBao — fall through to the DB copy.
+	if !openbao.Enabled() {
+		return nil, errors.New("OpenBao is required to read CSP credentials (set cm-honeybee.openbao.address)")
 	}
-	return decryptCredentialValues(sg.Credential)
+	data, err := openbao.Get(cspCredentialPath(sg.ID))
+	if err != nil {
+		return nil, err
+	}
+	return mapToKV(data), nil
 }
 
 // deleteCSPCredential removes a source group's CSP credential from OpenBao. It is

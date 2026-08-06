@@ -41,7 +41,8 @@ func Init() {
 	cfg := config.CMHoneybeeConfig.CMHoneybee.OpenBao
 	addr := strings.TrimRight(strings.TrimSpace(cfg.Address), "/")
 	if addr == "" {
-		logger.Println(logger.INFO, false, "OpenBao: not configured; using local secret storage")
+		logger.Println(logger.WARN, false, "OpenBao: not configured (cm-honeybee.openbao.address is empty). "+
+			"SSH/CSP credentials cannot be stored until OpenBao is configured.")
 		return
 	}
 

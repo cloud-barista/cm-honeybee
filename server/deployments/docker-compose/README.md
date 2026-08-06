@@ -55,13 +55,11 @@ and mc-terrarium's [credential paths](https://github.com/cloud-barista/mc-terrar
 - `HONEYBEE_VAULT_ADDR=http://openbao:8200`
 - `HONEYBEE_VAULT_TOKEN_FILE=/run/openbao/honeybee.token` (mounted read-only)
 
-These map to the `cm-honeybee.openbao` config (via `${VAR}` resolution). When
-`address` is set, cm-honeybee stores **CSP credentials** at `secret/csp/{sgId}`
-and **SSH secrets** (password / private key) at `secret/ssh/{connId}`, instead of
-the local SQLite store. When the address is empty (default), it keeps using the
-SQLite store — so nothing changes for existing deployments. Source groups /
-connections created before OpenBao was enabled keep working (the code falls back
-to the DB copy when a secret is absent in OpenBao).
+These map to the `cm-honeybee.openbao` config (via `${VAR}` resolution).
+cm-honeybee stores **CSP credentials** at `secret/csp/{sgId}` and **SSH secrets**
+(password / private key) at `secret/ssh/{connId}`. OpenBao is the **only** secret
+store — SQLite no longer holds credentials/SSH secrets. If `address` is empty,
+operations that need to store a secret fail with an `OpenBao is required` error.
 
 ## Security notes
 

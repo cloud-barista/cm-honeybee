@@ -84,11 +84,11 @@ func sshSecretPath(connID string) string { return "honeybee/ssh/" + connID }
 // OpenBao when enabled, clearing them from ci so the DB row holds no secrets.
 // No-op when OpenBao is off (secrets stay on ci for DB storage).
 func storeConnectionSecrets(ci *model.ConnectionInfo) error {
-	if !openbao.Enabled() {
-		return nil
-	}
 	if ci.Password == "" && (ci.PrivateKey == "" || ci.PrivateKey == "-") {
 		return nil // nothing sensitive to store (e.g. CSP connection without SSH)
+	}
+	if !openbao.Enabled() {
+		return errors.New("OpenBao is required to store SSH secrets (set cm-honeybee.openbao.address)")
 	}
 	data := map[string]string{"password": ci.Password, "private_key": ci.PrivateKey}
 	if err := openbao.Put(sshSecretPath(ci.ID), data); err != nil {

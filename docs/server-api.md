@@ -134,19 +134,24 @@
 
 ---
 
-## 비밀 정보 저장 (OpenBao / 로컬)
+## 비밀 정보 저장 (OpenBao 필수)
 
-SSH 접속 시크릿(비밀번호/개인키)과 CSP credential은 **OpenBao**(KV v2) 또는 로컬 SQLite에
-저장됩니다. `cm-honeybee.openbao.address`(또는 `HONEYBEE_VAULT_ADDR`)가 설정되면 OpenBao를 사용합니다.
+SSH 접속 시크릿(비밀번호/개인키)과 CSP credential은 **OpenBao**(KV v2)에만 저장됩니다. SQLite에는
+비밀 정보를 저장하지 않습니다(암호화 저장 포함 제거됨).
 
-| 종류 | OpenBao 경로 | 미설정 시(로컬) |
-|------|--------------|------------------|
-| CSP credential | `secret/csp/{sgId}` | DB에 RSA 암호화 저장 |
-| SSH 시크릿(password/private_key) | `secret/ssh/{connId}` | DB에 저장 |
+| 종류 | OpenBao 경로 |
+|------|--------------|
+| CSP credential | `secret/csp/{sgId}` |
+| SSH 시크릿(password/private_key) | `secret/ssh/{connId}` |
 
-- **설정**: `cm-honeybee.yaml`의 `openbao.address`/`openbao.token`(또는 `token_file`). 값은 `${VAR}`로
-  주입 가능. address가 비면 기존(로컬) 동작 — 하위호환.
-- **읽기 폴백**: OpenBao에 없으면 DB 값을 사용(OpenBao 도입 前 생성된 소스에도 안전).
+- **설정 필수**: `cm-honeybee.yaml`의 `openbao.address`(또는 `HONEYBEE_VAULT_ADDR`) + `token`/`token_file`.
+  값은 `${VAR}`로 주입 가능.
+- **미설정 시**: 비밀 정보가 필요한 작업(자격증명/SSH 접속정보를 가진 소스그룹·커넥션 생성)은
+  `"OpenBao is required ..."` 오류로 실패합니다. (비밀 정보가 없는 조회 등은 정상 동작)
+- CSP credential 키 이름은 cb-tumblebug의
+  [template.credentials.yaml](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/template.credentials.yaml)
+  규약(= cb-spider `credentialcsp`)을 따릅니다. 예: Azure `clientId/clientSecret/tenantId/subscriptionId`,
+  AWS `aws_access_key_id/aws_secret_access_key`. (`GET /csp/{name}`가 키+예시 제공)
 - OpenBao를 컨테이너로 함께 띄우는 구성은 [`deployments/docker-compose`](../deployments/docker-compose/README.md) 참고.
 
 ---
