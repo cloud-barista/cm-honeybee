@@ -73,6 +73,11 @@ func doDeleteSourceGroup(sourceGroupID string) error {
 		}
 	}
 
+	// Remove the CSP credential from OpenBao (no-op for DB storage / non-CSP).
+	if sourceGroup.Type == serverCommon.SourceGroupTypeCSP {
+		deleteCSPCredential(sourceGroup.ID)
+	}
+
 	err = dao.SourceGroupDelete(sourceGroup)
 	if err != nil {
 		return err
@@ -134,12 +139,13 @@ func CreateSourceGroup(c echo.Context) error {
 		if err := validateAndCanonicalizeCSP(sourceGroup, createSourceGroupReq.Credential); err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
-		// Encrypt credential values before persisting (honeybee is the only store).
-		encrypted, encErr := encryptCredentialValues(sourceGroup.Credential)
-		if encErr != nil {
-			return common.ReturnErrorMsg(c, encErr.Error())
+		// Persist the credential: OpenBao when enabled, otherwise RSA-encrypted in
+		// the DB row. On OpenBao, the DB row keeps no credential values.
+		stored, storeErr := storeCSPCredential(sourceGroup.ID, sourceGroup.Credential)
+		if storeErr != nil {
+			return common.ReturnErrorMsg(c, storeErr.Error())
 		}
-		sourceGroup.Credential = encrypted
+		sourceGroup.Credential = stored
 	}
 
 	var connectionInfoList []*model.ConnectionInfo

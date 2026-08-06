@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
+	"github.com/cloud-barista/cm-honeybee/server/lib/openbao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
 	"github.com/cloud-barista/cm-honeybee/server/lib/spider"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
@@ -121,6 +122,67 @@ func decryptCredentialValues(in []model.KeyValue) ([]model.KeyValue, error) {
 	return out, nil
 }
 
+// cspCredentialPath is the OpenBao KV path for a source group's CSP credential.
+func cspCredentialPath(sgID string) string { return "honeybee/csp/" + sgID }
+
+func kvToMap(in []model.KeyValue) map[string]string {
+	m := make(map[string]string, len(in))
+	for _, kv := range in {
+		m[kv.Key] = kv.Value
+	}
+	return m
+}
+
+func mapToKV(m map[string]string) []model.KeyValue {
+	out := make([]model.KeyValue, 0, len(m))
+	for k, v := range m {
+		out = append(out, model.KeyValue{Key: k, Value: v})
+	}
+	return out
+}
+
+// storeCSPCredential persists a source group's canonical plaintext credential.
+// With OpenBao it writes to the vault and returns nil (nothing kept in the DB
+// row); otherwise it returns the RSA-encrypted KV to store in the DB.
+func storeCSPCredential(sgID string, plain []model.KeyValue) (model.KeyValueList, error) {
+	if openbao.Enabled() {
+		if err := openbao.Put(cspCredentialPath(sgID), kvToMap(plain)); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}
+	enc, err := encryptCredentialValues(plain)
+	return enc, err
+}
+
+// loadCSPCredential returns the plaintext CSP credential for a source group,
+// reading from OpenBao when enabled and falling back to the DB (RSA-encrypted)
+// — e.g. for source groups created before OpenBao was configured.
+func loadCSPCredential(sg *model.SourceGroup) ([]model.KeyValue, error) {
+	if openbao.Enabled() {
+		data, err := openbao.Get(cspCredentialPath(sg.ID))
+		if err == nil {
+			return mapToKV(data), nil
+		}
+		if !errors.Is(err, openbao.ErrNotFound) {
+			return nil, err
+		}
+		// Not in OpenBao — fall through to the DB copy.
+	}
+	return decryptCredentialValues(sg.Credential)
+}
+
+// deleteCSPCredential removes a source group's CSP credential from OpenBao. It is
+// a no-op for DB storage (the row delete handles that).
+func deleteCSPCredential(sgID string) {
+	if !openbao.Enabled() {
+		return
+	}
+	if err := openbao.Delete(cspCredentialPath(sgID)); err != nil {
+		logger.Println(logger.WARN, true, "OpenBao: failed to delete CSP credential ("+sgID+"): "+err.Error())
+	}
+}
+
 // validateAndCanonicalizeCSP validates the supplied plaintext credential and
 // region against the CSP metainfo and records canonical provider/region/credential
 // on sg. It performs NO writes to cb-spider — credentials are registered only
@@ -211,7 +273,7 @@ func withSpiderCredential(sg *model.SourceGroup, fn func(driverName, credName st
 	if err != nil {
 		return err
 	}
-	plainKV, err := decryptCredentialValues(sg.Credential)
+	plainKV, err := loadCSPCredential(sg)
 	if err != nil {
 		return err
 	}
@@ -252,7 +314,7 @@ func withSpiderConnection(sg *model.SourceGroup, zoneOverride string, fn func(co
 		return err
 	}
 
-	plainKV, err := decryptCredentialValues(sg.Credential)
+	plainKV, err := loadCSPCredential(sg)
 	if err != nil {
 		return err
 	}
