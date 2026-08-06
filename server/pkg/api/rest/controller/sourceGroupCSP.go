@@ -37,20 +37,28 @@ func normalizeRegion(meta *spider.CloudOSMetaInfo, region string) string {
 //   - any required key is missing, or
 //   - any provided key is not in the required set.
 func canonicalizeCredentialKV(provider string, meta *spider.CloudOSMetaInfo, in []model.KeyValue) ([]model.KeyValue, error) {
-	if meta == nil || len(meta.Credential) == 0 {
-		// Without metainfo we trust the caller.
+	// Canonical credential keys follow cb-spider's "credentialcsp" convention,
+	// which matches cb-tumblebug's template.credentials.yaml (e.g. Azure
+	// clientId/clientSecret/…, AWS aws_access_key_id/…). cb-spider auto-maps these
+	// to its internal keys on RegisterCredential, so honeybee stores/advertises
+	// the tumblebug-aligned names. The generic keys (ClientId/…) are also accepted
+	// as input and normalized to the csp names.
+	if meta == nil || len(meta.CredentialCSP) == 0 {
 		return in, nil
 	}
 
-	required := make(map[string]string, len(meta.Credential)) // upper -> canonical
-	for _, k := range meta.Credential {
-		required[strings.ToUpper(k)] = k
+	accept := make(map[string]string, len(meta.CredentialCSP)*2) // upper(any key) -> canonical csp key
+	for i, cspKey := range meta.CredentialCSP {
+		accept[strings.ToUpper(cspKey)] = cspKey
+		if i < len(meta.Credential) {
+			accept[strings.ToUpper(meta.Credential[i])] = cspKey
+		}
 	}
 
 	out := make([]model.KeyValue, 0, len(in))
 	provided := make(map[string]bool, len(in))
 	for _, kv := range in {
-		canonical, ok := required[strings.ToUpper(strings.TrimSpace(kv.Key))]
+		canonical, ok := accept[strings.ToUpper(strings.TrimSpace(kv.Key))]
 		if !ok {
 			return nil, errors.New("credential key not accepted by " + provider + " CSP: " + kv.Key)
 		}
@@ -62,9 +70,9 @@ func canonicalizeCredentialKV(provider string, meta *spider.CloudOSMetaInfo, in 
 	}
 
 	missing := make([]string, 0)
-	for _, canonical := range required {
-		if !provided[canonical] {
-			missing = append(missing, canonical)
+	for _, cspKey := range meta.CredentialCSP {
+		if !provided[cspKey] {
+			missing = append(missing, cspKey)
 		}
 	}
 	if len(missing) > 0 {

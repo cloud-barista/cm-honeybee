@@ -22,34 +22,34 @@ type credExample struct{ example, description string }
 // matching provider secret formats) so they are safe to commit and to display.
 var credentialExamples = map[string]map[string]credExample{
 	"AWS": {
-		"ClientId":     {"<AWS_ACCESS_KEY_ID>", "AWS Access Key ID (aws_access_key_id)"},
-		"ClientSecret": {"<AWS_SECRET_ACCESS_KEY>", "AWS Secret Access Key (aws_secret_access_key)"},
+		"aws_access_key_id":     {"<AWS_ACCESS_KEY_ID>", "AWS Access Key ID"},
+		"aws_secret_access_key": {"<AWS_SECRET_ACCESS_KEY>", "AWS Secret Access Key"},
 	},
 	"AZURE": {
-		"ClientId":       {"<AZURE_CLIENT_ID>", "Azure Client ID (clientId), a GUID"},
-		"ClientSecret":   {"<AZURE_CLIENT_SECRET>", "Azure Client Secret (clientSecret)"},
-		"TenantId":       {"<AZURE_TENANT_ID>", "Azure Tenant ID (tenantId), a GUID"},
-		"SubscriptionId": {"<AZURE_SUBSCRIPTION_ID>", "Azure Subscription ID (subscriptionId), a GUID"},
+		"clientId":       {"<AZURE_CLIENT_ID>", "Azure Client ID, a GUID"},
+		"clientSecret":   {"<AZURE_CLIENT_SECRET>", "Azure Client Secret"},
+		"tenantId":       {"<AZURE_TENANT_ID>", "Azure Tenant ID, a GUID"},
+		"subscriptionId": {"<AZURE_SUBSCRIPTION_ID>", "Azure Subscription ID, a GUID"},
 	},
 	"GCP": {
-		"PrivateKey":  {"-----BEGIN PRIVATE KEY-----\\n<base64>\\n-----END PRIVATE KEY-----\\n", "GCP service account private key (private_key, inline with \\n)"},
-		"ProjectID":   {"cloud-barista", "GCP Project ID (project_id)"},
-		"ClientEmail": {"user01@cloud-barista.com", "GCP service account client email (client_email)"},
+		"private_key":  {"-----BEGIN PRIVATE KEY-----\\n<base64>\\n-----END PRIVATE KEY-----\\n", "GCP service account private key (inline with \\n)"},
+		"project_id":   {"cloud-barista", "GCP Project ID"},
+		"client_email": {"user01@cloud-barista.com", "GCP service account client email"},
 	},
 	"ALIBABA": {
-		"ClientId":     {"<ALIBABA_ACCESS_KEY_ID>", "Alibaba Access Key ID (AccessKeyId)"},
-		"ClientSecret": {"<ALIBABA_ACCESS_KEY_SECRET>", "Alibaba Access Key Secret (AccessKeySecret)"},
+		"AccessKeyId":     {"<ALIBABA_ACCESS_KEY_ID>", "Alibaba Cloud Access Key ID"},
+		"AccessKeySecret": {"<ALIBABA_ACCESS_KEY_SECRET>", "Alibaba Cloud Access Key Secret"},
 	},
 	"TENCENT": {
-		"ClientId":     {"<TENCENT_SECRET_ID>", "Tencent SecretId"},
-		"ClientSecret": {"<TENCENT_SECRET_KEY>", "Tencent SecretKey"},
+		"SecretId":  {"<TENCENT_SECRET_ID>", "Tencent Cloud SecretId"},
+		"SecretKey": {"<TENCENT_SECRET_KEY>", "Tencent Cloud SecretKey"},
 	},
 	"IBM": {
 		"ApiKey": {"<IBM_CLOUD_API_KEY>", "IBM Cloud API key"},
 	},
 	"NCP": {
-		"ClientId":     {"<NCLOUD_ACCESS_KEY>", "NCP Access Key (ncloud_access_key)"},
-		"ClientSecret": {"<NCLOUD_SECRET_KEY>", "NCP Secret Key (ncloud_secret_key)"},
+		"ncloud_access_key": {"<NCLOUD_ACCESS_KEY>", "NCP Access Key"},
+		"ncloud_secret_key":  {"<NCLOUD_SECRET_KEY>", "NCP Secret Key"},
 	},
 	"OPENSTACK": {
 		"IdentityEndpoint": {"http://openstack-host:5000/v3", "Keystone identity endpoint"},
@@ -128,10 +128,18 @@ func GetCSP(c echo.Context) error {
 		defaultRegion = meta.DefaultRegionToQuery[0]
 	}
 
+	// Advertise the cb-spider "credentialcsp" keys (== cb-tumblebug's
+	// template.credentials.yaml). Fall back to the generic keys if a driver has
+	// no csp list.
+	credKeys := meta.CredentialCSP
+	if len(credKeys) == 0 {
+		credKeys = meta.Credential
+	}
+
 	return c.JSONPretty(http.StatusOK, model.CSPInfo{
 		Name:           canonical,
-		CredentialKeys: meta.Credential,
-		Credentials:    buildCredentialFields(canonical, meta.Credential),
+		CredentialKeys: credKeys,
+		Credentials:    buildCredentialFields(canonical, credKeys),
 		Regions:        meta.Region,
 		DefaultRegion:  defaultRegion,
 	}, " ")
