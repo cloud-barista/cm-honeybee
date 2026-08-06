@@ -226,6 +226,12 @@ func k8sNodeInfoString(nodeInfo interface{}, key string) string {
 	return s
 }
 
+// normalizeUUID lowercases and strips hyphens so a machine/system UUID compares
+// equal regardless of formatting (e.g. "34C7FF99-E46C-..." == "34c7ff99e46c...").
+func normalizeUUID(s string) string {
+	return strings.ToLower(strings.ReplaceAll(strings.TrimSpace(s), "-", ""))
+}
+
 // buildK8sCluster builds the refined cluster property from the collected
 // Kubernetes information, falling back to a node's kubelet version when the
 // cluster version was not collected directly.
@@ -262,9 +268,16 @@ func buildK8sCluster(k8sInfo *kubernetes.Kubernetes) *inframodel.K8sClusterPrope
 func buildNodeFromK8s(node kubernetes.Node) inframodel.NodeProperty {
 	hostname, _ := node.Name.(string)
 
+	// Use systemUUID (the DMI product UUID) as the machine id so it lines up with
+	// what SSH collection records; fall back to machineID (/etc/machine-id).
+	machineID := k8sNodeInfoString(node.NodeInfo, "systemUUID")
+	if machineID == "" {
+		machineID = k8sNodeInfoString(node.NodeInfo, "machineID")
+	}
+
 	return inframodel.NodeProperty{
 		Hostname:  hostname,
-		MachineId: k8sNodeInfoString(node.NodeInfo, "machineID"),
+		MachineId: machineID,
 		Role:      string(node.Type),
 		CPU: inframodel.CpuProperty{
 			Architecture: k8sNodeInfoString(node.NodeInfo, "architecture"),
@@ -288,24 +301,35 @@ func buildNodeFromK8s(node kubernetes.Node) inframodel.NodeProperty {
 func mergeK8sNodes(nodes []inframodel.NodeProperty, k8sInfo *kubernetes.Kubernetes) []inframodel.NodeProperty {
 	index := make(map[string]int)
 	for i := range nodes {
-		if nodes[i].MachineId != "" {
-			index[nodes[i].MachineId] = i
+		if id := normalizeUUID(nodes[i].MachineId); id != "" {
+			index[id] = i
 		}
 	}
 
 	for _, node := range k8sInfo.Nodes {
-		machineID := k8sNodeInfoString(node.NodeInfo, "machineID")
-		if machineID != "" {
-			if i, ok := index[machineID]; ok {
+		// SSH collection records the host's DMI system UUID as the machine id,
+		// which corresponds to the K8s node's systemUUID — NOT its machineID
+		// (/etc/machine-id, a different value). Match on systemUUID first, then
+		// fall back to machineID, comparing normalized (hyphen/case-insensitive).
+		matched := false
+		for _, key := range []string{"systemUUID", "machineID"} {
+			id := normalizeUUID(k8sNodeInfoString(node.NodeInfo, key))
+			if id == "" {
+				continue
+			}
+			if i, ok := index[id]; ok {
 				nodes[i].Role = string(node.Type)
 				if nodes[i].CPU.Architecture == "" {
 					nodes[i].CPU.Architecture = k8sNodeInfoString(node.NodeInfo, "architecture")
 				}
-				continue
+				matched = true
+				break
 			}
 		}
 
-		nodes = append(nodes, buildNodeFromK8s(node))
+		if !matched {
+			nodes = append(nodes, buildNodeFromK8s(node))
+		}
 	}
 
 	// Host-level nodes that did not match any cluster node are standalone.
