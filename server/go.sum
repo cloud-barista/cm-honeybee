@@ -8,8 +8,8 @@ github.com/cloud-barista/cm-beetle/imdl v0.1.10 h1:bLj2bCdBn+MMuHjNNueXS1kq73gq7
 github.com/cloud-barista/cm-beetle/imdl v0.1.10/go.mod h1:RfpzPB67XRW5TDGs5f4Cv/W/zJ3c+eU8eV291oj+ns0=
 github.com/cloud-barista/cm-grasshopper/smdl v0.1.1 h1:RxUaiu9LWqHUwjA2yUoKuHzhpUZlm4ADxnAvk55pLsg=
 github.com/cloud-barista/cm-grasshopper/smdl v0.1.1/go.mod h1:WORfvOxkJr+NhRPCsJvkntzTEY/aG9JeuKFXKEBemAY=
-github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260713081130-9a4541db8e5e h1:ucKY6FwrYzkv01PrsZuhJHHf2qwV8cB9tceZs07ukv0=
-github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260713081130-9a4541db8e5e/go.mod h1:iGO14ZbZeUycaGzxz5Vsyh45orc6pD1w5hq1lOVfHWw=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260806082632-36aa85f509f8 h1:2bjkcC8QKGznaW7WONGh4Li7sAFMl9rNrxfLzaAjPPk=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260806082632-36aa85f509f8/go.mod h1:iGO14ZbZeUycaGzxz5Vsyh45orc6pD1w5hq1lOVfHWw=
 github.com/cyphar/filepath-securejoin v0.7.0 h1:s0Y3ITPy6sQn5xt54DuYvTF8hu134ooYLUb58DX/HjE=
 github.com/cyphar/filepath-securejoin v0.7.0/go.mod h1:ymLGms/u3BYaviIiuKFnUx8EkQEZeK6cInNoAPJA3o4=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
