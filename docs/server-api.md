@@ -64,7 +64,8 @@
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | GET | `/csp` | 연결된 cb-spider가 지원하는 CSP 목록. |
-| GET | `/csp/{name}` | CSP 메타데이터(자격 증명 키, 리전 등) 조회. |
+| GET | `/csp/{name}` | CSP 메타데이터(자격 증명 키+예시, 리전 키 등) 조회. 대소문자 무시, 미지원 시 지원목록 안내. |
+| GET | `/source_group/{sgId}/region` | `csp` SourceGroup의 **실제 리전/존 목록**(저장 credential로 live 조회). |
 | GET | `/source_group/{sgId}/discover` | `csp` SourceGroup의 VM / K8s 클러스터 / 오브젝트 스토리지 디스커버리. |
 
 ### 원시 소스 정보 수집
@@ -119,7 +120,7 @@
 | type | 설명 | 연결 정보 입력 방식 |
 |------|------|---------------------|
 | `ssh` (기본값) | 온프레미스/단순 호스트. SSH로 직접 접속해 수집. | ConnectionInfo에 `ip_address`, `ssh_port`, `user`, `password`/`private_key` 입력. |
-| `csp` | cb-spider 기반 클라우드 소스. credential/region으로 CSP에서 VM 메타데이터를 수집. VM이면 **SSH 접속 정보를 추가로 주면 게스트 내부까지 에이전트로 수집**. | SourceGroup에 `provider_name`/`region_name`/`credential[]`, ConnectionInfo에 `resource_type`/`resource_id` (+ 선택적으로 `ip_address`/`ssh_port`/`user`/`password`\|`private_key`) 입력. |
+| `csp` | cb-spider 기반 클라우드 소스. credential/region으로 CSP에서 VM 메타데이터를 수집. VM이면 **SSH 접속 정보를 추가로 주면 게스트 내부까지 에이전트로 수집**. | SourceGroup에 `provider_name`/`region_name`/`credential[]`, ConnectionInfo에 `resource_type`/`resource_id` (+ 선택적으로 `zone`, `ip_address`/`ssh_port`/`user`/`password`\|`private_key`) 입력. |
 
 - **`type`을 생략하면 `ssh`로 동작**하며, CSP 관련 필드는 모두 optional입니다. 따라서 기존
   (SSH 전용) 클라이언트 페이로드는 수정 없이 그대로 동작합니다(하위 호환).
@@ -242,8 +243,11 @@ honeybee는 조회 때마다 per-call 유니크 이름으로 **credential → re
 끝나면 역순으로 해제합니다. 이때 region은 **CSP 메타(`meta.Region`)가 요구하는 키를 모두** 채웁니다.
 예를 들어 Azure/AWS는 `Region`과 `Zone`을 모두 요구하므로 `Region`만 보내면 cb-spider가 거부합니다.
 
-- `region_name`은 `"<region>"` 또는 `"<region>/<zone>"` 형식을 지원합니다(예: `koreacentral/1`).
-  Zone을 생략하면 기본값 `1`이 사용됩니다(리소스 ID 기반 단건 조회에는 zone 값이 실제로 쓰이지 않습니다).
+- **Zone precedence**: ConnectionInfo의 `zone`(명시) > `region_name`에 `"<region>/<zone>"`로 임베드 >
+  provider 기본값 `1`. 즉 `region_name`은 `"koreacentral"` 또는 `"koreacentral/2"`를, ConnectionInfo는
+  `"zone":"2"`를 지원하며, 둘 다 있으면 ConnectionInfo의 `zone`이 우선합니다. (리소스 ID 기반 단건
+  조회에는 zone 값이 실제로 쓰이지 않지만, cb-spider가 zone 키를 요구하는 CSP가 있어 채워 보냅니다.)
+  선택 가능한 zone 목록은 `GET /source_group/{sgId}/region`의 각 리전 `zones`에서 확인합니다.
 - **Azure 주의:** cb-spider Azure 드라이버는 `RegionInfo.Region`을 **리소스 그룹**으로 사용합니다.
   따라서 Azure에서는 `region_name`에 **VM이 속한 리소스 그룹 이름**을 넣어야 합니다.
 
@@ -441,12 +445,36 @@ curl http://localhost:8081/honeybee/csp
 ```
 
 ### `GET /csp/{name}` — CSP 메타데이터 조회
-해당 CSP의 자격 증명 키, 리전 및 기타 메타데이터를 반환합니다. `name`은 대소문자를 구분하지
-않습니다(`aws` == `AWS`).
+해당 CSP의 자격 증명 키/리전/기타 메타데이터를 반환합니다.
+
+- **`name`은 대소문자 무시**(`aws` == `AWS`).
+- **미지원 CSP**를 주면 400과 함께 **지원 목록을 안내**합니다:
+  `"unsupported CSP: \"foo\". Supported CSPs: ALIBABA, AWS, AZURE, GCP, ..."`
+- 응답의 `credentials[]`는 각 credential 키에 **예시값·설명**을 함께 제공(입력 폼 자동 구성용):
 
 ```bash
-curl http://localhost:8081/honeybee/csp/aws
+curl http://localhost:8081/honeybee/csp/azure
+#  { "name":"AZURE",
+#    "credential_keys":["ClientId","ClientSecret","TenantId","SubscriptionId"],
+#    "credentials":[ {"key":"ClientId","example":"<AZURE_CLIENT_ID>","description":"Azure Client ID (clientId)"}, ... ],
+#    "regions":["Region","Zone"], ... }
 ```
+
+> `regions` 필드는 리전 "키 구조"(`Region`/`Zone`)일 뿐 실제 리전 목록이 아닙니다.
+> 실제 리전 목록은 credential이 필요하므로 아래 `GET /source_group/{sgId}/region`을 쓰세요.
+
+### `GET /source_group/{sgId}/region` — CSP 실제 리전/존 목록 (live)
+`csp` SourceGroup의 **저장된 credential로 cb-spider에 live 질의**하여 그 CSP의 실제 리전 목록과
+각 리전의 zone을 반환합니다(등록 후 사용). 등록 前 단계(`GET /csp/{name}`)에서는 credential이 없어
+실제 리전을 못 주므로, 소스그룹 등록 후 이 API로 리전/zone 선택지를 채웁니다.
+
+```bash
+curl http://localhost:8081/honeybee/source_group/$SG/region
+#  { "provider":"AZURE",
+#    "regions":[ {"name":"koreacentral","display_name":"...","zones":["1","2","3"]}, ... ] }
+```
+
+> 여기서 얻은 `zones` 값이 ConnectionInfo의 `zone`(아래) 입력 후보가 됩니다.
 
 ### `GET /source_group/{sgId}/discover` — CSP 리소스 디스커버리
 `type=csp` SourceGroup에 바인딩된 CSP 연결로 접근 가능한 VM / K8s 클러스터 / 오브젝트 스토리지 버킷을
