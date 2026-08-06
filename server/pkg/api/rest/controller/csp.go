@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strings"
 
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
@@ -91,6 +92,11 @@ func ListCSP(c echo.Context) error {
 	if err != nil {
 		return common.ReturnInternalError(c, err, "failed to list CSPs from cb-spider")
 	}
+	// Output provider names in lowercase (e.g. "aws", "azure"); they are matched
+	// case-insensitively on input.
+	for i := range list {
+		list[i] = strings.ToLower(list[i])
+	}
 	return c.JSONPretty(http.StatusOK, model.ListCSPRes{CSP: list}, " ")
 }
 
@@ -137,10 +143,10 @@ func GetCSP(c echo.Context) error {
 	}
 
 	return c.JSONPretty(http.StatusOK, model.CSPInfo{
-		Name:           canonical,
+		Name:           strings.ToLower(canonical),
 		CredentialKeys: credKeys,
 		Credentials:    buildCredentialFields(canonical, credKeys),
-		Regions:        meta.Region,
+		RegionKeys:     meta.Region,
 		DefaultRegion:  defaultRegion,
 	}, " ")
 }
@@ -196,7 +202,7 @@ func ListSourceGroupRegions(c echo.Context) error {
 	}
 
 	return c.JSONPretty(http.StatusOK, model.ListRegionRes{
-		Provider: sourceGroup.ProviderName,
+		Provider: strings.ToLower(sourceGroup.ProviderName),
 		Regions:  regions,
 	}, " ")
 }

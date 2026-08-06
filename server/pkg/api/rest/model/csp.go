@@ -7,9 +7,12 @@ type CSPInfo struct {
 	CredentialKeys []string `json:"credential_keys"`
 	// Credentials lists each required credential key with an example value and a
 	// short description, so a client can render a self-documenting input form.
-	Credentials   []CSPCredentialField `json:"credentials"`
-	Regions       []string             `json:"regions"`
-	DefaultRegion string               `json:"default_region,omitempty"`
+	Credentials []CSPCredentialField `json:"credentials"`
+	// RegionKeys are the keys needed to define a region for this CSP (e.g.
+	// ["Region","Zone"]) — NOT the list of available regions. The actual region
+	// list requires a credential; get it via GET /source_group/{sgId}/region.
+	RegionKeys    []string `json:"region_keys"`
+	DefaultRegion string   `json:"default_region,omitempty"`
 }
 
 // CSPCredentialField describes one credential key of a CSP with an example.

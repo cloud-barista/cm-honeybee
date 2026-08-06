@@ -53,7 +53,7 @@ func buildCSPInfo(connName string, sg *model.SourceGroup, vm *spider.VMInfo) inf
 	}
 
 	csp := infra.CSPInfo{
-		Provider:  sg.ProviderName,
+		Provider:  strings.ToLower(sg.ProviderName),
 		Region:    vm.Region.Region,
 		Zone:      vm.Region.Zone,
 		Name:      vm.IId.NameId,

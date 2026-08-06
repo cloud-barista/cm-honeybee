@@ -139,10 +139,10 @@
 SSH 접속 시크릿(비밀번호/개인키)과 CSP credential은 **OpenBao**(KV v2)에만 저장됩니다. SQLite에는
 비밀 정보를 저장하지 않습니다(암호화 저장 포함 제거됨).
 
-| 종류 | OpenBao 경로 |
+| 종류 | OpenBao 경로 (KV v2, mount `secret`) |
 |------|--------------|
-| CSP credential | `secret/csp/{sgId}` |
-| SSH 시크릿(password/private_key) | `secret/ssh/{connId}` |
+| CSP credential | `secret/honeybee/csp/{sgId}` |
+| SSH 시크릿(password/private_key) | `secret/honeybee/ssh/{connId}` |
 
 - **설정 필수**: `cm-honeybee.yaml`의 `openbao.address`(또는 `HONEYBEE_VAULT_ADDR`) + `token`/`token_file`.
   값은 `${VAR}`로 주입 가능.
@@ -482,7 +482,7 @@ curl http://localhost:8081/honeybee/csp/azure
 #    "regions":["Region","Zone"], ... }
 ```
 
-> `regions` 필드는 리전 "키 구조"(`Region`/`Zone`)일 뿐 실제 리전 목록이 아닙니다.
+> `region_keys` 필드는 리전 "키 구조"(`Region`/`Zone`)일 뿐 실제 리전 목록이 아닙니다.
 > 실제 리전 목록은 credential이 필요하므로 아래 `GET /source_group/{sgId}/region`을 쓰세요.
 
 ### `GET /source_group/{sgId}/region` — CSP 실제 리전/존 목록 (live)

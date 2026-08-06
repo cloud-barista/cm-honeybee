@@ -169,7 +169,7 @@ func validateAndCanonicalizeCSP(sg *model.SourceGroup, plainKV []model.KeyValue)
 		return errors.New("region_name is empty")
 	}
 
-	sg.ProviderName = provider
+	sg.ProviderName = strings.ToLower(provider)
 	sg.RegionName = region
 	sg.Credential = canonicalKV
 	return nil
