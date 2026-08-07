@@ -1,6 +1,84 @@
+name: cm-honeybee
+
+# cm-honeybee with its own dedicated OpenBao secrets backend.
+#
+#   honeybee-openbao       — OpenBao server (persistent file storage, KV v2) —
+#                            DEDICATED to cm-honeybee (not shared)
+#   honeybee-openbao-init  — one-time init + KV enable, then an auto-unseal watcher
+#   cm-honeybee            — the honeybee server, wired to reach its OpenBao
+#
+# Bring up:   docker compose up -d
+# Verify:     see openbao/README.md
 services:
+  # Dedicated OpenBao for cm-honeybee — stores its SSH access secrets and CSP
+  # credentials (KV v2). https://openbao.org/
+  honeybee-openbao:
+    image: openbao/openbao:2.5.1
+    container_name: honeybee-openbao
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    environment:
+      - BAO_ADDR=http://0.0.0.0:8200
+      - SKIP_SETCAP=true
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        chown -R openbao:openbao /openbao/data 2>/dev/null || true
+        exec docker-entrypoint.sh server -config=/openbao/config/openbao-config.hcl
+    ports:
+      - "8200:8200"
+    volumes:
+      - ./data/openbao/data:/openbao/data
+      - ./data/openbao/secrets:/openbao/secrets
+      - ./openbao/openbao-config.hcl:/openbao/config/openbao-config.hcl:ro
+    healthcheck:
+      # bao status: 0=unsealed, 1=sealed, 2=uninitialized — all mean "running".
+      test: ["CMD", "sh", "-c", "rc=0; bao status || rc=$$?; [ $$rc -le 2 ]"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # Initializes + unseals OpenBao and enables KV v2, then keeps it unsealed.
+  honeybee-openbao-init:
+    image: openbao/openbao:2.5.1
+    container_name: honeybee-openbao-init
+    restart: unless-stopped
+    depends_on:
+      honeybee-openbao:
+        condition: service_healthy
+    environment:
+      - BAO_ADDR=http://honeybee-openbao:8200
+    entrypoint: ["sh", "/openbao/openbao-init.sh"]
+    volumes:
+      - ./data/openbao/secrets:/openbao/secrets
+      - ./openbao/openbao-init.sh:/openbao/openbao-init.sh:ro
+    healthcheck:
+      # Healthy once the root token has been published for cm-honeybee.
+      test: ["CMD", "sh", "-c", "test -f /openbao/secrets/honeybee.token"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
   cm-honeybee:
-    container_name: cm-honeybee
-    restart: always
     image: cloudbaristaorg/cm-honeybee:edge
-    network_mode: "host"
+    container_name: cm-honeybee
+    restart: unless-stopped
+    pull_policy: always
+    depends_on:
+      honeybee-openbao-init:
+        condition: service_healthy
+    environment:
+      # SSH access secrets + CSP credentials are stored in this dedicated OpenBao
+      # (KV v2). SQLite no longer holds secrets.
+      - HONEYBEE_VAULT_ADDR=http://honeybee-openbao:8200
+      - HONEYBEE_VAULT_TOKEN_FILE=/run/openbao/honeybee.token
+    ports:
+      - "8081:8081" # server
+      - "8082:8082" # agent proxy
+    volumes:
+      - ./data/cm-honeybee/:/root/.cm-honeybee/:rw
+      # Read-only access to the published OpenBao token.
+      - ./data/openbao/secrets:/run/openbao:ro

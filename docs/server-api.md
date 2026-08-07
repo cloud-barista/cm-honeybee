@@ -152,7 +152,7 @@ SSH 접속 시크릿(비밀번호/개인키)과 CSP credential은 **OpenBao**(KV
   [template.credentials.yaml](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/template.credentials.yaml)
   규약(= cb-spider `credentialcsp`)을 따릅니다. 예: Azure `clientId/clientSecret/tenantId/subscriptionId`,
   AWS `aws_access_key_id/aws_secret_access_key`. (`GET /csp/{name}`가 키+예시 제공)
-- OpenBao를 컨테이너로 함께 띄우는 구성은 [`deployments/docker-compose`](../deployments/docker-compose/README.md) 참고.
+- OpenBao를 컨테이너로 함께 띄우는 구성은 [`server/docker-compose.yaml`](../server/docker-compose.yaml) (OpenBao 포함 전체 구성) 참고.
 
 ---
 

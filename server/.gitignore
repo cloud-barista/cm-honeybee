@@ -9,3 +9,6 @@ vendor
 *.log
 
 CM-HONEYBEE.db
+
+# docker-compose runtime data (OpenBao storage + unseal key/token, honeybee data)
+/data/

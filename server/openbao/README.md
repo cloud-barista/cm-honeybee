@@ -16,7 +16,7 @@ mc-terrarium / cb-tumblebug.
 ## Usage
 
 ```bash
-cd server/deployments/docker-compose
+cd server
 docker compose up -d
 
 # OpenBao is initialized, unsealed, and KV v2 is enabled automatically.
