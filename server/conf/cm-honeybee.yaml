@@ -13,6 +13,8 @@
 #   openbao.address   HONEYBEE_VAULT_ADDR
 #   openbao.token     HONEYBEE_VAULT_TOKEN
 #   openbao.token_file HONEYBEE_VAULT_TOKEN_FILE
+#   openbao.manage    HONEYBEE_VAULT_MANAGE       (true = self-manage init/unseal)
+#   openbao.init_file HONEYBEE_VAULT_INIT_FILE
 cm-honeybee:
     listen:
         port: 8081
@@ -27,7 +29,14 @@ cm-honeybee:
     # OpenBao secrets backend. SSH access secrets and CSP credentials are stored
     # ONLY in OpenBao (KV v2) — SQLite no longer stores secrets. If address is
     # empty, creating sources that carry a credential/SSH secret will fail.
-    # Inject via HONEYBEE_VAULT_ADDR / HONEYBEE_VAULT_TOKEN_FILE (env).
+    # Inject via HONEYBEE_VAULT_ADDR (env). Two modes:
+    #  - self-managed (manage: true): cm-honeybee runs init/unseal/KV-enable
+    #    itself and stores the unseal key + root token in init_file. No token or
+    #    init sidecar needed. Recovers on its own after reboots / volume loss.
+    #  - external (manage: false, default): an init sidecar unseals OpenBao and
+    #    publishes a token; provide token or token_file.
+    # manage / init_file are set via env (HONEYBEE_VAULT_MANAGE /
+    # HONEYBEE_VAULT_INIT_FILE); manage is a bool so it is not templated here.
     openbao:
         address: ${HONEYBEE_VAULT_ADDR}
         token: ${HONEYBEE_VAULT_TOKEN}

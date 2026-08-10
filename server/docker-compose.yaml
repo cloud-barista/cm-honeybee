@@ -2,16 +2,17 @@ name: cm-honeybee
 
 # cm-honeybee with its own dedicated OpenBao secrets backend.
 #
-#   openbao-honeybee       — OpenBao server (persistent file storage, KV v2) —
-#                            DEDICATED to cm-honeybee (not shared)
-#   openbao-honeybee-init  — init + KV enable + unseal, then an auto-unseal watcher
-#   cm-honeybee            — the honeybee server, wired to reach its OpenBao
+#   openbao-honeybee  — OpenBao server (persistent file storage, KV v2),
+#                       DEDICATED to cm-honeybee (not shared)
+#   cm-honeybee       — the honeybee server. It performs OpenBao init/unseal/
+#                       KV-enable ITSELF (HONEYBEE_VAULT_MANAGE=true) and waits
+#                       until OpenBao is usable before serving, so it recovers on
+#                       its own after host reboots / volume loss — no init sidecar.
 #
-# Service names start with "openbao" on purpose: cm-mayfly classifies/preserves
-# OpenBao services by that prefix (secrets category, `remove --clean-db` keep).
+# The service name starts with "openbao" on purpose: cm-mayfly classifies and
+# preserves OpenBao services by that prefix.
 #
 # Bring up:   docker compose up -d
-# Verify:     see openbao/README.md
 services:
   # Dedicated OpenBao for cm-honeybee — stores its SSH access secrets and CSP
   # credentials (KV v2). https://openbao.org/
@@ -33,40 +34,14 @@ services:
       - "8200:8200"
     volumes:
       - ./data/openbao/data:/openbao/data
-      - ./data/openbao/secrets:/openbao/secrets
       - ./openbao/openbao-config.hcl:/openbao/config/openbao-config.hcl:ro
     healthcheck:
       # bao status: 0=unsealed, 1=sealed, 2=uninitialized — all mean "running".
+      # cm-honeybee itself does init/unseal, so "running" is enough here.
       test: ["CMD", "sh", "-c", "rc=0; bao status || rc=$$?; [ $$rc -le 2 ]"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s
-
-  # Initializes + enables KV v2 + unseals OpenBao, then keeps it unsealed across
-  # restarts (OpenBao always comes back up SEALED). See openbao-init.sh.
-  openbao-honeybee-init:
-    image: openbao/openbao:2.5.1
-    container_name: openbao-honeybee-init
-    restart: unless-stopped
-    depends_on:
-      openbao-honeybee:
-        condition: service_healthy
-    environment:
-      - BAO_ADDR=http://openbao-honeybee:8200
-    entrypoint: ["sh", "/openbao/openbao-init.sh"]
-    volumes:
-      - ./data/openbao/secrets:/openbao/secrets
-      - ./openbao/openbao-init.sh:/openbao/openbao-init.sh:ro
-    healthcheck:
-      # Healthy only when OpenBao is actually UNSEALED (bao status rc 0) AND the
-      # token is published. Gating on unseal — not just token-file existence —
-      # is what keeps cm-honeybee from starting against a still-sealed OpenBao
-      # after a restart (the token file survives from the previous boot).
-      test: ["CMD", "sh", "-c", "bao status >/dev/null 2>&1 && test -f /openbao/secrets/honeybee.token"]
-      interval: 5s
-      timeout: 5s
-      retries: 60
       start_period: 5s
 
   cm-honeybee:
@@ -75,18 +50,19 @@ services:
     restart: unless-stopped
     pull_policy: always
     depends_on:
-      # Wait until OpenBao is initialized AND unsealed (not just token present).
-      openbao-honeybee-init:
+      # Only needs OpenBao to be running; cm-honeybee initializes/unseals it.
+      openbao-honeybee:
         condition: service_healthy
     environment:
       # SSH access secrets + CSP credentials are stored in this dedicated OpenBao
       # (KV v2). SQLite no longer holds secrets.
       - HONEYBEE_VAULT_ADDR=http://openbao-honeybee:8200
-      - HONEYBEE_VAULT_TOKEN_FILE=/run/openbao/honeybee.token
+      # Self-manage OpenBao: cm-honeybee runs init/unseal/KV-enable itself and
+      # persists the unseal key + root token under its data dir
+      # (/root/.cm-honeybee/openbao-init.json), so it recovers after restarts.
+      - HONEYBEE_VAULT_MANAGE=true
     ports:
       - "8081:8081" # server
       - "8082:8082" # agent proxy
     volumes:
       - ./data/cm-honeybee/:/root/.cm-honeybee/:rw
-      # Read-only access to the published OpenBao token.
-      - ./data/openbao/secrets:/run/openbao:ro

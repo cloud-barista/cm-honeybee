@@ -16,6 +16,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/lib/config"
 	"github.com/jollaman999/utils/logger"
 )
@@ -30,6 +31,8 @@ type client struct {
 	addr      string
 	token     string
 	tokenFile string
+	manage    bool   // perform init/unseal/KV-enable ourselves
+	initFile  string // where the self-managed unseal key + root token are stored
 	http      *http.Client
 }
 
@@ -49,13 +52,24 @@ func Init() {
 		return
 	}
 
+	initFile := strings.TrimSpace(cfg.InitFile)
+	if cfg.Manage && initFile == "" {
+		initFile = common.RootPath + "/openbao-init.json"
+	}
+
 	defaultClient = &client{
 		addr:      addr,
 		token:     strings.TrimSpace(cfg.Token),
 		tokenFile: strings.TrimSpace(cfg.TokenFile),
+		manage:    cfg.Manage,
+		initFile:  initFile,
 		http:      &http.Client{Timeout: 15 * time.Second},
 	}
-	logger.Println(logger.INFO, false, "OpenBao: enabled ("+addr+")")
+	mode := "external init/unseal"
+	if cfg.Manage {
+		mode = "self-managed init/unseal (init_file: " + initFile + ")"
+	}
+	logger.Println(logger.INFO, false, "OpenBao: enabled ("+addr+"), "+mode)
 }
 
 // Enabled reports whether OpenBao is configured and should be used.
@@ -130,12 +144,12 @@ func (c *client) kvReady() error {
 // (readyz 503) until this returns.
 //
 // It exists because container start order is NOT guaranteed on a host reboot:
-// docker restart policies ignore compose depends_on, so cm-honeybee can start
-// before the openbao-init sidecar has unsealed OpenBao. On a fresh or lost
-// volume OpenBao also comes up UNINITIALIZED until the sidecar runs
-// 'operator init' + unseal. Rather than trust start ordering (or fail secret
-// operations in that window), cm-honeybee verifies the full chain itself.
-// No-op when OpenBao is not configured.
+// docker restart policies ignore compose depends_on, and on a fresh or lost
+// volume OpenBao comes up UNINITIALIZED. In self-managed mode (openbao.manage)
+// cm-honeybee performs 'operator init' + unseal + KV-enable itself and persists
+// the unseal key/root token, so it recovers on its own after reboots and
+// volume loss with no init sidecar. Otherwise it waits for an external
+// initializer. No-op when OpenBao is not configured.
 func WaitReady() {
 	c := defaultClient
 	if c == nil {
@@ -145,23 +159,7 @@ func WaitReady() {
 
 	lastReason := ""
 	for i := 0; ; i++ {
-		reason := ""
-		st, err := c.sealStatus()
-		switch {
-		case err != nil:
-			reason = "unreachable: " + err.Error()
-		case !st.Initialized:
-			reason = "not initialized yet (waiting for openbao-init to run 'operator init')"
-		case st.Sealed:
-			reason = "sealed (waiting for unseal)"
-		default:
-			if err := c.reloadToken(); err != nil {
-				reason = "token not available yet: " + err.Error()
-			} else if err := c.kvReady(); err != nil {
-				reason = "KV not ready: " + err.Error()
-			}
-		}
-
+		reason := c.ensureReady()
 		if reason == "" {
 			logger.Println(logger.INFO, false, "OpenBao: ready (initialized, unsealed, KV v2 at secret/)")
 			return
@@ -174,6 +172,155 @@ func WaitReady() {
 		}
 		time.Sleep(3 * time.Second)
 	}
+}
+
+// ensureReady drives OpenBao toward a usable state and loads a token. In
+// self-managed mode it performs init/unseal/KV-enable itself; otherwise it
+// waits for an external initializer. Returns "" when ready, else a short reason
+// (for logging + retry).
+func (c *client) ensureReady() string {
+	st, err := c.sealStatus()
+	if err != nil {
+		return "unreachable: " + err.Error()
+	}
+
+	// 1) Initialize (self-managed only).
+	if !st.Initialized {
+		if !c.manage {
+			return "not initialized yet (waiting for external initializer)"
+		}
+		uk, rt, err := c.doInit()
+		if err != nil {
+			return "init failed: " + err.Error()
+		}
+		if err := c.saveInit(uk, rt); err != nil {
+			return "init succeeded but persisting keys failed: " + err.Error()
+		}
+		c.token = rt
+		logger.Println(logger.INFO, false, "OpenBao: initialized (unseal key + root token stored at "+c.initFile+")")
+		if st, err = c.sealStatus(); err != nil {
+			return "post-init status: " + err.Error()
+		}
+	}
+
+	// 2) Unseal.
+	if st.Sealed {
+		if !c.manage {
+			return "sealed (waiting for external unseal)"
+		}
+		uk, rt, err := c.loadInit()
+		if err != nil {
+			return "sealed but cannot read stored unseal key (" + c.initFile + "): " + err.Error()
+		}
+		if err := c.doUnseal(uk); err != nil {
+			return "unseal failed: " + err.Error()
+		}
+		if c.token == "" {
+			c.token = rt
+		}
+		logger.Println(logger.INFO, false, "OpenBao: unsealed")
+		if st, err = c.sealStatus(); err != nil {
+			return "post-unseal status: " + err.Error()
+		}
+		if st.Sealed {
+			return "still sealed after unseal attempt"
+		}
+	}
+
+	// 3) Load the token.
+	if c.manage {
+		if c.token == "" {
+			if _, rt, err := c.loadInit(); err == nil {
+				c.token = rt
+			}
+		}
+		if c.token == "" {
+			return "no root token available (init_file: " + c.initFile + ")"
+		}
+	} else if err := c.reloadToken(); err != nil {
+		return "token not available yet: " + err.Error()
+	}
+
+	// 4) Ensure the KV v2 engine is mounted and usable.
+	if c.manage {
+		if err := c.ensureKV(); err != nil {
+			return "enabling KV v2 failed: " + err.Error()
+		}
+	}
+	if err := c.kvReady(); err != nil {
+		return "KV not ready: " + err.Error()
+	}
+	return ""
+}
+
+// initFileData is the persisted self-managed unseal material.
+type initFileData struct {
+	UnsealKey string `json:"unseal_key"`
+	RootToken string `json:"root_token"`
+}
+
+// doInit runs 'operator init' with a single unseal key (threshold 1) for
+// unattended startup, returning the base64 unseal key and the root token.
+func (c *client) doInit() (unsealKey, rootToken string, err error) {
+	body, _ := json.Marshal(map[string]int{"secret_shares": 1, "secret_threshold": 1})
+	raw, err := c.do(http.MethodPost, "/v1/sys/init", body)
+	if err != nil {
+		return "", "", err
+	}
+	var r struct {
+		KeysB64   []string `json:"keys_base64"`
+		RootToken string   `json:"root_token"`
+	}
+	if err := json.Unmarshal(raw, &r); err != nil {
+		return "", "", err
+	}
+	if len(r.KeysB64) == 0 || r.RootToken == "" {
+		return "", "", errors.New("init returned no unseal key or root token")
+	}
+	return r.KeysB64[0], r.RootToken, nil
+}
+
+// doUnseal submits a single unseal key.
+func (c *client) doUnseal(key string) error {
+	body, _ := json.Marshal(map[string]string{"key": key})
+	_, err := c.do(http.MethodPost, "/v1/sys/unseal", body)
+	return err
+}
+
+// ensureKV mounts the KV v2 engine at secret/ if it is not already mounted.
+func (c *client) ensureKV() error {
+	if err := c.kvReady(); err == nil {
+		return nil
+	}
+	body, _ := json.Marshal(map[string]any{"type": "kv", "options": map[string]string{"version": "2"}})
+	_, err := c.do(http.MethodPost, "/v1/sys/mounts/"+mount, body)
+	if err != nil && strings.Contains(err.Error(), "already in use") {
+		return nil // mounted concurrently — fine
+	}
+	return err
+}
+
+func (c *client) saveInit(unsealKey, rootToken string) error {
+	b, err := json.Marshal(initFileData{UnsealKey: unsealKey, RootToken: rootToken})
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(c.initFile, b, 0o600)
+}
+
+func (c *client) loadInit() (unsealKey, rootToken string, err error) {
+	b, err := os.ReadFile(c.initFile)
+	if err != nil {
+		return "", "", err
+	}
+	var d initFileData
+	if err := json.Unmarshal(b, &d); err != nil {
+		return "", "", err
+	}
+	if d.UnsealKey == "" {
+		return "", "", errors.New("stored init file has no unseal key")
+	}
+	return d.UnsealKey, d.RootToken, nil
 }
 
 // Put writes (overwriting) the key/values at the KV v2 path.

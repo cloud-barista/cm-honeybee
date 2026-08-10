@@ -31,8 +31,16 @@ type cmHoneybeeConfig struct {
 			// disables OpenBao — secrets stay in the local (SQLite) store.
 			Address string `yaml:"address"`
 			// Token, or TokenFile to read it from (TokenFile wins if Token empty).
+			// Used in externally-managed mode (an init sidecar unseals OpenBao).
 			Token     string `yaml:"token"`
 			TokenFile string `yaml:"token_file"`
+			// Manage: when true, cm-honeybee performs OpenBao init/unseal/KV-enable
+			// itself (no external init sidecar) and persists the unseal key + root
+			// token to InitFile so it can re-unseal after restarts.
+			Manage bool `yaml:"manage"`
+			// InitFile is where the self-managed unseal key + root token are stored
+			// (default: <RootPath>/openbao-init.json).
+			InitFile string `yaml:"init_file"`
 		} `yaml:"openbao"`
 	} `yaml:"cm-honeybee"`
 }
@@ -114,6 +122,7 @@ func expandConfigEnvRefs() {
 		{"cm-honeybee.openbao.address", &CMHoneybeeConfig.CMHoneybee.OpenBao.Address, true},
 		{"cm-honeybee.openbao.token", &CMHoneybeeConfig.CMHoneybee.OpenBao.Token, true},
 		{"cm-honeybee.openbao.token_file", &CMHoneybeeConfig.CMHoneybee.OpenBao.TokenFile, true},
+		{"cm-honeybee.openbao.init_file", &CMHoneybeeConfig.CMHoneybee.OpenBao.InitFile, true},
 	}
 
 	for _, f := range fields {
@@ -147,6 +156,11 @@ func applyConfigEnvOverrides() {
 	set(&c.OpenBao.Address, "HONEYBEE_VAULT_ADDR")
 	set(&c.OpenBao.Token, "HONEYBEE_VAULT_TOKEN")
 	set(&c.OpenBao.TokenFile, "HONEYBEE_VAULT_TOKEN_FILE")
+	set(&c.OpenBao.InitFile, "HONEYBEE_VAULT_INIT_FILE")
+	if v := strings.TrimSpace(os.Getenv("HONEYBEE_VAULT_MANAGE")); v != "" {
+		lv := strings.ToLower(v)
+		c.OpenBao.Manage = lv == "true" || lv == "1" || lv == "yes" || lv == "on"
+	}
 }
 
 func readCMHoneybeeConfigFile() error {
