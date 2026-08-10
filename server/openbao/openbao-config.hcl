@@ -31,6 +31,6 @@ ui = true
 #
 # seal "awskms" {
 #   region     = "ap-northeast-2"
-#   kms_key_id = "alias/honeybee-openbao-unseal"
+#   kms_key_id = "alias/openbao-honeybee-unseal"
 # }
 # ─────────────────────────────────────────────────────────────────────

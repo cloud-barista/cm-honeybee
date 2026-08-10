@@ -29,9 +29,9 @@ docker compose logs -f openbao-init      # watch the bootstrap
 
 ```bash
 TOKEN=$(sudo cat data/openbao/secrets/honeybee.token)
-docker exec -e BAO_ADDR=http://127.0.0.1:8200 -e BAO_TOKEN="$TOKEN" honeybee-openbao \
+docker exec -e BAO_ADDR=http://127.0.0.1:8200 -e BAO_TOKEN="$TOKEN" openbao-honeybee \
   bao kv put secret/csp/aws AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
-docker exec -e BAO_ADDR=http://127.0.0.1:8200 -e BAO_TOKEN="$TOKEN" honeybee-openbao \
+docker exec -e BAO_ADDR=http://127.0.0.1:8200 -e BAO_TOKEN="$TOKEN" openbao-honeybee \
   bao kv get secret/csp/aws
 ```
 

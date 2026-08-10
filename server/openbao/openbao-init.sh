@@ -14,7 +14,7 @@
 #   unseal, and protect the secrets directory.
 set -eu
 
-BAO_ADDR="${BAO_ADDR:-http://honeybee-openbao:8200}"
+BAO_ADDR="${BAO_ADDR:-http://openbao-honeybee:8200}"
 export BAO_ADDR
 SECRETS_DIR=/openbao/secrets
 INIT_FILE="$SECRETS_DIR/openbao-init.json"
