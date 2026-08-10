@@ -1,9 +1,18 @@
-# Any value below may be written either as a literal or as a ${VAR} reference.
-# A ${VAR} value is resolved from the process environment at startup (e.g.
-# injected by docker-compose / kubernetes), so endpoints and credentials do not
-# have to be committed to this file. A literal is used as-is. If a ${VAR} is set
-# but the environment variable is unset, the value resolves to empty (a warning
-# is logged) rather than falling back to a default.
+# Every value below can be set three ways (later wins):
+#   1) a literal here,
+#   2) a ${VAR} reference resolved from the environment at startup, or
+#   3) a native env override (see the HONEYBEE_* names below) — a set env var
+#      wins over this file, so a stock image can run with NO mounted config file,
+#      configured entirely via `environment:` (this is how cm-mayfly runs it).
+#
+#   listen.port       HONEYBEE_LISTEN_PORT
+#   agent.port        HONEYBEE_AGENT_PORT
+#   spider.endpoint   HONEYBEE_SPIDER_ENDPOINT
+#   spider.username   HONEYBEE_SPIDER_USERNAME
+#   spider.password   HONEYBEE_SPIDER_PASSWORD
+#   openbao.address   HONEYBEE_VAULT_ADDR
+#   openbao.token     HONEYBEE_VAULT_TOKEN
+#   openbao.token_file HONEYBEE_VAULT_TOKEN_FILE
 cm-honeybee:
     listen:
         port: 8081
@@ -11,14 +20,14 @@ cm-honeybee:
         port: 8082
     spider:
         endpoint: http://cb-spider:1024/spider
-        # Prefer injecting credentials from the environment, e.g.:
-        #   username: ${SPIDER_USERNAME}
-        #   password: ${SPIDER_PASSWORD}
+        # cb-spider Basic Auth — inject via HONEYBEE_SPIDER_USERNAME /
+        # HONEYBEE_SPIDER_PASSWORD (env) rather than committing real credentials.
         username: default
         password: default
     # OpenBao secrets backend. SSH access secrets and CSP credentials are stored
     # ONLY in OpenBao (KV v2) — SQLite no longer stores secrets. If address is
     # empty, creating sources that carry a credential/SSH secret will fail.
+    # Inject via HONEYBEE_VAULT_ADDR / HONEYBEE_VAULT_TOKEN_FILE (env).
     openbao:
         address: ${HONEYBEE_VAULT_ADDR}
         token: ${HONEYBEE_VAULT_TOKEN}

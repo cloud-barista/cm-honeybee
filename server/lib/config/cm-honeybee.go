@@ -126,6 +126,29 @@ func expandConfigEnvRefs() {
 	}
 }
 
+// applyConfigEnvOverrides lets operators configure cm-honeybee entirely from the
+// environment, without mounting a cm-honeybee.yaml. A non-empty env var wins
+// over whatever the config file / defaults provided. This is what lets a stock
+// image run with just `environment:` entries (e.g. from cm-mayfly) instead of a
+// mounted config file. Runs after expandConfigEnvRefs so both ${VAR} references
+// in the file and these direct overrides are honored.
+func applyConfigEnvOverrides() {
+	set := func(ptr *string, env string) {
+		if v := strings.TrimSpace(os.Getenv(env)); v != "" {
+			*ptr = v
+		}
+	}
+	c := &CMHoneybeeConfig.CMHoneybee
+	set(&c.Listen.Port, "HONEYBEE_LISTEN_PORT")
+	set(&c.Agent.Port, "HONEYBEE_AGENT_PORT")
+	set(&c.Spider.Endpoint, "HONEYBEE_SPIDER_ENDPOINT")
+	set(&c.Spider.Username, "HONEYBEE_SPIDER_USERNAME")
+	set(&c.Spider.Password, "HONEYBEE_SPIDER_PASSWORD")
+	set(&c.OpenBao.Address, "HONEYBEE_VAULT_ADDR")
+	set(&c.OpenBao.Token, "HONEYBEE_VAULT_TOKEN")
+	set(&c.OpenBao.TokenFile, "HONEYBEE_VAULT_TOKEN_FILE")
+}
+
 func readCMHoneybeeConfigFile() error {
 	ex, err := os.Executable()
 	if err != nil {
@@ -159,6 +182,11 @@ func readCMHoneybeeConfigFile() error {
 	// literals are left unchanged, keeping existing configs working. Mirrors
 	// cm-mayfly's ${VAR} resolution.
 	expandConfigEnvRefs()
+
+	// Native env overrides (HONEYBEE_SPIDER_*, HONEYBEE_VAULT_*, ...) so the
+	// stock image can be configured entirely from the environment — no mounted
+	// cm-honeybee.yaml required. A set env var wins over file/default values.
+	applyConfigEnvOverrides()
 
 	err = checkCMHoneybeeConfigFile()
 	if err != nil {
