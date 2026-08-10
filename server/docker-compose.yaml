@@ -1,21 +1,14 @@
 name: cm-honeybee
 
 # cm-honeybee with its own dedicated OpenBao secrets backend.
-#
-#   openbao-honeybee  — OpenBao server (persistent file storage, KV v2),
-#                       DEDICATED to cm-honeybee (not shared)
-#   cm-honeybee       — the honeybee server. It performs OpenBao init/unseal/
-#                       KV-enable ITSELF (HONEYBEE_VAULT_MANAGE=true) and waits
-#                       until OpenBao is usable before serving, so it recovers on
-#                       its own after host reboots / volume loss — no init sidecar.
-#
-# The service name starts with "openbao" on purpose: cm-mayfly classifies and
-# preserves OpenBao services by that prefix.
+#   openbao-honeybee  — OpenBao server (file storage, KV v2)
+#   cm-honeybee       — honeybee server; runs OpenBao init/unseal/KV-enable
+#                       itself and waits until OpenBao is usable before serving.
 #
 # Bring up:   docker compose up -d
 services:
-  # Dedicated OpenBao for cm-honeybee — stores its SSH access secrets and CSP
-  # credentials (KV v2). https://openbao.org/
+  # Dedicated OpenBao for cm-honeybee's SSH access secrets and CSP credentials
+  # (KV v2). https://openbao.org/
   openbao-honeybee:
     image: openbao/openbao:2.5.1
     container_name: openbao-honeybee
@@ -36,8 +29,8 @@ services:
       - ./data/openbao/data:/openbao/data
       - ./openbao/openbao-config.hcl:/openbao/config/openbao-config.hcl:ro
     healthcheck:
-      # bao status: 0=unsealed, 1=sealed, 2=uninitialized — all mean "running".
-      # cm-honeybee itself does init/unseal, so "running" is enough here.
+      # 0=unsealed, 1=sealed, 2=uninitialized — all mean "running"; cm-honeybee
+      # does the init/unseal, so "running" is enough to depend on.
       test: ["CMD", "sh", "-c", "rc=0; bao status || rc=$$?; [ $$rc -le 2 ]"]
       interval: 10s
       timeout: 5s
@@ -54,13 +47,9 @@ services:
       openbao-honeybee:
         condition: service_healthy
     environment:
-      # SSH access secrets + CSP credentials are stored in this dedicated OpenBao
-      # (KV v2). SQLite no longer holds secrets.
+      # cm-honeybee self-manages OpenBao (init/unseal/KV-enable); the unseal key +
+      # root token are stored RSA-encrypted in its DB.
       - HONEYBEE_VAULT_ADDR=http://openbao-honeybee:8200
-      # Self-manage OpenBao: cm-honeybee runs init/unseal/KV-enable itself and
-      # persists the unseal key + root token under its data dir
-      # (/root/.cm-honeybee/openbao-init.json), so it recovers after restarts.
-      - HONEYBEE_VAULT_MANAGE=true
     ports:
       - "8081:8081" # server
       - "8082:8082" # agent proxy

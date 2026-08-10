@@ -7,18 +7,22 @@ package openbao
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/cloud-barista/cm-honeybee/server/common"
+	"github.com/cloud-barista/cm-honeybee/server/db"
 	"github.com/cloud-barista/cm-honeybee/server/lib/config"
+	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/jollaman999/utils/logger"
+	"gorm.io/gorm"
 )
 
 // mount is the KV v2 mount path (enabled at "secret/" by openbao-init).
@@ -28,21 +32,18 @@ const mount = "secret"
 var ErrNotFound = errors.New("openbao: secret not found")
 
 type client struct {
-	addr      string
-	token     string
-	tokenFile string
-	manage    bool   // perform init/unseal/KV-enable ourselves
-	initFile  string // where the self-managed unseal key + root token are stored
-	http      *http.Client
+	addr  string
+	token string // root token, loaded/decrypted from the DB at WaitReady
+	http  *http.Client
 }
 
 var defaultClient *client
 
 // Init wires the OpenBao client from config. Safe to call once at startup; when
-// no address is configured OpenBao stays disabled. When an address IS set, the
-// client is created immediately but the token is loaded lazily (it may not
-// exist yet — see WaitReady): the openbao-init sidecar can publish it after
-// cm-honeybee starts (fresh volume / host reboot).
+// no address is configured OpenBao stays disabled. cm-honeybee always
+// self-manages OpenBao (init/unseal/KV-enable) — see WaitReady — persisting the
+// unseal key + root token RSA-encrypted in the DB so it can re-unseal after
+// restarts.
 func Init() {
 	cfg := config.CMHoneybeeConfig.CMHoneybee.OpenBao
 	addr := strings.TrimRight(strings.TrimSpace(cfg.Address), "/")
@@ -52,24 +53,11 @@ func Init() {
 		return
 	}
 
-	initFile := strings.TrimSpace(cfg.InitFile)
-	if cfg.Manage && initFile == "" {
-		initFile = common.RootPath + "/openbao-init.json"
-	}
-
 	defaultClient = &client{
-		addr:      addr,
-		token:     strings.TrimSpace(cfg.Token),
-		tokenFile: strings.TrimSpace(cfg.TokenFile),
-		manage:    cfg.Manage,
-		initFile:  initFile,
-		http:      &http.Client{Timeout: 15 * time.Second},
+		addr: addr,
+		http: &http.Client{Timeout: 15 * time.Second},
 	}
-	mode := "external init/unseal"
-	if cfg.Manage {
-		mode = "self-managed init/unseal (init_file: " + initFile + ")"
-	}
-	logger.Println(logger.INFO, false, "OpenBao: enabled ("+addr+"), "+mode)
+	logger.Println(logger.INFO, false, "OpenBao: enabled ("+addr+"), self-managed init/unseal (keys RSA-encrypted in DB)")
 }
 
 // Enabled reports whether OpenBao is configured and should be used.
@@ -103,28 +91,6 @@ func (c *client) sealStatus() (sealState, error) {
 	return st, nil
 }
 
-// reloadToken (re)reads the token from token_file when configured, so a token
-// written or rotated by the openbao-init sidecar AFTER cm-honeybee started
-// (fresh volume, host reboot) is picked up. A static configured token is kept.
-func (c *client) reloadToken() error {
-	if c.tokenFile == "" {
-		if c.token == "" {
-			return errors.New("no token or token_file configured")
-		}
-		return nil
-	}
-	b, err := os.ReadFile(c.tokenFile)
-	if err != nil {
-		return err
-	}
-	t := strings.TrimSpace(string(b))
-	if t == "" {
-		return errors.New("token_file is empty")
-	}
-	c.token = t
-	return nil
-}
-
 // kvReady confirms the KV v2 engine is mounted at secret/ and the token is
 // accepted — i.e. secrets can actually be read/written end to end.
 func (c *client) kvReady() error {
@@ -145,11 +111,10 @@ func (c *client) kvReady() error {
 //
 // It exists because container start order is NOT guaranteed on a host reboot:
 // docker restart policies ignore compose depends_on, and on a fresh or lost
-// volume OpenBao comes up UNINITIALIZED. In self-managed mode (openbao.manage)
-// cm-honeybee performs 'operator init' + unseal + KV-enable itself and persists
-// the unseal key/root token, so it recovers on its own after reboots and
-// volume loss with no init sidecar. Otherwise it waits for an external
-// initializer. No-op when OpenBao is not configured.
+// volume OpenBao comes up UNINITIALIZED. cm-honeybee performs 'operator init' +
+// unseal + KV-enable itself and persists the unseal key/root token, so it
+// recovers on its own after reboots and volume loss with no init sidecar.
+// No-op when OpenBao is not configured.
 func WaitReady() {
 	c := defaultClient
 	if c == nil {
@@ -174,21 +139,17 @@ func WaitReady() {
 	}
 }
 
-// ensureReady drives OpenBao toward a usable state and loads a token. In
-// self-managed mode it performs init/unseal/KV-enable itself; otherwise it
-// waits for an external initializer. Returns "" when ready, else a short reason
-// (for logging + retry).
+// ensureReady drives OpenBao toward a usable state and loads the root token:
+// it performs init/unseal/KV-enable itself. Returns "" when ready, else a short
+// reason (for logging + retry).
 func (c *client) ensureReady() string {
 	st, err := c.sealStatus()
 	if err != nil {
 		return "unreachable: " + err.Error()
 	}
 
-	// 1) Initialize (self-managed only).
+	// 1) Initialize if needed.
 	if !st.Initialized {
-		if !c.manage {
-			return "not initialized yet (waiting for external initializer)"
-		}
 		uk, rt, err := c.doInit()
 		if err != nil {
 			return "init failed: " + err.Error()
@@ -197,20 +158,17 @@ func (c *client) ensureReady() string {
 			return "init succeeded but persisting keys failed: " + err.Error()
 		}
 		c.token = rt
-		logger.Println(logger.INFO, false, "OpenBao: initialized (unseal key + root token stored at "+c.initFile+")")
+		logger.Println(logger.INFO, false, "OpenBao: initialized (unseal key + root token stored RSA-encrypted in DB)")
 		if st, err = c.sealStatus(); err != nil {
 			return "post-init status: " + err.Error()
 		}
 	}
 
-	// 2) Unseal.
+	// 2) Unseal if sealed.
 	if st.Sealed {
-		if !c.manage {
-			return "sealed (waiting for external unseal)"
-		}
 		uk, rt, err := c.loadInit()
 		if err != nil {
-			return "sealed but cannot read stored unseal key (" + c.initFile + "): " + err.Error()
+			return "sealed but cannot read stored unseal key: " + err.Error()
 		}
 		if err := c.doUnseal(uk); err != nil {
 			return "unseal failed: " + err.Error()
@@ -227,36 +185,24 @@ func (c *client) ensureReady() string {
 		}
 	}
 
-	// 3) Load the token.
-	if c.manage {
-		if c.token == "" {
-			if _, rt, err := c.loadInit(); err == nil {
-				c.token = rt
-			}
+	// 3) Load the root token (already set above when we just initialized).
+	if c.token == "" {
+		if _, rt, err := c.loadInit(); err == nil {
+			c.token = rt
 		}
-		if c.token == "" {
-			return "no root token available (init_file: " + c.initFile + ")"
-		}
-	} else if err := c.reloadToken(); err != nil {
-		return "token not available yet: " + err.Error()
+	}
+	if c.token == "" {
+		return "no root token available (DB)"
 	}
 
 	// 4) Ensure the KV v2 engine is mounted and usable.
-	if c.manage {
-		if err := c.ensureKV(); err != nil {
-			return "enabling KV v2 failed: " + err.Error()
-		}
+	if err := c.ensureKV(); err != nil {
+		return "enabling KV v2 failed: " + err.Error()
 	}
 	if err := c.kvReady(); err != nil {
 		return "KV not ready: " + err.Error()
 	}
 	return ""
-}
-
-// initFileData is the persisted self-managed unseal material.
-type initFileData struct {
-	UnsealKey string `json:"unseal_key"`
-	RootToken string `json:"root_token"`
 }
 
 // doInit runs 'operator init' with a single unseal key (threshold 1) for
@@ -300,27 +246,66 @@ func (c *client) ensureKV() error {
 	return err
 }
 
+// rsaEncrypt/rsaDecrypt protect the unseal material at rest using honeybee's key
+// (common.PubKey to write, common.PrivKey to read), the same key honeybee uses
+// to encrypt other secrets it keeps in the DB.
+func rsaEncrypt(plain string) (string, error) {
+	if common.PubKey == nil {
+		return "", errors.New("honeybee public key not loaded")
+	}
+	ct, err := rsautil.EncryptWithPublicKey([]byte(plain), common.PubKey)
+	if err != nil {
+		return "", err
+	}
+	return base64.StdEncoding.EncodeToString(ct), nil
+}
+
+func rsaDecrypt(b64 string) (string, error) {
+	if common.PrivKey == nil {
+		return "", errors.New("honeybee private key not loaded")
+	}
+	ct, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return "", err
+	}
+	pt, err := rsautil.DecryptWithPrivateKey(ct, common.PrivKey)
+	if err != nil {
+		return "", err
+	}
+	return string(pt), nil
+}
+
+// saveInit stores the unseal key + root token RSA-encrypted in the DB (single
+// row, upserted).
 func (c *client) saveInit(unsealKey, rootToken string) error {
-	b, err := json.Marshal(initFileData{UnsealKey: unsealKey, RootToken: rootToken})
+	ukEnc, err := rsaEncrypt(unsealKey)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(c.initFile, b, 0o600)
+	rtEnc, err := rsaEncrypt(rootToken)
+	if err != nil {
+		return err
+	}
+	return db.DB.Save(&model.OpenBaoInit{ID: 1, UnsealKeyEnc: ukEnc, RootTokenEnc: rtEnc}).Error
 }
 
+// loadInit returns the stored unseal key + root token by decrypting the
+// RSA-encrypted row from the DB. Returns an error when no row exists yet.
 func (c *client) loadInit() (unsealKey, rootToken string, err error) {
-	b, err := os.ReadFile(c.initFile)
-	if err != nil {
+	var rec model.OpenBaoInit
+	if err := db.DB.First(&rec, 1).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", "", errors.New("no stored unseal key in DB")
+		}
 		return "", "", err
 	}
-	var d initFileData
-	if err := json.Unmarshal(b, &d); err != nil {
-		return "", "", err
+	if unsealKey, err = rsaDecrypt(rec.UnsealKeyEnc); err != nil {
+		return "", "", fmt.Errorf("decrypt unseal key: %w", err)
 	}
-	if d.UnsealKey == "" {
-		return "", "", errors.New("stored init file has no unseal key")
+	if rootToken, err = rsaDecrypt(rec.RootTokenEnc); err != nil {
+		return "", "", fmt.Errorf("decrypt root token: %w", err)
 	}
-	return d.UnsealKey, d.RootToken, nil
+	return unsealKey, rootToken, nil
 }
 
 // Put writes (overwriting) the key/values at the KV v2 path.

@@ -71,18 +71,9 @@ func init() {
 		logger.Panicln(logger.ERROR, true, err.Error())
 	}
 
-	// Block until OpenBao is initialized, unsealed, has a published token, and
-	// its KV engine is ready. Container start order is not guaranteed on a host
-	// reboot (restart policies ignore compose depends_on), so cm-honeybee checks
-	// OpenBao readiness itself and stays not-ready until then rather than failing
-	// secret operations in the meantime.
-	controller.OkMessage.Message = "Waiting for OpenBao (init/unseal)"
-	openbao.WaitReady()
-
-	// Migrate any SSH secrets left in the DB (from pre-OpenBao rows) into OpenBao.
-	// No-op when OpenBao is disabled or nothing remains.
-	controller.MigratePlaintextSecretsToOpenBao()
-
+	// Load the RSA keys BEFORE OpenBao: cm-honeybee encrypts/decrypts the OpenBao
+	// unseal material it stores in the DB with these keys (see openbao.WaitReady),
+	// and uses them for CSP credential encryption.
 	privateKeyPath := common.RootPath + "/" + common.PrivateKeyFileName
 	publicKeyPath := common.RootPath + "/" + common.PublicKeyFileName
 
@@ -102,16 +93,28 @@ func init() {
 	}
 
 	// The private key is required to decrypt secrets stored encrypted at rest
-	// (CSP credentials). It is optional for SSH-only deployments, so a missing or
-	// unreadable key is logged rather than fatal — CSP features report it on use.
+	// (the OpenBao unseal material and CSP credentials). It is optional only for
+	// SSH-only deployments without OpenBao, so a missing/unreadable key is logged
+	// rather than fatal — features that need it report it on use.
 	if fileutil.IsExist(privateKeyPath) {
 		common.PrivKey, err = rsautil.ReadPrivateKey(privateKeyPath)
 		if err != nil {
-			logger.Println(logger.WARN, true, "error occurred while reading private key; CSP credential decryption will be unavailable: "+err.Error())
+			logger.Println(logger.WARN, true, "error occurred while reading private key; encrypted-secret decryption will be unavailable: "+err.Error())
 		}
 	} else {
-		logger.Println(logger.WARN, true, "private key not found ("+privateKeyPath+"); CSP credential decryption will be unavailable")
+		logger.Println(logger.WARN, true, "private key not found ("+privateKeyPath+"); encrypted-secret decryption will be unavailable")
 	}
+
+	// Block until OpenBao is initialized, unsealed, has a token, and its KV engine
+	// is ready. Container start order is not guaranteed on a host reboot (restart
+	// policies ignore compose depends_on), so cm-honeybee drives OpenBao readiness
+	// itself and stays not-ready until then rather than failing secret operations.
+	controller.OkMessage.Message = "Waiting for OpenBao (init/unseal)"
+	openbao.WaitReady()
+
+	// Migrate any SSH secrets left in the DB (from pre-OpenBao rows) into OpenBao.
+	// No-op when OpenBao is disabled or nothing remains.
+	controller.MigratePlaintextSecretsToOpenBao()
 
 	controller.OkMessage.Message = "CM-Honeybee API server is ready"
 	controller.IsReady = true

@@ -1,9 +1,6 @@
-# Every value below can be set three ways (later wins):
-#   1) a literal here,
-#   2) a ${VAR} reference resolved from the environment at startup, or
-#   3) a native env override (see the HONEYBEE_* names below) — a set env var
-#      wins over this file, so a stock image can run with NO mounted config file,
-#      configured entirely via `environment:` (this is how cm-mayfly runs it).
+# Any value can be a literal, a ${VAR} reference, or a native env override (the
+# HONEYBEE_* names below); a set env var wins, so a stock image can be configured
+# entirely via `environment:` with no mounted config file.
 #
 #   listen.port       HONEYBEE_LISTEN_PORT
 #   agent.port        HONEYBEE_AGENT_PORT
@@ -11,10 +8,6 @@
 #   spider.username   HONEYBEE_SPIDER_USERNAME
 #   spider.password   HONEYBEE_SPIDER_PASSWORD
 #   openbao.address   HONEYBEE_VAULT_ADDR
-#   openbao.token     HONEYBEE_VAULT_TOKEN
-#   openbao.token_file HONEYBEE_VAULT_TOKEN_FILE
-#   openbao.manage    HONEYBEE_VAULT_MANAGE       (true = self-manage init/unseal)
-#   openbao.init_file HONEYBEE_VAULT_INIT_FILE
 cm-honeybee:
     listen:
         port: 8081
@@ -22,22 +15,11 @@ cm-honeybee:
         port: 8082
     spider:
         endpoint: http://cb-spider:1024/spider
-        # cb-spider Basic Auth — inject via HONEYBEE_SPIDER_USERNAME /
-        # HONEYBEE_SPIDER_PASSWORD (env) rather than committing real credentials.
+        # cb-spider Basic Auth — inject via HONEYBEE_SPIDER_USERNAME/PASSWORD (env).
         username: default
         password: default
-    # OpenBao secrets backend. SSH access secrets and CSP credentials are stored
-    # ONLY in OpenBao (KV v2) — SQLite no longer stores secrets. If address is
-    # empty, creating sources that carry a credential/SSH secret will fail.
-    # Inject via HONEYBEE_VAULT_ADDR (env). Two modes:
-    #  - self-managed (manage: true): cm-honeybee runs init/unseal/KV-enable
-    #    itself and stores the unseal key + root token in init_file. No token or
-    #    init sidecar needed. Recovers on its own after reboots / volume loss.
-    #  - external (manage: false, default): an init sidecar unseals OpenBao and
-    #    publishes a token; provide token or token_file.
-    # manage / init_file are set via env (HONEYBEE_VAULT_MANAGE /
-    # HONEYBEE_VAULT_INIT_FILE); manage is a bool so it is not templated here.
+    # OpenBao secrets backend (KV v2) for SSH access secrets and CSP credentials.
+    # cm-honeybee self-manages init/unseal/KV-enable and stores the unseal key +
+    # root token RSA-encrypted in its DB.
     openbao:
         address: ${HONEYBEE_VAULT_ADDR}
-        token: ${HONEYBEE_VAULT_TOKEN}
-        token_file: ${HONEYBEE_VAULT_TOKEN_FILE}
