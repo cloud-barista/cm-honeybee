@@ -71,6 +71,10 @@ func init() {
 		logger.Panicln(logger.ERROR, true, err.Error())
 	}
 
+	// Migrate any SSH secrets left in the DB (from pre-OpenBao rows) into OpenBao.
+	// No-op when OpenBao is disabled or nothing remains.
+	controller.MigratePlaintextSecretsToOpenBao()
+
 	privateKeyPath := common.RootPath + "/" + common.PrivateKeyFileName
 	publicKeyPath := common.RootPath + "/" + common.PublicKeyFileName
 
