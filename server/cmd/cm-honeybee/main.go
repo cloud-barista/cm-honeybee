@@ -71,6 +71,14 @@ func init() {
 		logger.Panicln(logger.ERROR, true, err.Error())
 	}
 
+	// Block until OpenBao is initialized, unsealed, has a published token, and
+	// its KV engine is ready. Container start order is not guaranteed on a host
+	// reboot (restart policies ignore compose depends_on), so cm-honeybee checks
+	// OpenBao readiness itself and stays not-ready until then rather than failing
+	// secret operations in the meantime.
+	controller.OkMessage.Message = "Waiting for OpenBao (init/unseal)"
+	openbao.WaitReady()
+
 	// Migrate any SSH secrets left in the DB (from pre-OpenBao rows) into OpenBao.
 	// No-op when OpenBao is disabled or nothing remains.
 	controller.MigratePlaintextSecretsToOpenBao()
