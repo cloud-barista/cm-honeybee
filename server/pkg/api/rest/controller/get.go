@@ -205,7 +205,13 @@ func GetInfraInfoSourceGroup(c echo.Context) error {
 	var infraInfoList model.InfraInfoList
 
 	for _, conn := range *list {
-		infraInfo, _ := doGetInfraInfo(conn.ID)
+		infraInfo, err := doGetInfraInfo(conn.ID)
+		if err != nil || infraInfo == nil {
+			// Nothing collected for this connection yet (normal right after
+			// registration) or unreadable — skip it; the error is logged in
+			// doGetInfraInfo. Avoids dereferencing a nil result.
+			continue
+		}
 		infraInfoList.Servers = append(infraInfoList.Servers, *infraInfo)
 	}
 
@@ -282,7 +288,10 @@ func GetSoftwareInfoSourceGroup(c echo.Context) error {
 	var softwareInfoList model.SoftwareInfoList
 
 	for _, conn := range *list {
-		softwareInfo, _ := doGetSoftwareInfo(conn.ID)
+		softwareInfo, err := doGetSoftwareInfo(conn.ID)
+		if err != nil || softwareInfo == nil {
+			continue // not collected yet / unreadable — skip (logged in doGetSoftwareInfo)
+		}
 		softwareInfoList.Servers = append(softwareInfoList.Servers, *softwareInfo)
 	}
 
@@ -359,7 +368,10 @@ func GetKubernetesInfoSourceGroup(c echo.Context) error {
 	var kubernetesInfoList model.KubernetesInfoList
 
 	for _, conn := range *list {
-		kubernetesInfo, _ := doGetKubernetesInfo(conn.ID)
+		kubernetesInfo, err := doGetKubernetesInfo(conn.ID)
+		if err != nil || kubernetesInfo == nil {
+			continue // not collected yet / unreadable — skip (logged in doGetKubernetesInfo)
+		}
 		kubernetesInfoList.Servers = append(kubernetesInfoList.Servers, *kubernetesInfo)
 	}
 
@@ -436,7 +448,10 @@ func GetHelmInfoSourceGroup(c echo.Context) error {
 	var helmInfoList model.HelmInfoList
 
 	for _, conn := range *list {
-		helmInfo, _ := doGetHelmInfo(conn.ID)
+		helmInfo, err := doGetHelmInfo(conn.ID)
+		if err != nil || helmInfo == nil {
+			continue // not collected yet / unreadable — skip (logged in doGetHelmInfo)
+		}
 		helmInfoList.Servers = append(helmInfoList.Servers, *helmInfo)
 	}
 
@@ -538,7 +553,10 @@ func GetDataInfoSourceGroup(c echo.Context) error {
 	var dataInfoList model.DataInfoList
 
 	for _, conn := range *list {
-		dataInfo, _ := doGetDataInfo(conn.ID)
+		dataInfo, err := doGetDataInfo(conn.ID)
+		if err != nil || dataInfo == nil {
+			continue // not collected yet / unreadable — skip (logged in doGetDataInfo)
+		}
 		dataInfoList.MinIOData = append(dataInfoList.MinIOData, *dataInfo)
 	}
 
