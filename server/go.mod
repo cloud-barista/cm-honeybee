@@ -12,9 +12,9 @@ require (
 )
 
 require (
-	github.com/cloud-barista/cm-beetle/imdl v0.1.10
+	github.com/cloud-barista/cm-beetle/imdl v0.1.11
 	github.com/cloud-barista/cm-grasshopper/smdl v0.1.1
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260807074203-e94bfd8ec9bb
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260811052700-ae4067916cb5
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.11
@@ -61,13 +61,13 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/mod v0.39.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/text v0.40.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
-	modernc.org/libc v1.75.0 // indirect
+	modernc.org/libc v1.75.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.0 // indirect
 	modernc.org/sqlite v1.56.0 // indirect
