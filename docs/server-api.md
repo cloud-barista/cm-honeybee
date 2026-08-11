@@ -156,7 +156,7 @@ SSH 접속 시크릿(비밀번호/개인키)과 CSP credential은 **OpenBao**(KV
   규약(= cb-spider `credentialcsp`)을 따릅니다. 예: Azure `clientId/clientSecret/tenantId/subscriptionId`,
   AWS `aws_access_key_id/aws_secret_access_key`. (`GET /csp/{name}`가 키+예시 제공)
 - 구조·부팅 흐름·복구 시나리오·프로덕션(KMS auto-unseal) 등 자세한 내용은
-  [`server/openbao/README.md`](../server/openbao/README.md) 참고. OpenBao 포함 전체 컨테이너 구성은
+  [`docs/openbao.md`](openbao.md) 참고. OpenBao 포함 전체 컨테이너 구성은
   [`server/docker-compose.yaml`](../server/docker-compose.yaml).
 
 ---

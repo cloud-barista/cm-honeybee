@@ -29,6 +29,7 @@ CM-Honeybee는 독립적으로 배포 가능한 두 개의 REST 모듈로 구성
 
 - [Agent API](./agent-api.md) — `cm-honeybee-agent`가 노출하는 엔드포인트 (호스트별 수집기).
 - [Server API](./server-api.md) — `cm-honeybee`가 노출하는 엔드포인트 (컨트롤 플레인, 정제 모델, K8s 소스 모델).
+- [OpenBao (자립형 시크릿 백엔드)](./openbao.md) — 시크릿 저장/자체 init·unseal 구조, 부팅 흐름, 복구 시나리오.
 
 ## 문서 공통 규칙
 
