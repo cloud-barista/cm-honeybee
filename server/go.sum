@@ -10,6 +10,8 @@ github.com/cloud-barista/cm-grasshopper/smdl v0.1.1 h1:RxUaiu9LWqHUwjA2yUoKuHzhp
 github.com/cloud-barista/cm-grasshopper/smdl v0.1.1/go.mod h1:WORfvOxkJr+NhRPCsJvkntzTEY/aG9JeuKFXKEBemAY=
 github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260811052700-ae4067916cb5 h1:R0kVLx2rSKuHTOylIC1xApIKtOljgvN+XaJDQsiI5Ow=
 github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260811052700-ae4067916cb5/go.mod h1:09zDHAU+z7cuDtkU0c5ZjEAepuLVkGdQuM+sm1+7sJs=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260812082927-c58c4764df2a h1:1/gS4pKwh9W0xRYCpFRs3UTMMBPsfDloA/EgoiXaJ04=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260812082927-c58c4764df2a/go.mod h1:bskpcJ6iXMpaJjexRnXFrqhhLM6Bic97pVUj6zhczK4=
 github.com/cyphar/filepath-securejoin v0.7.0 h1:s0Y3ITPy6sQn5xt54DuYvTF8hu134ooYLUb58DX/HjE=
 github.com/cyphar/filepath-securejoin v0.7.0/go.mod h1:ymLGms/u3BYaviIiuKFnUx8EkQEZeK6cInNoAPJA3o4=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
