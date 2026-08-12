@@ -396,10 +396,14 @@ func convertToPackages(packages interface{}) []softwaremodel.Package {
 	case []software.Snap:
 		for _, pkg := range p {
 			result = append(result, softwaremodel.Package{
-				Name:    pkg.Name,
-				Type:    softwaremodel.SoftwarePackageTypeSnap,
-				Version: pkg.Version,
-				Channel: pkg.Tracking,
+				Name:        pkg.Name,
+				Type:        softwaremodel.SoftwarePackageTypeSnap,
+				Version:     pkg.Version,
+				Channel:     pkg.Tracking,
+				Revision:    pkg.Revision,
+				Confinement: pkg.Confinement,
+				Base:        pkg.Base,
+				BlobPath:    pkg.BlobPath,
 			})
 		}
 	case []software.Flatpak:
@@ -415,6 +419,9 @@ func convertToPackages(packages interface{}) []softwaremodel.Package {
 				Origin:        pkg.Origin,
 				OriginURL:     pkg.OriginURL,
 				ApplicationID: pkg.ApplicationID,
+				Runtime:       pkg.Runtime,
+				Branch:        pkg.Branch,
+				Scope:         pkg.Installation,
 			})
 		}
 	}
@@ -721,6 +728,27 @@ func convertToContainers(containers *[]software.Container, runtime softwaremodel
 	return result
 }
 
+// dropSnapShadowedDebs removes deb packages whose name matches an installed
+// snap, so a transitional deb stub does not cause a duplicate install alongside
+// the snap it points to.
+func dropSnapShadowedDebs(debs, snaps []softwaremodel.Package) []softwaremodel.Package {
+	if len(snaps) == 0 {
+		return debs
+	}
+	snapNames := make(map[string]bool, len(snaps))
+	for _, s := range snaps {
+		snapNames[s.Name] = true
+	}
+	kept := debs[:0]
+	for _, d := range debs {
+		if snapNames[d.Name] {
+			continue
+		}
+		kept = append(kept, d)
+	}
+	return kept
+}
+
 func doGetRefinedSoftwareInfo(softwareInfo *software.Software) (*softwaremodel.SoftwareList, error) {
 	binaries := convertToBinaries(softwareInfo.Legacy)
 
@@ -730,6 +758,12 @@ func doGetRefinedSoftwareInfo(softwareInfo *software.Software) (*softwaremodel.S
 	rpmPackages := convertToPackages(softwareInfo.RPM)
 	snapPackages := convertToPackages(softwareInfo.Snap)
 	flatpakPackages := convertToPackages(softwareInfo.Flatpak)
+
+	// Dedup: on Ubuntu a deb like "firefox" is often a transitional stub whose
+	// only job is to pull the snap of the same name. Keeping both double-installs
+	// the app, so when a snap and a deb share a name the snap (the real install)
+	// wins and the deb is dropped.
+	debPackages = dropSnapShadowedDebs(debPackages, snapPackages)
 
 	packages = append(packages, debPackages...)
 	packages = append(packages, rpmPackages...)
