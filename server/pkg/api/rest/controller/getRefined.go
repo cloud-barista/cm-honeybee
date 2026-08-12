@@ -393,6 +393,29 @@ func convertToPackages(packages interface{}) []softwaremodel.Package {
 				Version: pkg.Version,
 			})
 		}
+	case []software.Snap:
+		for _, pkg := range p {
+			result = append(result, softwaremodel.Package{
+				Name:    pkg.Name,
+				Type:    softwaremodel.SoftwarePackageTypeSnap,
+				Version: pkg.Version,
+				Channel: pkg.Tracking,
+			})
+		}
+	case []software.Flatpak:
+		for _, pkg := range p {
+			name := pkg.ApplicationID
+			if name == "" {
+				name = pkg.Name
+			}
+			result = append(result, softwaremodel.Package{
+				Name:          name,
+				Type:          softwaremodel.SoftwarePackageTypeFlatpak,
+				Version:       pkg.Version,
+				Origin:        pkg.Origin,
+				ApplicationID: pkg.ApplicationID,
+			})
+		}
 	}
 
 	return result
@@ -704,9 +727,13 @@ func doGetRefinedSoftwareInfo(softwareInfo *software.Software) (*softwaremodel.S
 
 	debPackages := convertToPackages(softwareInfo.DEB)
 	rpmPackages := convertToPackages(softwareInfo.RPM)
+	snapPackages := convertToPackages(softwareInfo.Snap)
+	flatpakPackages := convertToPackages(softwareInfo.Flatpak)
 
 	packages = append(packages, debPackages...)
 	packages = append(packages, rpmPackages...)
+	packages = append(packages, snapPackages...)
+	packages = append(packages, flatpakPackages...)
 
 	var containers []softwaremodel.Container
 
