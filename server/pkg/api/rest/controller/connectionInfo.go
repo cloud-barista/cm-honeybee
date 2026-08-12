@@ -697,6 +697,84 @@ func DeleteConnectionInfo(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "success"}, " ")
 }
 
+// countConnectionsOnHost returns how many connections other than excludeID
+// target the same host (ip_address). The agent is a host-wide systemd service,
+// so this is used to avoid removing an agent still shared by another connection.
+func countConnectionsOnHost(ipAddress, excludeID string) (int, error) {
+	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{}, 0, 0)
+	if err != nil {
+		return 0, err
+	}
+	ip := strings.TrimSpace(ipAddress)
+	count := 0
+	for _, conn := range *list {
+		if conn.ID != excludeID && strings.TrimSpace(conn.IPAddress) == ip {
+			count++
+		}
+	}
+	return count, nil
+}
+
+// UninstallAgent godoc
+//
+//	@ID				uninstall-agent
+//	@Summary		Uninstall Agent
+//	@Description	Uninstall cm-honeybee-agent from the connection's host over SSH. It is kept (not removed) when another connection on the same host (same ip_address) still uses it. This does not delete the connection record.
+//	@Tags			[On-premise] ConnectionInfo
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Param			connId path string true "ID of the connectionInfo"
+//	@Success		200	{object}	model.SimpleMsg			"Agent uninstalled, or kept because it is still shared."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to uninstall the agent."
+//	@Router			/source_group/{sgId}/connection_info/{connId}/agent [delete]
+func UninstallAgent(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+	connID := c.Param("connId")
+	if connID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the connId.")
+	}
+
+	if _, err := dao.SourceGroupGet(sgID); err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+	if strings.TrimSpace(connectionInfo.IPAddress) == "" {
+		return common.ReturnErrorMsg(c, "connection has no ip_address; the agent is installed only on SSH-reachable hosts")
+	}
+
+	// Keep the agent if another connection (in any source group) targets the same
+	// host — it is a host-wide service shared across connections.
+	shared, err := countConnectionsOnHost(connectionInfo.IPAddress, connectionInfo.ID)
+	if err != nil {
+		return common.ReturnInternalError(c, err, "failed to check other connections on the host")
+	}
+	if shared > 0 {
+		return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "agent kept: host " +
+			connectionInfo.IPAddress + " is still used by " + strconv.Itoa(shared) + " other connection(s)"}, " ")
+	}
+
+	// Load SSH secrets (OpenBao) before connecting.
+	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+		return common.ReturnInternalError(c, err, "failed to load SSH secrets")
+	}
+
+	s := &ssh.SSH{}
+	if err := s.UninstallAgent(*connectionInfo); err != nil {
+		return common.ReturnInternalError(c, err, "failed to uninstall the agent")
+	}
+
+	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "agent uninstalled from " + connectionInfo.IPAddress}, " ")
+}
+
 // RefreshConnectionInfoStatus godoc
 //
 //	@ID				refresh-connection-info-status

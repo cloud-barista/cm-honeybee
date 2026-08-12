@@ -249,6 +249,41 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) error {
 	return o.checkAgentStatus()
 }
 
+// UninstallAgent removes cm-honeybee-agent from the connection's host by
+// running uninstallAgent.sh over SSH (inverse of RunAgent). No busybox is
+// needed — the script only uses systemctl/rm already present on the host.
+func (o *SSH) UninstallAgent(connectionInfo model.ConnectionInfo) error {
+	if err := o.NewClientConn(connectionInfo); err != nil {
+		return err
+	}
+	defer o.Close()
+
+	client, err := sftp.NewClient(o.Options.client)
+	if err != nil {
+		logger.Println(logger.ERROR, true, "Failed to SFTP Connect: "+err.Error())
+		return err
+	}
+	defer func() {
+		_ = client.Close()
+	}()
+
+	if err = o.copyFileToSFTP(client, "sourceFiles/uninstallAgent.sh", "/tmp/"); err != nil {
+		return err
+	}
+
+	logger.Printf(logger.DEBUG, true, "SSH: uninstallAgent Progressing...\n")
+	if _, err = o.RunCmd("sudo /tmp/uninstallAgent.sh"); err != nil {
+		logger.Println(logger.ERROR, true, "Failed to run command : ", err)
+		return err
+	}
+
+	if _, err = o.RunCmd("rm -f /tmp/uninstallAgent.sh"); err != nil {
+		logger.Println(logger.ERROR, true, "Failed to remove temporary files : ", err)
+	}
+
+	return nil
+}
+
 func (o *SSH) copyFilesToSFTP(client *sftp.Client, files []string, dstPath string) error {
 	for _, file := range files {
 		if err := o.copyFileToSFTP(client, file, dstPath); err != nil {
