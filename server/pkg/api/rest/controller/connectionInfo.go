@@ -775,6 +775,93 @@ func UninstallAgent(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "agent uninstalled from " + connectionInfo.IPAddress}, " ")
 }
 
+// countConnectionsOnHostOutsideGroup counts connections targeting the same host
+// (ip_address) that belong to a source group other than sgID.
+func countConnectionsOnHostOutsideGroup(ipAddress, sgID string) (int, error) {
+	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{}, 0, 0)
+	if err != nil {
+		return 0, err
+	}
+	ip := strings.TrimSpace(ipAddress)
+	count := 0
+	for _, conn := range *list {
+		if conn.SourceGroupID != sgID && strings.TrimSpace(conn.IPAddress) == ip {
+			count++
+		}
+	}
+	return count, nil
+}
+
+// AgentUninstallResult is one host's outcome in a source-group agent uninstall.
+type AgentUninstallResult struct {
+	Host    string `json:"host"`
+	Message string `json:"message"`
+}
+
+// UninstallAgentSourceGroup godoc
+//
+//	@ID				uninstall-agent-source-group
+//	@Summary		Uninstall Agent (Source Group)
+//	@Description	Uninstall cm-honeybee-agent from every host in the source group over SSH. Each host is processed once; a host is kept (not removed) when a connection in another source group still uses it. This does not delete the connection records.
+//	@Tags			[On-premise] ConnectionInfo
+//	@Accept			json
+//	@Produce		json
+//	@Param			sgId path string true "ID of the SourceGroup"
+//	@Success		200	{object}	model.SimpleMsg			"Per-host uninstall results."
+//	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to uninstall the agents."
+//	@Router			/source_group/{sgId}/agent [delete]
+func UninstallAgentSourceGroup(c echo.Context) error {
+	sgID := c.Param("sgId")
+	if sgID == "" {
+		return common.ReturnErrorMsg(c, "Please provide the sgId.")
+	}
+	if _, err := dao.SourceGroupGet(sgID); err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
+	if err != nil {
+		return common.ReturnInternalError(c, err, "failed to list connections")
+	}
+
+	results := make([]AgentUninstallResult, 0)
+	done := make(map[string]bool) // process each host once
+
+	for i := range *list {
+		conn := (*list)[i]
+		ip := strings.TrimSpace(conn.IPAddress)
+		if ip == "" || done[ip] {
+			continue
+		}
+		done[ip] = true
+
+		shared, err := countConnectionsOnHostOutsideGroup(ip, sgID)
+		if err != nil {
+			results = append(results, AgentUninstallResult{ip, "error checking other connections: " + err.Error()})
+			continue
+		}
+		if shared > 0 {
+			results = append(results, AgentUninstallResult{ip, "kept: still used by " +
+				strconv.Itoa(shared) + " connection(s) in other source group(s)"})
+			continue
+		}
+
+		if err := hydrateConnectionSecrets(&conn); err != nil {
+			results = append(results, AgentUninstallResult{ip, "failed to load SSH secrets: " + err.Error()})
+			continue
+		}
+		s := &ssh.SSH{}
+		if err := s.UninstallAgent(conn); err != nil {
+			results = append(results, AgentUninstallResult{ip, "failed to uninstall: " + err.Error()})
+			continue
+		}
+		results = append(results, AgentUninstallResult{ip, "uninstalled"})
+	}
+
+	return c.JSONPretty(http.StatusOK, map[string]interface{}{"results": results}, " ")
+}
+
 // RefreshConnectionInfoStatus godoc
 //
 //	@ID				refresh-connection-info-status

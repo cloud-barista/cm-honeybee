@@ -14,6 +14,7 @@ func RegisterConnectionInfo(e *echo.Echo) {
 	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId", controller.UpdateConnectionInfo)
 	e.DELETE("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId", controller.DeleteConnectionInfo)
 	e.DELETE("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/agent", controller.UninstallAgent)
+	e.DELETE("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/agent", controller.UninstallAgentSourceGroup)
 	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/refresh", controller.RefreshConnectionInfoStatus)
 
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/connection_info/:connId", controller.GetConnectionInfoDirectly)
