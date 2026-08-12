@@ -1,6 +1,7 @@
 package software
 
 import (
+	"os"
 	"os/exec"
 	"strings"
 
@@ -8,18 +9,26 @@ import (
 )
 
 // GetSnaps lists installed snap packages via `snap list`. Returns an empty slice
-// (no error) when snap is not installed or no snaps are present, so hosts without
+// (no error) when snap is not installed or none are present, so hosts without
 // snapd are handled gracefully.
-func GetSnaps() ([]software.Snap, error) {
+//
+// When showDefaultPackages is false (default), base/snapd/core "system" snaps
+// (core, core20..24, bare, snapd, ...) are filtered out — the snap analogue of
+// the deb/rpm default-package filtering — leaving user-installed apps only.
+func GetSnaps(showDefaultPackages bool) ([]software.Snap, error) {
 	snaps := make([]software.Snap, 0)
 
 	if _, err := exec.LookPath("snap"); err != nil {
 		return snaps, nil // snap not installed on this host
 	}
 
-	// `snap list` prints a table: Name Version Rev Tracking Publisher Notes.
-	// It exits non-zero with "No snaps are installed yet." — treated as empty.
-	out, err := exec.Command("snap", "list").Output()
+	// Force the C locale so the header row and Notes tokens are stable English
+	// (some locales translate the `snap list` header), keeping parsing/filtering
+	// reliable. `snap list` also exits non-zero with "No snaps are installed
+	// yet." — treated as empty.
+	cmd := exec.Command("snap", "list")
+	cmd.Env = append(os.Environ(), "LC_ALL=C")
+	out, err := cmd.Output()
 	if err != nil {
 		return snaps, nil
 	}
@@ -44,8 +53,28 @@ func GetSnaps() ([]software.Snap, error) {
 		if len(f) >= 6 {
 			s.Notes = strings.Join(f[5:], " ")
 		}
+
+		if !showDefaultPackages && isSystemSnap(s) {
+			continue
+		}
 		snaps = append(snaps, s)
 	}
 
 	return snaps, nil
+}
+
+// isSystemSnap reports whether a snap is a base/snapd/core (system) snap rather
+// than a user-installed application.
+func isSystemSnap(s software.Snap) bool {
+	switch s.Name {
+	case "core", "core16", "core18", "core20", "core22", "core24", "bare", "snapd":
+		return true
+	}
+	for _, n := range strings.FieldsFunc(s.Notes, func(r rune) bool { return r == ',' || r == ' ' }) {
+		switch n {
+		case "base", "core", "snapd":
+			return true
+		}
+	}
+	return false
 }

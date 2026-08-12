@@ -9,7 +9,12 @@ import (
 
 // GetFlatpaks lists installed flatpak applications via `flatpak list`. Returns an
 // empty slice (no error) when flatpak is not installed or none are present.
-func GetFlatpaks() ([]software.Flatpak, error) {
+//
+// When showDefaultPackages is false (default), only applications are listed
+// (--app) so the shared runtimes/platforms (org.freedesktop.Platform,
+// org.gnome.Platform, ...) — the flatpak analogue of system/base packages — are
+// excluded. When true, runtimes are included as well.
+func GetFlatpaks(showDefaultPackages bool) ([]software.Flatpak, error) {
 	flatpaks := make([]software.Flatpak, 0)
 
 	if _, err := exec.LookPath("flatpak"); err != nil {
@@ -17,8 +22,11 @@ func GetFlatpaks() ([]software.Flatpak, error) {
 	}
 
 	// Explicit columns give a stable, tab-separated, header-less output.
-	out, err := exec.Command("flatpak", "list", "--app",
-		"--columns=name,application,version,branch,arch,origin,installation").Output()
+	args := []string{"list", "--columns=name,application,version,branch,arch,origin,installation"}
+	if !showDefaultPackages {
+		args = append(args, "--app") // applications only (exclude runtimes)
+	}
+	out, err := exec.Command("flatpak", args...).Output()
 	if err != nil {
 		return flatpaks, nil
 	}

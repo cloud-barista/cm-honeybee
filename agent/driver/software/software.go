@@ -42,12 +42,12 @@ func GetSoftwareInfo(showDefaultPackages bool) (*software2.Software, error) {
 		}
 	}
 
-	snaps, err := GetSnaps()
+	snaps, err := GetSnaps(showDefaultPackages)
 	if err != nil {
 		logger.Println(logger.DEBUG, true, "SNAP: "+err.Error())
 	}
 
-	flatpaks, err := GetFlatpaks()
+	flatpaks, err := GetFlatpaks(showDefaultPackages)
 	if err != nil {
 		logger.Println(logger.DEBUG, true, "FLATPAK: "+err.Error())
 	}
