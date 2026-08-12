@@ -1,9 +1,14 @@
 package software
 
 import (
+	"context"
+	"encoding/json"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 )
@@ -12,9 +17,10 @@ import (
 // (no error) when snap is not installed or none are present, so hosts without
 // snapd are handled gracefully.
 //
-// When showDefaultPackages is false (default), base/snapd/core "system" snaps
-// (core, core20..24, bare, snapd, ...) are filtered out — the snap analogue of
-// the deb/rpm default-package filtering — leaving user-installed apps only.
+// When showDefaultPackages is false (default), system snaps (base/os/snapd/
+// kernel/gadget types — core, core20..24, bare, snapd, ...) are filtered out —
+// the snap analogue of the deb/rpm default-package filtering — leaving
+// user-installed apps only.
 func GetSnaps(showDefaultPackages bool) ([]software.Snap, error) {
 	snaps := make([]software.Snap, 0)
 
@@ -23,15 +29,17 @@ func GetSnaps(showDefaultPackages bool) ([]software.Snap, error) {
 	}
 
 	// Force the C locale so the header row and Notes tokens are stable English
-	// (some locales translate the `snap list` header), keeping parsing/filtering
-	// reliable. `snap list` also exits non-zero with "No snaps are installed
-	// yet." — treated as empty.
+	// (some locales translate the `snap list` header). `snap list` also exits
+	// non-zero with "No snaps are installed yet." — treated as empty.
 	cmd := exec.Command("snap", "list")
 	cmd.Env = append(os.Environ(), "LC_ALL=C")
 	out, err := cmd.Output()
 	if err != nil {
 		return snaps, nil
 	}
+
+	// Authoritative name->type map from snapd (nil when unavailable).
+	types := snapTypes()
 
 	lines := strings.Split(strings.TrimRight(string(out), "\n"), "\n")
 	for i, line := range lines {
@@ -54,7 +62,7 @@ func GetSnaps(showDefaultPackages bool) ([]software.Snap, error) {
 			s.Notes = strings.Join(f[5:], " ")
 		}
 
-		if !showDefaultPackages && isSystemSnap(s) {
+		if !showDefaultPackages && isSystemSnap(s, types) {
 			continue
 		}
 		snaps = append(snaps, s)
@@ -63,13 +71,52 @@ func GetSnaps(showDefaultPackages bool) ([]software.Snap, error) {
 	return snaps, nil
 }
 
-// isSystemSnap reports whether a snap is a base/snapd/core (system) snap rather
-// than a user-installed application.
-func isSystemSnap(s software.Snap) bool {
-	switch s.Name {
-	case "core", "core16", "core18", "core20", "core22", "core24", "bare", "snapd":
-		return true
+// snapTypes queries snapd for each snap's type (app / base / os / snapd / kernel
+// / gadget) via its local REST API. Returns nil when the API is unavailable, so
+// callers fall back to a heuristic. Using the real type avoids hard-coding base
+// snap names (core20, core22, ... and any future ones).
+func snapTypes() map[string]string {
+	transport := &http.Transport{
+		DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+			return net.Dial("unix", "/run/snapd.socket")
+		},
 	}
+	client := &http.Client{Transport: transport, Timeout: 5 * time.Second}
+
+	resp, err := client.Get("http://localhost/v2/snaps")
+	if err != nil {
+		return nil
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+
+	var body struct {
+		Result []struct {
+			Name string `json:"name"`
+			Type string `json:"type"`
+		} `json:"result"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return nil
+	}
+
+	m := make(map[string]string, len(body.Result))
+	for _, s := range body.Result {
+		m[s.Name] = s.Type
+	}
+	return m
+}
+
+// isSystemSnap reports whether a snap is a system snap (base/os/snapd/kernel/
+// gadget) rather than a user application. It uses snapd's authoritative type
+// when available, otherwise falls back to the `snap list` Notes tokens.
+func isSystemSnap(s software.Snap, types map[string]string) bool {
+	if t, ok := types[s.Name]; ok {
+		return t != "app"
+	}
+	// Fallback: Notes shows base/core/snapd for system snaps.
 	for _, n := range strings.FieldsFunc(s.Notes, func(r rune) bool { return r == ',' || r == ' ' }) {
 		switch n {
 		case "base", "core", "snapd":
