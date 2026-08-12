@@ -12,15 +12,15 @@ require (
 )
 
 require (
-	github.com/cloud-barista/cm-beetle/imdl v0.1.11
+	github.com/cloud-barista/cm-beetle/imdl v0.1.12
 	github.com/cloud-barista/cm-grasshopper/smdl v0.1.1
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260812082927-c58c4764df2a
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260812091608-78930cdeeb22
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.11
 	github.com/swaggo/echo-swagger v1.5.2
 	github.com/swaggo/swag v1.16.6
-	golang.org/x/crypto v0.54.0
+	golang.org/x/crypto v0.55.0
 	gorm.io/gorm v1.31.2
 )
 
@@ -64,7 +64,7 @@ require (
 	golang.org/x/mod v0.39.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/text v0.41.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	golang.org/x/tools v0.48.0 // indirect
 	modernc.org/libc v1.75.3 // indirect
