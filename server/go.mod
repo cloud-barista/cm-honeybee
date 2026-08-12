@@ -13,8 +13,8 @@ require (
 
 require (
 	github.com/cloud-barista/cm-beetle/imdl v0.1.12
-	github.com/cloud-barista/cm-grasshopper/smdl v0.1.2-0.20260812093625-aa2733b6236e
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260812091608-78930cdeeb22
+	github.com/cloud-barista/cm-grasshopper/smdl v0.1.2
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260812094338-9cffb9639b48
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/glebarez/sqlite v1.11.0
 	github.com/pkg/sftp v1.13.11

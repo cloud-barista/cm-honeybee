@@ -413,6 +413,7 @@ func convertToPackages(packages interface{}) []softwaremodel.Package {
 				Type:          softwaremodel.SoftwarePackageTypeFlatpak,
 				Version:       pkg.Version,
 				Origin:        pkg.Origin,
+				OriginURL:     pkg.OriginURL,
 				ApplicationID: pkg.ApplicationID,
 			})
 		}
