@@ -42,6 +42,16 @@ func GetSoftwareInfo(showDefaultPackages bool) (*software2.Software, error) {
 		}
 	}
 
+	snaps, err := GetSnaps()
+	if err != nil {
+		logger.Println(logger.DEBUG, true, "SNAP: "+err.Error())
+	}
+
+	flatpaks, err := GetFlatpaks()
+	if err != nil {
+		logger.Println(logger.DEBUG, true, "FLATPAK: "+err.Error())
+	}
+
 	legacySW, err := GetLegacySWs()
 	if err != nil {
 		logger.Println(logger.DEBUG, true, "LegacySW: "+err.Error())
@@ -58,11 +68,13 @@ func GetSoftwareInfo(showDefaultPackages bool) (*software2.Software, error) {
 	}
 
 	sw := software2.Software{
-		DEB:    deb,
-		RPM:    rpm,
-		Legacy: legacySW,
-		Docker: dockerContainers,
-		Podman: podmanContainers,
+		DEB:     deb,
+		RPM:     rpm,
+		Snap:    snaps,
+		Flatpak: flatpaks,
+		Legacy:  legacySW,
+		Docker:  dockerContainers,
+		Podman:  podmanContainers,
 	}
 
 	return &sw, nil
