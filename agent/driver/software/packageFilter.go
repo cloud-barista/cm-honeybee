@@ -1,9 +1,11 @@
 package software
 
 import (
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"crypto/tls"
+	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -13,6 +15,7 @@ import (
 	"github.com/ulikunitz/xz"
 	"io"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -73,8 +76,9 @@ func fetchURL(url string) ([]byte, error) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
+		// Not fatal on its own — callers try fallback URLs and log a final verdict.
 		errMsg := fmt.Sprintf("packageFilter: failed to fetch URL %s: %s", url, resp.Status)
-		logger.Println(logger.ERROR, true, errMsg)
+		logger.Println(logger.WARN, false, errMsg)
 		return nil, errors.New(errMsg)
 	}
 
@@ -172,6 +176,83 @@ func parseUbuntuManifest(data []byte) ([]string, error) {
 }
 
 // getUbuntuReleaseName maps Ubuntu version to release name
+// osRelease is the OS identity read from /etc/os-release.
+type osRelease struct {
+	id        string // e.g. "ubuntu", "debian"
+	versionID string // e.g. "24.04", "12"
+	codename  string // e.g. "noble", "bookworm"
+}
+
+// readOSRelease parses /etc/os-release (authoritative), falling back to
+// gopsutil's host.Info only when it is unavailable. gopsutil can misreport an
+// Ubuntu development release as "debian" (it reads /etc/debian_version).
+func readOSRelease() osRelease {
+	var r osRelease
+	if f, err := os.Open("/etc/os-release"); err == nil {
+		sc := bufio.NewScanner(f)
+		for sc.Scan() {
+			key, val, ok := strings.Cut(strings.TrimSpace(sc.Text()), "=")
+			if !ok {
+				continue
+			}
+			val = strings.Trim(val, `"'`)
+			switch key {
+			case "ID":
+				r.id = strings.ToLower(val)
+			case "VERSION_ID":
+				r.versionID = val
+			case "VERSION_CODENAME":
+				if r.codename == "" {
+					r.codename = strings.ToLower(val)
+				}
+			case "UBUNTU_CODENAME":
+				r.codename = strings.ToLower(val)
+			}
+		}
+		_ = f.Close()
+	}
+	if r.id == "" || r.versionID == "" {
+		if h, err := host.Info(); err == nil {
+			if r.id == "" {
+				r.id = strings.ToLower(h.Platform)
+			}
+			if r.versionID == "" {
+				r.versionID = h.PlatformVersion
+			}
+		}
+	}
+	return r
+}
+
+// parseDebianManifest extracts base package names from a Debian cloud-image
+// build manifest (items[].data.packages[].name).
+func parseDebianManifest(data []byte) ([]string, error) {
+	var body struct {
+		Items []struct {
+			Data struct {
+				Packages []struct {
+					Name string `json:"name"`
+				} `json:"packages"`
+			} `json:"data"`
+		} `json:"items"`
+	}
+	if err := json.Unmarshal(data, &body); err != nil {
+		return nil, err
+	}
+	var packages []string
+	for _, it := range body.Items {
+		for _, p := range it.Data.Packages {
+			if p.Name != "" {
+				packages = append(packages, p.Name)
+			}
+		}
+	}
+	if len(packages) == 0 {
+		return nil, errors.New("no packages found in Debian manifest")
+	}
+	return packages, nil
+}
+
 func getUbuntuReleaseName(version string) string {
 	switch {
 	case strings.HasPrefix(version, "24.04"):
@@ -282,18 +363,17 @@ func fetchDirectoryListing(dirURL string) ([]string, error) {
 
 // GetDefaultPackages fetches and returns the default package list for a given OS type and version
 func GetDefaultPackages() ([]string, error) {
-	h, err := host.Info()
-	if err != nil {
-		return nil, err
-	}
-
-	osType := h.Platform
-	version := h.PlatformVersion
+	// Identify the OS from /etc/os-release. gopsutil's host.Info misreports some
+	// Ubuntu development releases as "debian" (it reads /etc/debian_version), so
+	// os-release (ID / VERSION_ID / VERSION_CODENAME) is authoritative here.
+	osr := readOSRelease()
+	osType := osr.id
+	version := osr.versionID
 
 	baseURL := ""
 	secondaryURL := ""
 	fallbackURL := ""
-	switch strings.ToLower(osType) {
+	switch osType {
 	case "centos":
 		baseURL = fmt.Sprintf("https://mirror.stream.centos.org/%s/BaseOS/x86_64/os/repodata/repomd.xml", version)
 		secondaryURL = fmt.Sprintf("https://vault.centos.org/%s/BaseOS/x86_64/os/repodata/repomd.xml", version)
@@ -304,37 +384,72 @@ func GetDefaultPackages() ([]string, error) {
 		baseURL = fmt.Sprintf("https://dl.rockylinux.org/pub/rocky/%s/BaseOS/x86_64/os/repodata/repomd.xml", version)
 		secondaryURL = fmt.Sprintf("https://dl.rockylinux.org/vault/rocky/%s/BaseOS/x86_64/os/repodata/repomd.xml", version)
 	case "ubuntu":
-		releaseName := getUbuntuReleaseName(version)
-		if releaseName == "unknown" {
-			errMsg := fmt.Sprintf("packageFilter: unsupported Ubuntu version: %s", version)
-			logger.Println(logger.ERROR, true, errMsg)
-			return nil, errors.New(errMsg)
+		// Prefer the codename straight from os-release so future releases work
+		// without a hard-coded version→codename map.
+		releaseName := osr.codename
+		if releaseName == "" {
+			releaseName = getUbuntuReleaseName(version)
+		}
+		if releaseName == "" || releaseName == "unknown" {
+			msg := fmt.Sprintf("packageFilter: default-package filtering unavailable for Ubuntu %s (unknown release)", version)
+			logger.Println(logger.WARN, false, msg)
+			return nil, errors.New(msg)
 		}
 		baseURL = fmt.Sprintf("https://cloud-images.ubuntu.com/minimal/releases/%s/release/ubuntu-%s-minimal-cloudimg-amd64.manifest", releaseName, version)
+		// Development / not-yet-released versions are not under releases/ yet —
+		// fall back to the codename-keyed daily build manifest.
+		secondaryURL = fmt.Sprintf("https://cloud-images.ubuntu.com/minimal/daily/%s/current/%s-minimal-cloudimg-amd64.manifest", releaseName, releaseName)
+	case "debian":
+		if osr.codename == "" {
+			msg := fmt.Sprintf("packageFilter: default-package filtering unavailable for Debian %s (no codename)", version)
+			logger.Println(logger.WARN, false, msg)
+			return nil, errors.New(msg)
+		}
+		// Debian publishes a cloud-image build manifest (JSON) listing the base
+		// packages: .../cloud/{codename}/latest/debian-{major}-generic-amd64.json
+		baseURL = fmt.Sprintf("https://cloud.debian.org/images/cloud/%s/latest/debian-%s-generic-amd64.json", osr.codename, version)
 	default:
-		errMsg := fmt.Sprintf("packageFilter: unsupported OS Type: %s", osType)
-		logger.Println(logger.ERROR, true, errMsg)
-		return nil, errors.New(errMsg)
+		msg := fmt.Sprintf("packageFilter: default-package filtering unavailable for OS type: %q", osType)
+		logger.Println(logger.WARN, false, msg)
+		return nil, errors.New(msg)
 	}
 
 	var packages []string
+
+	if osType == "debian" {
+		logger.Println(logger.INFO, false, "packageFilter: Fetching Debian manifest from:", baseURL)
+		manifestData, err := fetchURL(baseURL)
+		if err != nil {
+			logger.Println(logger.WARN, false, "packageFilter: error fetching Debian manifest: "+err.Error())
+			return nil, err
+		}
+		packages, err = parseDebianManifest(manifestData)
+		if err != nil {
+			logger.Println(logger.WARN, false, "packageFilter: error parsing Debian manifest: "+err.Error())
+			return nil, err
+		}
+		return packages, nil
+	}
 
 	if osType == "ubuntu" {
 		// Fetch Ubuntu manifest file
 		logger.Println(logger.INFO, false, "packageFilter: Fetching Ubuntu manifest from:", baseURL)
 		manifestData, err := fetchURL(baseURL)
+		if err != nil && secondaryURL != "" && strings.Contains(err.Error(), "404") {
+			// Not published under releases/ (e.g. a development release) — try daily.
+			logger.Println(logger.WARN, false, "packageFilter: releases manifest not found, trying daily:", secondaryURL)
+			manifestData, err = fetchURL(secondaryURL)
+		}
 		if err != nil {
-			errMsg := "packageFilter: error fetching Ubuntu manifest: " + err.Error()
-			logger.Println(logger.ERROR, true, errMsg)
-			return nil, errors.New(errMsg)
+			logger.Println(logger.WARN, false, "packageFilter: error fetching Ubuntu manifest: "+err.Error())
+			return nil, err
 		}
 
 		// Parse the manifest file to extract package names
 		packages, err = parseUbuntuManifest(manifestData)
 		if err != nil {
-			errMsg := "packageFilter: error parsing Ubuntu manifest: " + err.Error()
-			logger.Println(logger.ERROR, true, errMsg)
-			return nil, errors.New(errMsg)
+			logger.Println(logger.WARN, false, "packageFilter: error parsing Ubuntu manifest: "+err.Error())
+			return nil, err
 		}
 
 		return packages, nil
