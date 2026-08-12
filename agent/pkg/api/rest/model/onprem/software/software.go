@@ -28,5 +28,6 @@ type Flatpak struct {
 	Branch        string `json:"branch"`
 	Arch          string `json:"arch"`
 	Origin        string `json:"origin"`
+	OriginURL     string `json:"origin_url"` // remote repo URL (from `flatpak remotes`)
 	Installation  string `json:"installation"`
 }

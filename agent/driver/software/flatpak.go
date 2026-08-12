@@ -31,6 +31,8 @@ func GetFlatpaks(showDefaultPackages bool) ([]software.Flatpak, error) {
 		return flatpaks, nil
 	}
 
+	remotes := flatpakRemoteURLs() // remote name -> repo URL (from this host)
+
 	for _, line := range strings.Split(strings.TrimRight(string(out), "\n"), "\n") {
 		if strings.TrimSpace(line) == "" {
 			continue
@@ -42,16 +44,39 @@ func GetFlatpaks(showDefaultPackages bool) ([]software.Flatpak, error) {
 			}
 			return ""
 		}
+		origin := col(5)
 		flatpaks = append(flatpaks, software.Flatpak{
 			Name:          col(0),
 			ApplicationID: col(1),
 			Version:       col(2),
 			Branch:        col(3),
 			Arch:          col(4),
-			Origin:        col(5),
+			Origin:        origin,
+			OriginURL:     remotes[origin],
 			Installation:  col(6),
 		})
 	}
 
 	return flatpaks, nil
+}
+
+// flatpakRemoteURLs returns a map of flatpak remote name -> repo URL, read from
+// the source host (`flatpak remotes`), so the migration target can re-add the
+// same remote instead of relying on a hard-coded URL.
+func flatpakRemoteURLs() map[string]string {
+	m := make(map[string]string)
+	out, err := exec.Command("flatpak", "remotes", "--columns=name,url").Output()
+	if err != nil {
+		return m
+	}
+	for _, line := range strings.Split(strings.TrimRight(string(out), "\n"), "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		f := strings.Split(line, "\t")
+		if len(f) >= 2 {
+			m[strings.TrimSpace(f[0])] = strings.TrimSpace(f[1])
+		}
+	}
+	return m
 }
