@@ -307,6 +307,17 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 		}
 	}
 
+	// Restore SSH secrets (password, private key) from OpenBao before encrypting
+	// the response. storeConnectionSecrets moves them out of the DB row into
+	// OpenBao, so the row we just read has them empty. Consumers such as
+	// cm-grasshopper read these fields (encrypted here, decrypted on their side)
+	// to SSH into the source host; without this they receive empty credentials
+	// and fail with "failed to determine auth method". The DB is untouched — the
+	// refresh status update above uses a field allowlist.
+	if err := hydrateConnectionSecrets(oldConnectionInfo); err != nil {
+		return nil, err
+	}
+
 	connectionInfo, err = encryptSecrets(oldConnectionInfo)
 	if err != nil {
 		return nil, err
@@ -524,6 +535,12 @@ func ListConnectionInfo(c echo.Context) error {
 			listConnectionInfoRes.ConnectionInfoStatusCount.CountAgentSuccess++
 		} else {
 			listConnectionInfoRes.ConnectionInfoStatusCount.CountAgentFailed++
+		}
+
+		// Restore SSH secrets from OpenBao so the list carries them encrypted,
+		// same as the single-connection GET (see doGetConnectionInfo).
+		if err := hydrateConnectionSecrets(&ci); err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
 		}
 
 		encryptedConnectionInfo, err := encryptSecrets(&ci)
