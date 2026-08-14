@@ -77,6 +77,17 @@ func GetLegacySWs() ([]software.Binary, error) {
 			continue
 		}
 
+		// A process running inside a container is migrated by the container path,
+		// not as a host legacy binary. Its files live in the container image, so
+		// collecting it here would yield an unreproducible binary entry (e.g. the
+		// official tomcat/mariadb images expose /usr/local/tomcat, /usr/sbin/mariadbd
+		// that do not exist on the host).
+		if isContainerizedProcess(p.Pid) {
+			logger.Println(logger.DEBUG, true,
+				fmt.Sprintf("LegacySW: skipping containerized process: %s (pid %d)", name, p.Pid))
+			continue
+		}
+
 		hasListen, connectionStatus := getListenStatus(p)
 		if !hasListen {
 			continue
