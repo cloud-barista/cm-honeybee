@@ -19,7 +19,29 @@ import (
 	"github.com/jollaman999/utils/iputil"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
+	"gopkg.in/yaml.v3"
 )
+
+// validateKubeconfig checks that s is a non-empty, structurally valid kubeconfig.
+func validateKubeconfig(s string) error {
+	if strings.TrimSpace(s) == "" {
+		return errors.New("kubeconfig is empty")
+	}
+	var kc struct {
+		Kind     string        `yaml:"kind"`
+		Clusters []interface{} `yaml:"clusters"`
+	}
+	if err := yaml.Unmarshal([]byte(s), &kc); err != nil {
+		return errors.New("kubeconfig is not valid YAML (" + err.Error() + ")")
+	}
+	if kc.Kind != "" && kc.Kind != "Config" {
+		return errors.New("kubeconfig kind must be 'Config'")
+	}
+	if len(kc.Clusters) == 0 {
+		return errors.New("kubeconfig has no clusters")
+	}
+	return nil
+}
 
 func checkIPAddress(ipAddress string) error {
 	if ipAddress == "" {
@@ -183,8 +205,8 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 			}
 		case serverCommon.ResourceTypeK8s:
 			connectionInfo.Kubeconfig = createConnectionInfoReq.Kubeconfig
-			if strings.TrimSpace(connectionInfo.Kubeconfig) == "" {
-				return nil, errors.New("kubeconfig is empty")
+			if err := validateKubeconfig(connectionInfo.Kubeconfig); err != nil {
+				return nil, err
 			}
 		default:
 			return nil, errors.New("resource_type for on-prem must be one of vm | k8s")
@@ -653,6 +675,9 @@ func UpdateConnectionInfo(c echo.Context) error {
 	default:
 		if oldConnectionInfo.ResourceType == serverCommon.ResourceTypeK8s {
 			if updateConnectionInfoReq.Kubeconfig != "" {
+				if err := validateKubeconfig(updateConnectionInfoReq.Kubeconfig); err != nil {
+					return common.ReturnErrorMsg(c, err.Error())
+				}
 				oldConnectionInfo.Kubeconfig = updateConnectionInfoReq.Kubeconfig
 			}
 			break
