@@ -74,28 +74,35 @@ func encryptSecrets(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo
 	}
 	connectionInfo.PrivateKey = privateKey
 
+	kubeconfig, err := encryptField(connectionInfo.Kubeconfig, "kubeconfig")
+	if err != nil {
+		return nil, err
+	}
+	connectionInfo.Kubeconfig = kubeconfig
+
 	return connectionInfo, nil
 }
 
 // sshSecretPath is the OpenBao KV path for a connection's SSH secrets.
 func sshSecretPath(connID string) string { return "honeybee/ssh/" + connID }
 
-// storeConnectionSecrets moves the SSH secrets (password, private key) into
-// OpenBao when enabled, clearing them from ci so the DB row holds no secrets.
-// No-op when OpenBao is off (secrets stay on ci for DB storage).
+// storeConnectionSecrets moves the connection secrets (SSH password/private key,
+// or kubeconfig) into OpenBao when enabled, clearing them from ci so the DB row
+// holds no secrets. Errors when there are secrets but OpenBao is off.
 func storeConnectionSecrets(ci *model.ConnectionInfo) error {
-	if ci.Password == "" && (ci.PrivateKey == "" || ci.PrivateKey == "-") {
+	if ci.Password == "" && (ci.PrivateKey == "" || ci.PrivateKey == "-") && ci.Kubeconfig == "" {
 		return nil // nothing sensitive to store (e.g. CSP connection without SSH)
 	}
 	if !openbao.Enabled() {
-		return errors.New("OpenBao is required to store SSH secrets (set cm-honeybee.openbao.address)")
+		return errors.New("OpenBao is required to store connection secrets (set cm-honeybee.openbao.address)")
 	}
-	data := map[string]string{"password": ci.Password, "private_key": ci.PrivateKey}
+	data := map[string]string{"password": ci.Password, "private_key": ci.PrivateKey, "kubeconfig": ci.Kubeconfig}
 	if err := openbao.Put(sshSecretPath(ci.ID), data); err != nil {
 		return err
 	}
 	ci.Password = ""
 	ci.PrivateKey = ""
+	ci.Kubeconfig = ""
 	return nil
 }
 
@@ -118,6 +125,7 @@ func hydrateConnectionSecrets(ci *model.ConnectionInfo) error {
 	if ci.PrivateKey == "" {
 		ci.PrivateKey = "-"
 	}
+	ci.Kubeconfig = data["kubeconfig"]
 	return nil
 }
 
@@ -149,26 +157,37 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 
 	switch sourceGroup.Type {
 	case "", serverCommon.SourceGroupTypeSSH, serverCommon.SourceGroupTypeOnprem:
-		connectionInfo.IPAddress = createConnectionInfoReq.IPAddress
-		connectionInfo.SSHPort = createConnectionInfoReq.SSHPort
-		connectionInfo.User = createConnectionInfoReq.User
-		connectionInfo.Password = createConnectionInfoReq.Password
-		connectionInfo.PrivateKey = createConnectionInfoReq.PrivateKey
+		connectionInfo.ResourceType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.ResourceType))
+		switch connectionInfo.ResourceType {
+		case "", serverCommon.ResourceTypeVM:
+			connectionInfo.IPAddress = createConnectionInfoReq.IPAddress
+			connectionInfo.SSHPort = createConnectionInfoReq.SSHPort
+			connectionInfo.User = createConnectionInfoReq.User
+			connectionInfo.Password = createConnectionInfoReq.Password
+			connectionInfo.PrivateKey = createConnectionInfoReq.PrivateKey
 
-		if err := checkIPAddress(connectionInfo.IPAddress); err != nil {
-			return nil, err
-		}
-		if err := checkPort(connectionInfo.SSHPort); err != nil {
-			return nil, err
-		}
-		if connectionInfo.User == "" {
-			return nil, errors.New("user is empty")
-		}
-		if connectionInfo.Password == "" && connectionInfo.PrivateKey == "" {
-			return nil, errors.New("password or private_key must be provided")
-		}
-		if connectionInfo.PrivateKey == "" {
-			connectionInfo.PrivateKey = "-"
+			if err := checkIPAddress(connectionInfo.IPAddress); err != nil {
+				return nil, err
+			}
+			if err := checkPort(connectionInfo.SSHPort); err != nil {
+				return nil, err
+			}
+			if connectionInfo.User == "" {
+				return nil, errors.New("user is empty")
+			}
+			if connectionInfo.Password == "" && connectionInfo.PrivateKey == "" {
+				return nil, errors.New("password or private_key must be provided")
+			}
+			if connectionInfo.PrivateKey == "" {
+				connectionInfo.PrivateKey = "-"
+			}
+		case serverCommon.ResourceTypeK8s:
+			connectionInfo.Kubeconfig = createConnectionInfoReq.Kubeconfig
+			if strings.TrimSpace(connectionInfo.Kubeconfig) == "" {
+				return nil, errors.New("kubeconfig is empty")
+			}
+		default:
+			return nil, errors.New("resource_type for on-prem must be one of vm | k8s")
 		}
 	case serverCommon.SourceGroupTypeCSP:
 		connectionInfo.ResourceType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.ResourceType))
@@ -632,6 +651,12 @@ func UpdateConnectionInfo(c echo.Context) error {
 			oldConnectionInfo.ResourceID = strings.TrimSpace(updateConnectionInfoReq.ResourceID)
 		}
 	default:
+		if oldConnectionInfo.ResourceType == serverCommon.ResourceTypeK8s {
+			if updateConnectionInfoReq.Kubeconfig != "" {
+				oldConnectionInfo.Kubeconfig = updateConnectionInfoReq.Kubeconfig
+			}
+			break
+		}
 		err = checkIPAddress(updateConnectionInfoReq.IPAddress)
 		if err == nil {
 			oldConnectionInfo.IPAddress = updateConnectionInfoReq.IPAddress
