@@ -148,7 +148,7 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 	}
 
 	switch sourceGroup.Type {
-	case "", serverCommon.SourceGroupTypeSSH:
+	case "", serverCommon.SourceGroupTypeSSH, serverCommon.SourceGroupTypeOnprem:
 		connectionInfo.IPAddress = createConnectionInfoReq.IPAddress
 		connectionInfo.SSHPort = createConnectionInfoReq.SSHPort
 		connectionInfo.User = createConnectionInfoReq.User
