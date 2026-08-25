@@ -315,6 +315,17 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 				}
 			}
 		default:
+			if connectionInfo.ResourceType == serverCommon.ResourceTypeK8s {
+				// on-prem k8s has no SSH host. The kubeconfig (validated at
+				// register) is consumed by downstream migration; agent-based
+				// collection over SSH does not apply.
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
+				oldConnectionInfo.ConnectionFailedMessage = ""
+				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.AgentFailedMessage = "agent-based collection is not applicable to on-prem k8s connections"
+				break
+			}
+
 			c := &ssh.SSH{}
 
 			if err := c.NewClientConn(*connectionInfo); err != nil {
