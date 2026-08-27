@@ -2,8 +2,11 @@
 
 BUSYBOX_PATH="/tmp/busybox"
 
-# Repo
-AGENT_REPO="https://raw.githubusercontent.com/cloud-barista/cm-honeybee/main/agent"
+# Repo. The ref is filled in with the release the binary comes from, not main:
+# the config file and the unit file must match the binary being installed. Taking
+# them from main installs whatever the next release will ship (e.g. a listen.port
+# the released binary cannot honour), which leaves the agent unreachable.
+AGENT_REPO_FMT="https://raw.githubusercontent.com/cloud-barista/cm-honeybee/%s/agent"
 
 # Select the agent release asset that matches the host architecture.
 # amd64 keeps the historical unsuffixed name; other arches use a suffix.
@@ -49,13 +52,19 @@ root_check() {
 }
 
 Copy() {
+    LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
+    if [ -z "$LATEST_RELEASE" ]; then
+        echo "Failed to resolve the latest release."
+        exit 1
+    fi
+    AGENT_REPO=$(printf "$AGENT_REPO_FMT" "$LATEST_RELEASE")
+
     RESULT=$(check_new_version)
     if [ "$RESULT" = "0" ]; then
         echo "Latest version already installed."
     elif [ "$RESULT" = "1" ] || [ ! -f "/usr/bin/cm-honeybee-agent" ]; then
         systemctl stop cm-honeybee-agent > /dev/null 2>&1
         rm -rf /usr/bin/cm-honeybee-agent
-        LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
         DOWNLOAD_URL=https://github.com/cloud-barista/cm-honeybee/releases/download/${LATEST_RELEASE}/${AGENT_ASSET}
         $BUSYBOX_PATH wget --no-check-certificate --quiet "$DOWNLOAD_URL" -O /usr/bin/cm-honeybee-agent
         chmod a+x /usr/bin/cm-honeybee-agent
