@@ -605,8 +605,39 @@ func GetDefaultPackages() ([]string, error) {
 			wait.Wait()
 		}
 	} else {
-		// Map to store directory listings for each first letter
+		// Directory listings cached per first letter. Fifty goroutines share
+		// these maps, so every access goes through dirMutex and each letter is
+		// fetched at most once via its own sync.Once.
 		dirListings := make(map[string][]string)
+		dirListingErrs := make(map[string]error)
+		dirListingOnce := make(map[string]*sync.Once)
+		var dirMutex sync.Mutex
+
+		getDirListing := func(firstLetter string) ([]string, error) {
+			dirMutex.Lock()
+			once, exists := dirListingOnce[firstLetter]
+			if !exists {
+				once = new(sync.Once)
+				dirListingOnce[firstLetter] = once
+			}
+			dirMutex.Unlock()
+
+			once.Do(func() {
+				// For versions 9 and above, use first letter subdirectory
+				dirURL := strings.ReplaceAll(baseURL, "repodata/repomd.xml", "Packages/") + firstLetter
+				rpmFiles, err := fetchDirectoryListing(dirURL)
+
+				dirMutex.Lock()
+				dirListings[firstLetter] = rpmFiles
+				dirListingErrs[firstLetter] = err
+				dirMutex.Unlock()
+			})
+
+			dirMutex.Lock()
+			defer dirMutex.Unlock()
+
+			return dirListings[firstLetter], dirListingErrs[firstLetter]
+		}
 
 		for i := 0; i < lenPackages; {
 			if lenPackages-i < routineMax {
@@ -624,22 +655,12 @@ func GetDefaultPackages() ([]string, error) {
 					// Determine the first letter of the package name
 					firstLetter := strings.ToLower(string(pkgName[0]))
 
-					// Check if directory listing is already fetched
-					if _, exists := dirListings[firstLetter]; !exists {
-						// For versions 9 and above, use first letter subdirectory
-						dirURL := strings.ReplaceAll(baseURL, "repodata/repomd.xml", "Packages/") + firstLetter
-
-						// Fetch RPM files in the directory and cache it
-						rpmFiles, err := fetchDirectoryListing(dirURL)
-						if err != nil {
-							logger.Println(logger.ERROR, true, "packageFilter: Error fetching directory listing:", err)
-							return
-						}
-						dirListings[firstLetter] = rpmFiles
+					// Get the directory listing, fetching it once per letter
+					rpmFiles, err := getDirListing(firstLetter)
+					if err != nil {
+						logger.Println(logger.ERROR, true, "packageFilter: Error fetching directory listing:", err)
+						return
 					}
-
-					// Get the cached directory listing
-					rpmFiles := dirListings[firstLetter]
 
 					// Find the correct RPM for the package
 					var matchedRPM string
