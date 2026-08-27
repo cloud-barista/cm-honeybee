@@ -34,6 +34,7 @@ type launchProvenance struct {
 	WorkingDirectory string
 	ServiceType      string // systemd Type= ("simple"|"forking"|...); "simple" for command-started
 	PIDFile          string
+	DeclaredEnv      []string // unit's Environment= and EnvironmentFile= contents
 }
 
 func GetLegacySWs() ([]software.Binary, error) {
@@ -267,6 +268,7 @@ func GetLegacySWs() ([]software.Binary, error) {
 			DataDirs:         dataDirs,
 			IsWine:           isWine,
 			WinePrefix:       winePrefix,
+			DeclaredEnviron:  prov.DeclaredEnv,
 			LaunchType:       prov.LaunchType,
 			SystemdUnitName:  prov.SystemdUnitName,
 			SystemdUnitPath:  prov.SystemdUnitPath,

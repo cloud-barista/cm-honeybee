@@ -57,7 +57,96 @@ func getLaunchProvenance(pid int32) launchProvenance {
 		p.PIDFile = strings.TrimSpace(string(out))
 	}
 
+	p.DeclaredEnv = declaredUnitEnv(unit)
+
 	return p
+}
+
+// declaredUnitEnv returns the environment the unit declares: Environment=
+// entries plus the contents of every EnvironmentFile=. This is what the software
+// was configured with, as opposed to /proc/<pid>/environ, which also carries
+// everything systemd and the login session injected at start (INVOCATION_ID,
+// JOURNAL_STREAM, MEMORY_PRESSURE_*, the desktop session, ...) -- host state that
+// means nothing on a migration target.
+func declaredUnitEnv(unit string) []string {
+	var env []string
+	seen := map[string]bool{}
+
+	add := func(entry string) {
+		entry = strings.TrimSpace(entry)
+		if entry == "" || strings.HasPrefix(entry, "#") {
+			return
+		}
+		key, _, found := strings.Cut(entry, "=")
+		if !found || key == "" || seen[key] {
+			return
+		}
+		seen[key] = true
+		env = append(env, entry)
+	}
+
+	// systemd prints Environment= as a single space-separated, shell-quoted line.
+	if out, err := exec.Command("systemctl", "show", "-p", "Environment", "--value", unit).Output(); err == nil {
+		for _, entry := range splitQuoted(strings.TrimSpace(string(out))) {
+			add(entry)
+		}
+	}
+
+	// EnvironmentFiles= lines look like "/path/to/file (ignore_errors=no)".
+	if out, err := exec.Command("systemctl", "show", "-p", "EnvironmentFiles", "--value", unit).Output(); err == nil {
+		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+			path := strings.TrimSpace(line)
+			if idx := strings.LastIndex(path, " ("); idx >= 0 {
+				path = strings.TrimSpace(path[:idx])
+			}
+			if path == "" {
+				continue
+			}
+
+			data, err := os.ReadFile(path)
+			if err != nil {
+				continue
+			}
+			for _, entry := range strings.Split(string(data), "\n") {
+				add(entry)
+			}
+		}
+	}
+
+	return env
+}
+
+// splitQuoted splits a systemd-style space-separated list, keeping values that
+// are wrapped in single or double quotes intact.
+func splitQuoted(s string) []string {
+	var parts []string
+	var buf strings.Builder
+	var quote rune
+
+	for _, r := range s {
+		switch {
+		case quote != 0:
+			if r == quote {
+				quote = 0
+			} else {
+				buf.WriteRune(r)
+			}
+		case r == '\'' || r == '"':
+			quote = r
+		case r == ' ':
+			if buf.Len() > 0 {
+				parts = append(parts, buf.String())
+				buf.Reset()
+			}
+		default:
+			buf.WriteRune(r)
+		}
+	}
+	if buf.Len() > 0 {
+		parts = append(parts, buf.String())
+	}
+
+	return parts
 }
 
 // isContainerizedProcess reports whether the process runs inside a container

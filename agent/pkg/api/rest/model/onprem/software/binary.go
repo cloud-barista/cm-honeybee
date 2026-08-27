@@ -6,14 +6,21 @@ type ConfigFile struct {
 }
 
 type Binary struct {
-	PID              int32        `json:"pid"`
-	Name             string       `json:"name"`
-	Version          string       `json:"version"`
-	ConnectionStatus string       `json:"connection_status"`
-	Cmdline          string       `json:"cmdline"`
-	CmdlineSlice     []string     `json:"cmdline_slice"`
-	ExecutablePath   string       `json:"executable_path"`
-	Environ          []string     `json:"environ"`
+	PID              int32    `json:"pid"`
+	Name             string   `json:"name"`
+	Version          string   `json:"version"`
+	ConnectionStatus string   `json:"connection_status"`
+	Cmdline          string   `json:"cmdline"`
+	CmdlineSlice     []string `json:"cmdline_slice"`
+	ExecutablePath   string   `json:"executable_path"`
+	// Environ is the process's inherited runtime environment (/proc/<pid>/environ).
+	// Most of it is injected by systemd or the login session and belongs to this
+	// host, not to the software -- use DeclaredEnviron for what the software was
+	// actually configured with.
+	Environ []string `json:"environ"`
+	// DeclaredEnviron is what the unit declares (Environment= and
+	// EnvironmentFile=). Empty for processes systemd did not start.
+	DeclaredEnviron  []string     `json:"declared_environ"`
 	UIDs             []int32      `json:"uids"`
 	GIDs             []int32      `json:"gids"`
 	Static           bool         `json:"static"`
