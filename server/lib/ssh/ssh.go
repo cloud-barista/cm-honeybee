@@ -336,12 +336,47 @@ func (o *SSH) getBenchmarkTypes(types string) []string {
 	return strings.Split(types, ",")
 }
 
+// agentPortFile is where the agent publishes the port it actually bound. The
+// path follows CMHONEYBEE_AGENT_ROOT as set by the agent's systemd unit, which
+// copyAgent.sh installs.
+const agentPortFile = "/etc/cloud-migrator/cm-honeybee-agent/port"
+
+// agentPort is the port the agent on this connection's host is listening on.
+// The agent binds a kernel-chosen port (listen.port: 0) and publishes it, so
+// the port is read per request rather than stored: it changes on every agent
+// restart. Agents old enough not to write the file sit on the fixed port from
+// cm-honeybee.agent.port.
+func (o *SSH) agentPort() string {
+	fallback := config.CMHoneybeeConfig.CMHoneybee.Agent.Port
+
+	output, err := o.RunCmdWithTimeout("cat "+agentPortFile, 10*time.Second)
+	if err != nil {
+		return fallback
+	}
+
+	published := strings.TrimSpace(output)
+	if published == "" {
+		return fallback
+	}
+
+	port, err := strconv.Atoi(published)
+	if err != nil || port < 1 || port > 65535 {
+		logger.Println(logger.WARN, true, "SSH: ("+o.ConnectionInfo.IPAddress+
+			") Ignoring invalid content in "+agentPortFile+", falling back to port "+fallback)
+		return fallback
+	}
+
+	return published
+}
+
 func (o *SSH) checkAgentStatus() error {
 	tryCount := 30
 
 	for i := 0; i < tryCount; i++ {
+		// Resolved inside the loop: right after an install the agent may not
+		// have written its port file yet.
 		output, err := o.RunCmdWithTimeout("curl -s --max-time 5 -o /dev/null -w '%{http_code}' -X GET http://localhost:"+
-			config.CMHoneybeeConfig.CMHoneybee.Agent.Port+"/honeybee-agent/readyz -H 'accept: application/json'",
+			o.agentPort()+"/honeybee-agent/readyz -H 'accept: application/json'",
 			10*time.Second)
 		if err != nil {
 			time.Sleep(1 * time.Second)
@@ -373,7 +408,7 @@ func (o *SSH) SendGetRequestToAgent(connectionInfo model.ConnectionInfo, request
 	// and the '?' is a glob metacharacter. On sources whose login shell is zsh (or bash with
 	// failglob), an unquoted URL expands to "no matches found" and curl never runs.
 	output, err := o.RunCmdWithTimeout("curl -s --max-time "+strconv.Itoa(int(timeout.Seconds()))+
-		" -X GET 'http://localhost:"+config.CMHoneybeeConfig.CMHoneybee.Agent.Port+"/honeybee-agent"+requestPath+
+		" -X GET 'http://localhost:"+o.agentPort()+"/honeybee-agent"+requestPath+
 		"' -H 'accept: application/json'", timeout+10*time.Second)
 	if err != nil {
 		return "", err

@@ -1,3 +1,8 @@
 cm-honeybee-agent:
     listen:
-        port: 8082
+        # 0 lets the kernel pick a free port on every start, so the agent cannot
+        # collide with software already using a fixed port on the source host.
+        # The chosen port is written to the 'port' file next to this conf
+        # directory's parent (CMHONEYBEE_AGENT_ROOT), where cm-honeybee reads it
+        # over SSH. Set a number here to pin the port instead.
+        port: 0

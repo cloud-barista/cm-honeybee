@@ -28,8 +28,10 @@ func checkCMHoneybeeAgentConfigFile() error {
 	if CMHoneybeeAgentConfig.CMHoneybeeAgent.Listen.Port == "" {
 		return errors.New("config error: cm-honeybee-agent.listen.port is empty")
 	}
+	// 0 is valid and means "let the kernel pick a free port". The chosen port is
+	// published to the port file so cm-honeybee can find it over SSH.
 	port, err := strconv.Atoi(CMHoneybeeAgentConfig.CMHoneybeeAgent.Listen.Port)
-	if err != nil || port < 1 || port > 65535 {
+	if err != nil || port < 0 || port > 65535 {
 		return errors.New("config error: cm-honeybee-agent.listen.port has invalid value")
 	}
 
@@ -39,7 +41,7 @@ func checkCMHoneybeeAgentConfigFile() error {
 func getCMHoneybeeAgentDefaultConfig() cmHoneybeeAgentConfig {
 	var defaultConfig cmHoneybeeAgentConfig
 
-	defaultConfig.CMHoneybeeAgent.Listen.Port = "8082"
+	defaultConfig.CMHoneybeeAgent.Listen.Port = "0"
 
 	return defaultConfig
 }

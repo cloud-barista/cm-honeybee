@@ -8,12 +8,57 @@ Server가 이 엔드포인트들로부터 데이터를 가져갑니다(에이전
 |------|-----|
 | 모듈명 | `HONEYBEE-AGENT` |
 | Base path | `/honeybee-agent` |
-| 기본 포트 | `8082` |
-| Swagger UI | `http://<host>:8082/honeybee-agent/api/index.html` |
+| 리슨 주소 | `127.0.0.1` (루프백 전용) |
+| 리슨 포트 | **기동할 때마다 커널이 고르는 빈 포트** (아래 "포트 확인" 참고) |
+| Swagger UI | `http://127.0.0.1:<port>/honeybee-agent/api/index.html` |
 | 인증 | 없음 |
 
 > 아래 모든 경로는 base path 기준 상대 경로입니다. 전체 URL 예시:
-> `http://localhost:8082/honeybee-agent/infra`
+> `http://127.0.0.1:<port>/honeybee-agent/infra`
+
+## 포트 확인
+
+에이전트는 고정 포트를 쓰지 않습니다. 설정의 `listen.port` 기본값이 `0`이고, 이는
+**커널이 비어 있는 포트를 골라준다**는 뜻입니다. 소스 호스트에서 이미 쓰고 있는 포트와
+충돌하지 않게 하기 위한 것이며, 재기동하면 포트 번호가 바뀝니다.
+
+고른 포트는 에이전트가 파일로 남깁니다. 확인하는 방법은 셋입니다.
+
+```bash
+# 1. 포트 파일 (권장). 일반 계정으로 읽을 수 있습니다.
+cat /etc/cloud-migrator/cm-honeybee-agent/port
+
+# 2. 리슨 중인 소켓에서 직접 (root 필요)
+sudo ss -lntp | grep cm-honeybee-age
+
+# 3. 기동 로그
+sudo journalctl -u cm-honeybee-agent | grep "http server started"
+```
+
+포트 파일 경로는 `CMHONEYBEE_AGENT_ROOT` 아래입니다. systemd 유닛이 이 값을
+`/etc/cloud-migrator/cm-honeybee-agent/`로 지정하므로 기본 설치에서는 위 경로가 맞습니다.
+
+이 문서의 예시는 아래처럼 포트를 변수에 담아 두었다고 가정합니다.
+
+```bash
+PORT=$(cat /etc/cloud-migrator/cm-honeybee-agent/port)
+```
+
+**포트를 고정해야 한다면** `conf/cm-honeybee-agent.yaml`의 `listen.port`에 번호를 적고
+에이전트를 재기동하십시오. 이 경우에도 포트 파일은 그대로 갱신됩니다.
+
+**Server는 이 포트를 알 필요가 없습니다.** cm-honeybee는 소스 호스트에 SSH로 접속한 뒤
+그 안에서 `curl http://localhost:<port>`를 실행하며, 포트는 요청할 때마다 위 포트 파일을
+읽어서 알아냅니다. 포트 파일이 없으면(구버전 에이전트) `cm-honeybee.agent.port` 설정값으로
+넘어갑니다.
+
+**루프백 전용입니다.** 에이전트는 `127.0.0.1`에만 바인드하므로 다른 호스트에서 직접
+접근할 수 없습니다. 원격에서 Swagger UI를 봐야 하면 SSH 포트 포워딩을 쓰십시오.
+
+```bash
+ssh -L 8082:127.0.0.1:$PORT <user>@<source-host>
+# 이후 브라우저에서 http://127.0.0.1:8082/honeybee-agent/api/index.html
+```
 
 ## 엔드포인트 요약
 
@@ -35,7 +80,7 @@ Server가 이 엔드포인트들로부터 데이터를 가져갑니다(에이전
 에이전트가 기동되어 요청을 처리할 수 있으면 `200 OK`를 반환합니다.
 
 ```bash
-curl http://localhost:8082/honeybee-agent/readyz
+curl http://127.0.0.1:$PORT/honeybee-agent/readyz
 ```
 
 ---
@@ -48,7 +93,7 @@ curl http://localhost:8082/honeybee-agent/readyz
 라우팅 테이블, 방화벽 규칙, OS 메타데이터.
 
 ```bash
-curl http://localhost:8082/honeybee-agent/infra
+curl http://127.0.0.1:$PORT/honeybee-agent/infra
 ```
 
 ---
@@ -65,10 +110,10 @@ curl http://localhost:8082/honeybee-agent/infra
 
 ```bash
 # 사용자 설치 소프트웨어만
-curl "http://localhost:8082/honeybee-agent/software"
+curl "http://127.0.0.1:$PORT/honeybee-agent/software"
 
 # OS 기본/베이스 패키지까지 포함
-curl "http://localhost:8082/honeybee-agent/software?show_default_packages=true"
+curl "http://127.0.0.1:$PORT/honeybee-agent/software?show_default_packages=true"
 ```
 
 ---
@@ -85,7 +130,7 @@ curl "http://localhost:8082/honeybee-agent/software?show_default_packages=true"
 > `KUBECONFIG` 환경 변수가 설정되어 있으면 그 값을, 없으면 기본 위치를 사용합니다(커밋 `1d73b05`).
 
 ```bash
-curl http://localhost:8082/honeybee-agent/kubernetes
+curl http://127.0.0.1:$PORT/honeybee-agent/kubernetes
 ```
 
 Server는 이 출력을 정제 소스 모델로 매핑합니다 —
@@ -101,7 +146,7 @@ Server는 이 출력을 정제 소스 모델로 매핑합니다 —
 접근 가능한 컨트롤 플레인 호스트에서만 의미가 있습니다.
 
 ```bash
-curl http://localhost:8082/honeybee-agent/helm
+curl http://127.0.0.1:$PORT/honeybee-agent/helm
 ```
 
 ---
@@ -113,5 +158,5 @@ curl http://localhost:8082/honeybee-agent/helm
 데이터 마이그레이션에 필요한 필드로 한정하여 관련 정보를 수집합니다.
 
 ```bash
-curl http://localhost:8082/honeybee-agent/data
+curl http://127.0.0.1:$PORT/honeybee-agent/data
 ```

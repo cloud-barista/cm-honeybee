@@ -9,7 +9,7 @@ CM-Honeybee는 독립적으로 배포 가능한 두 개의 REST 모듈로 구성
 
 | 모듈 | 바이너리 / 모듈명 | Base path | 기본 포트 | 역할 |
 |------|------------------|-----------|-----------|------|
-| **Agent** (`cm-honeybee-agent`) | `HONEYBEE-AGENT` | `/honeybee-agent` | `8082` | **각 소스 호스트에서 실행.** 로컬 인프라/소프트웨어/k8s/helm/데이터를 수집해 요청 시 반환합니다. |
+| **Agent** (`cm-honeybee-agent`) | `HONEYBEE-AGENT` | `/honeybee-agent` | 자동 (루프백) | **각 소스 호스트에서 실행.** 로컬 인프라/소프트웨어/k8s/helm/데이터를 수집해 요청 시 반환합니다. |
 | **Server** (`cm-honeybee`) | `HONEYBEE` | `/honeybee` | `8081` | 중앙 컨트롤 플레인. SourceGroup / ConnectionInfo를 관리하고, 에이전트(또는 SSH / CSP / cb-spider)로부터 데이터를 수집·저장하며 **정제된 소스 모델**을 제공합니다. |
 
 ```
@@ -17,7 +17,7 @@ CM-Honeybee는 독립적으로 배포 가능한 두 개의 REST 모듈로 구성
    마이그레이션 사용자 / cm-beetle ───▶ │  cm-honeybee SERVER  :8081  │
                                        │   /honeybee                 │
                                        └───────┬─────────────┬───────┘
-                                  agent :8082  │             │  cb-spider / SSH
+                                 agent (자동)  │             │  cb-spider / SSH
                                    (REST pull)  ▼             ▼  (CSP 디스커버리)
                                 ┌──────────────────────┐  ┌──────────────────┐
                                 │ cm-honeybee AGENT     │  │  클라우드/온프렘  │
@@ -47,13 +47,13 @@ CM-Honeybee는 독립적으로 배포 가능한 두 개의 REST 모듈로 구성
 
 ```bash
 # 1. 소스 호스트에서 Agent 실행
-cd agent && make run          # :8082 리슨, base path /honeybee-agent
+cd agent && make run          # 127.0.0.1 의 빈 포트에 리슨, base path /honeybee-agent
 
 # 2. 컨트롤 노드에서 Server 실행
 cd server && make run         # :8081 리슨, base path /honeybee
 
-# 3. 헬스 체크
-curl http://localhost:8082/honeybee-agent/readyz
+# 3. 헬스 체크 (에이전트 포트는 기동할 때마다 바뀌므로 파일에서 읽습니다)
+curl http://127.0.0.1:$(cat /etc/cloud-migrator/cm-honeybee-agent/port)/honeybee-agent/readyz
 curl http://localhost:8081/honeybee/readyz
 ```
 

@@ -41,7 +41,11 @@ Collecting and Aggregating Information From Source Computing framework (codename
     - listen
         - port : Listen port of the server's API.
     - agent
-        - port : Port of the agent's API.
+        - port : Fallback port of the agent's API. The agent binds a
+          kernel-chosen free port and publishes it to
+          `/etc/cloud-migrator/cm-honeybee-agent/port`, which the server reads
+          over SSH before each request. This value is used only when that file
+          is absent, i.e. against an agent old enough to sit on a fixed port.
     - spider
         - endpoint : cb-spider REST endpoint, used by CSP-type source groups.
         - username : Basic auth user for cb-spider (default: `default`).
@@ -52,6 +56,7 @@ Collecting and Aggregating Information From Source Computing framework (codename
       listen:
           port: 8081
       agent:
+          # Fallback only; see the option description above.
           port: 8082
       spider:
           endpoint: http://localhost:1024/spider

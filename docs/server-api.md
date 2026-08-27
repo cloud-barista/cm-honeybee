@@ -9,7 +9,7 @@
 | 모듈명 | `HONEYBEE` |
 | Base path | `/honeybee` |
 | 기본 포트 | `8081` |
-| 의존성 | `cm-honeybee-agent` (`:8082`), `cb-spider` (엔드포인트 설정 가능) |
+| 의존성 | `cm-honeybee-agent` (소스 호스트의 루프백, 포트 자동), `cb-spider` (엔드포인트 설정 가능) |
 | Swagger UI | `http://<host>:8081/honeybee/api/index.html` |
 | 인증 | 없음 |
 
@@ -319,7 +319,10 @@ VM 리소스는 `GET /cspvm/{id}`로 조회합니다. cb-spider는 관리하지 
 
 ConnectionInfo에 SSH 접속 정보(`ip_address`/`user`/`password`\|`private_key`)가 있으면, honeybee는
 SSH로 접속해 **에이전트(`cm-honeybee-agent`)를 설치·기동**하고, `import/*` 시 게스트 안에서
-`http://localhost:8082/honeybee-agent/...`를 호출해 OS·커널·CPU·메모리·디스크·소프트웨어를 수집합니다.
+`http://localhost:<port>/honeybee-agent/...`를 호출해 OS·커널·CPU·메모리·디스크·소프트웨어를 수집합니다.
+에이전트는 기동할 때마다 커널이 고른 빈 포트에 루프백으로 리슨하고 그 번호를
+`/etc/cloud-migrator/cm-honeybee-agent/port`에 남기므로, honeybee는 요청 직전에 SSH로 이 파일을
+읽어 포트를 알아냅니다. 파일이 없으면(구버전 에이전트) `cm-honeybee.agent.port` 설정값을 씁니다.
 이 결과는 `SavedInfraInfo.infra_data`에 저장됩니다.
 
 ### 4) 연결/에이전트 상태의 의미

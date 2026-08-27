@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"net"
+	"strconv"
 	"strings"
 
 	"github.com/cloud-barista/cm-honeybee/agent/common"
@@ -23,24 +24,11 @@ const (
 	website = " https://github.com/cloud-barista/cm-honeybee"
 )
 
-func getLocalIP() string {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		logger.Println(logger.ERROR, true, err)
-		return ""
-	}
-	defer func() {
-		_ = conn.Close()
-	}()
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	localIP := strings.Split(localAddr.String(), ":")
-	if len(localIP) == 0 {
-		logger.Println(logger.ERROR, true, "Failed to get local IP.")
-		return ""
-	}
-
-	return localIP[0]
-}
+// listenAddress is loopback only. cm-honeybee never reaches the agent over the
+// network: it opens an SSH session to the source host and runs curl against
+// localhost there. Binding every interface would expose an unauthenticated API
+// running as root for no gain.
+const listenAddress = "127.0.0.1"
 
 // @title CM-Honeybee Agent REST API
 // @version latest
@@ -67,8 +55,23 @@ func Init() {
 	route.RegisterSwagger(e)
 	route.RegisterUtility(e)
 
+	// Bind before anything reports the port: with listen.port 0 the kernel picks
+	// a free port, so the number only exists once the listener does.
+	listener, err := net.Listen("tcp", listenAddress+":"+
+		config.CMHoneybeeAgentConfig.CMHoneybeeAgent.Listen.Port)
+	if err != nil {
+		logger.Panicln(logger.ERROR, true, err)
+	}
+	port := listener.Addr().(*net.TCPAddr).Port
+
+	// Publish the port before serving so a caller on this host can find the API
+	// without being told which port it landed on.
+	if err := common.WriteListenPort(port); err != nil {
+		logger.Println(logger.ERROR, true, "Failed to write the listen port file: "+err.Error())
+	}
+
 	// Display API Docs Dashboard when server starts
-	endpoint := getLocalIP() + ":" + config.CMHoneybeeAgentConfig.CMHoneybeeAgent.Listen.Port
+	endpoint := listenAddress + ":" + strconv.Itoa(port)
 	apiDocsDashboard := " http://" + endpoint + "/" + strings.ToLower(common.ShortModuleName) + "/api/index.html"
 
 	fmt.Println("\n ")
@@ -79,6 +82,6 @@ func Init() {
 	fmt.Printf(noticeColor, apiDocsDashboard)
 	fmt.Println("\n ")
 
-	err := e.Start(":" + config.CMHoneybeeAgentConfig.CMHoneybeeAgent.Listen.Port)
-	logger.Panicln(logger.ERROR, true, err)
+	e.Listener = listener
+	logger.Panicln(logger.ERROR, true, e.StartServer(e.Server))
 }

@@ -13,6 +13,10 @@ cm-honeybee:
     listen:
         port: 8081
     agent:
+        # Fallback only. The agent binds a kernel-chosen port and publishes it to
+        # /etc/cloud-migrator/cm-honeybee-agent/port, which cm-honeybee reads over
+        # SSH per request. This value is used only when that file is absent, i.e.
+        # against an agent old enough to still sit on a fixed port.
         port: 8082
         # Seconds to wait for one agent request made over SSH. Collection on a
         # large source can take a minute or more; this bounds a hung agent so an
