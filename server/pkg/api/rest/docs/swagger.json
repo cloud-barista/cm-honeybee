@@ -599,6 +599,51 @@
                 }
             }
         },
+        "/source_group/{sgId}/agent": {
+            "delete": {
+                "description": "Uninstall cm-honeybee-agent from every host in the source group over SSH. Each host is processed once; a host is kept (not removed) when a connection in another source group still uses it. This does not delete the connection records.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] ConnectionInfo"
+                ],
+                "summary": "Uninstall Agent (Source Group)",
+                "operationId": "uninstall-agent-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Per-host uninstall results.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to uninstall the agents.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/connection_info": {
             "get": {
                 "description": "Get a list of connection information.",
@@ -895,6 +940,58 @@
                     },
                     "500": {
                         "description": "Failed to delete the connection information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/agent": {
+            "delete": {
+                "description": "Uninstall cm-honeybee-agent from the connection's host over SSH. It is kept (not removed) when another connection on the same host (same ip_address) still uses it. This does not delete the connection record.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[On-premise] ConnectionInfo"
+                ],
+                "summary": "Uninstall Agent",
+                "operationId": "uninstall-agent",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connectionInfo",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Agent uninstalled, or kept because it is still shared.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SimpleMsg"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to uninstall the agent.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -2145,6 +2242,51 @@
                     },
                     "500": {
                         "description": "Failed to refresh the source group",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/region": {
+            "get": {
+                "description": "Return the CSP's available regions and zones, queried live via the source group's stored credential. CSP-type source groups only.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[CSP] Metadata"
+                ],
+                "summary": "List CSP regions for a source group",
+                "operationId": "list-source-group-regions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the SourceGroup (csp type)",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Regions and zones",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListRegionRes"
+                        }
+                    },
+                    "400": {
+                        "description": "Not a csp-type source group / missing sgId",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to query cb-spider",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -3683,6 +3825,21 @@
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPCredentialField": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "example": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string",
+                    "example": "ClientId"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPInfo": {
             "type": "object",
             "properties": {
@@ -3692,6 +3849,13 @@
                         "type": "string"
                     }
                 },
+                "credentials": {
+                    "description": "Credentials lists each required credential key with an example value and a\nshort description, so a client can render a self-documenting input form.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPCredentialField"
+                    }
+                },
                 "default_region": {
                     "type": "string"
                 },
@@ -3699,7 +3863,26 @@
                     "type": "string",
                     "example": "AWS"
                 },
-                "regions": {
+                "region_keys": {
+                    "description": "RegionKeys are the keys needed to define a region for this CSP (e.g.\n[\"Region\",\"Zone\"]) — NOT the list of available regions. The actual region\nlist requires a credential; get it via GET /source_group/{sgId}/region.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPRegion": {
+            "type": "object",
+            "properties": {
+                "display_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "koreacentral"
+                },
+                "zones": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -3737,6 +3920,10 @@
                     "description": "SSH fields — required when parent SourceGroup.Type == \"ssh\".",
                     "type": "string"
                 },
+                "kubeconfig": {
+                    "description": "Kubeconfig — on-prem k8s credential (Type onprem + ResourceType k8s).",
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -3763,6 +3950,10 @@
                     "type": "string"
                 },
                 "user": {
+                    "type": "string"
+                },
+                "zone": {
+                    "description": "Zone overrides the CSP zone for this connection's cb-spider lookups.\nEmpty → provider default (see buildRegionKV).",
                     "type": "string"
                 }
             }
@@ -3800,6 +3991,10 @@
                     "description": "SSH fields — required when parent SourceGroup.Type == \"ssh\".",
                     "type": "string"
                 },
+                "kubeconfig": {
+                    "description": "Kubeconfig — required when on-prem + ResourceType \"k8s\".",
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -3820,6 +4015,10 @@
                     "type": "string"
                 },
                 "user": {
+                    "type": "string"
+                },
+                "zone": {
+                    "description": "Zone (optional) overrides the CSP zone for this connection. Empty → default.",
                     "type": "string"
                 }
             }
@@ -3988,6 +4187,20 @@
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListRegionRes": {
+            "type": "object",
+            "properties": {
+                "provider": {
+                    "type": "string"
+                },
+                "regions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPRegion"
+                    }
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListSourceGroupRes": {
             "type": "object",
             "properties": {
@@ -4091,11 +4304,14 @@
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedInfraInfo": {
             "type": "object",
             "required": [
-                "connection_id",
-                "infra_data"
+                "connection_id"
             ],
             "properties": {
                 "connection_id": {
+                    "type": "string"
+                },
+                "csp_data": {
+                    "description": "CSPData holds the CSP-side VM information (cb-spider) as JSON, kept separate\nfrom InfraData (agent-collected) so importing the agent data does not\noverwrite the CSP data and vice versa.",
                     "type": "string"
                 },
                 "infra_data": {
@@ -4591,6 +4807,149 @@
                 }
             }
         },
+        "infra.CSPInfo": {
+            "type": "object",
+            "properties": {
+                "data_disks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "description": "VM SystemId (CSP native / ARM ID)",
+                    "type": "string"
+                },
+                "image": {
+                    "description": "ImageIId NameId",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "VM NameId",
+                    "type": "string"
+                },
+                "network": {
+                    "$ref": "#/definitions/infra.CSPNetwork"
+                },
+                "platform": {
+                    "description": "e.g. LINUX/UNIX",
+                    "type": "string"
+                },
+                "private_ip": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "public_ip": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "root_disk": {
+                    "$ref": "#/definitions/infra.Disk"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "vm_spec": {
+                    "description": "e.g. Standard_D2s_v3",
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.CSPNetwork": {
+            "type": "object",
+            "properties": {
+                "security_groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.CSPSecurityGroup"
+                    }
+                },
+                "subnet": {
+                    "type": "string"
+                },
+                "vpc": {
+                    "$ref": "#/definitions/infra.CSPVPC"
+                }
+            }
+        },
+        "infra.CSPSecurityGroup": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.CSPSecurityRule"
+                    }
+                }
+            }
+        },
+        "infra.CSPSecurityRule": {
+            "type": "object",
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "direction": {
+                    "type": "string"
+                },
+                "from_port": {
+                    "type": "string"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "to_port": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.CSPSubnet": {
+            "type": "object",
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.CSPVPC": {
+            "type": "object",
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subnets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.CSPSubnet"
+                    }
+                }
+            }
+        },
         "infra.Compute": {
             "type": "object",
             "required": [
@@ -4849,6 +5208,14 @@
             "properties": {
                 "compute": {
                     "$ref": "#/definitions/infra.Compute"
+                },
+                "csp": {
+                    "description": "CSP holds provider-side VM information for CSP-type sources (collected via\ncb-spider). It is nil for on-premise/SSH sources and omitted from output\nwhen absent.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/infra.CSPInfo"
+                        }
+                    ]
                 },
                 "gpu": {
                     "$ref": "#/definitions/infra.GPU"
@@ -6010,14 +6377,14 @@
             ],
             "properties": {
                 "available": {
-                    "description": "Unit GiB",
+                    "description": "Unit GB",
                     "type": "integer"
                 },
                 "label": {
                     "type": "string"
                 },
                 "totalSize": {
-                    "description": "Unit GiB",
+                    "description": "Unit GB",
                     "type": "integer",
                     "example": 1024
                 },
@@ -6027,7 +6394,7 @@
                     "example": "SSD"
                 },
                 "used": {
-                    "description": "Unit GiB",
+                    "description": "Unit GB",
                     "type": "integer"
                 }
             }
@@ -6511,21 +6878,6 @@
                 1048576,
                 524288,
                 2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
                 511
             ],
             "x-enum-comments": {
@@ -6536,7 +6888,7 @@
                 "ModeExclusive": "l: exclusive use",
                 "ModeIrregular": "?: non-regular file; nothing else is known about this file",
                 "ModeNamedPipe": "p: named pipe (FIFO)",
-                "ModePerm": "Unix permission bits, 0o777",
+                "ModePerm": "Unix permission bits",
                 "ModeSetgid": "g: setgid",
                 "ModeSetuid": "u: setuid",
                 "ModeSocket": "S: Unix domain socket",
@@ -6559,7 +6911,7 @@
                 "t: sticky",
                 "?: non-regular file; nothing else is known about this file",
                 "",
-                "Unix permission bits, 0o777"
+                "Unix permission bits"
             ],
             "x-enum-varnames": [
                 "ModeDir",
@@ -6781,6 +7133,41 @@
                 }
             }
         },
+        "software.Flatpak": {
+            "type": "object",
+            "properties": {
+                "application_id": {
+                    "type": "string"
+                },
+                "arch": {
+                    "type": "string"
+                },
+                "branch": {
+                    "type": "string"
+                },
+                "installation": {
+                    "description": "system | user",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "origin": {
+                    "type": "string"
+                },
+                "origin_url": {
+                    "description": "remote repo URL (from `flatpak remotes`)",
+                    "type": "string"
+                },
+                "runtime": {
+                    "description": "required runtime ref (e.g. org.gnome.Platform/x86_64/50)",
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "software.RPM": {
             "type": "object",
             "properties": {
@@ -6822,6 +7209,46 @@
                 }
             }
         },
+        "software.Snap": {
+            "type": "object",
+            "properties": {
+                "base": {
+                    "description": "base snap (e.g. core22)",
+                    "type": "string"
+                },
+                "blob_path": {
+                    "description": "on-disk squashfs blob (for offline migration)",
+                    "type": "string"
+                },
+                "confinement": {
+                    "description": "strict/classic/devmode",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "publisher": {
+                    "type": "string"
+                },
+                "revision": {
+                    "type": "string"
+                },
+                "tracking": {
+                    "description": "channel (e.g. latest/stable)",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "app/base/os/snapd/...",
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "software.Software": {
             "type": "object",
             "properties": {
@@ -6835,6 +7262,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/software.Container"
+                    }
+                },
+                "flatpak": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/software.Flatpak"
                     }
                 },
                 "legacy": {
@@ -6853,6 +7286,12 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/software.RPM"
+                    }
+                },
+                "snap": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/software.Snap"
                     }
                 }
             }
@@ -7115,6 +7554,30 @@
                 "version"
             ],
             "properties": {
+                "application_id": {
+                    "description": "flatpak application id (e.g. org.gnome.Extensions)",
+                    "type": "string"
+                },
+                "base": {
+                    "description": "snap base (e.g. core22)",
+                    "type": "string"
+                },
+                "blob_path": {
+                    "description": "snap on-source blob path (offline sideload)",
+                    "type": "string"
+                },
+                "branch": {
+                    "description": "flatpak branch",
+                    "type": "string"
+                },
+                "channel": {
+                    "description": "snap/flatpak-only fields.",
+                    "type": "string"
+                },
+                "confinement": {
+                    "description": "snap confinement: strict/classic/devmode (classic needs --classic)",
+                    "type": "string"
+                },
                 "custom_configs": {
                     "type": "array",
                     "items": {
@@ -7139,12 +7602,32 @@
                 "needed_packages": {
                     "type": "string"
                 },
+                "origin": {
+                    "description": "flatpak remote name (e.g. flathub)",
+                    "type": "string"
+                },
+                "origin_url": {
+                    "description": "flatpak remote repo URL (from the source host)",
+                    "type": "string"
+                },
                 "repo_url": {
                     "type": "string"
                 },
                 "repo_use_os_version_code": {
                     "type": "boolean",
                     "default": false
+                },
+                "revision": {
+                    "description": "snap store revision (informational; drifts on auto-refresh)",
+                    "type": "string"
+                },
+                "runtime": {
+                    "description": "flatpak required runtime ref (e.g. org.gnome.Platform/x86_64/47)",
+                    "type": "string"
+                },
+                "scope": {
+                    "description": "flatpak install scope: system/user",
+                    "type": "string"
                 },
                 "type": {
                     "$ref": "#/definitions/softwaremodel.SoftwarePackageType"
@@ -7219,19 +7702,27 @@
             "type": "string",
             "enum": [
                 "deb",
-                "rpm"
+                "rpm",
+                "snap",
+                "flatpak"
             ],
             "x-enum-comments": {
                 "SoftwarePackageTypeDEB": "Debian based package type",
-                "SoftwarePackageTypeRPM": "RHEL based package type"
+                "SoftwarePackageTypeFlatpak": "flatpak application",
+                "SoftwarePackageTypeRPM": "RHEL based package type",
+                "SoftwarePackageTypeSnap": "snap package (snapd)"
             },
             "x-enum-descriptions": [
                 "Debian based package type",
-                "RHEL based package type"
+                "RHEL based package type",
+                "snap package (snapd)",
+                "flatpak application"
             ],
             "x-enum-varnames": [
                 "SoftwarePackageTypeDEB",
-                "SoftwarePackageTypeRPM"
+                "SoftwarePackageTypeRPM",
+                "SoftwarePackageTypeSnap",
+                "SoftwarePackageTypeFlatpak"
             ]
         },
         "softwaremodel.SourceConnectionInfoSoftwareProperty": {
@@ -7293,6 +7784,8 @@
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -7309,6 +7802,8 @@
                 "Second",
                 "Minute",
                 "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

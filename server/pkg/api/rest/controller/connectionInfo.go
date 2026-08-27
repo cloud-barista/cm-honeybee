@@ -19,7 +19,29 @@ import (
 	"github.com/jollaman999/utils/iputil"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
+	"gopkg.in/yaml.v3"
 )
+
+// validateKubeconfig checks that s is a non-empty, structurally valid kubeconfig.
+func validateKubeconfig(s string) error {
+	if strings.TrimSpace(s) == "" {
+		return errors.New("kubeconfig is empty")
+	}
+	var kc struct {
+		Kind     string        `yaml:"kind"`
+		Clusters []interface{} `yaml:"clusters"`
+	}
+	if err := yaml.Unmarshal([]byte(s), &kc); err != nil {
+		return errors.New("kubeconfig is not valid YAML (" + err.Error() + ")")
+	}
+	if kc.Kind != "" && kc.Kind != "Config" {
+		return errors.New("kubeconfig kind must be 'Config'")
+	}
+	if len(kc.Clusters) == 0 {
+		return errors.New("kubeconfig has no clusters")
+	}
+	return nil
+}
 
 func checkIPAddress(ipAddress string) error {
 	if ipAddress == "" {
@@ -74,39 +96,47 @@ func encryptSecrets(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo
 	}
 	connectionInfo.PrivateKey = privateKey
 
+	kubeconfig, err := encryptField(connectionInfo.Kubeconfig, "kubeconfig")
+	if err != nil {
+		return nil, err
+	}
+	connectionInfo.Kubeconfig = kubeconfig
+
 	return connectionInfo, nil
 }
 
-// sshSecretPath is the OpenBao KV path for a connection's SSH secrets.
-func sshSecretPath(connID string) string { return "honeybee/ssh/" + connID }
+// connectionSecretPath is the OpenBao KV path for a connection's secrets. The
+// "ssh" segment is kept so entries written before kubeconfig support stay readable.
+func connectionSecretPath(connID string) string { return "honeybee/ssh/" + connID }
 
-// storeConnectionSecrets moves the SSH secrets (password, private key) into
-// OpenBao when enabled, clearing them from ci so the DB row holds no secrets.
-// No-op when OpenBao is off (secrets stay on ci for DB storage).
+// storeConnectionSecrets moves the connection secrets (SSH password/private key,
+// or kubeconfig) into OpenBao when enabled, clearing them from ci so the DB row
+// holds no secrets. Errors when there are secrets but OpenBao is off.
 func storeConnectionSecrets(ci *model.ConnectionInfo) error {
-	if ci.Password == "" && (ci.PrivateKey == "" || ci.PrivateKey == "-") {
+	if ci.Password == "" && (ci.PrivateKey == "" || ci.PrivateKey == "-") && ci.Kubeconfig == "" {
 		return nil // nothing sensitive to store (e.g. CSP connection without SSH)
 	}
 	if !openbao.Enabled() {
-		return errors.New("OpenBao is required to store SSH secrets (set cm-honeybee.openbao.address)")
+		return errors.New("OpenBao is required to store connection secrets (set cm-honeybee.openbao.address)")
 	}
-	data := map[string]string{"password": ci.Password, "private_key": ci.PrivateKey}
-	if err := openbao.Put(sshSecretPath(ci.ID), data); err != nil {
+	data := map[string]string{"password": ci.Password, "private_key": ci.PrivateKey, "kubeconfig": ci.Kubeconfig}
+	if err := openbao.Put(connectionSecretPath(ci.ID), data); err != nil {
 		return err
 	}
 	ci.Password = ""
 	ci.PrivateKey = ""
+	ci.Kubeconfig = ""
 	return nil
 }
 
-// hydrateConnectionSecrets loads the SSH secrets from OpenBao into ci before an
-// SSH operation. Falls back to whatever is already on ci (DB values) when
+// hydrateConnectionSecrets loads the connection secrets from OpenBao into ci
+// before they are used. Falls back to whatever is already on ci (DB values) when
 // OpenBao is off or the connection predates OpenBao.
 func hydrateConnectionSecrets(ci *model.ConnectionInfo) error {
 	if !openbao.Enabled() {
 		return nil
 	}
-	data, err := openbao.Get(sshSecretPath(ci.ID))
+	data, err := openbao.Get(connectionSecretPath(ci.ID))
 	if err != nil {
 		if errors.Is(err, openbao.ErrNotFound) {
 			return nil
@@ -118,16 +148,17 @@ func hydrateConnectionSecrets(ci *model.ConnectionInfo) error {
 	if ci.PrivateKey == "" {
 		ci.PrivateKey = "-"
 	}
+	ci.Kubeconfig = data["kubeconfig"]
 	return nil
 }
 
-// deleteConnectionSecrets removes a connection's SSH secrets from OpenBao.
+// deleteConnectionSecrets removes a connection's secrets from OpenBao.
 func deleteConnectionSecrets(connID string) {
 	if !openbao.Enabled() {
 		return
 	}
-	if err := openbao.Delete(sshSecretPath(connID)); err != nil {
-		logger.Println(logger.WARN, true, "OpenBao: failed to delete SSH secrets ("+connID+"): "+err.Error())
+	if err := openbao.Delete(connectionSecretPath(connID)); err != nil {
+		logger.Println(logger.WARN, true, "OpenBao: failed to delete connection secrets ("+connID+"): "+err.Error())
 	}
 }
 
@@ -148,27 +179,38 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 	}
 
 	switch sourceGroup.Type {
-	case "", serverCommon.SourceGroupTypeSSH:
-		connectionInfo.IPAddress = createConnectionInfoReq.IPAddress
-		connectionInfo.SSHPort = createConnectionInfoReq.SSHPort
-		connectionInfo.User = createConnectionInfoReq.User
-		connectionInfo.Password = createConnectionInfoReq.Password
-		connectionInfo.PrivateKey = createConnectionInfoReq.PrivateKey
+	case "", serverCommon.SourceGroupTypeSSH, serverCommon.SourceGroupTypeOnprem:
+		connectionInfo.ResourceType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.ResourceType))
+		switch connectionInfo.ResourceType {
+		case "", serverCommon.ResourceTypeVM:
+			connectionInfo.IPAddress = createConnectionInfoReq.IPAddress
+			connectionInfo.SSHPort = createConnectionInfoReq.SSHPort
+			connectionInfo.User = createConnectionInfoReq.User
+			connectionInfo.Password = createConnectionInfoReq.Password
+			connectionInfo.PrivateKey = createConnectionInfoReq.PrivateKey
 
-		if err := checkIPAddress(connectionInfo.IPAddress); err != nil {
-			return nil, err
-		}
-		if err := checkPort(connectionInfo.SSHPort); err != nil {
-			return nil, err
-		}
-		if connectionInfo.User == "" {
-			return nil, errors.New("user is empty")
-		}
-		if connectionInfo.Password == "" && connectionInfo.PrivateKey == "" {
-			return nil, errors.New("password or private_key must be provided")
-		}
-		if connectionInfo.PrivateKey == "" {
-			connectionInfo.PrivateKey = "-"
+			if err := checkIPAddress(connectionInfo.IPAddress); err != nil {
+				return nil, err
+			}
+			if err := checkPort(connectionInfo.SSHPort); err != nil {
+				return nil, err
+			}
+			if connectionInfo.User == "" {
+				return nil, errors.New("user is empty")
+			}
+			if connectionInfo.Password == "" && connectionInfo.PrivateKey == "" {
+				return nil, errors.New("password or private_key must be provided")
+			}
+			if connectionInfo.PrivateKey == "" {
+				connectionInfo.PrivateKey = "-"
+			}
+		case serverCommon.ResourceTypeK8s:
+			connectionInfo.Kubeconfig = createConnectionInfoReq.Kubeconfig
+			if err := validateKubeconfig(connectionInfo.Kubeconfig); err != nil {
+				return nil, err
+			}
+		default:
+			return nil, errors.New("resource_type for on-prem must be one of vm | k8s")
 		}
 	case serverCommon.SourceGroupTypeCSP:
 		connectionInfo.ResourceType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.ResourceType))
@@ -274,6 +316,17 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 				}
 			}
 		default:
+			if connectionInfo.ResourceType == serverCommon.ResourceTypeK8s {
+				// on-prem k8s has no SSH host. The kubeconfig (validated at
+				// register) is consumed by downstream migration; agent-based
+				// collection over SSH does not apply.
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
+				oldConnectionInfo.ConnectionFailedMessage = ""
+				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.AgentFailedMessage = "agent-based collection is not applicable to on-prem k8s connections"
+				break
+			}
+
 			c := &ssh.SSH{}
 
 			if err := c.NewClientConn(*connectionInfo); err != nil {
@@ -632,6 +685,15 @@ func UpdateConnectionInfo(c echo.Context) error {
 			oldConnectionInfo.ResourceID = strings.TrimSpace(updateConnectionInfoReq.ResourceID)
 		}
 	default:
+		if oldConnectionInfo.ResourceType == serverCommon.ResourceTypeK8s {
+			if updateConnectionInfoReq.Kubeconfig != "" {
+				if err := validateKubeconfig(updateConnectionInfoReq.Kubeconfig); err != nil {
+					return common.ReturnErrorMsg(c, err.Error())
+				}
+				oldConnectionInfo.Kubeconfig = updateConnectionInfoReq.Kubeconfig
+			}
+			break
+		}
 		err = checkIPAddress(updateConnectionInfoReq.IPAddress)
 		if err == nil {
 			oldConnectionInfo.IPAddress = updateConnectionInfoReq.IPAddress

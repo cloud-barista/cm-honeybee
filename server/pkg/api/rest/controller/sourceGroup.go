@@ -75,7 +75,7 @@ func doDeleteSourceGroup(sourceGroupID string) error {
 	}
 
 	// Remove the CSP credential from OpenBao (no-op for DB storage / non-CSP).
-	if sourceGroup.Type == serverCommon.SourceGroupTypeCSP {
+	if serverCommon.IsCSPType(sourceGroup.Type) {
 		deleteCSPCredential(sourceGroup.ID)
 	}
 
@@ -120,8 +120,8 @@ func CreateSourceGroup(c echo.Context) error {
 	if sgType == "" {
 		sgType = serverCommon.SourceGroupTypeSSH
 	}
-	if sgType != serverCommon.SourceGroupTypeSSH && sgType != serverCommon.SourceGroupTypeCSP {
-		return common.ReturnErrorMsg(c, "type must be 'ssh' or 'csp'.")
+	if !serverCommon.IsValidSourceGroupType(sgType) {
+		return common.ReturnErrorMsg(c, "type must be 'onprem' (legacy 'ssh') or 'csp'.")
 	}
 
 	sourceGroup := &model.SourceGroup{
@@ -131,7 +131,7 @@ func CreateSourceGroup(c echo.Context) error {
 		Type:        sgType,
 	}
 
-	if sgType == serverCommon.SourceGroupTypeCSP {
+	if serverCommon.IsCSPType(sgType) {
 		sourceGroup.ProviderName = createSourceGroupReq.ProviderName
 		sourceGroup.RegionName = createSourceGroupReq.RegionName
 		// Validate against CSP metainfo and record canonical values. No cb-spider
@@ -410,7 +410,7 @@ func UpdateSourceGroup(c echo.Context) error {
 
 	// CSP-only: validate & persist region/credential changes. No cb-spider writes —
 	// credentials are registered only transiently at discovery/collection time.
-	if oldSourceGroup.Type == serverCommon.SourceGroupTypeCSP &&
+	if serverCommon.IsCSPType(oldSourceGroup.Type) &&
 		(updateSourceGroupReq.RegionName != "" || len(updateSourceGroupReq.Credential) > 0) {
 
 		if updateSourceGroupReq.RegionName != "" {

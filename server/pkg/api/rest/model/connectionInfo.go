@@ -21,6 +21,9 @@ type ConnectionInfo struct {
 	PrivateKey string `gorm:"column:private_key" json:"private_key,omitempty"`
 	PublicKey  string `gorm:"column:public_key" json:"public_key,omitempty"`
 
+	// Kubeconfig — on-prem k8s credential (Type onprem + ResourceType k8s).
+	Kubeconfig string `gorm:"column:kubeconfig" json:"kubeconfig,omitempty"`
+
 	// CSP fields — required when parent SourceGroup.Type == "csp".
 	// ResourceType: "vm" | "k8s" | "object_storage".
 	ResourceType string `gorm:"column:resource_type" json:"resource_type,omitempty"`
@@ -45,6 +48,9 @@ type CreateConnectionInfoReq struct {
 	User       string `json:"user,omitempty"`
 	Password   string `json:"password,omitempty"`
 	PrivateKey string `json:"private_key,omitempty"`
+
+	// Kubeconfig — required when on-prem + ResourceType "k8s".
+	Kubeconfig string `json:"kubeconfig,omitempty"`
 
 	// CSP fields — required when parent SourceGroup.Type == "csp".
 	ResourceType string `json:"resource_type,omitempty"`
