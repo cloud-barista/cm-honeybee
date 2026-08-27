@@ -49,13 +49,15 @@ func GetLegacySWs() ([]software.Binary, error) {
 	// here is spread over hundreds of processes, so only the totals say which
 	// phase is worth attention.
 	var elapsedListen, elapsedAnalyze, elapsedVersion time.Duration
-	var elapsedPackages, elapsedProvenance time.Duration
+	var elapsedPackages, elapsedProvenance, elapsedOwned, elapsedDeps time.Duration
 	defer func() {
 		common.LogElapsed("legacy", "total", total,
-			fmt.Sprintf("%d procs; listen %s, analyze %s, version %s, packages %s, provenance %s",
+			fmt.Sprintf("%d procs; listen %s, owned %s, analyze %s, deps %s, version %s, packages %s, provenance %s",
 				len(procs),
 				elapsedListen.Round(time.Millisecond),
+				elapsedOwned.Round(time.Millisecond),
 				elapsedAnalyze.Round(time.Millisecond),
+				elapsedDeps.Round(time.Millisecond),
 				elapsedVersion.Round(time.Millisecond),
 				elapsedPackages.Round(time.Millisecond),
 				elapsedProvenance.Round(time.Millisecond)))
@@ -66,6 +68,10 @@ func GetLegacySWs() ([]software.Binary, error) {
 	// Kept index-aligned with results so required packages can be resolved for
 	// all of them in one pass once the scan is done.
 	var mappedLibsByResult [][]string
+
+	// Everything the cheap first pass gathered, held until package ownership can
+	// be resolved for all of them together.
+	var candidates []legacyCandidate
 
 	// ppidByPID records the parent PID of every kept process so multi-process
 	// services (e.g. an Apache master plus its prefork workers, which all inherit
@@ -161,10 +167,43 @@ func GetLegacySWs() ([]software.Binary, error) {
 
 		isWine, winePrefix := detectWine(cmdSlice, envs, exe)
 
-		// Package-managed services are migrated as packages, not as legacy binaries.
-		// Skip a candidate whose representative install path is owned by an OS package
-		// (the app dir for JVM/Wine apps, otherwise the executable).
-		if isPackageOwned(representativeInstallPath(exe, cmdSlice, isWine, winePrefix)) {
+		candidates = append(candidates, legacyCandidate{
+			proc:             p,
+			name:             name,
+			connectionStatus: connectionStatus,
+			ppid:             ppid,
+			uids:             uids,
+			gids:             gids,
+			cmdline:          cmdline,
+			cmdSlice:         cmdSlice,
+			exe:              exe,
+			envs:             envs,
+			isWine:           isWine,
+			winePrefix:       winePrefix,
+			installPath:      representativeInstallPath(exe, cmdSlice, isWine, winePrefix),
+		})
+	}
+
+	// Package-managed services are migrated as packages, not as legacy binaries,
+	// so a candidate whose representative install path is owned by an OS package
+	// (the app dir for JVM/Wine apps, otherwise the executable) is dropped here.
+	// Ownership is resolved for every candidate at once because each lookup
+	// searches the whole package database.
+	ownedStart := time.Now()
+	installOwners := packagesOwningPaths(resolvedInstallPaths(candidates))
+	elapsedOwned = time.Since(ownedStart)
+
+	for _, c := range candidates {
+		p := c.proc
+		name := c.name
+		connectionStatus := c.connectionStatus
+		ppid := c.ppid
+		uids, gids := c.uids, c.gids
+		cmdline, cmdSlice := c.cmdline, c.cmdSlice
+		exe, envs := c.exe, c.envs
+		isWine, winePrefix := c.isWine, c.winePrefix
+
+		if isPathOwned(c.installPath, installOwners) {
 			logger.Println(logger.DEBUG, true,
 				fmt.Sprintf("LegacySW: skipping package-managed process: %s (pid %d)", name, p.Pid))
 			continue
@@ -196,7 +235,9 @@ func GetLegacySWs() ([]software.Binary, error) {
 
 		configFiles := extractConfigFiles(cmdSlice, openFiles)
 		dataDirs := detectDataDirs(openFiles)
+		depsStart := time.Now()
 		dependencies := collectDependencies(libPaths, envs, exe)
+		elapsedDeps += time.Since(depsStart)
 
 		provenanceStart := time.Now()
 		prov := getLaunchProvenance(p.Pid)
@@ -482,6 +523,69 @@ func representativeInstallPath(exePath string, cmdSlice []string, isWine bool, w
 		return winePrefix
 	}
 	return exePath
+}
+
+// legacyCandidate is a process that passed the cheap filters, held until package
+// ownership can be resolved for every candidate in one batch.
+type legacyCandidate struct {
+	proc             *process.Process
+	name             string
+	connectionStatus string
+	ppid             int32
+	uids             []int32
+	gids             []int32
+	cmdline          string
+	cmdSlice         []string
+	exe              string
+	envs             []string
+	isWine           bool
+	winePrefix       string
+	installPath      string
+}
+
+// resolvedInstallPaths returns each candidate's install path along with its
+// symlink target, which is what an ownership lookup has to be asked about.
+func resolvedInstallPaths(candidates []legacyCandidate) []string {
+	seen := map[string]bool{}
+	var paths []string
+
+	for _, c := range candidates {
+		for _, path := range ownershipCandidates(c.installPath) {
+			if !seen[path] {
+				seen[path] = true
+				paths = append(paths, path)
+			}
+		}
+	}
+
+	return paths
+}
+
+// ownershipCandidates returns the paths to ask a package manager about for path:
+// the path itself and, when it is a symlink, its target.
+func ownershipCandidates(path string) []string {
+	if path == "" {
+		return nil
+	}
+
+	candidates := []string{path}
+	if real, err := filepath.EvalSymlinks(path); err == nil && real != path {
+		candidates = append(candidates, real)
+	}
+
+	return candidates
+}
+
+// isPathOwned reports whether path is provided by an installed OS package,
+// answering from an ownership map built earlier by packagesOwningPaths.
+func isPathOwned(path string, owners map[string]string) bool {
+	for _, c := range ownershipCandidates(path) {
+		if owners[c] != "" {
+			return true
+		}
+	}
+
+	return false
 }
 
 // isPackageOwned reports whether path is provided by an installed OS package
