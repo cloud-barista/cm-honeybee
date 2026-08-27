@@ -34,8 +34,8 @@ func cidrToNetmask(prefixLen int) string {
 // PowerShell Get-NetRoute output format with interface names:
 // ifIndex DestinationPrefix             NextHop         RouteMetric InterfaceAlias
 // ------- -----------------             -------         ----------- --------------
-// 12      0.0.0.0/0                     192.168.110.254 256         Ethernet
-// 12      192.168.110.0/24              0.0.0.0         256         Ethernet
+// 12      0.0.0.0/0                     192.0.2.254     256         Ethernet
+// 12      192.0.2.0/24                  0.0.0.0         256         Ethernet
 // 1       ::1/128                       ::              256         Interface1
 //
 // This function uses PowerShell Get-NetRoute cmdlet to get both IPv4 and IPv6 routing information
