@@ -1,12 +1,14 @@
 package software
 
 import (
+	"github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 	_ "github.com/glebarez/go-sqlite" // sqlite
 	"github.com/hashicorp/go-multierror"
 	"github.com/jollaman999/utils/logger"
 	rpmdb "github.com/knqyf263/go-rpmdb/pkg"
 	"strings"
+	"time"
 )
 
 func detectDB() (*rpmdb.RpmDB, error) {
@@ -174,7 +176,9 @@ func GetRPMs(showDefaultPackages bool) ([]software.RPM, error) {
 			requiresRemovedList = append(requiresRemovedList, rpm)
 		}
 	} else {
+		defaultStart := time.Now()
 		defaultPackages, err := GetDefaultPackages()
+		common.LogElapsed("rpm", "default packages", defaultStart, common.CountDetail(len(defaultPackages)))
 		if err != nil {
 			logger.Println(logger.DEBUG, false, "RPM: Error occurred while getting default packages."+
 				" ("+err.Error()+")")

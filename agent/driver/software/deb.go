@@ -2,6 +2,7 @@ package software
 
 import (
 	"bufio"
+	"github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 	"github.com/jollaman999/utils/fileutil"
 	"github.com/jollaman999/utils/logger"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func parseLine(line string) (string, string) {
@@ -215,7 +217,9 @@ func GetDEBs(showDefaultPackages bool) ([]software.DEB, error) {
 			dependsRemovedList = append(dependsRemovedList, deb)
 		}
 	} else {
+		defaultStart := time.Now()
 		defaultPackages, err := GetDefaultPackages()
+		common.LogElapsed("deb", "default packages", defaultStart, common.CountDetail(len(defaultPackages)))
 		if err != nil {
 			logger.Println(logger.DEBUG, false, "DEB: Error occurred while getting default packages."+
 				" ("+err.Error()+")")

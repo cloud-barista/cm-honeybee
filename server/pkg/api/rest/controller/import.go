@@ -14,7 +14,26 @@ import (
 	"time"
 )
 
+// logImportStep records how long one step of an import took. Import latency is
+// dominated by the agent call over SSH, so the steps are timed individually to
+// show where the time actually goes when a source is slow. detail carries
+// step-specific context (a payload size) and may be empty.
+func logImportStep(kind string, connID string, step string, start time.Time, detail string) {
+	msg := "IMPORT TIMING: " + kind + ": " + step + " took " +
+		time.Since(start).Round(time.Millisecond).String()
+	if detail != "" {
+		msg += " (" + detail + ")"
+	}
+
+	logger.Println(logger.INFO, false, msg+" (ConnectionID="+connID+")")
+}
+
 func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
+	total := time.Now()
+	defer func() {
+		logImportStep("infra", connID, "total", total, "")
+	}()
+
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return nil, err
@@ -70,7 +89,9 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 		return nil, err
 	}
 	s := &ssh.SSH{}
+	fetchStart := time.Now()
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/infra")
+	logImportStep("infra", connectionInfo.ID, "agent fetch", fetchStart, strconv.Itoa(len(data))+" bytes")
 	if err != nil {
 		oldSavedInfraInfo.Status = "failed"
 		_ = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
@@ -95,6 +116,11 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 }
 
 func doImportSoftware(connID string, showDefaultPackages bool) (*model.SavedSoftwareInfo, error) {
+	total := time.Now()
+	defer func() {
+		logImportStep("software", connID, "total", total, "")
+	}()
+
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return nil, err
@@ -122,7 +148,9 @@ func doImportSoftware(connID string, showDefaultPackages bool) (*model.SavedSoft
 		return nil, err
 	}
 	s := &ssh.SSH{}
+	fetchStart := time.Now()
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/software?show_default_packages="+strconv.FormatBool(showDefaultPackages))
+	logImportStep("software", connectionInfo.ID, "agent fetch", fetchStart, strconv.Itoa(len(data))+" bytes")
 	if err != nil {
 		oldSavedSoftwareInfo.Status = "failed"
 		_ = dao.SavedSoftwareInfoUpdate(oldSavedSoftwareInfo)
@@ -147,6 +175,11 @@ func doImportSoftware(connID string, showDefaultPackages bool) (*model.SavedSoft
 }
 
 func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
+	total := time.Now()
+	defer func() {
+		logImportStep("kubernetes", connID, "total", total, "")
+	}()
+
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return nil, err
@@ -174,7 +207,9 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 		return nil, err
 	}
 	s := &ssh.SSH{}
+	fetchStart := time.Now()
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/kubernetes")
+	logImportStep("kubernetes", connectionInfo.ID, "agent fetch", fetchStart, strconv.Itoa(len(data))+" bytes")
 	if err != nil {
 		oldSavedKubernetesInfo.Status = "failed"
 		_ = dao.SavedKubernetesInfoUpdate(oldSavedKubernetesInfo)
@@ -199,6 +234,11 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 }
 
 func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
+	total := time.Now()
+	defer func() {
+		logImportStep("helm", connID, "total", total, "")
+	}()
+
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return nil, err
@@ -226,7 +266,9 @@ func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
 		return nil, err
 	}
 	s := &ssh.SSH{}
+	fetchStart := time.Now()
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/helm")
+	logImportStep("helm", connectionInfo.ID, "agent fetch", fetchStart, strconv.Itoa(len(data))+" bytes")
 	if err != nil {
 		oldSavedHelmInfo.Status = "failed"
 		_ = dao.SavedHelmInfoUpdate(oldSavedHelmInfo)
@@ -251,6 +293,11 @@ func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
 }
 
 func doImportData(connID string) (*model.SavedDataInfo, error) {
+	total := time.Now()
+	defer func() {
+		logImportStep("data", connID, "total", total, "")
+	}()
+
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return nil, err
@@ -278,7 +325,9 @@ func doImportData(connID string) (*model.SavedDataInfo, error) {
 		return nil, err
 	}
 	s := &ssh.SSH{}
+	fetchStart := time.Now()
 	data, err := s.SendGetRequestToAgent(*connectionInfo, "/data")
+	logImportStep("data", connectionInfo.ID, "agent fetch", fetchStart, strconv.Itoa(len(data))+" bytes")
 	if err != nil {
 		oldSavedDataInfo.Status = "failed"
 		_ = dao.SavedDataInfoUpdate(oldSavedDataInfo)

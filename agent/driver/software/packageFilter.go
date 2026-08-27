@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/cavaliergopher/rpm"
+	"github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/host"
 	"github.com/ulikunitz/xz"
@@ -62,6 +63,11 @@ func createTransport() *http.Transport {
 
 // fetchURL fetches the content from a URL with SSL verification disabled
 func fetchURL(url string) ([]byte, error) {
+	start := time.Now()
+	defer func() {
+		common.LogElapsed("packageFilter", "fetch "+url, start, "")
+	}()
+
 	client := &http.Client{
 		Transport: createTransport(),
 		Timeout:   time.Second * 30,
@@ -368,6 +374,11 @@ func fetchDirectoryListing(dirURL string) ([]string, error) {
 
 // GetDefaultPackages fetches and returns the default package list for a given OS type and version
 func GetDefaultPackages() ([]string, error) {
+	total := time.Now()
+	defer func() {
+		common.LogElapsed("packageFilter", "GetDefaultPackages", total, "")
+	}()
+
 	// Identify the OS from /etc/os-release. gopsutil's host.Info misreports some
 	// Ubuntu development releases as "debian" (it reads /etc/debian_version), so
 	// os-release (ID / VERSION_ID / VERSION_CODENAME) is authoritative here.

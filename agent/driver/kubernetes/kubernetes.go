@@ -3,7 +3,9 @@ package kubernetes
 import (
 	"errors"
 	"sync"
+	"time"
 
+	"github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/kubernetes"
 
 	"github.com/jollaman999/utils/logger"
@@ -41,6 +43,11 @@ func GetKubernetesInfo() (*kubernetes.Kubernetes, error) {
 		kubernetesInfoLock.Unlock()
 	}()
 
+	total := time.Now()
+	defer func() {
+		common.LogElapsed("kubernetes", "total", total, "")
+	}()
+
 	var i kubernetes.Kubernetes
 	var err error
 
@@ -48,17 +55,23 @@ func GetKubernetesInfo() (*kubernetes.Kubernetes, error) {
 		return &i, nil
 	}
 
+	start := time.Now()
 	i.NodeCount, i.Nodes, err = GetNodeInfo()
+	common.LogElapsed("kubernetes", "nodes", start, common.CountDetail(len(i.Nodes)))
 	if err != nil {
 		return nil, err
 	}
 
+	start = time.Now()
 	i.Cluster, err = GetClusterInfo()
+	common.LogElapsed("kubernetes", "cluster", start, "")
 	if err != nil {
 		return nil, err
 	}
 
+	start = time.Now()
 	i.Workloads, err = GetWorkloadInfo()
+	common.LogElapsed("kubernetes", "workloads", start, "")
 	if err != nil {
 		return nil, err
 	}
@@ -74,6 +87,11 @@ func GetHelmInfo() (*kubernetes.Helm, error) {
 		helmInfoLock.Unlock()
 	}()
 
+	total := time.Now()
+	defer func() {
+		common.LogElapsed("helm", "total", total, "")
+	}()
+
 	var i kubernetes.Helm
 	var err error
 
@@ -81,12 +99,16 @@ func GetHelmInfo() (*kubernetes.Helm, error) {
 		return &i, nil
 	}
 
+	start := time.Now()
 	i.Repo, err = GetRepoInfo()
+	common.LogElapsed("helm", "repo", start, common.CountDetail(len(i.Repo)))
 	if err != nil {
 		return nil, err
 	}
 
+	start = time.Now()
 	i.Release, err = GetReleaseInfo()
+	common.LogElapsed("helm", "release", start, common.CountDetail(len(i.Release)))
 	if err != nil {
 		return nil, err
 	}

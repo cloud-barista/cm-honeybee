@@ -7,7 +7,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/cloud-barista/cm-honeybee/agent/common"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 	"github.com/jollaman999/utils/logger"
 	"github.com/shirou/gopsutil/v3/process"
@@ -34,11 +36,29 @@ type launchProvenance struct {
 }
 
 func GetLegacySWs() ([]software.Binary, error) {
+	total := time.Now()
+
 	procs, err := process.Processes()
 
 	if err != nil {
 		return []software.Binary{}, err
 	}
+
+	// Per-process work is accumulated rather than logged per iteration: the cost
+	// here is spread over hundreds of processes, so only the totals say which
+	// phase is worth attention.
+	var elapsedListen, elapsedAnalyze, elapsedVersion time.Duration
+	var elapsedPackages, elapsedProvenance time.Duration
+	defer func() {
+		common.LogElapsed("legacy", "total", total,
+			fmt.Sprintf("%d procs; listen %s, analyze %s, version %s, packages %s, provenance %s",
+				len(procs),
+				elapsedListen.Round(time.Millisecond),
+				elapsedAnalyze.Round(time.Millisecond),
+				elapsedVersion.Round(time.Millisecond),
+				elapsedPackages.Round(time.Millisecond),
+				elapsedProvenance.Round(time.Millisecond)))
+	}()
 
 	var results []software.Binary
 
@@ -88,7 +108,9 @@ func GetLegacySWs() ([]software.Binary, error) {
 			continue
 		}
 
+		listenStart := time.Now()
 		hasListen, connectionStatus := getListenStatus(p)
+		elapsedListen += time.Since(listenStart)
 		if !hasListen {
 			continue
 		}
@@ -143,7 +165,9 @@ func GetLegacySWs() ([]software.Binary, error) {
 			continue
 		}
 
+		analyzeStart := time.Now()
 		binInfo, err := analyzeBinary(p)
+		elapsedAnalyze += time.Since(analyzeStart)
 		if err != nil {
 			markUnavailable(p.Pid, "AnalyzeBinary", err)
 		}
@@ -168,9 +192,17 @@ func GetLegacySWs() ([]software.Binary, error) {
 		configFiles := extractConfigFiles(cmdSlice, openFiles)
 		dataDirs := detectDataDirs(openFiles)
 		dependencies := collectDependencies(libPaths, envs, exe)
+		packagesStart := time.Now()
 		requiredPackages := collectRequiredPackages(mappedLibs)
+		elapsedPackages += time.Since(packagesStart)
+
+		provenanceStart := time.Now()
 		prov := getLaunchProvenance(p.Pid)
+		elapsedProvenance += time.Since(provenanceStart)
+
+		versionStart := time.Now()
 		version := detectBinaryVersion(exe, cmdSlice, envs)
+		elapsedVersion += time.Since(versionStart)
 
 		results = append(results, software.Binary{
 			PID:              p.Pid,
