@@ -105,8 +105,9 @@ func encryptSecrets(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo
 	return connectionInfo, nil
 }
 
-// sshSecretPath is the OpenBao KV path for a connection's SSH secrets.
-func sshSecretPath(connID string) string { return "honeybee/ssh/" + connID }
+// connectionSecretPath is the OpenBao KV path for a connection's secrets. The
+// "ssh" segment is kept so entries written before kubeconfig support stay readable.
+func connectionSecretPath(connID string) string { return "honeybee/ssh/" + connID }
 
 // storeConnectionSecrets moves the connection secrets (SSH password/private key,
 // or kubeconfig) into OpenBao when enabled, clearing them from ci so the DB row
@@ -119,7 +120,7 @@ func storeConnectionSecrets(ci *model.ConnectionInfo) error {
 		return errors.New("OpenBao is required to store connection secrets (set cm-honeybee.openbao.address)")
 	}
 	data := map[string]string{"password": ci.Password, "private_key": ci.PrivateKey, "kubeconfig": ci.Kubeconfig}
-	if err := openbao.Put(sshSecretPath(ci.ID), data); err != nil {
+	if err := openbao.Put(connectionSecretPath(ci.ID), data); err != nil {
 		return err
 	}
 	ci.Password = ""
@@ -128,14 +129,14 @@ func storeConnectionSecrets(ci *model.ConnectionInfo) error {
 	return nil
 }
 
-// hydrateConnectionSecrets loads the SSH secrets from OpenBao into ci before an
-// SSH operation. Falls back to whatever is already on ci (DB values) when
+// hydrateConnectionSecrets loads the connection secrets from OpenBao into ci
+// before they are used. Falls back to whatever is already on ci (DB values) when
 // OpenBao is off or the connection predates OpenBao.
 func hydrateConnectionSecrets(ci *model.ConnectionInfo) error {
 	if !openbao.Enabled() {
 		return nil
 	}
-	data, err := openbao.Get(sshSecretPath(ci.ID))
+	data, err := openbao.Get(connectionSecretPath(ci.ID))
 	if err != nil {
 		if errors.Is(err, openbao.ErrNotFound) {
 			return nil
@@ -151,13 +152,13 @@ func hydrateConnectionSecrets(ci *model.ConnectionInfo) error {
 	return nil
 }
 
-// deleteConnectionSecrets removes a connection's SSH secrets from OpenBao.
+// deleteConnectionSecrets removes a connection's secrets from OpenBao.
 func deleteConnectionSecrets(connID string) {
 	if !openbao.Enabled() {
 		return
 	}
-	if err := openbao.Delete(sshSecretPath(connID)); err != nil {
-		logger.Println(logger.WARN, true, "OpenBao: failed to delete SSH secrets ("+connID+"): "+err.Error())
+	if err := openbao.Delete(connectionSecretPath(connID)); err != nil {
+		logger.Println(logger.WARN, true, "OpenBao: failed to delete connection secrets ("+connID+"): "+err.Error())
 	}
 }
 

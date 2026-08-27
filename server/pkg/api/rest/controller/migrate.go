@@ -41,7 +41,7 @@ func MigratePlaintextSecretsToOpenBao() {
 		ci := &conns[i]
 
 		data := map[string]string{"password": ci.Password, "private_key": ci.PrivateKey}
-		if err := openbao.Put(sshSecretPath(ci.ID), data); err != nil {
+		if err := openbao.Put(connectionSecretPath(ci.ID), data); err != nil {
 			logger.Println(logger.ERROR, true, "OpenBao migration: failed to store secrets for connection "+ci.ID+": "+err.Error())
 			continue
 		}
