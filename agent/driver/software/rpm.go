@@ -211,5 +211,5 @@ func GetRPMs(showDefaultPackages bool) ([]software.RPM, error) {
 		}
 	}
 
-	return rpms, nil
+	return requiresRemovedList, nil
 }
