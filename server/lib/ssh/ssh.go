@@ -361,7 +361,10 @@ func (o *SSH) SendGetRequestToAgent(connectionInfo model.ConnectionInfo, request
 	}
 	defer o.Close()
 
-	output, err := o.RunCmd("curl -s -X GET http://localhost:" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/honeybee-agent" + requestPath + " -H 'accept: application/json'")
+	// Quote the URL: requestPath may carry a query string (e.g. "?show_default_packages=false"),
+	// and the '?' is a glob metacharacter. On sources whose login shell is zsh (or bash with
+	// failglob), an unquoted URL expands to "no matches found" and curl never runs.
+	output, err := o.RunCmd("curl -s -X GET 'http://localhost:" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/honeybee-agent" + requestPath + "' -H 'accept: application/json'")
 	if err != nil {
 		return "", err
 	}
