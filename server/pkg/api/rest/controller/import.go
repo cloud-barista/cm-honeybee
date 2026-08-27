@@ -460,7 +460,10 @@ func ImportSoftwareSourceGroup(c echo.Context) error {
 	var savedSoftwareInfoList []model.SavedSoftwareInfo
 
 	for _, conn := range *list {
-		savedSoftwareInfo, _ := doImportSoftware(conn.ID, showDefaultPackages)
+		savedSoftwareInfo, err := doImportSoftware(conn.ID, showDefaultPackages)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
 		savedSoftwareInfoList = append(savedSoftwareInfoList, *savedSoftwareInfo)
 	}
 
@@ -537,7 +540,10 @@ func ImportKubernetesSourceGroup(c echo.Context) error {
 	var savedKubernetesInfoList []model.SavedKubernetesInfo
 
 	for _, conn := range *list {
-		savedKubernetesInfo, _ := doImportKubernetes(conn.ID)
+		savedKubernetesInfo, err := doImportKubernetes(conn.ID)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
 		savedKubernetesInfoList = append(savedKubernetesInfoList, *savedKubernetesInfo)
 	}
 
@@ -614,7 +620,10 @@ func ImportHelmSourceGroup(c echo.Context) error {
 	var savedHelmInfoList []model.SavedHelmInfo
 
 	for _, conn := range *list {
-		savedHelmInfo, _ := doImportHelm(conn.ID)
+		savedHelmInfo, err := doImportHelm(conn.ID)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
 		savedHelmInfoList = append(savedHelmInfoList, *savedHelmInfo)
 	}
 
@@ -691,7 +700,10 @@ func ImportDataSourceGroup(c echo.Context) error {
 	var savedDataInfoList []model.SavedDataInfo
 
 	for _, conn := range *list {
-		savedDataInfo, _ := doImportData(conn.ID)
+		savedDataInfo, err := doImportData(conn.ID)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
 		savedDataInfoList = append(savedDataInfoList, *savedDataInfo)
 	}
 
