@@ -308,7 +308,12 @@ func fetchAndParseRPMDependencies(rpmURL string) ([]string, error) {
 func fetchDirectoryListing(dirURL string) ([]string, error) {
 	logger.Println(logger.INFO, false, "Fetching directory listing from: ", dirURL)
 
-	resp, err := http.Get(dirURL)
+	client := &http.Client{
+		Transport: createTransport(),
+		Timeout:   time.Second * 30,
+	}
+
+	resp, err := client.Get(dirURL)
 	if err != nil {
 		return nil, err
 	}
