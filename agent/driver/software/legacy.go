@@ -1,6 +1,7 @@
 package software
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -61,6 +62,10 @@ func GetLegacySWs() ([]software.Binary, error) {
 	}()
 
 	var results []software.Binary
+
+	// Kept index-aligned with results so required packages can be resolved for
+	// all of them in one pass once the scan is done.
+	var mappedLibsByResult [][]string
 
 	// ppidByPID records the parent PID of every kept process so multi-process
 	// services (e.g. an Apache master plus its prefork workers, which all inherit
@@ -192,9 +197,6 @@ func GetLegacySWs() ([]software.Binary, error) {
 		configFiles := extractConfigFiles(cmdSlice, openFiles)
 		dataDirs := detectDataDirs(openFiles)
 		dependencies := collectDependencies(libPaths, envs, exe)
-		packagesStart := time.Now()
-		requiredPackages := collectRequiredPackages(mappedLibs)
-		elapsedPackages += time.Since(packagesStart)
 
 		provenanceStart := time.Now()
 		prov := getLaunchProvenance(p.Pid)
@@ -219,7 +221,6 @@ func GetLegacySWs() ([]software.Binary, error) {
 			Libraries:        libs,
 			LibraryPaths:     libPaths,
 			Dependencies:     dependencies,
-			RequiredPackages: requiredPackages,
 			OpenFilePaths:    openFiles,
 			ConfigFiles:      configFiles,
 			DataDirs:         dataDirs,
@@ -234,7 +235,15 @@ func GetLegacySWs() ([]software.Binary, error) {
 			PIDFile:          prov.PIDFile,
 		})
 		ppidByPID[p.Pid] = ppid
+		mappedLibsByResult = append(mappedLibsByResult, mappedLibs)
 	}
+
+	// Resolved after the loop, in one batch: every lookup searches the whole
+	// package database, so asking per library costs tens of seconds on a process
+	// that maps a hundred of them.
+	packagesStart := time.Now()
+	resolveRequiredPackages(results, mappedLibsByResult)
+	elapsedPackages = time.Since(packagesStart)
 
 	results = dedupeServiceWorkers(results, ppidByPID)
 
@@ -497,30 +506,153 @@ func isPackageOwned(path string) bool {
 	return false
 }
 
-// collectRequiredPackages returns the OS packages that provide the package-owned
-// shared objects loaded by the process (e.g. libpcre2-8 for a source-built
-// Apache, plus transitive deps such as libexpat pulled in by a copied non-package
-// lib). These are NOT copied (collectDependencies excludes package-owned paths);
-// instead the target must install them via its package manager, otherwise the
-// migrated binary would be missing its runtime libraries. Non-package libs map to
-// no package and are skipped here (they are copied instead).
-func collectRequiredPackages(mappedLibs []string) []string {
+// resolveRequiredPackages fills RequiredPackages for every collected binary: the
+// OS packages that provide the package-owned shared objects the process loaded
+// (e.g. libpcre2-8 for a source-built Apache, plus transitive deps such as
+// libexpat pulled in by a copied non-package lib). These are NOT copied
+// (collectDependencies excludes package-owned paths); instead the target must
+// install them via its package manager, otherwise the migrated binary would be
+// missing its runtime libraries. Non-package libs map to no package and are
+// skipped (they are copied instead).
+//
+// mappedLibsByResult is index-aligned with results. Every distinct path across
+// all of them is resolved in one batch, because a single lookup searches the
+// entire package database.
+func resolveRequiredPackages(results []software.Binary, mappedLibsByResult [][]string) {
+	// The same library is mapped by many processes, so resolve each distinct
+	// path only once.
+	candidatesByLib := map[string][]string{}
 	seen := map[string]bool{}
-	var pkgs []string
+	var allPaths []string
 
-	for _, lp := range mappedLibs {
-		if lp == "" {
-			continue
-		}
-		name := packageNameOwning(lp)
-		if name != "" && !seen[name] {
-			seen[name] = true
-			pkgs = append(pkgs, name)
+	for _, libs := range mappedLibsByResult {
+		for _, lib := range libs {
+			if lib == "" {
+				continue
+			}
+			if _, done := candidatesByLib[lib]; done {
+				continue
+			}
+
+			candidates := []string{lib}
+			if real, err := filepath.EvalSymlinks(lib); err == nil && real != lib {
+				candidates = append(candidates, real)
+			}
+			candidatesByLib[lib] = candidates
+
+			for _, c := range candidates {
+				if !seen[c] {
+					seen[c] = true
+					allPaths = append(allPaths, c)
+				}
+			}
 		}
 	}
 
-	sort.Strings(pkgs)
-	return pkgs
+	owners := packagesOwningPaths(allPaths)
+
+	for i := range results {
+		if i >= len(mappedLibsByResult) {
+			break
+		}
+
+		found := map[string]bool{}
+		var pkgs []string
+
+		for _, lib := range mappedLibsByResult[i] {
+			for _, c := range candidatesByLib[lib] {
+				name := owners[c]
+				if name == "" {
+					continue
+				}
+				if !found[name] {
+					found[name] = true
+					pkgs = append(pkgs, name)
+				}
+				break
+			}
+		}
+
+		sort.Strings(pkgs)
+		results[i].RequiredPackages = pkgs
+	}
+}
+
+// dpkgInfoDir holds one .list file per installed package, naming the files that
+// package owns.
+const dpkgInfoDir = "/var/lib/dpkg/info"
+
+// packagesOwningPaths maps each path to the OS package providing it, omitting
+// paths no package owns.
+func packagesOwningPaths(paths []string) map[string]string {
+	owners := make(map[string]string, len(paths))
+	if len(paths) == 0 {
+		return owners
+	}
+
+	if _, err := exec.LookPath("dpkg"); err == nil {
+		if resolveFromDpkgFileLists(paths, owners) {
+			return owners
+		}
+	}
+
+	// An rpm host, or a dpkg host whose file lists could not be read: ask the
+	// package manager per path.
+	for _, path := range paths {
+		if name := packageNameOwning(path); name != "" {
+			owners[path] = name
+		}
+	}
+
+	return owners
+}
+
+// resolveFromDpkgFileLists answers every lookup with a single scan of the dpkg
+// file lists. `dpkg -S` re-searches the whole database per invocation, which
+// costs tens of seconds once a process maps a hundred libraries. Reports whether
+// the lists could be read at all; a path missing from them is not package-owned.
+func resolveFromDpkgFileLists(paths []string, owners map[string]string) bool {
+	entries, err := os.ReadDir(dpkgInfoDir)
+	if err != nil {
+		return false
+	}
+
+	wanted := make(map[string]bool, len(paths))
+	for _, path := range paths {
+		wanted[path] = true
+	}
+
+	for _, entry := range entries {
+		fileName := entry.Name()
+		if !strings.HasSuffix(fileName, ".list") {
+			continue
+		}
+
+		pkg := strings.TrimSuffix(fileName, ".list")
+		if idx := strings.IndexByte(pkg, ':'); idx >= 0 { // strip multiarch suffix
+			pkg = pkg[:idx]
+		}
+
+		fd, err := os.Open(filepath.Join(dpkgInfoDir, fileName))
+		if err != nil {
+			continue
+		}
+
+		scanner := bufio.NewScanner(fd)
+		scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if wanted[line] {
+				if _, exists := owners[line]; !exists {
+					owners[line] = pkg
+				}
+			}
+		}
+
+		_ = fd.Close()
+	}
+
+	return true
 }
 
 // packageNameOwning returns the name of the OS package that provides path, or ""
