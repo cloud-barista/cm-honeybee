@@ -4,6 +4,7 @@
 #
 #   listen.port       HONEYBEE_LISTEN_PORT
 #   agent.port        HONEYBEE_AGENT_PORT
+#   agent.request_timeout  HONEYBEE_AGENT_REQUEST_TIMEOUT
 #   spider.endpoint   HONEYBEE_SPIDER_ENDPOINT
 #   spider.username   HONEYBEE_SPIDER_USERNAME
 #   spider.password   HONEYBEE_SPIDER_PASSWORD
@@ -13,6 +14,10 @@ cm-honeybee:
         port: 8081
     agent:
         port: 8082
+        # Seconds to wait for one agent request made over SSH. Collection on a
+        # large source can take a minute or more; this bounds a hung agent so an
+        # import fails instead of holding the connection open forever.
+        request_timeout: 600
     spider:
         endpoint: http://cb-spider:1024/spider
         # cb-spider Basic Auth — inject via HONEYBEE_SPIDER_USERNAME/PASSWORD (env).

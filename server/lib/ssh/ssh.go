@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -339,7 +340,9 @@ func (o *SSH) checkAgentStatus() error {
 	tryCount := 30
 
 	for i := 0; i < tryCount; i++ {
-		output, err := o.RunCmd("curl -o /dev/null -w '%{http_code}' -X GET http://localhost:" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/honeybee-agent/readyz -H 'accept: application/json'")
+		output, err := o.RunCmdWithTimeout("curl -s --max-time 5 -o /dev/null -w '%{http_code}' -X GET http://localhost:"+
+			config.CMHoneybeeConfig.CMHoneybee.Agent.Port+"/honeybee-agent/readyz -H 'accept: application/json'",
+			10*time.Second)
 		if err != nil {
 			time.Sleep(1 * time.Second)
 			continue
@@ -361,15 +364,33 @@ func (o *SSH) SendGetRequestToAgent(connectionInfo model.ConnectionInfo, request
 	}
 	defer o.Close()
 
+	// Collection on a large source legitimately takes a while, so the bound is
+	// generous. curl gives up first; the SSH-side deadline is the backstop for a
+	// curl that itself never returns.
+	timeout := agentRequestTimeout()
+
 	// Quote the URL: requestPath may carry a query string (e.g. "?show_default_packages=false"),
 	// and the '?' is a glob metacharacter. On sources whose login shell is zsh (or bash with
 	// failglob), an unquoted URL expands to "no matches found" and curl never runs.
-	output, err := o.RunCmd("curl -s -X GET 'http://localhost:" + config.CMHoneybeeConfig.CMHoneybee.Agent.Port + "/honeybee-agent" + requestPath + "' -H 'accept: application/json'")
+	output, err := o.RunCmdWithTimeout("curl -s --max-time "+strconv.Itoa(int(timeout.Seconds()))+
+		" -X GET 'http://localhost:"+config.CMHoneybeeConfig.CMHoneybee.Agent.Port+"/honeybee-agent"+requestPath+
+		"' -H 'accept: application/json'", timeout+10*time.Second)
 	if err != nil {
 		return "", err
 	}
 
 	return output, nil
+}
+
+// agentRequestTimeout is how long one agent request may take, from
+// cm-honeybee.agent.request_timeout (seconds).
+func agentRequestTimeout() time.Duration {
+	seconds, err := strconv.Atoi(config.CMHoneybeeConfig.CMHoneybee.Agent.RequestTimeout)
+	if err != nil || seconds < 1 {
+		seconds = 600
+	}
+
+	return time.Duration(seconds) * time.Second
 }
 
 func (o *SSH) CheckKubernetes(connectionInfo model.ConnectionInfo) (bool, error) {
@@ -426,6 +447,17 @@ func (o *SSH) tryPrivateKey(methods []ssh.AuthMethod, connectionInfo model.Conne
 
 // RunCmd to SSH Server
 func (o *SSH) RunCmd(cmd string) (string, error) {
+	return o.runCmd(cmd, 0)
+}
+
+// RunCmdWithTimeout runs cmd and gives up after timeout, closing the session so
+// the caller is not blocked forever by a remote command that never returns.
+// A timeout of zero or less waits indefinitely, like RunCmd.
+func (o *SSH) RunCmdWithTimeout(cmd string, timeout time.Duration) (string, error) {
+	return o.runCmd(cmd, timeout)
+}
+
+func (o *SSH) runCmd(cmd string, timeout time.Duration) (string, error) {
 	session, err := o.Options.client.NewSession()
 	if err != nil {
 		return "", fmt.Errorf("failed to create session: %s", err)
@@ -438,14 +470,39 @@ func (o *SSH) RunCmd(cmd string) (string, error) {
 	session.Stdout = &output
 	session.Stderr = &stderr
 
-	if cmd != "" {
-		logger.Println(logger.DEBUG, false, "SSH: ("+o.ConnectionInfo.IPAddress+") Running command: "+cmd)
+	if cmd == "" {
+		return output.String(), nil
+	}
+
+	logger.Println(logger.DEBUG, false, "SSH: ("+o.ConnectionInfo.IPAddress+") Running command: "+cmd)
+
+	if timeout <= 0 {
 		if err := session.Run(cmd); err != nil {
 			return output.String() + "\n" + stderr.String(), err
 		}
+
+		return output.String(), nil
 	}
 
-	return output.String(), nil
+	done := make(chan error, 1)
+	go func() {
+		done <- session.Run(cmd)
+	}()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			return output.String() + "\n" + stderr.String(), err
+		}
+
+		return output.String(), nil
+	case <-time.After(timeout):
+		// Closing the session unblocks the goroutine's session.Run.
+		_ = session.Close()
+
+		return output.String() + "\n" + stderr.String(),
+			fmt.Errorf("command timed out after %s: %s", timeout, cmd)
+	}
 }
 
 func (o *SSH) Close() {

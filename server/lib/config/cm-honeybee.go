@@ -20,6 +20,10 @@ type cmHoneybeeConfig struct {
 		} `yaml:"listen"`
 		Agent struct {
 			Port string `yaml:"port"`
+			// Seconds to wait for one agent request made over SSH. Collection on
+			// a large source can take a minute or more, so this is generous; it
+			// exists to bound a hung agent, not to pace a slow one.
+			RequestTimeout string `yaml:"request_timeout"`
 		} `yaml:"agent"`
 		Spider struct {
 			Endpoint string `yaml:"endpoint"`
@@ -39,6 +43,10 @@ type cmHoneybeeConfig struct {
 var CMHoneybeeConfig cmHoneybeeConfig
 var cmHoneybeeConfigFile = "cm-honeybee.yaml"
 
+// defaultAgentRequestTimeout is the fallback for cm-honeybee.agent.request_timeout
+// (seconds) when neither the config file nor the environment sets it.
+const defaultAgentRequestTimeout = "600"
+
 func checkCMHoneybeeConfigFile() error {
 	if CMHoneybeeConfig.CMHoneybee.Listen.Port == "" {
 		return errors.New("config error: cm-honeybee.listen.port is empty")
@@ -56,6 +64,16 @@ func checkCMHoneybeeConfigFile() error {
 		return errors.New("config error: cm-honeybee.agent.port has invalid value")
 	}
 
+	// Absent from config files written before this option existed, so an empty
+	// value takes the default instead of refusing to start.
+	if CMHoneybeeConfig.CMHoneybee.Agent.RequestTimeout == "" {
+		CMHoneybeeConfig.CMHoneybee.Agent.RequestTimeout = defaultAgentRequestTimeout
+	}
+	timeout, err := strconv.Atoi(CMHoneybeeConfig.CMHoneybee.Agent.RequestTimeout)
+	if err != nil || timeout < 1 {
+		return errors.New("config error: cm-honeybee.agent.request_timeout has invalid value")
+	}
+
 	if CMHoneybeeConfig.CMHoneybee.Spider.Endpoint == "" {
 		return errors.New("config error: cm-honeybee.spider.endpoint is empty")
 	}
@@ -68,6 +86,7 @@ func getCMHoneybeeDefaultConfig() cmHoneybeeConfig {
 
 	defaultConfig.CMHoneybee.Listen.Port = "8081"
 	defaultConfig.CMHoneybee.Agent.Port = "8082"
+	defaultConfig.CMHoneybee.Agent.RequestTimeout = defaultAgentRequestTimeout
 	defaultConfig.CMHoneybee.Spider.Endpoint = "http://localhost:1024/spider"
 	defaultConfig.CMHoneybee.Spider.Username = "default"
 	defaultConfig.CMHoneybee.Spider.Password = "default"
@@ -107,6 +126,7 @@ func expandConfigEnvRefs() {
 	}{
 		{"cm-honeybee.listen.port", &CMHoneybeeConfig.CMHoneybee.Listen.Port, false},
 		{"cm-honeybee.agent.port", &CMHoneybeeConfig.CMHoneybee.Agent.Port, false},
+		{"cm-honeybee.agent.request_timeout", &CMHoneybeeConfig.CMHoneybee.Agent.RequestTimeout, true},
 		{"cm-honeybee.spider.endpoint", &CMHoneybeeConfig.CMHoneybee.Spider.Endpoint, false},
 		{"cm-honeybee.spider.username", &CMHoneybeeConfig.CMHoneybee.Spider.Username, false},
 		{"cm-honeybee.spider.password", &CMHoneybeeConfig.CMHoneybee.Spider.Password, false},
@@ -138,6 +158,7 @@ func applyConfigEnvOverrides() {
 	c := &CMHoneybeeConfig.CMHoneybee
 	set(&c.Listen.Port, "HONEYBEE_LISTEN_PORT")
 	set(&c.Agent.Port, "HONEYBEE_AGENT_PORT")
+	set(&c.Agent.RequestTimeout, "HONEYBEE_AGENT_REQUEST_TIMEOUT")
 	set(&c.Spider.Endpoint, "HONEYBEE_SPIDER_ENDPOINT")
 	set(&c.Spider.Username, "HONEYBEE_SPIDER_USERNAME")
 	set(&c.Spider.Password, "HONEYBEE_SPIDER_PASSWORD")
