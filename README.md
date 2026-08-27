@@ -242,13 +242,14 @@ curl http://localhost:8081/honeybee/readyz
 
 ### Agent
 
-Check if CM-Honeybee agent is running
+Check if CM-Honeybee agent is running. The agent listens on a kernel-chosen
+loopback port and publishes it, so read the port instead of assuming one.
 
 ```bash
-curl http://localhost:8081/honeybee/readyz
+curl http://127.0.0.1:$(cat /etc/cloud-migrator/cm-honeybee-agent/port)/honeybee-agent/readyz
 
 # Output if it's running successfully
-# {"message":"CM-Honeybee Agent API server is ready"}
+# {"message":"CM-Honeybee Agent is ready"}
 ```
 
 ## Check out all APIs

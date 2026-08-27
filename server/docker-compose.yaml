@@ -52,6 +52,5 @@ services:
       - HONEYBEE_VAULT_ADDR=http://openbao-honeybee:8200
     ports:
       - "8081:8081" # server
-      - "8082:8082" # agent proxy
     volumes:
       - ./data/cm-honeybee/:/root/.cm-honeybee/:rw

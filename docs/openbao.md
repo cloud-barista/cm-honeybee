@@ -13,7 +13,7 @@ OpenBao가 사용 가능해질 때까지 not-ready 상태로 대기합니다. **
 | 서비스 | 역할 |
 |--------|------|
 | `openbao-honeybee` | OpenBao 서버 — 영속 파일 스토리지, KV v2, 포트 8200. cm-honeybee 전용(공용 스택 OpenBao와 별개). |
-| `cm-honeybee` | honeybee 서버(8081/8082). OpenBao의 init/unseal/KV-enable을 HTTP API로 직접 수행하고 시크릿을 저장. |
+| `cm-honeybee` | honeybee 서버(8081). OpenBao의 init/unseal/KV-enable을 HTTP API로 직접 수행하고 시크릿을 저장. |
 
 서비스명이 `openbao`로 시작하는 것은 의도적입니다: cm-mayfly가 그 프리픽스로
 OpenBao 서비스를 분류·보존합니다(secrets 카테고리, `remove --clean-db` 시 데이터
