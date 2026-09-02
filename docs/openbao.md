@@ -84,10 +84,14 @@ honeybee 키로 RSA 암호화하여 저장합니다:
 
 ## 시크릿 경로 (KV v2, mount `secret/`)
 
-| 종류 | 경로 |
-|------|------|
-| SSH 접속 시크릿 (password / private key) | `secret/honeybee/ssh/{connectionId}` |
-| CSP credential | `secret/honeybee/csp/{sourceGroupId}` |
+| 종류 | 경로 | 키 |
+|------|------|-----|
+| 커넥션 시크릿 | `secret/honeybee/ssh/{connectionId}` | `password`, `private_key`, `kubeconfig` |
+| CSP credential | `secret/honeybee/csp/{sourceGroupId}` | CSP별 credential 키 |
+
+`kubeconfig`는 온프렘 k8s 커넥션(`type: onprem` + `resource_type: k8s`)의 자격 증명입니다.
+경로의 `ssh` 세그먼트는 kubeconfig 지원 이전에 쓰던 이름 그대로 두어, 그때 저장된 항목을 계속
+읽을 수 있게 했습니다.
 
 ## 설정
 

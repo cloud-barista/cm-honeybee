@@ -21,8 +21,9 @@
 - **SourceGroup** — 함께 마이그레이션할 소스 머신들의 논리적 그룹. 온프레미스 그룹과 `csp`(클라우드)
   그룹 등의 타입이 있습니다. SourceGroup은 등록된 *target* 정보(마이그레이션 후 cm-beetle이 돌려준
   결과)도 함께 가질 수 있습니다.
-- **ConnectionInfo** — SourceGroup에 속한 개별 소스 노드의 연결 정보(IP, SSH 포트, 사용자/자격 증명).
-  Server는 이를 사용해 호스트/에이전트에 접근하여 데이터를 수집합니다.
+- **ConnectionInfo** - SourceGroup에 속한 개별 소스의 연결 정보. SSH 대상이면 IP/SSH 포트/사용자·자격
+  증명을, 온프렘 k8s 클러스터면 `kubeconfig`를, CSP 리소스면 `resource_type`/`resource_id`를 담습니다.
+  Server는 이를 사용해 호스트/에이전트/cb-spider에 접근하여 데이터를 수집합니다.
 - **원시(Raw) vs 정제(Refined)** — `/infra`, `/software`, `/kubernetes`, `/helm`, `/data`는 수집된
   원시 데이터를 반환합니다. `/.../refined` 엔드포인트는 다운스트림에서 사용하는 정규화된 모델
   (`github.com/cloud-barista/cm-beetle/imdl/on-premise-model`)을 반환합니다.
@@ -57,6 +58,8 @@
 | PUT | `/source_group/{sgId}/connection_info/{connId}` | ConnectionInfo 수정. |
 | DELETE | `/source_group/{sgId}/connection_info/{connId}` | ConnectionInfo 삭제. |
 | PUT | `/source_group/{sgId}/connection_info/{connId}/refresh` | 단일 연결 상태 갱신. |
+| DELETE | `/source_group/{sgId}/connection_info/{connId}/agent` | **소스 호스트에 설치된 에이전트를 제거**(SSH로 uninstall 실행). |
+| DELETE | `/source_group/{sgId}/agent` | **그룹 내 모든 호스트의 에이전트를 제거.** |
 | GET | `/connection_info/{connId}` | sgId 없이 ConnectionInfo 직접 조회. |
 | PUT | `/connection_info/{connId}/refresh` | sgId 없이 단일 연결 상태 직접 갱신. |
 
@@ -113,36 +116,60 @@
 
 ---
 
-## SourceGroup 타입 (ssh / csp)
+## SourceGroup 타입 (onprem / csp)
 
 모든 SourceGroup은 `type` 필드로 수집 방식을 구분합니다.
 
 | type | 설명 | 연결 정보 입력 방식 |
 |------|------|---------------------|
-| `ssh` (기본값) | 온프레미스/단순 호스트. SSH로 직접 접속해 수집. | ConnectionInfo에 `ip_address`, `ssh_port`, `user`, `password`/`private_key` 입력. |
+| `onprem` | 온프레미스 소스. SSH로 직접 접속하거나, kubeconfig로 온프렘 k8s 클러스터를 등록. | ConnectionInfo의 `resource_type`에 따라 갈립니다(아래 표). |
 | `csp` | cb-spider 기반 클라우드 소스. credential/region으로 CSP에서 VM 메타데이터를 수집. VM이면 **SSH 접속 정보를 추가로 주면 게스트 내부까지 에이전트로 수집**. | SourceGroup에 `provider_name`/`region_name`/`credential[]`, ConnectionInfo에 `resource_type`/`resource_id` (+ 선택적으로 `zone`, `ip_address`/`ssh_port`/`user`/`password`\|`private_key`) 입력. |
 
-- **`type`을 생략하면 `ssh`로 동작**하며, CSP 관련 필드는 모두 optional입니다. 따라서 기존
-  (SSH 전용) 클라이언트 페이로드는 수정 없이 그대로 동작합니다(하위 호환).
+- **`onprem`, `ssh`, 빈 값은 모두 온프레미스로 같게 취급**됩니다(`server/common/csp.go`의
+  `IsOnpremType`). 기존에 `"type":"ssh"`로 등록했거나 `type`을 생략한 클라이언트 페이로드는
+  수정 없이 그대로 동작합니다(하위 호환).
+- 다만 **`type`을 생략하면 저장·응답되는 값은 `ssh`** 입니다(`controller/sourceGroup.go:120-121`).
+  `onprem`으로 저장하고 싶으면 명시적으로 보내야 합니다.
 
 - **CSP 타입은 두 가지 정보원을 함께 씁니다.**
-  - **CSP(cb-spider) 수집** — VM 스펙·이미지·리전·공인/사설 IP·디스크·태그·VPC/서브넷/SG 이름 등
+  - **CSP(cb-spider) 수집** - VM 스펙·이미지·리전·공인/사설 IP·디스크·태그·VPC/서브넷/SG 이름 등
     *클라우드 바깥에서 보이는* 정보. `csp` 섹션으로 노출됩니다.
-  - **에이전트(SSH) 수집** — OS·커널·CPU·메모리·디스크 사용량·소프트웨어 등 *게스트 내부* 정보.
+  - **에이전트(SSH) 수집** - OS·커널·CPU·메모리·디스크 사용량·소프트웨어 등 *게스트 내부* 정보.
     ConnectionInfo에 SSH 접속 정보를 준 경우에만 수집됩니다(에이전트를 설치해 조회).
   - 두 정보는 **분리 저장**되어 서로 덮어쓰지 않습니다(아래 "CSP 수집 동작 상세" 참고).
+
+### 온프레미스 ConnectionInfo의 `resource_type`
+
+온프레미스 그룹도 `resource_type`으로 연결의 성격을 나눕니다. 허용 값은 `vm`과 `k8s` 둘뿐이며,
+다른 값을 주면 `"resource_type for on-prem must be one of vm | k8s"` 오류로 거부됩니다.
+
+| resource_type | 필수 입력 | 수집 방식 |
+|---------------|-----------|-----------|
+| `vm` (기본값, 생략 가능) | `ip_address`, `ssh_port`, `user`, `password`\|`private_key` | SSH로 접속해 에이전트를 설치하고 조회. |
+| `k8s` | `kubeconfig` | **SSH 호스트가 없습니다.** 등록 시 kubeconfig의 구조만 검증하고 저장하며, 실제 수집은 다운스트림 마이그레이션 모듈이 이 kubeconfig로 수행합니다. |
+
+- `kubeconfig`는 등록·수정 시 **구조를 파싱해 검증**합니다. 비었거나 형식이 깨졌으면 등록이 거부됩니다.
+- 온프렘 `k8s` 커넥션의 상태 필드는 다음으로 고정됩니다. 에이전트 실패로 보이지만 **정상 상태**입니다.
+  - `connection_status`: `success`
+  - `agent_status`: `failed`, `agent_failed_message`:
+    `"agent-based collection is not applicable to on-prem k8s connections"`
+- 따라서 온프렘 `k8s` 커넥션에는 `POST /import/*`(에이전트 경로)를 호출하지 마세요. SSH 대상이 없어
+  실패합니다.
 
 ---
 
 ## 비밀 정보 저장 (OpenBao 필수)
 
-SSH 접속 시크릿(비밀번호/개인키)과 CSP credential은 **OpenBao**(KV v2)에만 저장됩니다. SQLite에는
-비밀 정보를 저장하지 않습니다.
+커넥션 시크릿(비밀번호/개인키/kubeconfig)과 CSP credential은 **OpenBao**(KV v2)에만 저장됩니다.
+SQLite에는 비밀 정보를 저장하지 않습니다.
 
 | 종류 | OpenBao 경로 (KV v2, mount `secret`) |
 |------|--------------|
 | CSP credential | `secret/honeybee/csp/{sgId}` |
-| SSH 시크릿(password/private_key) | `secret/honeybee/ssh/{connId}` |
+| 커넥션 시크릿(password/private_key/kubeconfig) | `secret/honeybee/ssh/{connId}` |
+
+> 경로의 `ssh` 세그먼트는 kubeconfig 지원 이전에 쓰던 이름 그대로입니다. 기존에 저장된 항목을
+> 계속 읽을 수 있도록 바꾸지 않았습니다.
 
 - **자립형(self-managed)**: cm-honeybee가 전용 OpenBao의 init/unseal/KV-enable을 **스스로 수행**하고,
   unseal key와 root token은 `honeybee.key`로 **RSA 암호화해 DB(`open_bao_inits`)에 저장**합니다.
@@ -278,9 +305,22 @@ honeybee는 조회 때마다 per-call 유니크 이름으로 **credential → re
 - **Azure 주의:** cb-spider Azure 드라이버는 `RegionInfo.Region`을 **리소스 그룹**으로 사용합니다.
   따라서 Azure에서는 `region_name`에 **VM이 속한 리소스 그룹 이름**을 넣어야 합니다.
 
-### 2) CSP에서 수집하는 것 (→ `csp` 섹션)
+### 2) CSP에서 수집하는 것
 
-VM 리소스는 `GET /cspvm/{id}`로 조회합니다. cb-spider는 관리하지 않는(기존) VM도 CSP에 직접 질의해
+**수집·저장은 `POST /import/infra` 하나가 담당합니다.** 리소스 종류에 관계없이 이 엔드포인트를
+부르며, `resource_type`에 따라 저장 위치와 조회 경로가 갈립니다.
+
+| resource_type | cb-spider 호출 | 저장 위치 | 조회 경로 |
+|---------------|----------------|-----------|-----------|
+| `vm` | `GET /cspvm/{id}` | `SavedInfraInfo.csp_data` | `GET /.../infra`의 `csp` 섹션 |
+| `k8s` | `GET /cluster/{id}` | `SavedKubernetesInfo` | `GET /.../kubernetes` |
+| `object_storage` | `GET /s3/{bucket}?location` | `SavedDataInfo` | `GET /.../data` |
+
+> **주의:** CSP 소스의 k8s·오브젝트 스토리지 정보를 채우려면 `POST /import/kubernetes`나
+> `POST /import/data`가 아니라 **`POST /import/infra`** 를 불러야 합니다. `import/kubernetes`와
+> `import/data`는 게스트 안의 에이전트에 SSH로 붙는 경로라 CSP 리소스에는 해당하지 않습니다.
+
+아래는 `vm`의 경우입니다. VM 리소스는 `GET /cspvm/{id}`로 조회합니다. cb-spider는 관리하지 않는(기존) VM도 CSP에 직접 질의해
 정보를 돌려줍니다. 전체 ARM ID는 경로 인코딩 문제로 깨지므로 honeybee는 **VM 이름(리소스 ID의 마지막
 세그먼트)** 을 넘깁니다. 이 **수집·저장은 `POST /import/infra`에서** 이뤄지며(등록/`refresh`는
 연결 상태만 확인하고 저장하지 않음), 결과는 `SavedInfraInfo.csp_data`에 저장되어 `GET /.../infra`의
@@ -333,6 +373,9 @@ SSH로 접속해 **에이전트(`cm-honeybee-agent`)를 설치·기동**하고, 
 | `agent_status` | **실제 SSH 접속 + 에이전트 설치 결과.** SSH 정보가 없으면 성공으로 위장하지 않고 `"no SSH access configured..."`로 실패 표기. |
 
 ### 5) 저장 분리 (덮어쓰기 없음)
+
+아래는 `resource_type: vm`인 CSP 소스 얘기입니다. `k8s`/`object_storage`는 `SavedInfraInfo`가 아니라
+각각 `SavedKubernetesInfo`/`SavedDataInfo`에 통째로 쓰이므로 칼럼이 갈리지 않습니다(위 2) 표 참고).
 
 `SavedInfraInfo`는 한 레코드에 두 칼럼을 둡니다.
 
@@ -447,7 +490,17 @@ Body: `model.RegisterTargetInfoReq` — cm-beetle을 통한 인프라 마이그�
 ## ConnectionInfo
 
 ### `POST /source_group/{sgId}/connection_info` — 생성
-Body: `model.CreateConnectionInfoReq` (IP, SSH 포트, 사용자, 자격 증명 등).
+Body: `model.CreateConnectionInfoReq`. 필수 필드는 그룹의 `type`과 이 요청의 `resource_type`에 따라
+갈립니다 - [SourceGroup 타입](#sourcegroup-타입-onprem--csp) 참고.
+
+| 그룹 type | resource_type | 필수 필드 |
+|-----------|---------------|-----------|
+| `onprem` | `vm`(생략 가능) | `name`, `ip_address`, `ssh_port`, `user`, `password`\|`private_key` |
+| `onprem` | `k8s` | `name`, `kubeconfig` |
+| `csp` | `vm` \| `k8s` \| `object_storage` | `name`, `resource_type`, `resource_id` (+ 선택 `zone`, SSH 접속 정보) |
+
+응답의 `user`/`password`/`private_key`/`kubeconfig`는 `honeybee.pub`으로 **RSA 암호화된 값**입니다
+(요청마다 값이 달라집니다). `ssh_port`는 암호화하지 않고 그대로 돌려줍니다.
 
 ### `GET /source_group/{sgId}/connection_info` — 목록
 Query 필터: `page`, `row`, `name`, `description`, `ip_address`, `ssh_port`, `user`.
@@ -462,6 +515,15 @@ Body: `model.CreateConnectionInfoReq`.
 
 ### `PUT /source_group/{sgId}/connection_info/{connId}/refresh` — 상태 갱신
 `PUT /connection_info/{connId}/refresh`로 그룹 없이도 가능.
+**상태만 갱신하고 수집 데이터는 저장하지 않습니다.** 수집·저장은 `POST /import/*`가 합니다.
+
+### `DELETE /source_group/{sgId}/connection_info/{connId}/agent` - 에이전트 제거
+소스 호스트에 SSH로 접속해 `uninstallAgent.sh`를 실행합니다. systemd 서비스를 중지·비활성화하고
+유닛 파일, `/usr/bin/cm-honeybee-agent`, `/etc/cloud-migrator/cm-honeybee-agent`를 지웁니다.
+ConnectionInfo 자체는 남습니다.
+
+### `DELETE /source_group/{sgId}/agent` - 그룹 에이전트 일괄 제거
+그룹에 속한 모든 호스트에서 위 작업을 수행합니다.
 
 ---
 

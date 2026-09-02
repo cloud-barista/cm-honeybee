@@ -79,10 +79,16 @@ Or, you can run it within Docker by this command.
 Check your source group ID (sgID) after register.
 
 A source group has a `type` field:
-- `ssh` (default) — collects from on-premise hosts via the agent over SSH.
-- `csp` — collects from cloud sources (VM / Kubernetes / Object Storage) through cb-spider.
+- `onprem` - on-premise sources. A connection is either a host reached over SSH
+  (`resource_type: vm`) or a Kubernetes cluster registered by its kubeconfig
+  (`resource_type: k8s`).
+- `csp` - collects from cloud sources (VM / Kubernetes / Object Storage) through cb-spider.
 
-#### 2.1 SSH source group
+`onprem`, `ssh` and an omitted `type` are all treated as on-premise, so payloads
+written against earlier versions keep working unchanged. An omitted `type` is
+still stored and returned as `ssh`; send `onprem` explicitly to store that value.
+
+#### 2.1 On-premise source group
 - Request
 ```shell
 curl -X 'POST' \
@@ -146,15 +152,15 @@ behalf and stores the spider names back on the source group.
 Register the connection information to the source group. The body shape
 depends on the group's `type`.
 
-#### 3.1 SSH connection info
-Agent will be installed automatically.
+#### 3.1 On-premise SSH connection info
+`resource_type` defaults to `vm` and may be omitted. Agent will be installed automatically.
 - Request
 ```shell
 curl -X 'POST' \
  'http://127.0.0.1:8081/honeybee/source_group/b9e86d53-9fbe-4a96-9e06-627f77fdd6b7/connection_info' \
  -H 'accept: application/json' \
  -H 'Content-Type: application/json' \
- -d '{ "description": "NFS Server", "ip_address": "172.16.0.123", "name": "cm-nfs", "password": "some_pass", "private_key": "-----BEGIN RSA PRIVATE KEY-----\n******\n-----END RSA PRIVATE KEY-----", "ssh_port": 22, "user": "ubuntu" }'
+ -d '{ "description": "NFS Server", "ip_address": "192.0.2.123", "name": "cm-nfs", "password": "$SSH_PASSWORD", "private_key": "$SSH_PRIVATE_KEY", "ssh_port": "22", "user": "ubuntu" }'
 ```
 - Reply
 ```json
@@ -163,8 +169,8 @@ curl -X 'POST' \
   "name": "cm-nfs",
   "description": "NFS Server",
   "source_group_id": "b9e86d53-9fbe-4a96-9e06-627f77fdd6b7",
-  "ip_address": "172.16.0.123",
-  "ssh_port": "XXXXXXXX...=",
+  "ip_address": "192.0.2.123",
+  "ssh_port": "22",
   "user": "XXXXXXXX...=",
   "password": "XXXXXXXX...=",
   "private_key": "XXXXXXXX...=",
@@ -176,7 +182,32 @@ curl -X 'POST' \
 }
 ```
 
-#### 3.2 CSP connection info
+#### 3.2 On-premise Kubernetes connection info
+Register an on-premise cluster by its kubeconfig instead of an SSH host. The
+kubeconfig is parsed and rejected if it is empty or malformed.
+```shell
+curl -X 'POST' \
+ 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/connection_info' \
+ -H 'Content-Type: application/json' \
+ -d '{ "name": "onprem-k8s", "resource_type": "k8s", "kubeconfig": "apiVersion: v1\nkind: Config\n..." }'
+```
+There is no SSH host to reach, so the agent is not installed and the reply
+reports that explicitly:
+```json
+{
+  "resource_type": "k8s",
+  "kubeconfig": "XXXXXXXX...=",
+  "connection_status": "success",
+  "connection_failed_message": "",
+  "agent_status": "failed",
+  "agent_failed_message": "agent-based collection is not applicable to on-prem k8s connections"
+}
+```
+Do not call `POST .../import/*` on such a connection - those endpoints collect
+through the in-guest agent over SSH. The stored kubeconfig is consumed by the
+downstream migration modules.
+
+#### 3.3 CSP connection info
 For CSP groups, each `connection_info` points at one cloud resource by id.
 You can list available resources first via the discovery endpoint:
 ```shell
@@ -191,9 +222,20 @@ curl -X 'POST' \
  -H 'Content-Type: application/json' \
  -d '{ "name": "vm-app01", "resource_type": "vm", "resource_id": "i-0abc..." }'
 ```
-`resource_type` is one of `vm`, `k8s`, or `object_storage`. Refresh
-(`PUT .../refresh`) populates the relevant `Saved*Info` table by calling
-cb-spider through the connection bound to the source group.
+`resource_type` is one of `vm`, `k8s`, or `object_storage`.
+
+`PUT .../refresh` only re-checks the connection status; it stores nothing.
+Collection is done by `POST .../import/infra`, which queries cb-spider and
+writes to a table chosen by `resource_type`:
+
+| `resource_type` | Stored in | Read back with |
+|-----------------|-----------|----------------|
+| `vm` | `SavedInfraInfo.csp_data` | `GET .../infra` (the `csp` section) |
+| `k8s` | `SavedKubernetesInfo` | `GET .../kubernetes` |
+| `object_storage` | `SavedDataInfo` | `GET .../data` |
+
+Note that `import/kubernetes` and `import/data` are the agent-over-SSH paths and
+do not apply to CSP resources - use `import/infra` for all three.
 
 ### 4. Save current source information.
 Below example is saving infrastructure information of all connection in the source group.
@@ -258,7 +300,7 @@ curl http://127.0.0.1:$(cat /etc/cloud-migrator/cm-honeybee-agent/port)/honeybee
 
 
 ## For Docker users
-There are default private key and public key used for encrypt connection info's secret values (ssh port, user, password, private key) from the honeybee server.
+There are default private key and public key used for encrypt connection info's secret values (user, password, private key, kubeconfig) from the honeybee server.
 (Located in server/_default_key)
 For security, run these commands to generate new key files.
 
