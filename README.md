@@ -22,7 +22,7 @@ Collecting and Aggregating Information From Source Computing framework (codename
 * Tested operating systems (OSs):
   * Ubuntu 24.04, Ubuntu 22.04, Ubuntu 18.04, Rocky Linux 9, Windows 11
 * Language:
-  * Go: 1.25.0
+  * Go: 1.26.2
 
 ## How to run
 
@@ -124,11 +124,15 @@ registered as individual `connection_info` entries.
 
 Discover the credential keys required by the target CSP first:
 ```shell
-curl 'http://127.0.0.1:8081/honeybee/csp'              # supported CSP names
+curl 'http://127.0.0.1:8081/honeybee/csp'              # supported CSP names, lowercase
 curl 'http://127.0.0.1:8081/honeybee/csp/aws'          # case-insensitive
 ```
-The response includes `credential_keys` (e.g. `["ClientId", "ClientSecret"]` for AWS)
-and the available `regions`.
+The response includes `credential_keys` (e.g. `["aws_access_key_id",
+"aws_secret_access_key"]` for AWS, queried live from cb-spider) and
+`region_keys`, which is the shape of a region for that CSP (e.g.
+`["Region", "Zone"]`) rather than a list of regions. The actual regions need a
+stored credential - get them from `GET /source_group/{sgID}/region` after the
+group is created.
 
 Then create the group:
 ```shell
@@ -141,13 +145,15 @@ curl -X 'POST' \
     "provider_name": "AWS",
     "region_name": "ap-northeast-2",
     "credential": [
-      {"key": "ClientId",     "value": "AKIA..."},
-      {"key": "ClientSecret", "value": "..."}
+      {"key": "aws_access_key_id",     "value": "$AWS_ACCESS_KEY_ID"},
+      {"key": "aws_secret_access_key", "value": "$AWS_SECRET_ACCESS_KEY"}
     ]
   }'
 ```
-honeybee registers the credential and connection config in cb-spider on your
-behalf and stores the spider names back on the source group.
+honeybee stores the credential in OpenBao and keeps it there. cb-spider never
+holds it: for each call honeybee registers a credential, region and connection
+config under a per-call unique name, uses it, then tears all three down in
+reverse order. No spider connection name is kept on the source group.
 ### 3. Register connection info
 Register the connection information to the source group. The body shape
 depends on the group's `type`.

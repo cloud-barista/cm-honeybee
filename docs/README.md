@@ -58,5 +58,5 @@ curl http://localhost:8081/honeybee/readyz
 ```
 
 "소스 등록 → 수집 → 정제 → cm-beetle 전달"의 전체 흐름은 [Server API 문서](./server-api.md)의
-전형적인 워크플로우 절(SSH 타입 / CSP 타입)을 참고하세요. v0.6.0에서는 **SSH 타입 등록을 권장**하며,
-CSP(cb-spider) 타입은 실험적/예정 기능입니다.
+전형적인 워크플로우 절(온프레미스 SSH 타입 / CSP 타입)을 참고하세요. 현재는 **온프레미스 SSH 타입
+등록을 권장**하며, CSP(cb-spider) 타입은 실험적/예정 기능입니다.

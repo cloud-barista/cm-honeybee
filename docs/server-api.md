@@ -188,7 +188,7 @@ SQLite에는 비밀 정보를 저장하지 않습니다.
 
 ---
 
-## 전형적인 워크플로우 (SSH 타입 — v0.6.0 권장)
+## 전형적인 워크플로우 (온프레미스 SSH 타입, 권장)
 
 ```bash
 BASE=http://localhost:8081/honeybee
@@ -235,14 +235,15 @@ BASE=http://localhost:8081/honeybee
 
 # 1. 지원 CSP 목록 조회
 curl -s $BASE/csp | jq
-#   → { "csp": ["AWS", "GCP", "AZURE", ...] }
+#   → { "csp": ["aws", "gcp", "azure", ...] }   이름은 소문자로 내려옵니다
 
-# 2. 선택한 CSP의 credential 키 / 리전 메타데이터 조회 (CSP마다 다름)
+# 2. 선택한 CSP의 credential 키 / 리전 키 조회 (CSP마다 다름)
 curl -s $BASE/csp/azure | jq
-#   → { "name":"AZURE",
-#       "credential_keys":["ClientId","ClientSecret","TenantId","SubscriptionId"],
-#       "regions":[...], ... }
-#   클라이언트는 credential_keys로 입력 폼을, regions로 리전 드롭다운을 동적 렌더링.
+#   → { "name":"azure",
+#       "credential_keys":["clientId","clientSecret","tenantId","subscriptionId"],
+#       "region_keys":["Region","Zone"], ... }
+#   클라이언트는 credential_keys로 입력 폼을 동적 렌더링.
+#   region_keys는 "리전을 어떤 키로 표현하는가"일 뿐 리전 목록이 아닙니다(아래 3-1 참고).
 
 # 3. CSP 타입 SourceGroup 등록 + VM ConnectionInfo (한 번에)
 #    connection_info에 resource_type/resource_id(=CSP 리소스 식별) + 선택적 SSH 접속 정보.
@@ -254,10 +255,10 @@ SG=$(curl -s -X POST $BASE/source_group \
         "provider_name":"azure",
         "region_name":"koreacentral",
         "credential":[
-          {"key":"ClientId","value":"..."},
-          {"key":"ClientSecret","value":"..."},
-          {"key":"TenantId","value":"..."},
-          {"key":"SubscriptionId","value":"..."}
+          {"key":"clientId","value":"$AZURE_CLIENT_ID"},
+          {"key":"clientSecret","value":"$AZURE_CLIENT_SECRET"},
+          {"key":"tenantId","value":"$AZURE_TENANT_ID"},
+          {"key":"subscriptionId","value":"$AZURE_SUBSCRIPTION_ID"}
         ],
         "connection_info":[{
           "name":"vm-1",
@@ -328,7 +329,7 @@ honeybee는 조회 때마다 per-call 유니크 이름으로 **credential → re
 
 ```jsonc
 "csp": {
-  "provider": "AZURE", "region": "koreacentral", "zone": "1",
+  "provider": "azure", "region": "koreacentral", "zone": "1",
   "name": "vm-1", "id": "/subscriptions/.../virtualMachines/vm-1",
   "vm_spec": "Standard_D2s_v3", "image": "...", "platform": "LINUX/UNIX",
   "public_ip": "40.82.136.176", "private_ip": "10.0.0.4",
@@ -435,7 +436,7 @@ SSH 정보를 함께 준 CSP(Azure) VM 소스의 실제 응답 예시입니다. 
 
       // ── cb-spider 수집: 클라우드 관점 (별도 저장, 덮어쓰이지 않음) ──
       "csp": {
-        "provider": "AZURE", "region": "koreacentral", "zone": "1",
+        "provider": "azure", "region": "koreacentral", "zone": "1",
         "name": "ish-test",
         "id": "/subscriptions/…/resourceGroups/koreacentral/providers/Microsoft.Compute/virtualMachines/ish-test",
         "vm_spec": "Standard_D2s_v3", "image": "canonical:ubuntu-24_04-lts:ubuntu-pro:latest",
@@ -546,11 +547,16 @@ curl http://localhost:8081/honeybee/csp
 
 ```bash
 curl http://localhost:8081/honeybee/csp/azure
-#  { "name":"AZURE",
-#    "credential_keys":["ClientId","ClientSecret","TenantId","SubscriptionId"],
-#    "credentials":[ {"key":"ClientId","example":"<AZURE_CLIENT_ID>","description":"Azure Client ID (clientId)"}, ... ],
-#    "regions":["Region","Zone"], ... }
+#  { "name":"azure",
+#    "credential_keys":["clientId","clientSecret","tenantId","subscriptionId"],
+#    "credentials":[ {"key":"clientId","example":"<AZURE_CLIENT_ID>","description":"Azure Client ID, a GUID"}, ... ],
+#    "region_keys":["Region","Zone"], "default_region":"..." }
 ```
+
+> `credential_keys`는 cb-spider의 `credentialcsp` 값을 그대로 내보냅니다. 따라서 실제 키 이름과
+> 대소문자는 연결된 cb-spider 버전을 따릅니다. `credentials[]`의 예시·설명은 honeybee가 키 이름을
+> **정확히 일치**시켜 붙이므로(`controller/csp.go`의 `credentialExamples`), 이름이 어긋나면
+> `example`/`description`이 빈 값으로 내려옵니다.
 
 > `region_keys` 필드는 리전 "키 구조"(`Region`/`Zone`)일 뿐 실제 리전 목록이 아닙니다.
 > 실제 리전 목록은 credential이 필요하므로 아래 `GET /source_group/{sgId}/region`을 쓰세요.
@@ -562,7 +568,7 @@ curl http://localhost:8081/honeybee/csp/azure
 
 ```bash
 curl http://localhost:8081/honeybee/source_group/$SG/region
-#  { "provider":"AZURE",
+#  { "provider":"azure",
 #    "regions":[ {"name":"koreacentral","display_name":"...","zones":["1","2","3"]}, ... ] }
 ```
 
