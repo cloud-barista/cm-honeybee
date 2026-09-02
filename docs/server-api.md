@@ -665,7 +665,10 @@ K8s 소스 그룹의 정제 인프라 응답은 대략 다음과 같습니다.
 
 | 쿼리 파라미터 | 기본값 | 설명 |
 |---------------|--------|------|
-| `types` | `cpus,cpum` | 콤마로 구분된 벤치마크 타입: `cpus, cpum, memR, memW, fioR, fioW, dbR, dbW`. |
+| `types` | `cpus,cpum,memR,memW,fioR,fioW` | 콤마로 구분된 벤치마크 타입: `cpus, cpum, memR, memW, fioR, fioW, dbR, dbW`. |
+
+> 생략하면 `dbR`/`dbW`를 뺀 6종이 전부 돕니다(`server/lib/ssh/ssh.go`의 `getBenchmarkTypes`).
+> Swagger 어노테이션에는 `default(cpus,cpum)`으로 적혀 있으나 실제 동작은 위와 같습니다.
 
 ```bash
 curl -X POST "http://localhost:8081/honeybee/bench/$CONN/run?types=cpus,memR,fioW"
