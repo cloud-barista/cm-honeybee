@@ -127,12 +127,15 @@ Discover the credential keys required by the target CSP first:
 curl 'http://127.0.0.1:8081/honeybee/csp'              # supported CSP names, lowercase
 curl 'http://127.0.0.1:8081/honeybee/csp/aws'          # case-insensitive
 ```
-The response includes `credential_keys` (e.g. `["aws_access_key_id",
-"aws_secret_access_key"]` for AWS, queried live from cb-spider) and
-`region_keys`, which is the shape of a region for that CSP (e.g.
-`["Region", "Zone"]`) rather than a list of regions. The actual regions need a
-stored credential - get them from `GET /source_group/{sgID}/region` after the
-group is created.
+The response includes `credential_keys`, queried live from cb-spider. Their
+spelling differs per CSP: AWS uses lowercase snake_case
+(`aws_access_key_id`, `aws_secret_access_key`) while Azure uses camelCase
+(`clientId`, `clientSecret`, `tenantId`, `subscriptionId`).
+
+It also includes `region_keys`, which is the shape of a region for that CSP
+(e.g. `["Region", "Zone"]`) rather than a list of regions, and `default_region`.
+The actual regions need a stored credential - get them from
+`GET /source_group/{sgID}/region` after the group is created.
 
 Then create the group:
 ```shell

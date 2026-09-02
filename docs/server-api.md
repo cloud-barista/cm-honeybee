@@ -241,8 +241,9 @@ curl -s $BASE/csp | jq
 curl -s $BASE/csp/azure | jq
 #   → { "name":"azure",
 #       "credential_keys":["clientId","clientSecret","tenantId","subscriptionId"],
-#       "region_keys":["Region","Zone"], ... }
+#       "region_keys":["Region","Zone"], "default_region":"koreacentral" }
 #   클라이언트는 credential_keys로 입력 폼을 동적 렌더링.
+#   키 표기는 CSP마다 다릅니다 (AWS=aws_access_key_id 소문자, Azure=clientId camelCase).
 #   region_keys는 "리전을 어떤 키로 표현하는가"일 뿐 리전 목록이 아닙니다(아래 3-1 참고).
 
 # 3. CSP 타입 SourceGroup 등록 + VM ConnectionInfo (한 번에)
@@ -550,13 +551,17 @@ curl http://localhost:8081/honeybee/csp/azure
 #  { "name":"azure",
 #    "credential_keys":["clientId","clientSecret","tenantId","subscriptionId"],
 #    "credentials":[ {"key":"clientId","example":"<AZURE_CLIENT_ID>","description":"Azure Client ID, a GUID"}, ... ],
-#    "region_keys":["Region","Zone"], "default_region":"..." }
+#    "region_keys":["Region","Zone"], "default_region":"koreacentral" }
 ```
 
-> `credential_keys`는 cb-spider의 `credentialcsp` 값을 그대로 내보냅니다. 따라서 실제 키 이름과
-> 대소문자는 연결된 cb-spider 버전을 따릅니다. `credentials[]`의 예시·설명은 honeybee가 키 이름을
-> **정확히 일치**시켜 붙이므로(`controller/csp.go`의 `credentialExamples`), 이름이 어긋나면
-> `example`/`description`이 빈 값으로 내려옵니다.
+`default_region`은 cb-spider가 그 CSP에 대해 기본으로 질의하는 리전입니다(비어 있으면 생략).
+
+> **`credential_keys`의 표기는 CSP마다 다릅니다.** 하나로 뭉뚱그리지 마세요.
+> AWS는 snake_case 소문자(`aws_access_key_id`), Azure는 camelCase(`clientId`)입니다.
+> 이 값은 cb-spider의 `credentialcsp`를 그대로 내보내므로 연결된 cb-spider를 따릅니다.
+> `credentials[]`의 예시·설명은 honeybee가 키 이름을 **정확히 일치**시켜 붙이므로
+> (`controller/csp.go`의 `credentialExamples`), 이름이 어긋나면 `example`/`description`이
+> 빈 값으로 내려옵니다.
 
 > `region_keys` 필드는 리전 "키 구조"(`Region`/`Zone`)일 뿐 실제 리전 목록이 아닙니다.
 > 실제 리전 목록은 credential이 필요하므로 아래 `GET /source_group/{sgId}/region`을 쓰세요.
