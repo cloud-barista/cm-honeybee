@@ -4747,6 +4747,113 @@
                 }
             }
         },
+        "infra.AMD": {
+            "type": "object",
+            "properties": {
+                "device_attribute": {
+                    "$ref": "#/definitions/infra.AMDDeviceAttribute"
+                },
+                "performance": {
+                    "$ref": "#/definitions/infra.AMDPerformance"
+                }
+            }
+        },
+        "infra.AMDDeviceAttribute": {
+            "type": "object",
+            "properties": {
+                "card": {
+                    "type": "string"
+                },
+                "compute_partition": {
+                    "type": "string"
+                },
+                "device_id": {
+                    "type": "string"
+                },
+                "driver_version": {
+                    "type": "string"
+                },
+                "gpu_id": {
+                    "type": "string"
+                },
+                "gpu_uuid": {
+                    "type": "string"
+                },
+                "memory_partition": {
+                    "type": "string"
+                },
+                "pci_bus_id": {
+                    "type": "string"
+                },
+                "product_name": {
+                    "type": "string"
+                },
+                "serial_number": {
+                    "type": "string"
+                },
+                "unique_id": {
+                    "type": "string"
+                },
+                "vbios_version": {
+                    "type": "string"
+                },
+                "vendor_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.AMDPerformance": {
+            "type": "object",
+            "properties": {
+                "clock_memory": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "clock_sm": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "fan_speed": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "gpu_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "memory_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "performance_level": {
+                    "type": "string"
+                },
+                "power_cap": {
+                    "description": "watt",
+                    "type": "number"
+                },
+                "power_draw": {
+                    "description": "watt",
+                    "type": "number"
+                },
+                "temperature_gpu": {
+                    "description": "celsius",
+                    "type": "number"
+                },
+                "temperature_memory": {
+                    "description": "celsius",
+                    "type": "number"
+                },
+                "vram_memory_total": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "vram_memory_used": {
+                    "description": "MiB",
+                    "type": "integer"
+                }
+            }
+        },
         "infra.BucketEncryption": {
             "type": "object",
             "properties": {
@@ -5006,6 +5113,9 @@
         "infra.DRM": {
             "type": "object",
             "properties": {
+                "card": {
+                    "type": "string"
+                },
                 "driver_date": {
                     "type": "string"
                 },
@@ -5016,6 +5126,9 @@
                     "type": "string"
                 },
                 "driver_version": {
+                    "type": "string"
+                },
+                "pci_bus_id": {
                     "type": "string"
                 }
             }
@@ -5053,6 +5166,12 @@
         "infra.GPU": {
             "type": "object",
             "properties": {
+                "amd": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.AMD"
+                    }
+                },
                 "drm": {
                     "type": "array",
                     "items": {
@@ -5070,6 +5189,10 @@
                     "items": {
                         "$ref": "#/definitions/infra.NVIDIA"
                     }
+                },
+                "nvidia_smi_schema": {
+                    "description": "NVIDIASMISchema is the nvidia-smi XML schema version the output was\nparsed with (v11, v12, v13 ...). Empty when nvidia-smi did not run.",
+                    "type": "string"
                 }
             }
         },
@@ -5448,14 +5571,32 @@
                 "device_attribute": {
                     "$ref": "#/definitions/infra.NVIDIADeviceAttribute"
                 },
+                "ecc": {
+                    "$ref": "#/definitions/infra.NVIDIAECC"
+                },
+                "mig_devices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.NVIDIAMIGDevice"
+                    }
+                },
                 "performance": {
                     "$ref": "#/definitions/infra.NVIDIAPerformance"
+                },
+                "processes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/infra.NVIDIAProcess"
+                    }
                 }
             }
         },
         "infra.NVIDIADeviceAttribute": {
             "type": "object",
             "properties": {
+                "compute_mode": {
+                    "type": "string"
+                },
                 "cuda_version": {
                     "type": "string"
                 },
@@ -5463,6 +5604,27 @@
                     "type": "string"
                 },
                 "gpu_uuid": {
+                    "type": "string"
+                },
+                "host_vgpu_mode": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "mig_mode": {
+                    "type": "string"
+                },
+                "minor_number": {
+                    "type": "string"
+                },
+                "nvml_version": {
+                    "type": "string"
+                },
+                "pci_bus_id": {
+                    "type": "string"
+                },
+                "persistence_mode": {
                     "type": "string"
                 },
                 "product_architecture": {
@@ -5473,14 +5635,96 @@
                 },
                 "product_name": {
                     "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                },
+                "vbios_version": {
+                    "type": "string"
+                },
+                "vgpu_license_status": {
+                    "type": "string"
+                },
+                "virtualization_mode": {
+                    "type": "string"
+                }
+            }
+        },
+        "infra.NVIDIAECC": {
+            "type": "object",
+            "properties": {
+                "aggregate": {
+                    "$ref": "#/definitions/infra.NVIDIAECCErrors"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "volatile": {
+                    "$ref": "#/definitions/infra.NVIDIAECCErrors"
+                }
+            }
+        },
+        "infra.NVIDIAECCErrors": {
+            "type": "object",
+            "properties": {
+                "double_bit": {
+                    "type": "integer"
+                },
+                "dram_correctable": {
+                    "type": "integer"
+                },
+                "dram_uncorrectable": {
+                    "type": "integer"
+                },
+                "single_bit": {
+                    "type": "integer"
+                },
+                "sram_correctable": {
+                    "type": "integer"
+                },
+                "sram_uncorrectable": {
+                    "type": "integer"
+                }
+            }
+        },
+        "infra.NVIDIAMIGDevice": {
+            "type": "object",
+            "properties": {
+                "compute_instance_id": {
+                    "type": "string"
+                },
+                "fb_memory_free": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "fb_memory_total": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "fb_memory_used": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "gpu_instance_id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
                 }
             }
         },
         "infra.NVIDIAPerformance": {
             "type": "object",
             "properties": {
+                "bar1_memory_free": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
                 "bar1_memory_total": {
-                    "description": "mb",
+                    "description": "MiB",
                     "type": "integer"
                 },
                 "bar1_memory_usage": {
@@ -5488,11 +5732,51 @@
                     "type": "integer"
                 },
                 "bar1_memory_used": {
-                    "description": "mb",
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "clock_graphics": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "clock_memory": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "clock_sm": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "clock_video": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "clocks_event_reasons": {
+                    "description": "ClocksEventReasons is the NVML clocks-event (throttle) reason bitmask,\nfolded from the per-reason Active/Not Active strings. Zero means \"reported,\nnothing active\"; nil means nvidia-smi reported no reason at all.",
+                    "type": "integer"
+                },
+                "decoder_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "encoder_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "fan_speed": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "fb_memory_free": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "fb_memory_reserved": {
+                    "description": "MiB",
                     "type": "integer"
                 },
                 "fb_memory_total": {
-                    "description": "mb",
+                    "description": "MiB",
                     "type": "integer"
                 },
                 "fb_memory_usage": {
@@ -5500,11 +5784,77 @@
                     "type": "integer"
                 },
                 "fb_memory_used": {
-                    "description": "mb",
+                    "description": "MiB",
                     "type": "integer"
                 },
                 "gpu_usage": {
                     "description": "percent",
+                    "type": "integer"
+                },
+                "max_clock_graphics": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "max_clock_memory": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "max_clock_sm": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "memory_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "pcie_link_gen_current": {
+                    "type": "integer"
+                },
+                "pcie_link_width_current": {
+                    "description": "lanes",
+                    "type": "integer"
+                },
+                "pcie_replay_counter": {
+                    "type": "integer"
+                },
+                "performance_state": {
+                    "type": "string"
+                },
+                "power_draw": {
+                    "description": "watt",
+                    "type": "number"
+                },
+                "power_limit": {
+                    "description": "watt",
+                    "type": "number"
+                },
+                "temperature_gpu": {
+                    "description": "celsius",
+                    "type": "integer"
+                },
+                "temperature_memory": {
+                    "description": "celsius",
+                    "type": "integer"
+                }
+            }
+        },
+        "infra.NVIDIAProcess": {
+            "type": "object",
+            "properties": {
+                "gpu_instance_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pid": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "used_memory": {
+                    "description": "MiB",
                     "type": "integer"
                 }
             }

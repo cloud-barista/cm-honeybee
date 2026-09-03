@@ -1601,6 +1601,113 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.AMD": {
+            "type": "object",
+            "properties": {
+                "device_attribute": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.AMDDeviceAttribute"
+                },
+                "performance": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.AMDPerformance"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.AMDDeviceAttribute": {
+            "type": "object",
+            "properties": {
+                "card": {
+                    "type": "string"
+                },
+                "compute_partition": {
+                    "type": "string"
+                },
+                "device_id": {
+                    "type": "string"
+                },
+                "driver_version": {
+                    "type": "string"
+                },
+                "gpu_id": {
+                    "type": "string"
+                },
+                "gpu_uuid": {
+                    "type": "string"
+                },
+                "memory_partition": {
+                    "type": "string"
+                },
+                "pci_bus_id": {
+                    "type": "string"
+                },
+                "product_name": {
+                    "type": "string"
+                },
+                "serial_number": {
+                    "type": "string"
+                },
+                "unique_id": {
+                    "type": "string"
+                },
+                "vbios_version": {
+                    "type": "string"
+                },
+                "vendor_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.AMDPerformance": {
+            "type": "object",
+            "properties": {
+                "clock_memory": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "clock_sm": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "fan_speed": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "gpu_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "memory_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "performance_level": {
+                    "type": "string"
+                },
+                "power_cap": {
+                    "description": "watt",
+                    "type": "number"
+                },
+                "power_draw": {
+                    "description": "watt",
+                    "type": "number"
+                },
+                "temperature_gpu": {
+                    "description": "celsius",
+                    "type": "number"
+                },
+                "temperature_memory": {
+                    "description": "celsius",
+                    "type": "number"
+                },
+                "vram_memory_total": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "vram_memory_used": {
+                    "description": "MiB",
+                    "type": "integer"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.BucketEncryption": {
             "type": "object",
             "properties": {
@@ -1661,6 +1768,149 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPInfo": {
+            "type": "object",
+            "properties": {
+                "data_disks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "id": {
+                    "description": "VM SystemId (CSP native / ARM ID)",
+                    "type": "string"
+                },
+                "image": {
+                    "description": "ImageIId NameId",
+                    "type": "string"
+                },
+                "name": {
+                    "description": "VM NameId",
+                    "type": "string"
+                },
+                "network": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPNetwork"
+                },
+                "platform": {
+                    "description": "e.g. LINUX/UNIX",
+                    "type": "string"
+                },
+                "private_ip": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "public_ip": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "root_disk": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Disk"
+                },
+                "start_time": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "vm_spec": {
+                    "description": "e.g. Standard_D2s_v3",
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPNetwork": {
+            "type": "object",
+            "properties": {
+                "security_groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPSecurityGroup"
+                    }
+                },
+                "subnet": {
+                    "type": "string"
+                },
+                "vpc": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPVPC"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPSecurityGroup": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "rules": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPSecurityRule"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPSecurityRule": {
+            "type": "object",
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "direction": {
+                    "type": "string"
+                },
+                "from_port": {
+                    "type": "string"
+                },
+                "protocol": {
+                    "type": "string"
+                },
+                "to_port": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPSubnet": {
+            "type": "object",
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPVPC": {
+            "type": "object",
+            "properties": {
+                "cidr": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subnets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPSubnet"
+                    }
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Compute": {
             "type": "object",
             "required": [
@@ -1717,6 +1967,9 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.DRM": {
             "type": "object",
             "properties": {
+                "card": {
+                    "type": "string"
+                },
                 "driver_date": {
                     "type": "string"
                 },
@@ -1727,6 +1980,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "driver_version": {
+                    "type": "string"
+                },
+                "pci_bus_id": {
                     "type": "string"
                 }
             }
@@ -1764,6 +2020,12 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.GPU": {
             "type": "object",
             "properties": {
+                "amd": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.AMD"
+                    }
+                },
                 "drm": {
                     "type": "array",
                     "items": {
@@ -1781,6 +2043,10 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIA"
                     }
+                },
+                "nvidia_smi_schema": {
+                    "description": "NVIDIASMISchema is the nvidia-smi XML schema version the output was\nparsed with (v11, v12, v13 ...). Empty when nvidia-smi did not run.",
+                    "type": "string"
                 }
             }
         },
@@ -1919,6 +2185,14 @@ const docTemplate = `{
             "properties": {
                 "compute": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Compute"
+                },
+                "csp": {
+                    "description": "CSP holds provider-side VM information for CSP-type sources (collected via\ncb-spider). It is nil for on-premise/SSH sources and omitted from output\nwhen absent.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPInfo"
+                        }
+                    ]
                 },
                 "gpu": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.GPU"
@@ -2151,14 +2425,32 @@ const docTemplate = `{
                 "device_attribute": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIADeviceAttribute"
                 },
+                "ecc": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAECC"
+                },
+                "mig_devices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAMIGDevice"
+                    }
+                },
                 "performance": {
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAPerformance"
+                },
+                "processes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAProcess"
+                    }
                 }
             }
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIADeviceAttribute": {
             "type": "object",
             "properties": {
+                "compute_mode": {
+                    "type": "string"
+                },
                 "cuda_version": {
                     "type": "string"
                 },
@@ -2166,6 +2458,27 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "gpu_uuid": {
+                    "type": "string"
+                },
+                "host_vgpu_mode": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "integer"
+                },
+                "mig_mode": {
+                    "type": "string"
+                },
+                "minor_number": {
+                    "type": "string"
+                },
+                "nvml_version": {
+                    "type": "string"
+                },
+                "pci_bus_id": {
+                    "type": "string"
+                },
+                "persistence_mode": {
                     "type": "string"
                 },
                 "product_architecture": {
@@ -2176,14 +2489,96 @@ const docTemplate = `{
                 },
                 "product_name": {
                     "type": "string"
+                },
+                "serial": {
+                    "type": "string"
+                },
+                "vbios_version": {
+                    "type": "string"
+                },
+                "vgpu_license_status": {
+                    "type": "string"
+                },
+                "virtualization_mode": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAECC": {
+            "type": "object",
+            "properties": {
+                "aggregate": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAECCErrors"
+                },
+                "mode": {
+                    "type": "string"
+                },
+                "volatile": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAECCErrors"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAECCErrors": {
+            "type": "object",
+            "properties": {
+                "double_bit": {
+                    "type": "integer"
+                },
+                "dram_correctable": {
+                    "type": "integer"
+                },
+                "dram_uncorrectable": {
+                    "type": "integer"
+                },
+                "single_bit": {
+                    "type": "integer"
+                },
+                "sram_correctable": {
+                    "type": "integer"
+                },
+                "sram_uncorrectable": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAMIGDevice": {
+            "type": "object",
+            "properties": {
+                "compute_instance_id": {
+                    "type": "string"
+                },
+                "fb_memory_free": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "fb_memory_total": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "fb_memory_used": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "gpu_instance_id": {
+                    "type": "string"
+                },
+                "index": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string"
                 }
             }
         },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAPerformance": {
             "type": "object",
             "properties": {
+                "bar1_memory_free": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
                 "bar1_memory_total": {
-                    "description": "mb",
+                    "description": "MiB",
                     "type": "integer"
                 },
                 "bar1_memory_usage": {
@@ -2191,11 +2586,51 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "bar1_memory_used": {
-                    "description": "mb",
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "clock_graphics": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "clock_memory": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "clock_sm": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "clock_video": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "clocks_event_reasons": {
+                    "description": "ClocksEventReasons is the NVML clocks-event (throttle) reason bitmask,\nfolded from the per-reason Active/Not Active strings. Zero means \"reported,\nnothing active\"; nil means nvidia-smi reported no reason at all.",
+                    "type": "integer"
+                },
+                "decoder_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "encoder_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "fan_speed": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "fb_memory_free": {
+                    "description": "MiB",
+                    "type": "integer"
+                },
+                "fb_memory_reserved": {
+                    "description": "MiB",
                     "type": "integer"
                 },
                 "fb_memory_total": {
-                    "description": "mb",
+                    "description": "MiB",
                     "type": "integer"
                 },
                 "fb_memory_usage": {
@@ -2203,11 +2638,77 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "fb_memory_used": {
-                    "description": "mb",
+                    "description": "MiB",
                     "type": "integer"
                 },
                 "gpu_usage": {
                     "description": "percent",
+                    "type": "integer"
+                },
+                "max_clock_graphics": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "max_clock_memory": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "max_clock_sm": {
+                    "description": "MHz",
+                    "type": "integer"
+                },
+                "memory_usage": {
+                    "description": "percent",
+                    "type": "integer"
+                },
+                "pcie_link_gen_current": {
+                    "type": "integer"
+                },
+                "pcie_link_width_current": {
+                    "description": "lanes",
+                    "type": "integer"
+                },
+                "pcie_replay_counter": {
+                    "type": "integer"
+                },
+                "performance_state": {
+                    "type": "string"
+                },
+                "power_draw": {
+                    "description": "watt",
+                    "type": "number"
+                },
+                "power_limit": {
+                    "description": "watt",
+                    "type": "number"
+                },
+                "temperature_gpu": {
+                    "description": "celsius",
+                    "type": "integer"
+                },
+                "temperature_memory": {
+                    "description": "celsius",
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.NVIDIAProcess": {
+            "type": "object",
+            "properties": {
+                "gpu_instance_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pid": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "used_memory": {
+                    "description": "MiB",
                     "type": "integer"
                 }
             }
@@ -2744,6 +3245,13 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "declared_environ": {
+                    "description": "DeclaredEnviron is what the unit declares (Environment= and\nEnvironmentFile=). Empty for processes systemd did not start.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "dependencies": {
                     "description": "non-package-owned runtime paths to copy",
                     "type": "array",
@@ -2752,6 +3260,7 @@ const docTemplate = `{
                     }
                 },
                 "environ": {
+                    "description": "Environ is the process's inherited runtime environment (/proc/\u003cpid\u003e/environ).\nMost of it is injected by systemd or the login session and belongs to this\nhost, not to the software -- use DeclaredEnviron for what the software was\nactually configured with.",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -2919,6 +3428,41 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Flatpak": {
+            "type": "object",
+            "properties": {
+                "application_id": {
+                    "type": "string"
+                },
+                "arch": {
+                    "type": "string"
+                },
+                "branch": {
+                    "type": "string"
+                },
+                "installation": {
+                    "description": "system | user",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "origin": {
+                    "type": "string"
+                },
+                "origin_url": {
+                    "description": "remote repo URL (from ` + "`" + `flatpak remotes` + "`" + `)",
+                    "type": "string"
+                },
+                "runtime": {
+                    "description": "required runtime ref (e.g. org.gnome.Platform/x86_64/50)",
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.RPM": {
             "type": "object",
             "properties": {
@@ -2960,6 +3504,46 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Snap": {
+            "type": "object",
+            "properties": {
+                "base": {
+                    "description": "base snap (e.g. core22)",
+                    "type": "string"
+                },
+                "blob_path": {
+                    "description": "on-disk squashfs blob (for offline migration)",
+                    "type": "string"
+                },
+                "confinement": {
+                    "description": "strict/classic/devmode",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "publisher": {
+                    "type": "string"
+                },
+                "revision": {
+                    "type": "string"
+                },
+                "tracking": {
+                    "description": "channel (e.g. latest/stable)",
+                    "type": "string"
+                },
+                "type": {
+                    "description": "app/base/os/snapd/...",
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Software": {
             "type": "object",
             "properties": {
@@ -2973,6 +3557,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Container"
+                    }
+                },
+                "flatpak": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Flatpak"
                     }
                 },
                 "legacy": {
@@ -2991,6 +3581,12 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.RPM"
+                    }
+                },
+                "snap": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Snap"
                     }
                 }
             }
@@ -3595,51 +4191,6 @@ const docTemplate = `{
                 1048576,
                 524288,
                 2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
                 511
             ],
             "x-enum-comments": {
@@ -3728,41 +4279,7 @@ const docTemplate = `{
                 1000000,
                 1000000000,
                 60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000
+                3600000000000
             ],
             "x-enum-varnames": [
                 "minDuration",
@@ -3772,41 +4289,7 @@ const docTemplate = `{
                 "Millisecond",
                 "Second",
                 "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second"
+                "Hour"
             ]
         },
         "v1.Descriptor": {
