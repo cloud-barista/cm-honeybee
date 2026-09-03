@@ -52,14 +52,19 @@ type SourceGroup struct {
 	Description string     `gorm:"column:description" json:"description"`
 	TargetInfo  TargetInfo `gorm:"column:target_info" json:"target_info"`
 
-	// Type discriminates how this group's connections are collected.
-	// Allowed: "ssh" (default, on-prem) or "csp" (cb-spider backed).
+	// Type discriminates how this group's connections are collected. Allowed:
+	// "onprem" or "csp" (cb-spider backed); see common.IsOnpremType. "ssh" and
+	// the empty value are the earlier spelling of "onprem" and are still
+	// accepted. The stored default stays "ssh" rather than "onprem" because it
+	// is what clients already compare against; the request handler writes it
+	// explicitly when the caller omits the field.
 	Type string `gorm:"column:type;default:ssh" json:"type"`
 
-	// CSP fields — populated only when Type == "csp".
-	// Credential is stored RSA-encrypted at rest. It is decrypted on demand and
-	// registered to cb-spider only transiently (per discovery/collection call);
-	// honeybee is the single source of truth, so no spider connection name is kept.
+	// CSP fields, populated only when Type == "csp".
+	// Credential lives in OpenBao, never in this table: the column is cleared on
+	// write and rehydrated on demand. It is registered to cb-spider only
+	// transiently (per discovery/collection call); honeybee is the single source
+	// of truth, so no spider connection name is kept.
 	ProviderName string       `gorm:"column:provider_name" json:"provider_name,omitempty"`
 	RegionName   string       `gorm:"column:region_name" json:"region_name,omitempty"`
 	Credential   KeyValueList `gorm:"column:credential" json:"credential,omitempty"`
