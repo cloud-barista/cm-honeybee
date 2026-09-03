@@ -1,0 +1,74 @@
+<?xml version="1.0" ?>
+<nvidia_smi_log>
+	<timestamp>Thu Sep  3 12:07:10 2026</timestamp>
+	<driver_version>390.157</driver_version>
+	<cuda_version>9.1</cuda_version>
+	<attached_gpus>1</attached_gpus>
+	<gpu id="0000:01:00.0">
+		<product_name>Quadro P400</product_name>
+		<product_brand>Quadro</product_brand>
+		<uuid>GPU-dddddddd-0000-1111-2222-333333333333</uuid>
+		<minor_number>0</minor_number>
+		<vbios_version>86.07.6F.00.24</vbios_version>
+		<persistence_mode>Disabled</persistence_mode>
+		<pci>
+			<pci_bus_id>0000:01:00.0</pci_bus_id>
+		</pci>
+		<fan_speed>39 %</fan_speed>
+		<performance_state>P8</performance_state>
+		<clocks_throttle_reasons>
+			<clocks_throttle_reason_gpu_idle>Active</clocks_throttle_reason_gpu_idle>
+			<clocks_throttle_reason_sw_power_cap>Not Active</clocks_throttle_reason_sw_power_cap>
+		</clocks_throttle_reasons>
+		<fb_memory_usage>
+			<total>2000 MiB</total>
+			<used>0 MiB</used>
+			<free>2000 MiB</free>
+		</fb_memory_usage>
+		<bar1_memory_usage>
+			<total>256 MiB</total>
+			<used>2 MiB</used>
+			<free>254 MiB</free>
+		</bar1_memory_usage>
+		<compute_mode>Default</compute_mode>
+		<utilization>
+			<gpu_util>0 %</gpu_util>
+			<memory_util>0 %</memory_util>
+		</utilization>
+		<ecc_mode>
+			<current_ecc>N/A</current_ecc>
+		</ecc_mode>
+		<ecc_errors>
+			<volatile>
+				<single_bit>
+					<total>N/A</total>
+				</single_bit>
+				<double_bit>
+					<total>N/A</total>
+				</double_bit>
+			</volatile>
+			<aggregate>
+				<single_bit>
+					<total>4</total>
+				</single_bit>
+				<double_bit>
+					<total>0</total>
+				</double_bit>
+			</aggregate>
+		</ecc_errors>
+		<temperature>
+			<gpu_temp>36 C</gpu_temp>
+		</temperature>
+		<power_readings>
+			<power_state>P8</power_state>
+			<power_draw>N/A</power_draw>
+			<power_limit>N/A</power_limit>
+		</power_readings>
+		<clocks>
+			<graphics_clock>139 MHz</graphics_clock>
+			<sm_clock>139 MHz</sm_clock>
+			<mem_clock>405 MHz</mem_clock>
+		</clocks>
+		<processes></processes>
+	</gpu>
+</nvidia_smi_log>

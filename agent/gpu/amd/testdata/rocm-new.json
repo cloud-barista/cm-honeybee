@@ -1,0 +1,41 @@
+{
+    "card10": {
+        "Device ID": "0x74a1",
+        "Device Rev": "0x00",
+        "Device Name": "Instinct MI300X",
+        "Unique ID": "0x79ccd55167a2124a",
+        "GUID": "44003",
+        "VBIOS version": "113-M3000100-102",
+        "Temperature (Sensor edge) (C)": "42.0",
+        "Temperature (Sensor junction) (C)": "45.0",
+        "Temperature (Sensor memory) (C)": "44.0",
+        "mclk clock speed:": "(1300Mhz)",
+        "sclk clock speed:": "(132Mhz)",
+        "Performance Level": "auto",
+        "Max Graphics Package Power (W)": "750.0",
+        "Average Graphics Package Power (W)": "137.0",
+        "GPU use (%)": "0",
+        "GPU Memory Allocated (VRAM%)": "0",
+        "Serial Number": "PCB123456789",
+        "PCI Bus": "0000:05:00.0",
+        "VRAM Total Memory (B)": "205939376128",
+        "VRAM Total Used Memory (B)": "10737418240",
+        "Card Series": "Instinct MI300X",
+        "Card Model": "0x74a1",
+        "Card Vendor": "Advanced Micro Devices, Inc. [AMD/ATI]",
+        "Card SKU": "M3000100",
+        "Compute Partition": "SPX",
+        "Memory Partition": "NPS1"
+    },
+    "card2": {
+        "Device ID": "0x74a1",
+        "Device Name": "Instinct MI300X",
+        "PCI Bus": "0000:06:00.0",
+        "GPU use (%)": "55",
+        "VRAM Total Memory (B)": "205939376128",
+        "VRAM Total Used Memory (B)": "0"
+    },
+    "system": {
+        "Driver version": "6.10.5"
+    }
+}

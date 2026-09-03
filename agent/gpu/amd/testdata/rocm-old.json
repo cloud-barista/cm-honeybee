@@ -1,0 +1,45 @@
+{
+    "card0": {
+        "GPU ID": "0x738c",
+        "Unique ID": "N/A",
+        "VBIOS version": "113-D3430400-037",
+        "Temperature (Sensor edge) (C)": "31.0",
+        "Temperature (Sensor junction) (C)": "34.0",
+        "Temperature (Sensor memory) (C)": "30.0",
+        "mclk clock speed:": "(1200Mhz)",
+        "sclk clock speed:": "(300Mhz)",
+        "Performance Level": "auto",
+        "Max Graphics Package Power (W)": "290.0",
+        "Average Graphics Package Power (W)": "39.0",
+        "GPU use (%)": "0",
+        "GPU memory use (%)": "7",
+        "Serial Number": "0",
+        "PCI Bus": "0000:1E:00.0",
+        "VRAM Total Memory (B)": "34342961152",
+        "VRAM Total Used Memory (B)": "2405433344",
+        "Card series": "Instinct MI100",
+        "Card model": "0x0c34",
+        "Card vendor": "Advanced Micro Devices, Inc. [AMD/ATI]",
+        "Card SKU": "D3430400",
+        "Fan speed (%)": "0"
+    },
+    "card1": {
+        "GPU ID": "0x738c",
+        "Unique ID": "N/A",
+        "VBIOS version": "113-D3430400-037",
+        "Temperature (Sensor edge) (C)": "N/A",
+        "mclk clock speed:": "N/A",
+        "sclk clock speed:": "N/A",
+        "Performance Level": "N/A",
+        "Average Graphics Package Power (W)": "N/A",
+        "GPU use (%)": "N/A",
+        "GPU memory use (%)": "N/A",
+        "PCI Bus": "0000:2E:00.0",
+        "VRAM Total Memory (B)": "N/A",
+        "VRAM Total Used Memory (B)": "N/A",
+        "Card series": "Instinct MI100"
+    },
+    "system": {
+        "Driver version": "6.2.4"
+    }
+}

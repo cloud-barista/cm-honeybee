@@ -1,0 +1,120 @@
+<?xml version="1.0" ?>
+<!DOCTYPE nvidia_smi_log SYSTEM "nvsmi_device_v13.dtd">
+<nvidia_smi_log>
+	<timestamp>Thu Sep  3 12:07:10 2026</timestamp>
+	<driver_version>610.57.04</driver_version>
+	<cuda_version>13.3</cuda_version>
+	<kmd_version>610.57.04</kmd_version>
+	<cuda_umd_version>13.3</cuda_umd_version>
+	<attached_gpus>1</attached_gpus>
+	<gpu id="00000000:01:00.0">
+		<product_name>NVIDIA L40S</product_name>
+		<product_brand>NVIDIA</product_brand>
+		<product_architecture>Ada Lovelace</product_architecture>
+		<persistence_mode>Enabled</persistence_mode>
+		<mig_mode>
+			<current_mig>N/A</current_mig>
+		</mig_mode>
+		<gpu_virtualization_mode>
+			<virtualization_mode>Pass-Through</virtualization_mode>
+			<host_vgpu_mode>N/A</host_vgpu_mode>
+		</gpu_virtualization_mode>
+		<serial>1234567890123</serial>
+		<uuid>GPU-00000000-1111-2222-3333-444444444444</uuid>
+		<minor_number>0</minor_number>
+		<vbios_version>95.02.6C.00.01</vbios_version>
+		<pci>
+			<pci_bus_id>00000000:01:00.0</pci_bus_id>
+			<pci_gpu_link_info>
+				<pcie_gen>
+					<current_link_gen>4</current_link_gen>
+				</pcie_gen>
+				<link_widths>
+					<current_link_width>16x</current_link_width>
+				</link_widths>
+			</pci_gpu_link_info>
+			<replay_counter>7</replay_counter>
+		</pci>
+		<fan_speed>N/A</fan_speed>
+		<performance_state>P8</performance_state>
+		<clocks_event_reasons>
+			<clocks_event_reason_gpu_idle>Active</clocks_event_reason_gpu_idle>
+			<clocks_event_reason_applications_clocks_setting>Not Active</clocks_event_reason_applications_clocks_setting>
+			<clocks_event_reason_sw_power_cap>Not Active</clocks_event_reason_sw_power_cap>
+			<clocks_event_reason_hw_slowdown>Not Active</clocks_event_reason_hw_slowdown>
+			<clocks_event_reason_hw_thermal_slowdown>Not Active</clocks_event_reason_hw_thermal_slowdown>
+			<clocks_event_reason_hw_power_brake_slowdown>Not Active</clocks_event_reason_hw_power_brake_slowdown>
+			<clocks_event_reason_sync_boost>Not Active</clocks_event_reason_sync_boost>
+			<clocks_event_reason_sw_thermal_slowdown>Not Active</clocks_event_reason_sw_thermal_slowdown>
+			<clocks_event_reason_display_clocks_setting>Not Active</clocks_event_reason_display_clocks_setting>
+		</clocks_event_reasons>
+		<fb_memory_usage>
+			<total>46068 MiB</total>
+			<reserved>685 MiB</reserved>
+			<used>1 MiB</used>
+			<free>45380 MiB</free>
+		</fb_memory_usage>
+		<bar1_memory_usage>
+			<total>65536 MiB</total>
+			<used>1 MiB</used>
+			<free>65535 MiB</free>
+		</bar1_memory_usage>
+		<compute_mode>Default</compute_mode>
+		<utilization>
+			<gpu_util>25 %</gpu_util>
+			<memory_util>3 %</memory_util>
+			<encoder_util>0 %</encoder_util>
+			<decoder_util>0 %</decoder_util>
+		</utilization>
+		<ecc_mode>
+			<current_ecc>Enabled</current_ecc>
+		</ecc_mode>
+		<ecc_errors>
+			<volatile>
+				<sram_correctable>0</sram_correctable>
+				<sram_uncorrectable_parity>2</sram_uncorrectable_parity>
+				<sram_uncorrectable_secded>3</sram_uncorrectable_secded>
+				<dram_correctable>0</dram_correctable>
+				<dram_uncorrectable>0</dram_uncorrectable>
+			</volatile>
+			<aggregate>
+				<sram_correctable>11</sram_correctable>
+				<sram_uncorrectable_parity>0</sram_uncorrectable_parity>
+				<sram_uncorrectable_secded>0</sram_uncorrectable_secded>
+				<dram_correctable>0</dram_correctable>
+				<dram_uncorrectable>0</dram_uncorrectable>
+			</aggregate>
+		</ecc_errors>
+		<temperature>
+			<gpu_temp>29 C</gpu_temp>
+			<memory_temp>N/A</memory_temp>
+		</temperature>
+		<gpu_power_readings>
+			<power_state>Requested functionality has been deprecated</power_state>
+			<average_power_draw>38.14 W</average_power_draw>
+			<instant_power_draw>39.02 W</instant_power_draw>
+			<current_power_limit>350.00 W</current_power_limit>
+			<default_power_limit>350.00 W</default_power_limit>
+		</gpu_power_readings>
+		<clocks>
+			<graphics_clock>210 MHz</graphics_clock>
+			<sm_clock>210 MHz</sm_clock>
+			<mem_clock>405 MHz</mem_clock>
+			<video_clock>555 MHz</video_clock>
+		</clocks>
+		<max_clocks>
+			<graphics_clock>2520 MHz</graphics_clock>
+			<sm_clock>2520 MHz</sm_clock>
+			<mem_clock>9001 MHz</mem_clock>
+		</max_clocks>
+		<processes>
+			<process_info>
+				<gpu_instance_id>N/A</gpu_instance_id>
+				<pid>4242</pid>
+				<type>C</type>
+				<process_name>/usr/bin/python3</process_name>
+				<used_memory>512 MiB</used_memory>
+			</process_info>
+		</processes>
+	</gpu>
+</nvidia_smi_log>

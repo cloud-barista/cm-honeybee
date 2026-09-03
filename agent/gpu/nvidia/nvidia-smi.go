@@ -1,329 +1,139 @@
 package nvidia
 
 import (
-	"encoding/xml"
+	"bytes"
+	"context"
 	"errors"
-	"github.com/jollaman999/utils/cmd"
-	"github.com/jollaman999/utils/logger"
+	"os"
+	"os/exec"
+	"strings"
+	"sync"
+	"time"
 )
 
-// SmiLog was generated 2023-11-22 11:48:41 by https://xml-to-go.github.io/ in Ukraine.
-// Generated based on NVIDIA Windows 536.23 driver.
-type SmiLog struct {
-	XMLName       xml.Name `xml:"nvidia_smi_log"`
-	Text          string   `xml:",chardata"`
-	Timestamp     string   `xml:"timestamp"`
-	DriverVersion string   `xml:"driver_version"`
-	CudaVersion   string   `xml:"cuda_version"`
-	AttachedGpus  string   `xml:"attached_gpus"`
-	Gpu           []struct {
-		Text                string `xml:",chardata"`
-		ID                  string `xml:"id,attr"`
-		ProductName         string `xml:"product_name"`
-		ProductBrand        string `xml:"product_brand"`
-		ProductArchitecture string `xml:"product_architecture"`
-		DisplayMode         string `xml:"display_mode"`
-		DisplayActive       string `xml:"display_active"`
-		PersistenceMode     string `xml:"persistence_mode"`
-		AddressingMode      string `xml:"addressing_mode"`
-		MigMode             struct {
-			Text       string `xml:",chardata"`
-			CurrentMig string `xml:"current_mig"`
-			PendingMig string `xml:"pending_mig"`
-		} `xml:"mig_mode"`
-		MigDevices               string `xml:"mig_devices"`
-		AccountingMode           string `xml:"accounting_mode"`
-		AccountingModeBufferSize string `xml:"accounting_mode_buffer_size"`
-		DriverModel              struct {
-			Text      string `xml:",chardata"`
-			CurrentDm string `xml:"current_dm"`
-			PendingDm string `xml:"pending_dm"`
-		} `xml:"driver_model"`
-		Serial           string `xml:"serial"`
-		UUID             string `xml:"uuid"`
-		MinorNumber      string `xml:"minor_number"`
-		VbiosVersion     string `xml:"vbios_version"`
-		MultigpuBoard    string `xml:"multigpu_board"`
-		BoardID          string `xml:"board_id"`
-		BoardPartNumber  string `xml:"board_part_number"`
-		GpuPartNumber    string `xml:"gpu_part_number"`
-		GpuFruPartNumber string `xml:"gpu_fru_part_number"`
-		GpuModuleID      string `xml:"gpu_module_id"`
-		InforomVersion   struct {
-			Text       string `xml:",chardata"`
-			ImgVersion string `xml:"img_version"`
-			OemObject  string `xml:"oem_object"`
-			EccObject  string `xml:"ecc_object"`
-			PwrObject  string `xml:"pwr_object"`
-		} `xml:"inforom_version"`
-		GpuOperationMode struct {
-			Text       string `xml:",chardata"`
-			CurrentGom string `xml:"current_gom"`
-			PendingGom string `xml:"pending_gom"`
-		} `xml:"gpu_operation_mode"`
-		GspFirmwareVersion    string `xml:"gsp_firmware_version"`
-		GpuVirtualizationMode struct {
-			Text               string `xml:",chardata"`
-			VirtualizationMode string `xml:"virtualization_mode"`
-			HostVgpuMode       string `xml:"host_vgpu_mode"`
-		} `xml:"gpu_virtualization_mode"`
-		GpuResetStatus struct {
-			Text                     string `xml:",chardata"`
-			ResetRequired            string `xml:"reset_required"`
-			DrainAndResetRecommended string `xml:"drain_and_reset_recommended"`
-		} `xml:"gpu_reset_status"`
-		Ibmnpu struct {
-			Text                string `xml:",chardata"`
-			RelaxedOrderingMode string `xml:"relaxed_ordering_mode"`
-		} `xml:"ibmnpu"`
-		Pci struct {
-			Text           string `xml:",chardata"`
-			PciBus         string `xml:"pci_bus"`
-			PciDevice      string `xml:"pci_device"`
-			PciDomain      string `xml:"pci_domain"`
-			PciDeviceID    string `xml:"pci_device_id"`
-			PciBusID       string `xml:"pci_bus_id"`
-			PciSubSystemID string `xml:"pci_sub_system_id"`
-			PciGpuLinkInfo struct {
-				Text    string `xml:",chardata"`
-				PcieGen struct {
-					Text                 string `xml:",chardata"`
-					MaxLinkGen           string `xml:"max_link_gen"`
-					CurrentLinkGen       string `xml:"current_link_gen"`
-					DeviceCurrentLinkGen string `xml:"device_current_link_gen"`
-					MaxDeviceLinkGen     string `xml:"max_device_link_gen"`
-					MaxHostLinkGen       string `xml:"max_host_link_gen"`
-				} `xml:"pcie_gen"`
-				LinkWidths struct {
-					Text             string `xml:",chardata"`
-					MaxLinkWidth     string `xml:"max_link_width"`
-					CurrentLinkWidth string `xml:"current_link_width"`
-				} `xml:"link_widths"`
-			} `xml:"pci_gpu_link_info"`
-			PciBridgeChip struct {
-				Text           string `xml:",chardata"`
-				BridgeChipType string `xml:"bridge_chip_type"`
-				BridgeChipFw   string `xml:"bridge_chip_fw"`
-			} `xml:"pci_bridge_chip"`
-			ReplayCounter         string `xml:"replay_counter"`
-			ReplayRolloverCounter string `xml:"replay_rollover_counter"`
-			TxUtil                string `xml:"tx_util"`
-			RxUtil                string `xml:"rx_util"`
-			AtomicCapsInbound     string `xml:"atomic_caps_inbound"`
-			AtomicCapsOutbound    string `xml:"atomic_caps_outbound"`
-		} `xml:"pci"`
-		FanSpeed           string `xml:"fan_speed"`
-		PerformanceState   string `xml:"performance_state"`
-		ClocksEventReasons struct {
-			Text                                       string `xml:",chardata"`
-			ClocksEventReasonGpuIdle                   string `xml:"clocks_event_reason_gpu_idle"`
-			ClocksEventReasonApplicationsClocksSetting string `xml:"clocks_event_reason_applications_clocks_setting"`
-			ClocksEventReasonSwPowerCap                string `xml:"clocks_event_reason_sw_power_cap"`
-			ClocksEventReasonHwSlowdown                string `xml:"clocks_event_reason_hw_slowdown"`
-			ClocksEventReasonHwThermalSlowdown         string `xml:"clocks_event_reason_hw_thermal_slowdown"`
-			ClocksEventReasonHwPowerBrakeSlowdown      string `xml:"clocks_event_reason_hw_power_brake_slowdown"`
-			ClocksEventReasonSyncBoost                 string `xml:"clocks_event_reason_sync_boost"`
-			ClocksEventReasonSwThermalSlowdown         string `xml:"clocks_event_reason_sw_thermal_slowdown"`
-			ClocksEventReasonDisplayClocksSetting      string `xml:"clocks_event_reason_display_clocks_setting"`
-		} `xml:"clocks_event_reasons"`
-		FbMemoryUsage struct {
-			Text     string `xml:",chardata"`
-			Total    string `xml:"total"`
-			Reserved string `xml:"reserved"`
-			Used     string `xml:"used"`
-			Free     string `xml:"free"`
-		} `xml:"fb_memory_usage"`
-		Bar1MemoryUsage struct {
-			Text  string `xml:",chardata"`
-			Total string `xml:"total"`
-			Used  string `xml:"used"`
-			Free  string `xml:"free"`
-		} `xml:"bar1_memory_usage"`
-		CcProtectedMemoryUsage struct {
-			Text  string `xml:",chardata"`
-			Total string `xml:"total"`
-			Used  string `xml:"used"`
-			Free  string `xml:"free"`
-		} `xml:"cc_protected_memory_usage"`
-		ComputeMode string `xml:"compute_mode"`
-		Utilization struct {
-			Text        string `xml:",chardata"`
-			GpuUtil     string `xml:"gpu_util"`
-			MemoryUtil  string `xml:"memory_util"`
-			EncoderUtil string `xml:"encoder_util"`
-			DecoderUtil string `xml:"decoder_util"`
-			JpegUtil    string `xml:"jpeg_util"`
-			OfaUtil     string `xml:"ofa_util"`
-		} `xml:"utilization"`
-		EncoderStats struct {
-			Text           string `xml:",chardata"`
-			SessionCount   string `xml:"session_count"`
-			AverageFps     string `xml:"average_fps"`
-			AverageLatency string `xml:"average_latency"`
-		} `xml:"encoder_stats"`
-		FbcStats struct {
-			Text           string `xml:",chardata"`
-			SessionCount   string `xml:"session_count"`
-			AverageFps     string `xml:"average_fps"`
-			AverageLatency string `xml:"average_latency"`
-		} `xml:"fbc_stats"`
-		EccMode struct {
-			Text       string `xml:",chardata"`
-			CurrentEcc string `xml:"current_ecc"`
-			PendingEcc string `xml:"pending_ecc"`
-		} `xml:"ecc_mode"`
-		EccErrors struct {
-			Text     string `xml:",chardata"`
-			Volatile struct {
-				Text              string `xml:",chardata"`
-				SramCorrectable   string `xml:"sram_correctable"`
-				SramUncorrectable string `xml:"sram_uncorrectable"`
-				DramCorrectable   string `xml:"dram_correctable"`
-				DramUncorrectable string `xml:"dram_uncorrectable"`
-			} `xml:"volatile"`
-			Aggregate struct {
-				Text              string `xml:",chardata"`
-				SramCorrectable   string `xml:"sram_correctable"`
-				SramUncorrectable string `xml:"sram_uncorrectable"`
-				DramCorrectable   string `xml:"dram_correctable"`
-				DramUncorrectable string `xml:"dram_uncorrectable"`
-			} `xml:"aggregate"`
-		} `xml:"ecc_errors"`
-		RetiredPages struct {
-			Text                        string `xml:",chardata"`
-			MultipleSingleBitRetirement struct {
-				Text            string `xml:",chardata"`
-				RetiredCount    string `xml:"retired_count"`
-				RetiredPagelist string `xml:"retired_pagelist"`
-			} `xml:"multiple_single_bit_retirement"`
-			DoubleBitRetirement struct {
-				Text            string `xml:",chardata"`
-				RetiredCount    string `xml:"retired_count"`
-				RetiredPagelist string `xml:"retired_pagelist"`
-			} `xml:"double_bit_retirement"`
-			PendingBlacklist  string `xml:"pending_blacklist"`
-			PendingRetirement string `xml:"pending_retirement"`
-		} `xml:"retired_pages"`
-		RemappedRows string `xml:"remapped_rows"`
-		Temperature  struct {
-			Text                   string `xml:",chardata"`
-			GpuTemp                string `xml:"gpu_temp"`
-			GpuTempTlimit          string `xml:"gpu_temp_tlimit"`
-			GpuTempMaxThreshold    string `xml:"gpu_temp_max_threshold"`
-			GpuTempSlowThreshold   string `xml:"gpu_temp_slow_threshold"`
-			GpuTempMaxGpuThreshold string `xml:"gpu_temp_max_gpu_threshold"`
-			GpuTargetTemperature   string `xml:"gpu_target_temperature"`
-			MemoryTemp             string `xml:"memory_temp"`
-			GpuTempMaxMemThreshold string `xml:"gpu_temp_max_mem_threshold"`
-		} `xml:"temperature"`
-		SupportedGpuTargetTemp struct {
-			Text             string `xml:",chardata"`
-			GpuTargetTempMin string `xml:"gpu_target_temp_min"`
-			GpuTargetTempMax string `xml:"gpu_target_temp_max"`
-		} `xml:"supported_gpu_target_temp"`
-		GpuPowerReadings struct {
-			Text                string `xml:",chardata"`
-			PowerState          string `xml:"power_state"`
-			PowerDraw           string `xml:"power_draw"`
-			CurrentPowerLimit   string `xml:"current_power_limit"`
-			RequestedPowerLimit string `xml:"requested_power_limit"`
-			DefaultPowerLimit   string `xml:"default_power_limit"`
-			MinPowerLimit       string `xml:"min_power_limit"`
-			MaxPowerLimit       string `xml:"max_power_limit"`
-		} `xml:"gpu_power_readings"`
-		ModulePowerReadings struct {
-			Text                string `xml:",chardata"`
-			PowerState          string `xml:"power_state"`
-			PowerDraw           string `xml:"power_draw"`
-			CurrentPowerLimit   string `xml:"current_power_limit"`
-			RequestedPowerLimit string `xml:"requested_power_limit"`
-			DefaultPowerLimit   string `xml:"default_power_limit"`
-			MinPowerLimit       string `xml:"min_power_limit"`
-			MaxPowerLimit       string `xml:"max_power_limit"`
-		} `xml:"module_power_readings"`
-		Clocks struct {
-			Text          string `xml:",chardata"`
-			GraphicsClock string `xml:"graphics_clock"`
-			SmClock       string `xml:"sm_clock"`
-			MemClock      string `xml:"mem_clock"`
-			VideoClock    string `xml:"video_clock"`
-		} `xml:"clocks"`
-		ApplicationsClocks struct {
-			Text          string `xml:",chardata"`
-			GraphicsClock string `xml:"graphics_clock"`
-			MemClock      string `xml:"mem_clock"`
-		} `xml:"applications_clocks"`
-		DefaultApplicationsClocks struct {
-			Text          string `xml:",chardata"`
-			GraphicsClock string `xml:"graphics_clock"`
-			MemClock      string `xml:"mem_clock"`
-		} `xml:"default_applications_clocks"`
-		DeferredClocks struct {
-			Text     string `xml:",chardata"`
-			MemClock string `xml:"mem_clock"`
-		} `xml:"deferred_clocks"`
-		MaxClocks struct {
-			Text          string `xml:",chardata"`
-			GraphicsClock string `xml:"graphics_clock"`
-			SmClock       string `xml:"sm_clock"`
-			MemClock      string `xml:"mem_clock"`
-			VideoClock    string `xml:"video_clock"`
-		} `xml:"max_clocks"`
-		MaxCustomerBoostClocks struct {
-			Text          string `xml:",chardata"`
-			GraphicsClock string `xml:"graphics_clock"`
-		} `xml:"max_customer_boost_clocks"`
-		ClockPolicy struct {
-			Text             string `xml:",chardata"`
-			AutoBoost        string `xml:"auto_boost"`
-			AutoBoostDefault string `xml:"auto_boost_default"`
-		} `xml:"clock_policy"`
-		Voltage struct {
-			Text         string `xml:",chardata"`
-			GraphicsVolt string `xml:"graphics_volt"`
-		} `xml:"voltage"`
-		Fabric struct {
-			Text   string `xml:",chardata"`
-			State  string `xml:"state"`
-			Status string `xml:"status"`
-		} `xml:"fabric"`
-		SupportedClocks struct {
-			Text              string `xml:",chardata"`
-			SupportedMemClock []struct {
-				Text                   string   `xml:",chardata"`
-				Value                  string   `xml:"value"`
-				SupportedGraphicsClock []string `xml:"supported_graphics_clock"`
-			} `xml:"supported_mem_clock"`
-		} `xml:"supported_clocks"`
-		Processes struct {
-			Text        string `xml:",chardata"`
-			ProcessInfo []struct {
-				Text              string `xml:",chardata"`
-				GpuInstanceID     string `xml:"gpu_instance_id"`
-				ComputeInstanceID string `xml:"compute_instance_id"`
-				Pid               string `xml:"pid"`
-				Type              string `xml:"type"`
-				ProcessName       string `xml:"process_name"`
-				UsedMemory        string `xml:"used_memory"`
-			} `xml:"process_info"`
-		} `xml:"processes"`
-		AccountedProcesses string `xml:"accounted_processes"`
-	} `xml:"gpu"`
-}
+const (
+	// queryTimeout bounds `nvidia-smi -q -x`. A wedged driver makes nvidia-smi
+	// block indefinitely, and without a bound that block propagates all the way
+	// up to the infra collection request.
+	queryTimeout = 30 * time.Second
+	// versionTimeout bounds the much cheaper `nvidia-smi --version`.
+	versionTimeout = 10 * time.Second
+	// waitDelay bounds how long we wait for the output pipes after the process
+	// was killed, so a child holding stdout cannot keep us blocked.
+	waitDelay = 5 * time.Second
+)
 
-func runNVIDIASmi(argString string) (string, error) {
-	output, err := cmd.RunCMD("nvidia-smi " + argString)
-	if err != nil {
-		errMsg := "NVIDIA-SMI: " + output
-		logger.Println(logger.DEBUG, true, errMsg)
-		return output, errors.New(errMsg)
+// ErrNotAvailable reports that no nvidia-smi binary was found in PATH.
+var ErrNotAvailable = errors.New("NVIDIA: nvidia-smi command is not available")
+
+var (
+	binPathOnce sync.Once
+	binPath     string
+
+	nvmlVersionOnce sync.Once
+	nvmlVersion     string
+)
+
+// smiPath resolves nvidia-smi in PATH. Presence of the binary is the only
+// thing it decides; whether the driver actually answers is decided by running
+// the real query, because nvidia-smi still prints its help text on a host
+// whose driver is not loaded.
+func smiPath() (string, error) {
+	binPathOnce.Do(func() {
+		path, err := exec.LookPath("nvidia-smi")
+		if err != nil {
+			return
+		}
+		binPath = path
+	})
+
+	if binPath == "" {
+		return "", ErrNotAvailable
 	}
 
-	return output, nil
+	return binPath, nil
 }
 
-func isNVIDIASmiAvailable() bool {
-	_, err := runNVIDIASmi("--help")
+// runNVIDIASmi executes nvidia-smi with the given arguments under a timeout.
+// stdout is returned on its own: nvidia-smi writes warnings to stderr, and
+// folding those into stdout would corrupt the XML document we are about to
+// parse. The locale is pinned so number formatting does not follow the
+// agent's environment.
+func runNVIDIASmi(timeout time.Duration, args ...string) ([]byte, error) {
+	path, err := smiPath()
+	if err != nil {
+		return nil, err
+	}
 
-	return err == nil
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	var stdout, stderr bytes.Buffer
+
+	cmd := exec.CommandContext(ctx, path, args...)
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	cmd.WaitDelay = waitDelay
+	cmd.Env = append(os.Environ(), "LC_ALL=C", "LANG=C")
+
+	err = cmd.Run()
+	if err != nil {
+		message := strings.TrimSpace(stderr.String())
+		if message == "" {
+			message = strings.TrimSpace(stdout.String())
+		}
+		if message == "" {
+			message = err.Error()
+		}
+
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return nil, errors.New("NVIDIA-SMI: timed out after " +
+				timeout.String() + ": " + oneLine(message))
+		}
+
+		return nil, errors.New("NVIDIA-SMI: " + oneLine(message))
+	}
+
+	return stdout.Bytes(), nil
+}
+
+// oneLine flattens a multi-line command output so it stays readable as a
+// single entry of the collected error list.
+func oneLine(s string) string {
+	return strings.Join(strings.Fields(s), " ")
+}
+
+// getNVMLVersion reads the NVML library version from `nvidia-smi --version`.
+// The v13 schema deprecates driver_version in the query output, and NVML's own
+// version is not in the query output at all, so it comes from here. It is a
+// static value, so it is read once per process. Drivers older than R555 have
+// no such line and yield an empty string, which is then simply not reported.
+func getNVMLVersion() string {
+	nvmlVersionOnce.Do(func() {
+		output, err := runNVIDIASmi(versionTimeout, "--version")
+		if err != nil {
+			return
+		}
+		nvmlVersion = parseNVMLVersion(string(output))
+	})
+
+	return nvmlVersion
+}
+
+func parseNVMLVersion(output string) string {
+	for _, line := range strings.Split(output, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if !strings.HasPrefix(strings.ToLower(trimmed), "nvml version") {
+			continue
+		}
+
+		colon := strings.Index(trimmed, ":")
+		if colon < 0 {
+			continue
+		}
+
+		return strings.TrimSpace(trimmed[colon+1:])
+	}
+
+	return ""
 }

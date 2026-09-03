@@ -1,0 +1,138 @@
+<?xml version="1.0" ?>
+<!DOCTYPE nvidia_smi_log SYSTEM "nvsmi_device_v12.dtd">
+<nvidia_smi_log>
+	<timestamp>Thu Sep  3 12:07:10 2026</timestamp>
+	<driver_version>535.104.05</driver_version>
+	<cuda_version>12.2</cuda_version>
+	<attached_gpus>2</attached_gpus>
+	<gpu id="00000000:07:00.0">
+		<product_name>NVIDIA A100-SXM4-40GB</product_name>
+		<product_brand>NVIDIA</product_brand>
+		<product_architecture>Ampere</product_architecture>
+		<persistence_mode>Enabled</persistence_mode>
+		<mig_mode>
+			<current_mig>Enabled</current_mig>
+		</mig_mode>
+		<mig_devices>
+			<mig_device>
+				<index>0</index>
+				<gpu_instance_id>1</gpu_instance_id>
+				<compute_instance_id>0</compute_instance_id>
+				<uuid>MIG-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee</uuid>
+				<fb_memory_usage>
+					<total>19968 MiB</total>
+					<used>12 MiB</used>
+					<free>19955 MiB</free>
+				</fb_memory_usage>
+			</mig_device>
+		</mig_devices>
+		<gpu_virtualization_mode>
+			<virtualization_mode>None</virtualization_mode>
+			<host_vgpu_mode>N/A</host_vgpu_mode>
+		</gpu_virtualization_mode>
+		<serial>0322920000000</serial>
+		<uuid>GPU-aaaaaaaa-0000-1111-2222-333333333333</uuid>
+		<minor_number>0</minor_number>
+		<vbios_version>92.00.4B.00.03</vbios_version>
+		<pci>
+			<pci_bus_id>00000000:07:00.0</pci_bus_id>
+			<pci_gpu_link_info>
+				<pcie_gen>
+					<current_link_gen>4</current_link_gen>
+				</pcie_gen>
+				<link_widths>
+					<current_link_width>16x</current_link_width>
+				</link_widths>
+			</pci_gpu_link_info>
+			<replay_counter>0</replay_counter>
+		</pci>
+		<fan_speed>N/A</fan_speed>
+		<performance_state>P0</performance_state>
+		<clocks_event_reasons>
+			<clocks_event_reason_gpu_idle>Not Active</clocks_event_reason_gpu_idle>
+			<clocks_event_reason_sw_power_cap>Active</clocks_event_reason_sw_power_cap>
+			<clocks_event_reason_hw_slowdown>Not Active</clocks_event_reason_hw_slowdown>
+		</clocks_event_reasons>
+		<fb_memory_usage>
+			<total>40960 MiB</total>
+			<reserved>0 MiB</reserved>
+			<used>20480 MiB</used>
+			<free>20480 MiB</free>
+		</fb_memory_usage>
+		<bar1_memory_usage>
+			<total>65536 MiB</total>
+			<used>21 MiB</used>
+			<free>65515 MiB</free>
+		</bar1_memory_usage>
+		<compute_mode>Default</compute_mode>
+		<utilization>
+			<gpu_util>100 %</gpu_util>
+			<memory_util>50 %</memory_util>
+			<encoder_util>0 %</encoder_util>
+			<decoder_util>0 %</decoder_util>
+		</utilization>
+		<ecc_mode>
+			<current_ecc>Enabled</current_ecc>
+		</ecc_mode>
+		<ecc_errors>
+			<volatile>
+				<sram_correctable>0</sram_correctable>
+				<sram_uncorrectable>1</sram_uncorrectable>
+				<dram_correctable>0</dram_correctable>
+				<dram_uncorrectable>0</dram_uncorrectable>
+			</volatile>
+			<aggregate>
+				<sram_correctable>5</sram_correctable>
+				<sram_uncorrectable>1</sram_uncorrectable>
+				<dram_correctable>0</dram_correctable>
+				<dram_uncorrectable>0</dram_uncorrectable>
+			</aggregate>
+		</ecc_errors>
+		<temperature>
+			<gpu_temp>62 C</gpu_temp>
+			<memory_temp>58 C</memory_temp>
+		</temperature>
+		<gpu_power_readings>
+			<power_state>P0</power_state>
+			<power_draw>310.55 W</power_draw>
+			<current_power_limit>400.00 W</current_power_limit>
+		</gpu_power_readings>
+		<clocks>
+			<graphics_clock>1410 MHz</graphics_clock>
+			<sm_clock>1410 MHz</sm_clock>
+			<mem_clock>1215 MHz</mem_clock>
+			<video_clock>1275 MHz</video_clock>
+		</clocks>
+		<max_clocks>
+			<graphics_clock>1410 MHz</graphics_clock>
+			<sm_clock>1410 MHz</sm_clock>
+			<mem_clock>1215 MHz</mem_clock>
+		</max_clocks>
+		<processes></processes>
+	</gpu>
+	<gpu id="00000000:0F:00.0">
+		<product_name>NVIDIA A100-SXM4-40GB</product_name>
+		<product_brand>NVIDIA</product_brand>
+		<product_architecture>Ampere</product_architecture>
+		<uuid>GPU-bbbbbbbb-0000-1111-2222-333333333333</uuid>
+		<minor_number>1</minor_number>
+		<pci>
+			<pci_bus_id>00000000:0F:00.0</pci_bus_id>
+		</pci>
+		<fb_memory_usage>
+			<total>N/A</total>
+			<used>N/A</used>
+		</fb_memory_usage>
+		<utilization>
+			<gpu_util>N/A</gpu_util>
+			<memory_util>Not Supported</memory_util>
+		</utilization>
+		<temperature>
+			<gpu_temp>N/A</gpu_temp>
+		</temperature>
+		<gpu_power_readings>
+			<power_draw>N/A</power_draw>
+		</gpu_power_readings>
+		<processes></processes>
+	</gpu>
+</nvidia_smi_log>

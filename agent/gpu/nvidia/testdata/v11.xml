@@ -1,0 +1,105 @@
+<?xml version="1.0" ?>
+<!DOCTYPE nvidia_smi_log SYSTEM "nvsmi_device_v11.dtd">
+<nvidia_smi_log>
+	<timestamp>Thu Sep  3 12:07:10 2026</timestamp>
+	<driver_version>470.199.02</driver_version>
+	<cuda_version>11.4</cuda_version>
+	<attached_gpus>1</attached_gpus>
+	<gpu id="00000000:00:1E.0">
+		<product_name>Tesla T4</product_name>
+		<product_brand>Tesla</product_brand>
+		<product_architecture>Turing</product_architecture>
+		<persistence_mode>Disabled</persistence_mode>
+		<mig_mode>
+			<current_mig>N/A</current_mig>
+		</mig_mode>
+		<gpu_virtualization_mode>
+			<virtualization_mode>Pass-Through</virtualization_mode>
+			<host_vgpu_mode>N/A</host_vgpu_mode>
+		</gpu_virtualization_mode>
+		<serial>1560721000000</serial>
+		<uuid>GPU-cccccccc-0000-1111-2222-333333333333</uuid>
+		<minor_number>0</minor_number>
+		<vbios_version>90.04.9A.00.A2</vbios_version>
+		<pci>
+			<pci_bus_id>00000000:00:1E.0</pci_bus_id>
+			<pci_gpu_link_info>
+				<pcie_gen>
+					<current_link_gen>3</current_link_gen>
+				</pcie_gen>
+				<link_widths>
+					<current_link_width>8x</current_link_width>
+				</link_widths>
+			</pci_gpu_link_info>
+			<replay_counter>0</replay_counter>
+		</pci>
+		<fan_speed>N/A</fan_speed>
+		<performance_state>P0</performance_state>
+		<clocks_throttle_reasons>
+			<clocks_throttle_reason_gpu_idle>Not Active</clocks_throttle_reason_gpu_idle>
+			<clocks_throttle_reason_applications_clocks_setting>Not Active</clocks_throttle_reason_applications_clocks_setting>
+			<clocks_throttle_reason_sw_power_cap>Not Active</clocks_throttle_reason_sw_power_cap>
+			<clocks_throttle_reason_hw_slowdown>Active</clocks_throttle_reason_hw_slowdown>
+			<clocks_throttle_reason_hw_thermal_slowdown>Not Active</clocks_throttle_reason_hw_thermal_slowdown>
+			<clocks_throttle_reason_hw_power_brake_slowdown>Not Active</clocks_throttle_reason_hw_power_brake_slowdown>
+			<clocks_throttle_reason_sync_boost>Not Active</clocks_throttle_reason_sync_boost>
+			<clocks_throttle_reason_sw_thermal_slowdown>Not Active</clocks_throttle_reason_sw_thermal_slowdown>
+			<clocks_throttle_reason_display_clocks_setting>Not Active</clocks_throttle_reason_display_clocks_setting>
+		</clocks_throttle_reasons>
+		<fb_memory_usage>
+			<total>15360 MiB</total>
+			<used>3840 MiB</used>
+			<free>11520 MiB</free>
+		</fb_memory_usage>
+		<bar1_memory_usage>
+			<total>256 MiB</total>
+			<used>4 MiB</used>
+			<free>252 MiB</free>
+		</bar1_memory_usage>
+		<compute_mode>Default</compute_mode>
+		<utilization>
+			<gpu_util>44 %</gpu_util>
+			<memory_util>12 %</memory_util>
+			<encoder_util>0 %</encoder_util>
+			<decoder_util>0 %</decoder_util>
+		</utilization>
+		<ecc_mode>
+			<current_ecc>Enabled</current_ecc>
+		</ecc_mode>
+		<ecc_errors>
+			<volatile>
+				<sram_correctable>0</sram_correctable>
+				<sram_uncorrectable>0</sram_uncorrectable>
+				<dram_correctable>0</dram_correctable>
+				<dram_uncorrectable>0</dram_uncorrectable>
+			</volatile>
+			<aggregate>
+				<sram_correctable>0</sram_correctable>
+				<sram_uncorrectable>0</sram_uncorrectable>
+				<dram_correctable>0</dram_correctable>
+				<dram_uncorrectable>0</dram_uncorrectable>
+			</aggregate>
+		</ecc_errors>
+		<temperature>
+			<gpu_temp>40 C</gpu_temp>
+			<memory_temp>N/A</memory_temp>
+		</temperature>
+		<power_readings>
+			<power_state>P0</power_state>
+			<power_draw>26.78 W</power_draw>
+			<power_limit>70.00 W</power_limit>
+		</power_readings>
+		<clocks>
+			<graphics_clock>585 MHz</graphics_clock>
+			<sm_clock>585 MHz</sm_clock>
+			<mem_clock>5000 MHz</mem_clock>
+			<video_clock>945 MHz</video_clock>
+		</clocks>
+		<max_clocks>
+			<graphics_clock>1590 MHz</graphics_clock>
+			<sm_clock>1590 MHz</sm_clock>
+			<mem_clock>5001 MHz</mem_clock>
+		</max_clocks>
+		<processes></processes>
+	</gpu>
+</nvidia_smi_log>

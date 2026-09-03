@@ -1,0 +1,62 @@
+<?xml version="1.0" ?>
+<!DOCTYPE nvidia_smi_log SYSTEM "nvsmi_device_v13.dtd">
+<nvidia_smi_log>
+	<timestamp>Thu Sep  3 12:07:10 2026</timestamp>
+	<driver_version>570.124.03</driver_version>
+	<cuda_version>12.8</cuda_version>
+	<attached_gpus>1</attached_gpus>
+	<gpu id="00000000:02:01.0">
+		<product_name>NVIDIA A40-8Q</product_name>
+		<product_brand>NVIDIA Virtual Workstation</product_brand>
+		<product_architecture>Ampere</product_architecture>
+		<persistence_mode>N/A</persistence_mode>
+		<mig_mode>
+			<current_mig>N/A</current_mig>
+		</mig_mode>
+		<gpu_virtualization_mode>
+			<virtualization_mode>VGPU</virtualization_mode>
+			<host_vgpu_mode>N/A</host_vgpu_mode>
+		</gpu_virtualization_mode>
+		<vgpu_software_licensed_product>
+			<license_status>Licensed (Expiry: 2026-9-4 3:9:8 GMT)</license_status>
+		</vgpu_software_licensed_product>
+		<uuid>GPU-eeeeeeee-0000-1111-2222-333333333333</uuid>
+		<minor_number>0</minor_number>
+		<pci>
+			<pci_bus_id>00000000:02:01.0</pci_bus_id>
+		</pci>
+		<fan_speed>N/A</fan_speed>
+		<performance_state>P0</performance_state>
+		<fb_memory_usage>
+			<total>8192 MiB</total>
+			<used>977 MiB</used>
+			<free>7215 MiB</free>
+		</fb_memory_usage>
+		<bar1_memory_usage>
+			<total>0 MiB</total>
+			<used>0 MiB</used>
+			<free>0 MiB</free>
+		</bar1_memory_usage>
+		<compute_mode>Default</compute_mode>
+		<utilization>
+			<gpu_util>17 %</gpu_util>
+			<memory_util>4 %</memory_util>
+		</utilization>
+		<ecc_mode>
+			<current_ecc>N/A</current_ecc>
+		</ecc_mode>
+		<temperature>
+			<gpu_temp>N/A</gpu_temp>
+		</temperature>
+		<gpu_power_readings>
+			<instant_power_draw>N/A</instant_power_draw>
+			<current_power_limit>N/A</current_power_limit>
+		</gpu_power_readings>
+		<clocks>
+			<graphics_clock>1740 MHz</graphics_clock>
+			<sm_clock>1740 MHz</sm_clock>
+			<mem_clock>7250 MHz</mem_clock>
+		</clocks>
+		<processes></processes>
+	</gpu>
+</nvidia_smi_log>
