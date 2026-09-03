@@ -431,7 +431,8 @@ SSH 정보를 함께 준 CSP(Azure) VM 소스의 실제 응답 예시입니다. 
         },
         "csp": { "name": "", "vpc": null, "nlb": null, "security_group": null }
       },
-      "gpu": { "nvidia": [], "drm": [ { "driver_name": "hyperv_drm", … } ],
+      "gpu": { "nvidia": [], "amd": [], "drm": [ { "driver_name": "hyperv_drm", … } ],
+               "nvidia_smi_schema": "",
                "errors": ["NVIDIA: nvidia-smi command is not available"] },
       "storage": { "mount_point": { "mounted_information": null } },
       "haproxy": { "version": "", … },

@@ -90,7 +90,12 @@ curl http://127.0.0.1:$PORT/honeybee-agent/readyz
 ### `GET /infra` — 통합 인프라 정보 조회
 
 호스트의 전체 인프라 구성을 수집합니다: 컴퓨트(CPU/메모리), 루트 + 데이터 디스크, 네트워크 인터페이스,
-라우팅 테이블, 방화벽 규칙, OS 메타데이터.
+라우팅 테이블, 방화벽 규칙, OS 메타데이터, GPU.
+
+GPU는 `nvidia`(nvidia-smi XML), `amd`, 커널이 붙인 `drm` 세 갈래로 나뉩니다. 수집에 실패한 갈래는
+빈 배열이 되고 이유가 `errors[]`에 남습니다 - **`errors`가 비어 있지 않다고 수집 전체가 실패한 것은
+아닙니다.** `nvidia_smi_schema`에는 어느 XML 스키마 버전으로 파싱했는지가 담기며, nvidia-smi가
+돌지 않았으면 빈 문자열입니다.
 
 ```bash
 curl http://127.0.0.1:$PORT/honeybee-agent/infra
@@ -124,6 +129,12 @@ curl "http://127.0.0.1:$PORT/honeybee-agent/software?show_default_packages=true"
 
 쿠버네티스 **클러스터** 메타데이터(이름, 버전, CNI 플러그인, Pod/Service CIDR, NodePort 범위)와
 **노드** 정보(`control-plane`/`worker` 등 역할, 노드 스펙, machine ID)를 수집합니다.
+
+노드 스펙에는 CPU·메모리·임시 스토리지와 함께 `gpu[]`가 들어갑니다. 쿠버네티스에는 GPU를 나타내는
+기본 리소스가 없어서, 클러스터가 GPU를 가졌다고 말하는 곳은 `nvidia.com/gpu` 같은 **확장 리소스**뿐입니다.
+`capacity`/`allocatable`은 코어가 아니라 **장치 개수**입니다. `vendor`·`product`·`driver_version`·
+`memory`·`mig_capable`·`mig_strategy`는 벤더의 feature discovery가 노드에 붙인 레이블에서 가져오므로,
+그것 없이 device plugin만 도는 클러스터에서는 비어 있습니다(추측해서 채우지 않습니다).
 
 > **중요:** 쿠버네티스(및 Helm) 수집은 호스트가 *접근 가능한 쿠버네티스 컨트롤 플레인*일 때만
 > 동작합니다. 컨트롤 플레인이 아니면 에이전트가 수집을 건너뜁니다(커밋 `66c7305`). kubeconfig 경로는
