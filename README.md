@@ -212,9 +212,11 @@ reports that explicitly:
   "agent_failed_message": "agent-based collection is not applicable to on-prem k8s connections"
 }
 ```
-Do not call `POST .../import/*` on such a connection - those endpoints collect
-through the in-guest agent over SSH. The stored kubeconfig is consumed by the
-downstream migration modules.
+`POST .../import/*` collects through the in-guest agent over SSH, which such a
+connection does not have. Calling it for this connection alone is refused with
+the message above; calling it for the whole source group skips this member and
+collects the rest. The stored kubeconfig is consumed by the downstream
+migration modules.
 
 #### 3.3 CSP connection info
 For CSP groups, each `connection_info` points at one cloud resource by id.

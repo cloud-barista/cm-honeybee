@@ -153,8 +153,10 @@
   - `connection_status`: `success`
   - `agent_status`: `failed`, `agent_failed_message`:
     `"agent-based collection is not applicable to on-prem k8s connections"`
-- 따라서 온프렘 `k8s` 커넥션에는 `POST /import/*`(에이전트 경로)를 호출하지 마세요. SSH 대상이 없어
-  실패합니다.
+- `POST /import/*`는 에이전트 경로라 온프렘 `k8s`에는 해당하지 않습니다.
+  - **단건 호출**(`.../connection_info/{connId}/import/*`)은 위와 같은 문구로 거부합니다.
+  - **그룹 호출**(`/source_group/{sgId}/import/*`)은 그 커넥션만 건너뛰고 나머지를 수집합니다.
+    응답 배열에 그 커넥션의 항목이 없는 것으로 확인합니다.
 
 ---
 
