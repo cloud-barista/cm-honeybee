@@ -6044,6 +6044,39 @@ const docTemplate = `{
                 }
             }
         },
+        "kubernetes.NodeGPU": {
+            "type": "object",
+            "properties": {
+                "allocatable": {
+                    "type": "integer"
+                },
+                "capacity": {
+                    "type": "integer"
+                },
+                "driver_version": {
+                    "type": "string"
+                },
+                "memory": {
+                    "description": "MiB, per device",
+                    "type": "integer"
+                },
+                "mig_capable": {
+                    "type": "string"
+                },
+                "mig_strategy": {
+                    "type": "string"
+                },
+                "product": {
+                    "type": "string"
+                },
+                "resource_name": {
+                    "type": "string"
+                },
+                "vendor": {
+                    "type": "string"
+                }
+            }
+        },
         "kubernetes.NodeSpec": {
             "type": "object",
             "properties": {
@@ -6054,6 +6087,12 @@ const docTemplate = `{
                 "ephemeral_storage": {
                     "description": "MiB",
                     "type": "integer"
+                },
+                "gpu": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/kubernetes.NodeGPU"
+                    }
                 },
                 "memory": {
                     "description": "MiB",
@@ -6232,7 +6271,11 @@ const docTemplate = `{
             "properties": {
                 "mode": {
                     "description": "Mode of the tmpfs upon creation",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/os.FileMode"
+                        }
+                    ]
                 },
                 "options": {
                     "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
@@ -7212,6 +7255,92 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "os.FileMode": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511
+            ],
+            "x-enum-comments": {
+                "ModeAppend": "a: append-only",
+                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
+                "ModeDevice": "D: device file",
+                "ModeDir": "d: is a directory",
+                "ModeExclusive": "l: exclusive use",
+                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
+                "ModeNamedPipe": "p: named pipe (FIFO)",
+                "ModePerm": "Unix permission bits, 0o777",
+                "ModeSetgid": "g: setgid",
+                "ModeSetuid": "u: setuid",
+                "ModeSocket": "S: Unix domain socket",
+                "ModeSticky": "t: sticky",
+                "ModeSymlink": "L: symbolic link",
+                "ModeTemporary": "T: temporary file; Plan 9 only"
+            },
+            "x-enum-descriptions": [
+                "d: is a directory",
+                "a: append-only",
+                "l: exclusive use",
+                "T: temporary file; Plan 9 only",
+                "L: symbolic link",
+                "D: device file",
+                "p: named pipe (FIFO)",
+                "S: Unix domain socket",
+                "u: setuid",
+                "g: setgid",
+                "c: Unix character device, when ModeDevice is set",
+                "t: sticky",
+                "?: non-regular file; nothing else is known about this file",
+                "",
+                "Unix permission bits, 0o777"
+            ],
+            "x-enum-varnames": [
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm"
+            ]
         },
         "software.Binary": {
             "type": "object",

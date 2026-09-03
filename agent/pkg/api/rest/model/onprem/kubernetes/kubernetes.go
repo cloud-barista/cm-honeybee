@@ -44,9 +44,29 @@ type Node struct {
 }
 
 type NodeSpec struct {
-	CPU              int `json:"cpu"`               // cores
-	Memory           int `json:"memory"`            // MiB
-	EphemeralStorage int `json:"ephemeral_storage"` // MiB
+	CPU              int       `json:"cpu"`               // cores
+	Memory           int       `json:"memory"`            // MiB
+	EphemeralStorage int       `json:"ephemeral_storage"` // MiB
+	GPU              []NodeGPU `json:"gpu,omitempty"`
+}
+
+// NodeGPU is one GPU extended resource a node advertises, such as
+// nvidia.com/gpu or amd.com/gpu. Kubernetes never reports GPUs as a core
+// resource, so this is the only place a cluster states that it has any.
+//
+// Capacity and Allocatable are device counts, not cores. The remaining fields
+// come from the labels a device plugin's feature discovery puts on the node,
+// so they are empty on a cluster that runs the plain device plugin without it.
+type NodeGPU struct {
+	ResourceName  string `json:"resource_name"`
+	Capacity      int64  `json:"capacity"`
+	Allocatable   int64  `json:"allocatable"`
+	Vendor        string `json:"vendor,omitempty"`
+	Product       string `json:"product,omitempty"`
+	DriverVersion string `json:"driver_version,omitempty"`
+	Memory        int    `json:"memory,omitempty"` // MiB, per device
+	MIGCapable    string `json:"mig_capable,omitempty"`
+	MIGStrategy   string `json:"mig_strategy,omitempty"`
 }
 
 type Helm struct {

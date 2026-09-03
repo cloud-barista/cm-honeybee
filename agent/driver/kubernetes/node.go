@@ -10,6 +10,7 @@ import (
 
 	"github.com/jollaman999/utils/logger"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,8 +20,10 @@ func convertToMiB(q resource.Quantity) int {
 	return int(bytes / 1048576)
 }
 
-func parseNodeSpec(nodeData map[string]interface{}, index int) kubernetes.NodeSpec {
+func parseNodeSpec(nodeData map[string]interface{}, index int, node corev1.Node) kubernetes.NodeSpec {
 	var nodeSpec kubernetes.NodeSpec
+
+	nodeSpec.GPU = parseNodeGPU(node)
 
 	if cpuStr, ok := common.GoJq(nodeData, fmt.Sprintf(".items[%d].status.capacity.cpu", index)).(string); ok {
 		if cpu, err := strconv.Atoi(cpuStr); err == nil {
@@ -72,7 +75,7 @@ func GetNodeInfo() (kubernetes.NodeCount, []kubernetes.Node, error) {
 			Name:      common.GoJq(nodeMap, fmt.Sprintf(".items[%d].metadata.name", i)),
 			Labels:    common.GoJq(nodeMap, fmt.Sprintf(".items[%d].metadata.labels", i)),
 			Addresses: common.GoJq(nodeMap, fmt.Sprintf(".items[%d].status.addresses[]", i)),
-			NodeSpec:  parseNodeSpec(nodeMap, i),
+			NodeSpec:  parseNodeSpec(nodeMap, i, objects.Items[i]),
 			NodeInfo:  common.GoJq(nodeMap, fmt.Sprintf(".items[%d].status.nodeInfo", i)),
 		}
 
