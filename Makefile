@@ -64,16 +64,14 @@ run: ## Run built binaries
 	@"$(MAKE)" -C ./agent run
 	@"$(MAKE)" -C ./server run
 
-run_docker: ## Run built binaries within Docker
-	@"$(MAKE)" -C ./agent run_docker
+run_docker: ## Run the server within Docker (the agent has no container image)
 	@"$(MAKE)" -C ./server run_docker
 
 stop: ## Stop built binaries
 	@"$(MAKE)" -C ./agent stop
 	@"$(MAKE)" -C ./server stop
 
-stop_docker: ## Stop Docker containers
-	@"$(MAKE)" -C ./agent stop_docker
+stop_docker: ## Stop the server's Docker container
 	@"$(MAKE)" -C ./server stop_docker
 
 clean: ## Remove previous builds
