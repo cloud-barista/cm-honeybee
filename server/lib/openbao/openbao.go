@@ -25,7 +25,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// mount is the KV v2 mount path (enabled at "secret/" by openbao-init).
+// mount is the KV v2 mount path, enabled at "secret/" by ensureKV during startup.
 const mount = "secret"
 
 // ErrNotFound is returned by Get when the path holds no secret.

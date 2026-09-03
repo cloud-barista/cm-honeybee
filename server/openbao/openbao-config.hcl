@@ -1,8 +1,9 @@
 # OpenBao server configuration for cm-honeybee's secrets backend.
 #
-# Stores SSH access info and CSP credentials for cm-honeybee (KV v2 engine at
-# secret/). TLS is disabled for local/dev; enable it (and a KMS auto-unseal
-# stanza) for production. See README.md.
+# Stores connection secrets (SSH password/private key, on-prem k8s kubeconfig)
+# and CSP credentials for cm-honeybee (KV v2 engine at secret/). TLS is disabled
+# for local/dev; enable it (and a KMS auto-unseal stanza) for production.
+# See ../../docs/openbao.md.
 #
 # Reference: https://openbao.org/docs/configuration/
 
@@ -26,8 +27,9 @@ disable_mlock = true
 ui = true
 
 # ─────────────────────────────────────────────────────────────────────
-# (Production) Cloud KMS Auto-Unseal — prefer this over the plaintext-key
-# auto-unseal watcher (openbao-init) for production. Example (AWS KMS):
+# (Production) Cloud KMS Auto-Unseal. cm-honeybee unseals this server itself,
+# keeping the unseal key RSA-encrypted in its own database; a KMS seal moves
+# that key out of the database entirely. Example (AWS KMS):
 #
 # seal "awskms" {
 #   region     = "ap-northeast-2"
