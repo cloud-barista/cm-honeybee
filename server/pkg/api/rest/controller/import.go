@@ -14,6 +14,33 @@ import (
 	"time"
 )
 
+// ErrOnpremK8sAgent is returned when an agent-backed import is asked for an
+// on-prem Kubernetes connection. Such a connection is registered by its
+// kubeconfig and has no SSH host, so there is no in-guest agent to query.
+// Group imports skip these connections instead of failing the whole group.
+var ErrOnpremK8sAgent = errors.New("agent-based collection is not applicable to on-prem k8s connections")
+
+// isOnpremK8s reports whether this connection is an on-prem Kubernetes cluster,
+// which is reached through its kubeconfig rather than through the agent.
+func isOnpremK8s(sourceGroup *model.SourceGroup, connectionInfo *model.ConnectionInfo) bool {
+	return serverCommon.IsOnpremType(sourceGroup.Type) &&
+		connectionInfo.ResourceType == serverCommon.ResourceTypeK8s
+}
+
+// checkAgentImportable rejects connections that cannot be collected through the
+// agent, before an import writes an "importing" record it would never finish.
+func checkAgentImportable(connectionInfo *model.ConnectionInfo) error {
+	sourceGroup, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
+	if err != nil {
+		return err
+	}
+	if isOnpremK8s(sourceGroup, connectionInfo) {
+		return ErrOnpremK8sAgent
+	}
+
+	return nil
+}
+
 // logImportStep records how long one step of an import took. Import latency is
 // dominated by the agent call over SSH, so the steps are timed individually to
 // show where the time actually goes when a source is slow. detail carries
@@ -42,6 +69,10 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 	sourceGroup, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
 	if err != nil {
 		return nil, err
+	}
+
+	if isOnpremK8s(sourceGroup, connectionInfo) {
+		return nil, ErrOnpremK8sAgent
 	}
 
 	oldSavedInfraInfo, _ := dao.SavedInfraInfoGet(connectionInfo.ID)
@@ -126,6 +157,10 @@ func doImportSoftware(connID string, showDefaultPackages bool) (*model.SavedSoft
 		return nil, err
 	}
 
+	if err := checkAgentImportable(connectionInfo); err != nil {
+		return nil, err
+	}
+
 	oldSavedSoftwareInfo, _ := dao.SavedSoftwareInfoGet(connectionInfo.ID)
 
 	if oldSavedSoftwareInfo == nil {
@@ -182,6 +217,10 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := checkAgentImportable(connectionInfo); err != nil {
 		return nil, err
 	}
 
@@ -244,6 +283,10 @@ func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
 		return nil, err
 	}
 
+	if err := checkAgentImportable(connectionInfo); err != nil {
+		return nil, err
+	}
+
 	oldSavedHelmInfo, _ := dao.SavedHelmInfoGet(connectionInfo.ID)
 
 	if oldSavedHelmInfo == nil {
@@ -300,6 +343,10 @@ func doImportData(connID string) (*model.SavedDataInfo, error) {
 
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := checkAgentImportable(connectionInfo); err != nil {
 		return nil, err
 	}
 
@@ -423,6 +470,11 @@ func ImportInfraSourceGroup(c echo.Context) error {
 	for _, conn := range *list {
 		savedInfraInfo, err := doImportInfra(conn.ID)
 		if err != nil {
+			// An on-prem k8s member carries no agent; skip it rather than
+			// failing the collection for every other source in the group.
+			if errors.Is(err, ErrOnpremK8sAgent) {
+				continue
+			}
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 		savedInfraInfoList = append(savedInfraInfoList, *savedInfraInfo)
@@ -511,6 +563,11 @@ func ImportSoftwareSourceGroup(c echo.Context) error {
 	for _, conn := range *list {
 		savedSoftwareInfo, err := doImportSoftware(conn.ID, showDefaultPackages)
 		if err != nil {
+			// An on-prem k8s member carries no agent; skip it rather than
+			// failing the collection for every other source in the group.
+			if errors.Is(err, ErrOnpremK8sAgent) {
+				continue
+			}
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 		savedSoftwareInfoList = append(savedSoftwareInfoList, *savedSoftwareInfo)
@@ -591,6 +648,11 @@ func ImportKubernetesSourceGroup(c echo.Context) error {
 	for _, conn := range *list {
 		savedKubernetesInfo, err := doImportKubernetes(conn.ID)
 		if err != nil {
+			// An on-prem k8s member carries no agent; skip it rather than
+			// failing the collection for every other source in the group.
+			if errors.Is(err, ErrOnpremK8sAgent) {
+				continue
+			}
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 		savedKubernetesInfoList = append(savedKubernetesInfoList, *savedKubernetesInfo)
@@ -671,6 +733,11 @@ func ImportHelmSourceGroup(c echo.Context) error {
 	for _, conn := range *list {
 		savedHelmInfo, err := doImportHelm(conn.ID)
 		if err != nil {
+			// An on-prem k8s member carries no agent; skip it rather than
+			// failing the collection for every other source in the group.
+			if errors.Is(err, ErrOnpremK8sAgent) {
+				continue
+			}
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 		savedHelmInfoList = append(savedHelmInfoList, *savedHelmInfo)
@@ -751,6 +818,11 @@ func ImportDataSourceGroup(c echo.Context) error {
 	for _, conn := range *list {
 		savedDataInfo, err := doImportData(conn.ID)
 		if err != nil {
+			// An on-prem k8s member carries no agent; skip it rather than
+			// failing the collection for every other source in the group.
+			if errors.Is(err, ErrOnpremK8sAgent) {
+				continue
+			}
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 		savedDataInfoList = append(savedDataInfoList, *savedDataInfo)
