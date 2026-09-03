@@ -56,7 +56,7 @@ func GetBenchmarkInfo(c echo.Context) error {
 //	@Accept			json
 //	@Produce		json
 //	@Param			connId path string true "ID of the connection info"
-//	@Param			types query string false "Comma-separated types for benchmarking (e.g., cpus, cpum, memR, memW, fioR, fioW, dbR, dbW)" default(cpus,cpum)
+//	@Param			types query string false "Comma-separated types for benchmarking (e.g., cpus, cpum, memR, memW, fioR, fioW, dbR, dbW)" default(cpus,cpum,memR,memW,fioR,fioW)
 //	@Success		200	{object}	model.Benchmark			"Successfully get information of the benchmark."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the benchmark."

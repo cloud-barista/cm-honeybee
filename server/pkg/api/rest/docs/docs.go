@@ -88,7 +88,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "cpus,cpum",
+                        "default": "cpus,cpum,memR,memW,fioR,fioW",
                         "description": "Comma-separated types for benchmarking (e.g., cpus, cpum, memR, memW, fioR, fioW, dbR, dbW)",
                         "name": "types",
                         "in": "query"
@@ -4419,7 +4419,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "provider_name": {
-                    "description": "CSP fields — populated only when Type == \"csp\".\nCredential is stored RSA-encrypted at rest. It is decrypted on demand and\nregistered to cb-spider only transiently (per discovery/collection call);\nhoneybee is the single source of truth, so no spider connection name is kept.",
+                    "description": "CSP fields, populated only when Type == \"csp\".\nCredential lives in OpenBao, never in this table: the column is cleared on\nwrite and rehydrated on demand. It is registered to cb-spider only\ntransiently (per discovery/collection call); honeybee is the single source\nof truth, so no spider connection name is kept.",
                     "type": "string"
                 },
                 "region_name": {
@@ -4429,7 +4429,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo"
                 },
                 "type": {
-                    "description": "Type discriminates how this group's connections are collected.\nAllowed: \"ssh\" (default, on-prem) or \"csp\" (cb-spider backed).",
+                    "description": "Type discriminates how this group's connections are collected. Allowed:\n\"onprem\" or \"csp\" (cb-spider backed); see common.IsOnpremType. \"ssh\" and\nthe empty value are the earlier spelling of \"onprem\" and are still\naccepted. The stored default stays \"ssh\" rather than \"onprem\" because it\nis what clients already compare against; the request handler writes it\nexplicitly when the caller omits the field.",
                     "type": "string"
                 }
             }
@@ -5882,11 +5882,7 @@ const docTemplate = `{
             "properties": {
                 "mode": {
                     "description": "Mode of the tmpfs upon creation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/os.FileMode"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "options": {
                     "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
@@ -6867,77 +6863,6 @@ const docTemplate = `{
                 }
             }
         },
-        "os.FileMode": {
-            "type": "integer",
-            "format": "int32",
-            "enum": [
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511
-            ],
-            "x-enum-comments": {
-                "ModeAppend": "a: append-only",
-                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
-                "ModeDevice": "D: device file",
-                "ModeDir": "d: is a directory",
-                "ModeExclusive": "l: exclusive use",
-                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
-                "ModeNamedPipe": "p: named pipe (FIFO)",
-                "ModePerm": "Unix permission bits",
-                "ModeSetgid": "g: setgid",
-                "ModeSetuid": "u: setuid",
-                "ModeSocket": "S: Unix domain socket",
-                "ModeSticky": "t: sticky",
-                "ModeSymlink": "L: symbolic link",
-                "ModeTemporary": "T: temporary file; Plan 9 only"
-            },
-            "x-enum-descriptions": [
-                "d: is a directory",
-                "a: append-only",
-                "l: exclusive use",
-                "T: temporary file; Plan 9 only",
-                "L: symbolic link",
-                "D: device file",
-                "p: named pipe (FIFO)",
-                "S: Unix domain socket",
-                "u: setuid",
-                "g: setgid",
-                "c: Unix character device, when ModeDevice is set",
-                "t: sticky",
-                "?: non-regular file; nothing else is known about this file",
-                "",
-                "Unix permission bits"
-            ],
-            "x-enum-varnames": [
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm"
-            ]
-        },
         "software.Binary": {
             "type": "object",
             "properties": {
@@ -6965,6 +6890,13 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "declared_environ": {
+                    "description": "DeclaredEnviron is what the unit declares (Environment= and\nEnvironmentFile=). Empty for processes systemd did not start.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "dependencies": {
                     "description": "non-package-owned runtime paths to copy",
                     "type": "array",
@@ -6973,6 +6905,7 @@ const docTemplate = `{
                     }
                 },
                 "environ": {
+                    "description": "Environ is the process's inherited runtime environment (/proc/\u003cpid\u003e/environ).\nMost of it is injected by systemd or the login session and belongs to this\nhost, not to the software -- use DeclaredEnviron for what the software was\nactually configured with.",
                     "type": "array",
                     "items": {
                         "type": "string"

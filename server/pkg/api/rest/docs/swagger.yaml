@@ -1468,10 +1468,11 @@ definitions:
         type: string
       provider_name:
         description: |-
-          CSP fields — populated only when Type == "csp".
-          Credential is stored RSA-encrypted at rest. It is decrypted on demand and
-          registered to cb-spider only transiently (per discovery/collection call);
-          honeybee is the single source of truth, so no spider connection name is kept.
+          CSP fields, populated only when Type == "csp".
+          Credential lives in OpenBao, never in this table: the column is cleared on
+          write and rehydrated on demand. It is registered to cb-spider only
+          transiently (per discovery/collection call); honeybee is the single source
+          of truth, so no spider connection name is kept.
         type: string
       region_name:
         type: string
@@ -1479,8 +1480,12 @@ definitions:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo'
       type:
         description: |-
-          Type discriminates how this group's connections are collected.
-          Allowed: "ssh" (default, on-prem) or "csp" (cb-spider backed).
+          Type discriminates how this group's connections are collected. Allowed:
+          "onprem" or "csp" (cb-spider backed); see common.IsOnpremType. "ssh" and
+          the empty value are the earlier spelling of "onprem" and are still
+          accepted. The stored default stays "ssh" rather than "onprem" because it
+          is what clients already compare against; the request handler writes it
+          explicitly when the caller omits the field.
         type: string
     required:
     - id
@@ -2594,9 +2599,8 @@ definitions:
   mount.TmpfsOptions:
     properties:
       mode:
-        allOf:
-        - $ref: '#/definitions/os.FileMode'
         description: Mode of the tmpfs upon creation
+        type: integer
       options:
         description: |-
           Options to be passed to the tmpfs mount. An array of arrays. Flag
@@ -3303,72 +3307,6 @@ definitions:
         description: Optionally stores the source address (used for policy-based routing)
         type: string
     type: object
-  os.FileMode:
-    enum:
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    format: int32
-    type: integer
-    x-enum-comments:
-      ModeAppend: 'a: append-only'
-      ModeCharDevice: 'c: Unix character device, when ModeDevice is set'
-      ModeDevice: 'D: device file'
-      ModeDir: 'd: is a directory'
-      ModeExclusive: 'l: exclusive use'
-      ModeIrregular: '?: non-regular file; nothing else is known about this file'
-      ModeNamedPipe: 'p: named pipe (FIFO)'
-      ModePerm: Unix permission bits
-      ModeSetgid: 'g: setgid'
-      ModeSetuid: 'u: setuid'
-      ModeSocket: 'S: Unix domain socket'
-      ModeSticky: 't: sticky'
-      ModeSymlink: 'L: symbolic link'
-      ModeTemporary: 'T: temporary file; Plan 9 only'
-    x-enum-descriptions:
-    - 'd: is a directory'
-    - 'a: append-only'
-    - 'l: exclusive use'
-    - 'T: temporary file; Plan 9 only'
-    - 'L: symbolic link'
-    - 'D: device file'
-    - 'p: named pipe (FIFO)'
-    - 'S: Unix domain socket'
-    - 'u: setuid'
-    - 'g: setgid'
-    - 'c: Unix character device, when ModeDevice is set'
-    - 't: sticky'
-    - '?: non-regular file; nothing else is known about this file'
-    - ""
-    - Unix permission bits
-    x-enum-varnames:
-    - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
-    - ModeSetuid
-    - ModeSetgid
-    - ModeCharDevice
-    - ModeSticky
-    - ModeIrregular
-    - ModeType
-    - ModePerm
   software.Binary:
     properties:
       cmdline:
@@ -3387,12 +3325,24 @@ definitions:
         items:
           type: string
         type: array
+      declared_environ:
+        description: |-
+          DeclaredEnviron is what the unit declares (Environment= and
+          EnvironmentFile=). Empty for processes systemd did not start.
+        items:
+          type: string
+        type: array
       dependencies:
         description: non-package-owned runtime paths to copy
         items:
           type: string
         type: array
       environ:
+        description: |-
+          Environ is the process's inherited runtime environment (/proc/<pid>/environ).
+          Most of it is injected by systemd or the login session and belongs to this
+          host, not to the software -- use DeclaredEnviron for what the software was
+          actually configured with.
         items:
           type: string
         type: array
@@ -4233,7 +4183,7 @@ paths:
         name: connId
         required: true
         type: string
-      - default: cpus,cpum
+      - default: cpus,cpum,memR,memW,fioR,fioW
         description: Comma-separated types for benchmarking (e.g., cpus, cpum, memR,
           memW, fioR, fioW, dbR, dbW)
         in: query
