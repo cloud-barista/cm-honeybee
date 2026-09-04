@@ -24,9 +24,12 @@
 - **ConnectionInfo** - SourceGroup에 속한 개별 소스의 연결 정보. SSH 대상이면 IP/SSH 포트/사용자·자격
   증명을, 온프렘 k8s 클러스터면 `kubeconfig`를, CSP 리소스면 `resource_type`/`resource_id`를 담습니다.
   Server는 이를 사용해 호스트/에이전트/cb-spider에 접근하여 데이터를 수집합니다.
-- **원시(Raw) vs 정제(Refined)** — `/infra`, `/software`, `/kubernetes`, `/helm`, `/data`는 수집된
+- **원시(Raw) vs 정제(Refined)** - `/infra`, `/software`, `/kubernetes`, `/helm`, `/data`는 수집된
   원시 데이터를 반환합니다. `/.../refined` 엔드포인트는 다운스트림에서 사용하는 정규화된 모델
   (`github.com/cloud-barista/cm-beetle/imdl/on-premise-model`)을 반환합니다.
+  **정제 모델에는 GPU가 없습니다.** 대상 모델에 GPU 필드가 정의돼 있지 않아, `infra.gpu`와
+  쿠버네티스 노드의 `spec.gpu`는 **원시 엔드포인트로만 나옵니다.** GPU 정보를 쓰는 쪽은
+  `/.../refined`가 아니라 `/.../infra`나 `/.../kubernetes`를 호출해야 합니다.
 
 ---
 

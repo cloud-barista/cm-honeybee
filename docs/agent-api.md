@@ -92,10 +92,19 @@ curl http://127.0.0.1:$PORT/honeybee-agent/readyz
 호스트의 전체 인프라 구성을 수집합니다: 컴퓨트(CPU/메모리), 루트 + 데이터 디스크, 네트워크 인터페이스,
 라우팅 테이블, 방화벽 규칙, OS 메타데이터, GPU.
 
-GPU는 `nvidia`(nvidia-smi XML), `amd`, 커널이 붙인 `drm` 세 갈래로 나뉩니다. 수집에 실패한 갈래는
-빈 배열이 되고 이유가 `errors[]`에 남습니다 - **`errors`가 비어 있지 않다고 수집 전체가 실패한 것은
-아닙니다.** 예를 들어 AMD GPU가 없는 호스트는 `amd`가 빈 배열이고 `errors`에
-`"AMD: rocm-smi command is not available"` 한 줄이 남습니다.
+GPU는 `nvidia`(nvidia-smi XML), `amd`(rocm-smi JSON), 커널이 붙인 `drm` 세 갈래로 나뉩니다.
+세 갈래를 각각 독립으로 수집하므로 실패한 갈래만 빈 배열이 되고 이유가 `errors[]`에 남습니다 -
+**`errors`가 비어 있지 않다고 수집 전체가 실패한 것은 아닙니다.** 예를 들어 AMD GPU가 없는
+호스트는 `amd`가 빈 배열이고 `errors`에 `"AMD: rocm-smi command is not available"` 한 줄이
+남지만 `nvidia` 수집은 정상입니다.
+
+**`nvidia` 배열과 `drm` 배열은 역할이 다릅니다.** `nvidia`는 nvidia-smi가 보고하는 GPU이고,
+`drm`은 커널 DRM 서브시스템에 등록된 카드 목록입니다. `nvidia_drm` 모듈이 로드되지 않은
+환경(일부 클라우드 이미지)에서는 GPU가 `nvidia`에는 잡히지만 `drm`에는 안 잡히고, 대신
+하이퍼바이저 프레임버퍼(`simpledrm` 등)만 나옵니다. **GPU 유무는 `nvidia`/`amd`로 판단하세요.**
+
+`device_attribute.virtualization_mode`로 물리 장비와 가상화 환경을 구분할 수 있습니다.
+실측 예: 물리 GPU는 `"None"`, GPU 패스스루된 클라우드 VM은 `"Pass-Through"`.
 
 `nvidia_smi_schema`에는 `nvidia-smi -q -x` 출력의 DOCTYPE에서 읽어낸 XML 스키마 버전이 담깁니다.
 
