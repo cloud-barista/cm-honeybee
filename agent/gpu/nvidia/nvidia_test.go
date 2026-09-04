@@ -47,9 +47,11 @@ func TestDetectSchema(t *testing.T) {
 	}
 }
 
-// An unknown schema version must not be dropped: it is newer than anything we
-// know, so it is read with the newest parser rather than rejected.
-func TestUnknownSchemaFallsBackToLatest(t *testing.T) {
+// A schema newer than anything we know must not be dropped: it mostly adds
+// elements the newest parser can ignore, so it is read with that one. The
+// reported schema has to name the substitution instead of claiming the agent
+// understood the document's own version.
+func TestUnknownNewerSchemaReadsWithLatest(t *testing.T) {
 	data := strings.Replace(string(load(t, "v13-single.xml")),
 		"nvsmi_device_v13.dtd", "nvsmi_device_v99.dtd", 1)
 
@@ -58,12 +60,48 @@ func TestUnknownSchemaFallsBackToLatest(t *testing.T) {
 		t.Fatalf("parse: %v", err)
 	}
 
-	if schema != latestSchema {
-		t.Errorf("schema = %q, want %q", schema, latestSchema)
+	if want := "v99 (read as v13)"; schema != want {
+		t.Errorf("schema = %q, want %q", schema, want)
 	}
 
 	if len(gpus) != 1 {
 		t.Fatalf("got %d GPUs, want 1", len(gpus))
+	}
+}
+
+// A schema older than anything we know must be read with the oldest parser,
+// not the newest. v13 renamed power_readings to gpu_power_readings, so reading
+// such a document with the v13 parser loses the power fields silently.
+func TestUnknownOlderSchemaKeepsPowerFields(t *testing.T) {
+	data := strings.Replace(string(load(t, "v11.xml")),
+		"nvsmi_device_v11.dtd", "nvsmi_device_v9.dtd", 1)
+
+	gpus, schema, err := parse([]byte(data))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+
+	if want := "v9 (read as v11)"; schema != want {
+		t.Errorf("schema = %q, want %q", schema, want)
+	}
+
+	if len(gpus) == 0 {
+		t.Fatal("got no GPUs")
+	}
+
+	reference, _ := parseFile(t, "v11.xml")
+
+	got, want := gpus[0].Performance.PowerDraw, reference[0].Performance.PowerDraw
+	if want == nil {
+		t.Fatal("the v11 fixture carries no power_draw, so this test proves nothing")
+	}
+
+	if got == nil {
+		t.Fatal("power_draw was dropped when the older schema fell back")
+	}
+
+	if *got != *want {
+		t.Errorf("power_draw = %v, want %v", *got, *want)
 	}
 }
 

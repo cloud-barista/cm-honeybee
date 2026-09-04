@@ -163,8 +163,10 @@ type GPU struct {
 	NVIDIA []NVIDIA `json:"nvidia"`
 	AMD    []AMD    `json:"amd"`
 	DRM    []DRM    `json:"drm"`
-	// NVIDIASMISchema is the nvidia-smi XML schema version the output was
-	// parsed with (v11, v12, v13 ...). Empty when nvidia-smi did not run.
+	// NVIDIASMISchema is the nvidia-smi XML schema version found in the output
+	// (v11, v12, v13 ...). A version with no parser of its own is read with the
+	// nearest one and reported as "v9 (read as v11)", so a substituted reading
+	// is never presented as an understood one. Empty when nvidia-smi did not run.
 	NVIDIASMISchema string   `json:"nvidia_smi_schema,omitempty"`
 	Errors          []string `json:"errors"`
 }

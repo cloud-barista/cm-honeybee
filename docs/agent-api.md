@@ -94,8 +94,24 @@ curl http://127.0.0.1:$PORT/honeybee-agent/readyz
 
 GPU는 `nvidia`(nvidia-smi XML), `amd`, 커널이 붙인 `drm` 세 갈래로 나뉩니다. 수집에 실패한 갈래는
 빈 배열이 되고 이유가 `errors[]`에 남습니다 - **`errors`가 비어 있지 않다고 수집 전체가 실패한 것은
-아닙니다.** `nvidia_smi_schema`에는 어느 XML 스키마 버전으로 파싱했는지가 담기며, nvidia-smi가
-돌지 않았으면 빈 문자열입니다.
+아닙니다.** nvidia-smi가 돌지 않았으면 `nvidia_smi_schema`가 빈 문자열입니다.
+
+`nvidia_smi_schema`에는 nvidia-smi 출력에서 읽어낸 XML 스키마 버전이 담깁니다. 전용 파서가 없는
+버전은 가장 가까운 파서로 읽고 `v9 (read as v11)` 형태로 **감지한 버전과 실제로 쓴 파서를 함께**
+표기합니다. 대체해서 읽은 것을 이해한 것처럼 보고하지 않기 위함입니다.
+
+| 감지된 버전 | 쓰는 파서 | 표기 |
+|-------------|-----------|------|
+| v10, v11 | v11 | `v11` (v10도 `v10`) |
+| v12 | v12 | `v12` |
+| v13 | v13 | `v13` |
+| v13보다 위 (예: v14) | v13 | `v14 (read as v13)` |
+| v11보다 아래 (예: v9) | v11 | `v9 (read as v11)` |
+| DOCTYPE 없음 | v11 | `v11` |
+
+하위 버전을 v13 파서로 읽으면 안 되는 이유가 있습니다. v13이 `power_readings`를
+`gpu_power_readings`로 바꿨기 때문에, v9 문서를 v13 파서로 읽으면 `power_draw`·`power_limit`·
+`clocks_event_reasons`가 **에러 없이 사라집니다.**
 
 ```bash
 curl http://127.0.0.1:$PORT/honeybee-agent/infra
