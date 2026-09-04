@@ -20,6 +20,8 @@ github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260812094338-9cffb9639b48 h1
 github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260812094338-9cffb9639b48/go.mod h1:HtnWiuPOFgsLGqDF1t/VShXDMowdpms5jq+NGvPl35o=
 github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260812162807-06a9173d9f7f h1:i7bQG4xh+Wcu79RseunPsO4iylONE5WM/Sq9oaHTZjw=
 github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260812162807-06a9173d9f7f/go.mod h1:HtnWiuPOFgsLGqDF1t/VShXDMowdpms5jq+NGvPl35o=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260903051017-7965dd2c2274 h1:VoOlZkouEs+G7OWqbWjTwIsFE2uhmUAkHKbGLAfA20s=
+github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260903051017-7965dd2c2274/go.mod h1:HtnWiuPOFgsLGqDF1t/VShXDMowdpms5jq+NGvPl35o=
 github.com/cyphar/filepath-securejoin v0.7.0 h1:s0Y3ITPy6sQn5xt54DuYvTF8hu134ooYLUb58DX/HjE=
 github.com/cyphar/filepath-securejoin v0.7.0/go.mod h1:ymLGms/u3BYaviIiuKFnUx8EkQEZeK6cInNoAPJA3o4=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
