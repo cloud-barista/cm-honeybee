@@ -136,6 +136,173 @@ GPU는 `nvidia`(nvidia-smi XML), `amd`(rocm-smi JSON), 커널이 붙인 `drm` �
 curl http://127.0.0.1:$PORT/honeybee-agent/infra
 ```
 
+#### 응답 예시 - `gpu` 절
+
+물리 서버(GeForce GTX 1660, 드라이버 610.57.04 / CUDA 13.3)에서 받은 실제 응답입니다.
+프로세스 이름의 긴 인자만 줄였고 나머지는 그대로입니다.
+
+```json
+{
+  "nvidia": [
+    {
+      "device_attribute": {
+        "gpu_uuid": "GPU-05548171-05c7-229a-e00e-59703ed40eb0",
+        "driver_version": "610.57.04",
+        "cuda_version": "13.3",
+        "product_name": "NVIDIA GeForce GTX 1660",
+        "product_brand": "GeForce",
+        "product_architecture": "Turing",
+        "nvml_version": "610.57",
+        "index": 0,
+        "minor_number": "0",
+        "pci_bus_id": "00000000:01:00.0",
+        "vbios_version": "90.16.25.00.C3",
+        "compute_mode": "Default",
+        "persistence_mode": "Disabled",
+        "virtualization_mode": "None"
+      },
+      "performance": {
+        "gpu_usage": 3,
+        "memory_usage": 7,
+        "encoder_usage": 0,
+        "decoder_usage": 0,
+        "fb_memory_used": 1302,
+        "fb_memory_total": 6144,
+        "fb_memory_free": 4446,
+        "fb_memory_reserved": 397,
+        "fb_memory_usage": 21,
+        "bar1_memory_used": 21,
+        "bar1_memory_total": 256,
+        "bar1_memory_free": 235,
+        "bar1_memory_usage": 8,
+        "performance_state": "P8",
+        "fan_speed": 40,
+        "temperature_gpu": 39,
+        "power_draw": 13.71,
+        "power_limit": 120,
+        "clock_graphics": 300,
+        "clock_sm": 300,
+        "clock_memory": 405,
+        "clock_video": 540,
+        "max_clock_graphics": 2100,
+        "max_clock_sm": 2100,
+        "max_clock_memory": 4001,
+        "pcie_link_gen_current": 1,
+        "pcie_link_width_current": 16,
+        "pcie_replay_counter": 0,
+        "clocks_event_reasons": 1
+      },
+      "processes": [
+        { "pid": 99627,  "type": "G",   "name": "/usr/bin/gnome-shell",   "used_memory": 150 },
+        { "pid": 100052, "type": "G",   "name": "/usr/bin/Xwayland",      "used_memory": 3 },
+        { "pid": 109937, "type": "C+G", "name": "/opt/google/chrome/chrome", "used_memory": 460 }
+      ]
+    }
+  ],
+  "amd": [],
+  "drm": [
+    {
+      "card": "card1",
+      "pci_bus_id": "00000000:01:00.0",
+      "driver_name": "nvidia-drm",
+      "driver_version": "0.0.0",
+      "driver_date": "0",
+      "driver_description": "NVIDIA DRM driver"
+    }
+  ],
+  "nvidia_smi_schema": "v13",
+  "errors": [
+    "AMD: rocm-smi command is not available"
+  ]
+}
+```
+
+이 응답에서 읽어야 할 것:
+
+- `ecc`·`mig_devices` 키가 **없습니다.** GeForce가 ECC와 MIG를 지원하지 않아 nvidia-smi가
+  `N/A`로 답했고, `omitempty`라 키째 빠집니다. `null`이 아니라 부재입니다.
+  `serial`·`host_vgpu_mode`·`vgpu_license_status`·`temperature_memory`도 같은 이유로 없습니다.
+- `amd`가 빈 배열이고 `errors`에 한 줄이 있지만 `nvidia` 수집은 정상입니다.
+- `drm[0].pci_bus_id`가 `nvidia[0].device_attribute.pci_bus_id`와 같은 값이라 두 배열을
+  짝지을 수 있습니다.
+- `clocks_event_reasons`는 클럭 이벤트(스로틀) 사유 비트마스크입니다. `0`은 "보고됐고 활성 사유
+  없음", 키 부재는 "사유를 아예 보고하지 않음"입니다.
+
+가상화 환경에서는 같은 코드가 다르게 채웁니다. GPU 패스스루된 클라우드 VM(Tesla T4)에서 실측한
+차이입니다.
+
+| 필드 | 물리 (GeForce) | 패스스루 VM (Tesla) |
+|------|----------------|---------------------|
+| `virtualization_mode` | `"None"` | `"Pass-Through"` |
+| `ecc` | 키 없음 | `{"mode": "Enabled", ...}` |
+| `serial` | 키 없음 | 보고됨 |
+| `fan_speed` | 보고됨 | 키 없음 (수동냉각) |
+| `performance_state` | `"P8"` (절전) | `"P0"` 고정 |
+| `processes[].type` | `G` / `C+G` | `C` |
+| `drm` | `nvidia-drm`, PCI 주소 있음 | `simpledrm`, PCI 주소 없음 |
+
+마지막 줄이 위에서 말한 `nvidia`와 `drm`의 역할 차이입니다. 그 VM 이미지에는 `nvidia_drm` 커널
+모듈이 로드되지 않아 `/sys/class/drm`에 NVIDIA 노드가 없었고, 잡힌 `simpledrm`은 하이퍼바이저
+프레임버퍼입니다.
+
+#### `amd` 배열의 모양
+
+AMD는 `rocm-smi --json` 출력을 파싱해 채웁니다. 카드 하나가 배열 항목 하나입니다.
+
+```json
+"amd": [
+  {
+    "device_attribute": {
+      "card": "card0",
+      "gpu_id": "0x738c",
+      "product_name": "Instinct MI100",
+      "serial_number": "0",
+      "pci_bus_id": "0000:1E:00.0",
+      "vbios_version": "113-D3430400-037",
+      "driver_version": "6.2.4",
+      "vendor_id": "Advanced Micro Devices, Inc. [AMD/ATI]",
+      "device_id": "0x738c"
+    },
+    "performance": {
+      "gpu_usage": 0,
+      "memory_usage": 7,
+      "vram_memory_used": 2294,
+      "vram_memory_total": 32752,
+      "performance_level": "auto",
+      "fan_speed": 0,
+      "temperature_gpu": 31,
+      "temperature_memory": 30,
+      "power_draw": 39,
+      "power_cap": 290,
+      "clock_sm": 300,
+      "clock_memory": 1200
+    }
+  }
+]
+```
+
+rocm-smi 출력을 그대로 옮기지 않고 변환하는 것이 있습니다.
+
+| rocm-smi 가 주는 것 | 응답 필드 | 변환 |
+|---------------------|-----------|------|
+| `"VRAM Total Memory (B)": "205939376128"` | `vram_memory_total` | 바이트 → MiB |
+| `"sclk clock speed:": "(132Mhz)"` | `clock_sm` | 괄호와 단위를 벗기고 숫자만 |
+| `Temperature (Sensor edge)` | `temperature_gpu` | |
+| `Temperature (Sensor memory)` | `temperature_memory` | `Sensor junction`은 쓰지 않습니다 |
+| `Average Graphics Package Power (W)` | `power_draw` | |
+| `Max Graphics Package Power (W)` | `power_cap` | |
+| 최상위 `system` 항목의 `Driver version` | 각 카드의 `driver_version` | 카드마다 채워 넣습니다 |
+
+주의할 점:
+
+- **카드 순서는 rocm-smi 출력 순서가 아니라 카드 이름 순입니다.** 수집할 때마다 순서가
+  흔들리지 않게 정렬합니다.
+- **카드마다 필드 수가 다를 수 있습니다.** rocm-smi가 카드별로 다른 블록을 내면 그대로
+  반영되고, 없는 항목은 키째 빠집니다.
+- `"performance": {}`가 나올 수 있습니다. 카드는 인식됐는데 읽어낸 수치가 하나도 없는
+  상태이며, `amd`가 빈 배열인 것(카드 없음)과 다릅니다.
+- `compute_partition`·`memory_partition`은 파티셔닝을 지원하는 데이터센터 카드에서만 나옵니다.
+
 ---
 
 ## Software
