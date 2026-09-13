@@ -6,9 +6,13 @@ import (
 	"errors"
 	"os"
 	"os/exec"
+	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/jollaman999/utils/logger"
 )
 
 const (
@@ -21,6 +25,13 @@ const (
 	// waitDelay bounds how long we wait for the output pipes after the process
 	// was killed, so a child holding stdout cannot keep us blocked.
 	waitDelay = 5 * time.Second
+)
+
+// gpuLine and migLine match the two shapes `nvidia-smi -L` prints. The MIG
+// line is indented under the GPU it belongs to, which is what separates them.
+var (
+	gpuLine = regexp.MustCompile(`^GPU (\d+):.*\(UUID: (GPU-[^)]+)\)`)
+	migLine = regexp.MustCompile(`^\s+MIG \S+\s+Device\s+(\d+):.*\(UUID: (MIG-[^)]+)\)`)
 )
 
 // ErrNotAvailable reports that no nvidia-smi binary was found in PATH.
@@ -101,6 +112,69 @@ func runNVIDIASmi(timeout time.Duration, args ...string) ([]byte, error) {
 // single entry of the collected error list.
 func oneLine(s string) string {
 	return strings.Join(strings.Fields(s), " ")
+}
+
+// migUUIDsByDevice reads the MIG instance UUIDs out of `nvidia-smi -L`, keyed
+// by the GPU index and then the MIG device index.
+//
+// The query output is the primary source for MIG instances, but some drivers
+// leave the <uuid> element out of <mig_device> even though the schema carries
+// it. Measured on a MIG-backed vGPU host running 595.71.03: the XML held no MIG
+// UUID at all while `-L` reported them at the same moment. Without this the
+// field stays empty and the caller has no way to name an instance.
+func migUUIDsByDevice() map[int]map[int]string {
+	output, err := runNVIDIASmi(versionTimeout, "-L")
+	if err != nil {
+		logger.Println(logger.DEBUG, false, "NVIDIA: cannot list MIG devices: "+err.Error())
+
+		return nil
+	}
+
+	return parseMIGListing(output)
+}
+
+// parseMIGListing pulls the MIG UUIDs out of an `nvidia-smi -L` listing, which
+// indents each MIG line under the GPU it belongs to:
+//
+//	GPU 0: NVIDIA RTX PRO 6000 Blackwell Server Edition (UUID: GPU-e821...)
+//	  MIG 2g.48gb     Device  0: (UUID: MIG-e085...)
+//
+// A host with no MIG instances yields an empty map, as does output that is not
+// a listing at all.
+func parseMIGListing(output []byte) map[int]map[int]string {
+	uuids := make(map[int]map[int]string)
+	gpuIndex := -1
+
+	for _, line := range strings.Split(string(output), "\n") {
+		if m := gpuLine.FindStringSubmatch(line); m != nil {
+			n, err := strconv.Atoi(m[1])
+			if err != nil {
+				gpuIndex = -1
+
+				continue
+			}
+			gpuIndex = n
+
+			continue
+		}
+
+		m := migLine.FindStringSubmatch(line)
+		if m == nil || gpuIndex < 0 {
+			continue
+		}
+
+		device, err := strconv.Atoi(m[1])
+		if err != nil {
+			continue
+		}
+
+		if uuids[gpuIndex] == nil {
+			uuids[gpuIndex] = make(map[int]string)
+		}
+		uuids[gpuIndex][device] = m[2]
+	}
+
+	return uuids
 }
 
 // getNVMLVersion reads the NVML library version from `nvidia-smi --version`.

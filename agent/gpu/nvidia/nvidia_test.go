@@ -481,3 +481,84 @@ func TestParseVGPUHost(t *testing.T) {
 		t.Errorf("fb_memory_reserved = %d, want 1104", got)
 	}
 }
+
+// TestMIGUUIDLineParsing covers the shapes `nvidia-smi -L` prints. The samples
+// are the real listings from four hosts: a consumer card, a vGPU host with one
+// and with two L40S, and a MIG-partitioned card.
+func TestMIGUUIDLineParsing(t *testing.T) {
+	tests := []struct {
+		name    string
+		listing string
+		want    map[int]map[int]string
+	}{
+		{
+			name:    "single GPU, no MIG",
+			listing: "GPU 0: NVIDIA GeForce GTX 1660 (UUID: GPU-05548171-05c7-229a-e00e-59703ed40eb0)\n",
+			want:    map[int]map[int]string{},
+		},
+		{
+			name: "two GPUs, no MIG",
+			listing: "GPU 0: NVIDIA L40S (UUID: GPU-1aefeed7-20f6-5f9f-a3a5-119cedf83094)\n" +
+				"GPU 1: NVIDIA L40S (UUID: GPU-4e456fd8-4619-afcc-24e7-29b32c8a7eb5)\n",
+			want: map[int]map[int]string{},
+		},
+		{
+			name: "MIG instances under one GPU",
+			listing: "GPU 0: NVIDIA RTX PRO 6000 Blackwell Server Edition (UUID: GPU-e8212571-5195-16f1-de41-621d30dc84f0)\n" +
+				"  MIG 2g.48gb     Device  0: (UUID: MIG-e0851099-6b9b-5ba5-addd-7637efce4b32)\n" +
+				"  MIG 2g.48gb     Device  1: (UUID: MIG-c535a97e-39e4-5552-a354-0bb05e3bc664)\n",
+			want: map[int]map[int]string{0: {
+				0: "MIG-e0851099-6b9b-5ba5-addd-7637efce4b32",
+				1: "MIG-c535a97e-39e4-5552-a354-0bb05e3bc664",
+			}},
+		},
+		{
+			name:    "output that is not a listing",
+			listing: "nvidia-smi: command failed\n",
+			want:    map[int]map[int]string{},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := parseMIGListing([]byte(tc.listing))
+
+			if len(got) != len(tc.want) {
+				t.Fatalf("gpu count = %d, want %d (%v)", len(got), len(tc.want), got)
+			}
+
+			for gpu, devices := range tc.want {
+				for device, uuid := range devices {
+					if got[gpu][device] != uuid {
+						t.Errorf("gpu %d device %d = %q, want %q", gpu, device, got[gpu][device], uuid)
+					}
+				}
+			}
+		})
+	}
+}
+
+// TestFillMIGUUIDsKeepsQueryOutput checks that a UUID the query output already
+// carried is not replaced by the listing, which is only a fallback.
+func TestFillMIGUUIDsKeepsQueryOutput(t *testing.T) {
+	gpus := []infra.NVIDIA{{
+		DeviceAttribute: infra.NVIDIADeviceAttribute{Index: 0},
+		MIGDevices: []infra.NVIDIAMIGDevice{
+			{Index: "0", UUID: "MIG-from-query"},
+			{Index: "1"},
+		},
+	}}
+
+	applyMIGUUIDs(gpus, map[int]map[int]string{0: {
+		0: "MIG-from-listing",
+		1: "MIG-from-listing-1",
+	}})
+
+	if got := gpus[0].MIGDevices[0].UUID; got != "MIG-from-query" {
+		t.Errorf("device 0 uuid = %q, want the query output kept", got)
+	}
+
+	if got := gpus[0].MIGDevices[1].UUID; got != "MIG-from-listing-1" {
+		t.Errorf("device 1 uuid = %q, want it filled from the listing", got)
+	}
+}

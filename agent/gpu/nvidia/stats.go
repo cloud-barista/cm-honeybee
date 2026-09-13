@@ -1,6 +1,8 @@
 package nvidia
 
 import (
+	"strconv"
+
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/jollaman999/utils/logger"
 )
@@ -40,9 +42,73 @@ func QueryGPU() (Result, error) {
 		}
 	}
 
+	fillMIGUUIDs(gpus)
+
 	if gpus == nil {
 		gpus = []infra.NVIDIA{}
 	}
 
 	return Result{GPUs: gpus, Schema: schema}, nil
+}
+
+// fillMIGUUIDs supplies the MIG instance UUIDs that the query output left out.
+//
+// Some drivers omit <uuid> from <mig_device> even though the schema carries it,
+// and `nvidia-smi -L` still reports it. The extra command only runs when there
+// is something to fill, so a host with no MIG instances, or one whose output
+// already names them, pays nothing. A UUID that came from the query output is
+// never overwritten: that output is the primary source and this is a fallback.
+func fillMIGUUIDs(gpus []infra.NVIDIA) {
+	missing := false
+
+	for i := range gpus {
+		for j := range gpus[i].MIGDevices {
+			if gpus[i].MIGDevices[j].UUID == "" {
+				missing = true
+
+				break
+			}
+		}
+	}
+
+	if !missing {
+		return
+	}
+
+	uuids := migUUIDsByDevice()
+	if len(uuids) == 0 {
+		return
+	}
+
+	applyMIGUUIDs(gpus, uuids)
+}
+
+// applyMIGUUIDs writes the listed UUIDs onto the MIG instances that have none.
+// Both sides are numbered by the driver, so the GPU index and the MIG device
+// index line the two up.
+func applyMIGUUIDs(gpus []infra.NVIDIA, uuids map[int]map[int]string) {
+	for i := range gpus {
+		byDevice := uuids[gpus[i].DeviceAttribute.Index]
+		if byDevice == nil {
+			continue
+		}
+
+		for j := range gpus[i].MIGDevices {
+			mig := &gpus[i].MIGDevices[j]
+			if mig.UUID != "" {
+				continue
+			}
+
+			// The MIG index is a string in the model because the query output
+			// carries it as one; `-L` numbers the same devices.
+			index, err := strconv.Atoi(mig.Index)
+			if err != nil {
+				continue
+			}
+
+			if uuid := byDevice[index]; uuid != "" {
+				mig.UUID = uuid
+			}
+		}
+	}
 }

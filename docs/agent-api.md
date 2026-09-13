@@ -177,8 +177,12 @@ MIG가 켜진 카드는 `device_attribute.mig_mode`가 `"Enabled"`이고 `mig_de
 ]
 ```
 
-- **`mig_devices[].uuid`는 대개 비어 있습니다.** nvidia-smi의 `-q -x` 출력이 `<mig_device>`에
-  UUID를 넣지 않기 때문이고, 수집 실패가 아닙니다. MIG UUID가 필요하면 `nvidia-smi -L`을 봐야 합니다.
+- **`mig_devices[].uuid`는 `-q -x`에 없으면 `nvidia-smi -L`로 채웁니다.** 스키마에는 `<uuid>`
+  요소가 있는데 드라이버가 그것을 아예 내보내지 않는 구성이 있습니다(MIG-backed vGPU 호스트,
+  드라이버 595.71.03에서 확인). 같은 호스트에서 `-L`은 같은 시점에 UUID를 내주므로, MIG 인스턴스가
+  있는데 UUID가 빈 경우에만 `-L`을 한 번 더 불러 보충합니다. `-q -x`가 이미 준 값은 덮어쓰지
+  않고, MIG가 없는 호스트에서는 `-L`을 부르지 않습니다. 보충에 실패해도 수집은 그대로 성공하고
+  그 필드만 빕니다.
 - MIG 카드는 ECC로 거의 깎이지 않습니다. 실측에서 공칭 96GB 카드가 97887 MiB를 보고해
   417 MiB 차이였습니다 (위 L40S의 3084 MiB와 대비됩니다).
 
