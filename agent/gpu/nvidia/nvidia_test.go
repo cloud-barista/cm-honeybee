@@ -439,3 +439,45 @@ func deref64(t *testing.T, v *uint64) uint64 {
 
 	return *v
 }
+
+// TestParseVGPUHost covers what a vGPU host reports, taken from an L40S with
+// SR-IOV vGPU and ECC on. Two things only show up on a host like this: the
+// CUDA version comes back as "Not Found" because the host carries no CUDA
+// runtime, and the framebuffer total is the post-ECC figure with a driver
+// reservation inside it.
+func TestParseVGPUHost(t *testing.T) {
+	gpus, schema := parseFile(t, "vgpu-host-v13.xml")
+
+	if schema != "v13" {
+		t.Errorf("schema = %q, want v13", schema)
+	}
+
+	g := gpus[0]
+
+	// "Not Found" carries no reading, so it must not reach the response as a
+	// literal string.
+	if g.DeviceAttribute.CUDAVersion != "" {
+		t.Errorf("cuda_version = %q, want empty", g.DeviceAttribute.CUDAVersion)
+	}
+
+	if g.DeviceAttribute.VirtualizationMode != "Host VGPU" {
+		t.Errorf("virtualization_mode = %q, want Host VGPU", g.DeviceAttribute.VirtualizationMode)
+	}
+
+	if g.DeviceAttribute.HostVGPUMode != "SR-IOV" {
+		t.Errorf("host_vgpu_mode = %q, want SR-IOV", g.DeviceAttribute.HostVGPUMode)
+	}
+
+	if g.ECC == nil || g.ECC.Mode != "Enabled" {
+		t.Fatalf("ecc = %+v, want mode Enabled", g.ECC)
+	}
+
+	// The reservation sits inside the reported total rather than beside it.
+	if got := deref64(t, g.Performance.FBMemoryTotal); got != 46068 {
+		t.Errorf("fb_memory_total = %d, want 46068", got)
+	}
+
+	if got := deref64(t, g.Performance.FBMemoryReserved); got != 1104 {
+		t.Errorf("fb_memory_reserved = %d, want 1104", got)
+	}
+}

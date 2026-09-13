@@ -1,9 +1,12 @@
 // Package common holds the value normalization shared by every nvidia-smi
-// schema parser. nvidia-smi reports a reading it cannot take as "N/A" or
-// "Not Supported" rather than omitting it, and newer drivers answer some
-// queries with a deprecation notice. Turning any of those into a zero would
-// be indistinguishable from a real zero, so every helper here returns nil (or
-// an empty string) instead.
+// schema parser. nvidia-smi reports a reading it cannot take as "N/A",
+// "Not Supported" or "Not Found" rather than omitting it, and newer drivers
+// answer some queries with a deprecation notice. Turning any of those into a
+// zero would be indistinguishable from a real zero, so every helper here
+// returns nil (or an empty string) instead.
+//
+// "Not Found" is what a vGPU host with no CUDA runtime answers for the CUDA
+// version, which otherwise reached the response as a literal string.
 package common
 
 import (
@@ -20,7 +23,7 @@ func unusable(v string) bool {
 	s := strings.ToLower(strings.TrimSpace(v))
 
 	return s == "" || s == "n/a" || s == "not supported" ||
-		s == "unknown error" || s == deprecatedValue
+		s == "not found" || s == "unknown error" || s == deprecatedValue
 }
 
 // token returns the leading whitespace-separated token of v, which is where
