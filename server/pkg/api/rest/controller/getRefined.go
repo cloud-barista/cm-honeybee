@@ -684,7 +684,7 @@ func convertToBinaries(legacy []software.Binary) []softwaremodel.Binary {
 			UIDs:             b.UIDs,
 			GIDs:             b.GIDs,
 			CmdlineSlice:     b.CmdlineSlice,
-			Envs:             b.Environ,
+			Envs:             migrationEnvs(b),
 			NeededLibraries:  neededLibraries,
 			RequiredPackages: b.RequiredPackages,
 			BinaryPath:       binaryPath,
@@ -797,6 +797,102 @@ func getArchitectureType(arch, variant string) softwaremodel.SoftwareArchitectur
 	}
 
 	return "Unknown"
+}
+
+// runtimeEnvDenyList names variables that systemd or the login session injects at
+// start. They describe this host's current boot and session -- a cgroup path, an
+// invocation id, an X display, an agent socket -- so replaying them on a
+// migration target is at best meaningless and at worst harmful (a stale
+// SSH_AUTH_SOCK or DISPLAY forced on every login there).
+var runtimeEnvDenyList = map[string]bool{
+	// systemd, per-invocation
+	"INVOCATION_ID": true, "JOURNAL_STREAM": true, "NOTIFY_SOCKET": true,
+	"SYSTEMD_EXEC_PID": true, "MANAGERPID": true, "MANAGERPIDFDID": true,
+	"LISTEN_PID": true, "LISTEN_FDS": true, "LISTEN_FDNAMES": true,
+	"MEMORY_PRESSURE_WATCH": true, "MEMORY_PRESSURE_WRITE": true,
+	// login session / shell
+	"USER": true, "USERNAME": true, "LOGNAME": true, "HOME": true, "SHELL": true,
+	"PWD": true, "OLDPWD": true, "SHLVL": true, "TERM": true, "MAIL": true,
+	"_": true, "PATH": true, "HOSTNAME": true, "LS_COLORS": true, "container": true,
+	"SSH_CLIENT": true, "SSH_CONNECTION": true, "SSH_TTY": true, "SSH_AUTH_SOCK": true,
+	"GPG_AGENT_INFO": true,
+	// desktop session
+	"DISPLAY": true, "WAYLAND_DISPLAY": true, "XAUTHORITY": true,
+	"DBUS_SESSION_BUS_ADDRESS": true, "DESKTOP_SESSION": true, "DESKTOP_STARTUP_ID": true,
+	"GDMSESSION": true, "GNOME_DESKTOP_SESSION_ID": true, "GNOME_SETUP_DISPLAY": true,
+	"GTK_MODULES": true, "QT_ACCESSIBILITY": true, "QT_IM_MODULE": true,
+	"QT_IM_MODULES": true, "XMODIFIERS": true,
+	"GIO_LAUNCHED_DESKTOP_FILE": true, "GIO_LAUNCHED_DESKTOP_FILE_PID": true,
+	"XDG_ACTIVATION_TOKEN": true, "XDG_CURRENT_DESKTOP": true, "XDG_MENU_PREFIX": true,
+	"XDG_RUNTIME_DIR": true, "XDG_SESSION_CLASS": true, "XDG_SESSION_DESKTOP": true,
+	"XDG_SESSION_ID": true, "XDG_SESSION_TYPE": true,
+	"XDG_SESSION_EXTRA_DEVICE_ACCESS": true, "XDG_DATA_DIRS": true,
+}
+
+// secretEnvKeyTokens flag a variable whose value is likely a credential.
+var secretEnvKeyTokens = []string{
+	"PASSWORD", "PASSWD", "SECRET", "TOKEN", "APIKEY", "API_KEY",
+	"ACCESS_KEY", "PRIVATE_KEY", "CREDENTIAL", "PASSPHRASE",
+}
+
+// isSecretEnvKey reports whether key names something that likely holds a credential.
+func isSecretEnvKey(key string) bool {
+	upper := strings.ToUpper(key)
+	for _, token := range secretEnvKeyTokens {
+		if strings.Contains(upper, token) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// migrationEnvs picks the environment to carry to the migration target.
+//
+// For a process systemd started, the unit's own declaration (Environment= /
+// EnvironmentFile=) is authoritative: it is what the software was configured
+// with. /proc/<pid>/environ additionally holds everything systemd and the login
+// session injected, which belongs to this host. Anything else falls back to the
+// runtime environment with those injected variables removed.
+//
+// Values of credential-looking variables are dropped: the refined model is
+// served over an API with no authentication and is applied to the target's
+// system-wide /etc/environment, so neither is a place for a plaintext secret.
+// The keys are logged so an operator knows what has to be supplied by hand.
+func migrationEnvs(b software.Binary) []string {
+	source := b.DeclaredEnviron
+	if len(source) == 0 {
+		if b.LaunchType == "systemd" {
+			// systemd started it and the unit declares nothing, so every variable
+			// the process holds was injected. Nothing to carry.
+			return nil
+		}
+
+		source = b.Environ
+	}
+
+	var envs []string
+	var omitted []string
+
+	for _, entry := range source {
+		key, _, found := strings.Cut(entry, "=")
+		if !found || key == "" || runtimeEnvDenyList[key] {
+			continue
+		}
+		if isSecretEnvKey(key) {
+			omitted = append(omitted, key)
+			continue
+		}
+
+		envs = append(envs, entry)
+	}
+
+	if len(omitted) > 0 {
+		logger.Println(logger.WARN, false, "Refined: omitted credential-looking environment variables from "+
+			b.Name+" ("+strings.Join(omitted, ", ")+"); set them on the target by hand")
+	}
+
+	return envs
 }
 
 func convertEnvs(env *[]string) []softwaremodel.Env {
