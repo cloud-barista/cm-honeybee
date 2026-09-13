@@ -31,8 +31,8 @@
   모델이 섞인 노드도 카드별로 그대로 표현됩니다. 메모리는 드라이버가 보고한 값을 그대로
   넣습니다 - ECC가 켜진 카드는 표기 용량보다 작게 보고되는데, 그 차이를 여기서 보정하지 않고
   `eccEnabled`와 `memoryReservedGB`를 함께 실어 소비하는 쪽이 판단하게 합니다.
-  온도·전력·클럭·프로세스 같은 텔레메트리와 `drm`은 정제 모델에 담기지 않으므로,
-  그 값이 필요하면 `/.../infra`를 호출하세요.
+  온도·전력·클럭·프로세스 같은 텔레메트리와 `drm`, 그리고 **MIG 인스턴스 목록**은 정제 모델에
+  담기지 않으므로, 그 값이 필요하면 `/.../infra`를 호출하세요.
 
 ---
 
@@ -632,6 +632,55 @@ curl $BASE/source_group/$SG/infra/refined
 curl $BASE/source_group/$SG/connection_info/$CONN/software/refined
 curl $BASE/source_group/$SG/software/refined
 ```
+
+### 노드의 GPU (`gpuCards`)
+
+물리 GPU 카드 하나가 항목 하나입니다. 한 노드에 서로 다른 모델이 꽂혀 있어도 카드별로 그대로
+실리므로, 요약 하나로 뭉개지지 않습니다.
+
+```json
+"gpuCards": [
+  {
+    "driverIndex": "0",
+    "uuid": "GPU-1aefeed7-20f6-5f9f-a3a5-119cedf83094",
+    "vendor": "NVIDIA",
+    "model": "NVIDIA L40S",
+    "type": "GPU",
+    "architecture": "Ada Lovelace",
+    "driverVersion": "595.71.03",
+    "pciBusId": "00000000:61:00.0",
+    "eccEnabled": true,
+    "memoryTotalGB": 44.98828,
+    "memoryReservedGB": 1.078125,
+    "memoryFreeGB": 36.848633,
+    "memoryUsedGB": 7.0634766
+  }
+]
+```
+
+| 필드 | 채워지는 값 |
+|------|-------------|
+| `driverIndex` | 드라이버가 쓰는 표기를 **그대로**. NVIDIA는 `"0"`, AMD는 `"card0"`·`"card10"` |
+| `vendor` / `model` / `architecture` | 각 드라이버가 보고한 값 |
+| `eccEnabled` | ECC가 켜져 있는지. 드라이버가 ECC를 보고하지 않으면 `false` |
+| `memoryTotalGB` | 드라이버가 보고한 총량을 GB로. **보정하지 않습니다** |
+| `memoryReservedGB` | 그 총량 **안에** 잡혀 있는 예약분 |
+
+읽을 때 주의할 점.
+
+- **`driverIndex`는 배열 안에서 유일하지 않습니다.** NVIDIA와 AMD가 같이 꽂힌 노드에서는
+  nvidia-smi의 `0`과 rocm-smi의 `card0`이 각자 0번입니다. 노드 안에서 카드를 가리는 키로는
+  `uuid`나 `pciBusId`를 쓰세요.
+- **ECC가 켜진 카드의 `memoryTotalGB`는 카드 표기 용량보다 작습니다.** 위 L40S는 공칭 48GB인데
+  44.99가 실립니다. 보정하지 않는 이유는 보정한 값과 날것을 구분할 수 없게 되기 때문이고,
+  대신 `eccEnabled`와 `memoryReservedGB`를 같이 보냅니다. `memoryTotalGB + memoryReservedGB`로도
+  표기 용량이 복원되지 않는다는 점에 주의하세요 - 둘은 서로 다른 것입니다.
+- AMD는 rocm-smi가 free와 reserved를 주지 않아 `memoryFreeGB`·`memoryReservedGB`가 비고,
+  ECC 상태도 보고하지 않습니다.
+- 쿠버네티스 API로만 보이는 노드는 확장 리소스가 개수만 알려주므로, 장수만큼 항목이 생기고
+  `uuid`·`pciBusId`는 빕니다.
+
+---
 
 ### 쿠버네티스 소스 모델
 

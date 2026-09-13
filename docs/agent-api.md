@@ -104,7 +104,16 @@ GPU는 `nvidia`(nvidia-smi XML), `amd`(rocm-smi JSON), 커널이 붙인 `drm` �
 하이퍼바이저 프레임버퍼(`simpledrm` 등)만 나옵니다. **GPU 유무는 `nvidia`/`amd`로 판단하세요.**
 
 `device_attribute.virtualization_mode`로 물리 장비와 가상화 환경을 구분할 수 있습니다.
-실측 예: 물리 GPU는 `"None"`, GPU 패스스루된 클라우드 VM은 `"Pass-Through"`.
+실측한 값은 세 가지입니다.
+
+| 값 | 어떤 환경 | 같이 오는 것 |
+|----|-----------|--------------|
+| `"None"` | 물리 장비 | |
+| `"Pass-Through"` | GPU 패스스루된 클라우드 VM | |
+| `"Host VGPU"` | vGPU를 나눠 주는 호스트 | `host_vgpu_mode`(예: `"SR-IOV"`) |
+
+vGPU 호스트에는 CUDA 런타임이 없어서 nvidia-smi가 CUDA 버전을 `Not Found`로 답합니다.
+그것은 값이 아니라 **읽히지 않았다는 뜻**이라 `N/A`와 같이 취급되어 `cuda_version` 키가 빠집니다.
 
 `nvidia_smi_schema`에는 `nvidia-smi -q -x` 출력의 DOCTYPE에서 읽어낸 XML 스키마 버전이 담깁니다.
 
@@ -131,6 +140,47 @@ GPU는 `nvidia`(nvidia-smi XML), `amd`(rocm-smi JSON), 커널이 붙인 `drm` �
 하위 버전을 v13 파서로 읽으면 안 되는 이유가 있습니다. v13이 `power_readings`를
 `gpu_power_readings`로 바꿨기 때문에, v9 문서를 v13 파서로 읽으면 `power_draw`·`power_limit`·
 `clocks_event_reasons`가 **에러 없이 사라집니다.**
+
+#### ECC를 켜면 총 메모리가 표기 용량보다 작게 나옵니다
+
+`performance.fb_memory_total`은 드라이버가 보고하는 값을 그대로 옮긴 것이고, **카드에 적힌 용량이
+아닙니다.** ECC가 켜진 카드는 패리티에 쓰는 만큼이 빠진 채 보고됩니다.
+
+L40S(공칭 48GB, ECC on) 실측입니다.
+
+```
+Total    : 46068 MiB      <- 공칭 49152 MiB 보다 3084 MiB (6.27%) 작다
+Reserved :  1104 MiB
+Used     :  7233 MiB
+Free     : 37733 MiB
+```
+
+두 가지를 주의하세요.
+
+- **`reserved`는 `total` 안에 들어 있습니다.** `used + free + reserved`가 `total`과 맞습니다.
+  `total` 옆에 따로 있는 양이 아닙니다.
+- **`total + reserved`로도 공칭 용량이 복원되지 않습니다.** 위 예에서 47172 MiB로, 아직
+  1980 MiB 모자랍니다. ECC가 가져간 몫과 `reserved`는 서로 다른 것입니다.
+
+ECC가 얼마나 가져갔는지는 **이 응답만으로는 알 수 없습니다.** 공칭 용량을 담은 필드가 없어서,
+차이를 구하려면 카드 사양을 밖에서 알아야 합니다. `ecc.mode`로 켜졌는지만 알 수 있습니다.
+
+#### MIG
+
+MIG가 켜진 카드는 `device_attribute.mig_mode`가 `"Enabled"`이고 `mig_devices[]`가 채워집니다.
+
+```json
+"mig_mode": "Enabled",
+"mig_devices": [
+  { "index": "0", "gpu_instance_id": "1", "compute_instance_id": "0",
+    "fb_memory_total": 47744, "fb_memory_used": 47508, "fb_memory_free": 237 }
+]
+```
+
+- **`mig_devices[].uuid`는 대개 비어 있습니다.** nvidia-smi의 `-q -x` 출력이 `<mig_device>`에
+  UUID를 넣지 않기 때문이고, 수집 실패가 아닙니다. MIG UUID가 필요하면 `nvidia-smi -L`을 봐야 합니다.
+- MIG 카드는 ECC로 거의 깎이지 않습니다. 실측에서 공칭 96GB 카드가 97887 MiB를 보고해
+  417 MiB 차이였습니다 (위 L40S의 3084 MiB와 대비됩니다).
 
 ```bash
 curl http://127.0.0.1:$PORT/honeybee-agent/infra
