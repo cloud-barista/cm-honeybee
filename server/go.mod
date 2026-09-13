@@ -12,7 +12,7 @@ require (
 )
 
 require (
-	github.com/cloud-barista/cm-beetle/imdl v0.1.12
+	github.com/cloud-barista/cm-beetle/imdl v0.1.15
 	github.com/cloud-barista/cm-grasshopper/smdl v0.1.3
 	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260904055431-58b62a1f9522
 	github.com/docker/docker v28.5.2+incompatible

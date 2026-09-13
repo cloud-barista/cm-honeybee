@@ -27,9 +27,12 @@
 - **원시(Raw) vs 정제(Refined)** - `/infra`, `/software`, `/kubernetes`, `/helm`, `/data`는 수집된
   원시 데이터를 반환합니다. `/.../refined` 엔드포인트는 다운스트림에서 사용하는 정규화된 모델
   (`github.com/cloud-barista/cm-beetle/imdl/on-premise-model`)을 반환합니다.
-  **정제 모델에는 GPU가 없습니다.** 대상 모델에 GPU 필드가 정의돼 있지 않아, `infra.gpu`와
-  쿠버네티스 노드의 `spec.gpu`는 **원시 엔드포인트로만 나옵니다.** GPU 정보를 쓰는 쪽은
-  `/.../refined`가 아니라 `/.../infra`나 `/.../kubernetes`를 호출해야 합니다.
+  **정제 모델은 GPU를 노드의 `gpuCards[]`로 냅니다.** 물리 카드 하나가 항목 하나이고,
+  모델이 섞인 노드도 카드별로 그대로 표현됩니다. 메모리는 드라이버가 보고한 값을 그대로
+  넣습니다 - ECC가 켜진 카드는 표기 용량보다 작게 보고되는데, 그 차이를 여기서 보정하지 않고
+  `eccEnabled`와 `memoryReservedGB`를 함께 실어 소비하는 쪽이 판단하게 합니다.
+  온도·전력·클럭·프로세스 같은 텔레메트리와 `drm`은 정제 모델에 담기지 않으므로,
+  그 값이 필요하면 `/.../infra`를 호출하세요.
 
 ---
 

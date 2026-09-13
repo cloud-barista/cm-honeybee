@@ -5198,7 +5198,7 @@ const docTemplate = `{
                     }
                 },
                 "nvidia_smi_schema": {
-                    "description": "NVIDIASMISchema is the nvidia-smi XML schema version the output was\nparsed with (v11, v12, v13 ...). Empty when nvidia-smi did not run.",
+                    "description": "NVIDIASMISchema is the nvidia-smi XML schema version found in the output\n(v11, v12, v13 ...). A version with no parser of its own is read with the\nnearest one and reported as \"v9 (read as v11)\", so a substituted reading\nis never presented as an understood one. Empty when nvidia-smi did not run.",
                     "type": "string"
                 }
             }
@@ -6271,11 +6271,7 @@ const docTemplate = `{
             "properties": {
                 "mode": {
                     "description": "Mode of the tmpfs upon creation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/os.FileMode"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "options": {
                     "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
@@ -6845,6 +6841,86 @@ const docTemplate = `{
                 }
             }
         },
+        "onpremisemodel.GpuCardProperty": {
+            "type": "object",
+            "properties": {
+                "architecture": {
+                    "description": "GPU Microarchitecture (e.g., \"Ampere\", \"Turing\", \"CDNA 4\")",
+                    "type": "string",
+                    "example": "Ampere"
+                },
+                "cudaVersion": {
+                    "description": "CUDA or compute API version (e.g., \"12.2\", \"ROCm 6.2\")",
+                    "type": "string",
+                    "example": "12.2"
+                },
+                "driverIndex": {
+                    "description": "Driver device index (e.g., \"0\", \"card0\", \"card10\")",
+                    "type": "string",
+                    "example": "0"
+                },
+                "driverVersion": {
+                    "description": "Installed driver version for this device",
+                    "type": "string",
+                    "example": "535.129.03"
+                },
+                "eccEnabled": {
+                    "description": "Whether Error-Correcting Code (ECC) memory protection is enabled",
+                    "type": "boolean",
+                    "example": true
+                },
+                "memoryFreeGB": {
+                    "description": "Available/Free memory in GB",
+                    "type": "number",
+                    "example": 38
+                },
+                "memoryReservedGB": {
+                    "description": "VRAM reserved for ECC parity and system overhead in GB",
+                    "type": "number",
+                    "example": 2
+                },
+                "memoryTotalGB": {
+                    "description": "Total physical VRAM capacity in GB (Total + Reserved)",
+                    "type": "number",
+                    "example": 40
+                },
+                "memoryUsedGB": {
+                    "description": "Used memory in GB",
+                    "type": "number",
+                    "example": 2
+                },
+                "model": {
+                    "description": "Specific model for this card/chip",
+                    "type": "string",
+                    "example": "NVIDIA A100-PCIE-40GB"
+                },
+                "pciBusId": {
+                    "description": "PCIe Bus identifier (e.g., \"0000:01:00.0\")",
+                    "type": "string",
+                    "example": "0000:01:00.0"
+                },
+                "slot": {
+                    "description": "Physical PCIe slot label if available (optional)",
+                    "type": "string",
+                    "example": "PCIe Slot 1"
+                },
+                "type": {
+                    "description": "Accelerator type: \"GPU\", \"NPU\", \"TPU\" (defaults to \"GPU\")",
+                    "type": "string",
+                    "example": "GPU"
+                },
+                "uuid": {
+                    "description": "Unique device UUID from driver (e.g., NVML GPU UUID)",
+                    "type": "string",
+                    "example": "GPU-12345678-abcd-ef01-2345-..."
+                },
+                "vendor": {
+                    "description": "GPU Vendor (e.g., \"NVIDIA\", \"AMD\", \"Intel\")",
+                    "type": "string",
+                    "example": "NVIDIA"
+                }
+            }
+        },
         "onpremisemodel.K8sClusterProperty": {
             "type": "object",
             "required": [
@@ -7103,6 +7179,13 @@ const docTemplate = `{
                         "$ref": "#/definitions/onpremisemodel.FirewallRuleProperty"
                     }
                 },
+                "gpuCards": {
+                    "description": "Physical GPU cards installed on the node",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.GpuCardProperty"
+                    }
+                },
                 "hostname": {
                     "type": "string"
                 },
@@ -7255,92 +7338,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "os.FileMode": {
-            "type": "integer",
-            "format": "int32",
-            "enum": [
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511
-            ],
-            "x-enum-comments": {
-                "ModeAppend": "a: append-only",
-                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
-                "ModeDevice": "D: device file",
-                "ModeDir": "d: is a directory",
-                "ModeExclusive": "l: exclusive use",
-                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
-                "ModeNamedPipe": "p: named pipe (FIFO)",
-                "ModePerm": "Unix permission bits, 0o777",
-                "ModeSetgid": "g: setgid",
-                "ModeSetuid": "u: setuid",
-                "ModeSocket": "S: Unix domain socket",
-                "ModeSticky": "t: sticky",
-                "ModeSymlink": "L: symbolic link",
-                "ModeTemporary": "T: temporary file; Plan 9 only"
-            },
-            "x-enum-descriptions": [
-                "d: is a directory",
-                "a: append-only",
-                "l: exclusive use",
-                "T: temporary file; Plan 9 only",
-                "L: symbolic link",
-                "D: device file",
-                "p: named pipe (FIFO)",
-                "S: Unix domain socket",
-                "u: setuid",
-                "g: setgid",
-                "c: Unix character device, when ModeDevice is set",
-                "t: sticky",
-                "?: non-regular file; nothing else is known about this file",
-                "",
-                "Unix permission bits, 0o777"
-            ],
-            "x-enum-varnames": [
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm"
-            ]
         },
         "software.Binary": {
             "type": "object",
@@ -8203,8 +8200,6 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -8221,8 +8216,6 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
-                "minDuration",
-                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

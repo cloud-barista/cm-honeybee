@@ -2131,8 +2131,10 @@ definitions:
         type: array
       nvidia_smi_schema:
         description: |-
-          NVIDIASMISchema is the nvidia-smi XML schema version the output was
-          parsed with (v11, v12, v13 ...). Empty when nvidia-smi did not run.
+          NVIDIASMISchema is the nvidia-smi XML schema version found in the output
+          (v11, v12, v13 ...). A version with no parser of its own is read with the
+          nearest one and reported as "v9 (read as v11)", so a substituted reading
+          is never presented as an understood one. Empty when nvidia-smi did not run.
         type: string
     type: object
   infra.HAProxy:
@@ -2873,9 +2875,8 @@ definitions:
   mount.TmpfsOptions:
     properties:
       mode:
-        allOf:
-        - $ref: '#/definitions/os.FileMode'
         description: Mode of the tmpfs upon creation
+        type: integer
       options:
         description: |-
           Options to be passed to the tmpfs mount. An array of arrays. Flag
@@ -3292,6 +3293,69 @@ definitions:
         description: Unique identifier for the machine (e.g., UUID)
         type: string
     type: object
+  onpremisemodel.GpuCardProperty:
+    properties:
+      architecture:
+        description: GPU Microarchitecture (e.g., "Ampere", "Turing", "CDNA 4")
+        example: Ampere
+        type: string
+      cudaVersion:
+        description: CUDA or compute API version (e.g., "12.2", "ROCm 6.2")
+        example: "12.2"
+        type: string
+      driverIndex:
+        description: Driver device index (e.g., "0", "card0", "card10")
+        example: "0"
+        type: string
+      driverVersion:
+        description: Installed driver version for this device
+        example: 535.129.03
+        type: string
+      eccEnabled:
+        description: Whether Error-Correcting Code (ECC) memory protection is enabled
+        example: true
+        type: boolean
+      memoryFreeGB:
+        description: Available/Free memory in GB
+        example: 38
+        type: number
+      memoryReservedGB:
+        description: VRAM reserved for ECC parity and system overhead in GB
+        example: 2
+        type: number
+      memoryTotalGB:
+        description: Total physical VRAM capacity in GB (Total + Reserved)
+        example: 40
+        type: number
+      memoryUsedGB:
+        description: Used memory in GB
+        example: 2
+        type: number
+      model:
+        description: Specific model for this card/chip
+        example: NVIDIA A100-PCIE-40GB
+        type: string
+      pciBusId:
+        description: PCIe Bus identifier (e.g., "0000:01:00.0")
+        example: "0000:01:00.0"
+        type: string
+      slot:
+        description: Physical PCIe slot label if available (optional)
+        example: PCIe Slot 1
+        type: string
+      type:
+        description: 'Accelerator type: "GPU", "NPU", "TPU" (defaults to "GPU")'
+        example: GPU
+        type: string
+      uuid:
+        description: Unique device UUID from driver (e.g., NVML GPU UUID)
+        example: GPU-12345678-abcd-ef01-2345-...
+        type: string
+      vendor:
+        description: GPU Vendor (e.g., "NVIDIA", "AMD", "Intel")
+        example: NVIDIA
+        type: string
+    type: object
   onpremisemodel.K8sClusterProperty:
     properties:
       cniPlugin:
@@ -3472,6 +3536,11 @@ definitions:
         items:
           $ref: '#/definitions/onpremisemodel.FirewallRuleProperty'
         type: array
+      gpuCards:
+        description: Physical GPU cards installed on the node
+        items:
+          $ref: '#/definitions/onpremisemodel.GpuCardProperty'
+        type: array
       hostname:
         type: string
       interfaces:
@@ -3582,87 +3651,6 @@ definitions:
         description: Optionally stores the source address (used for policy-based routing)
         type: string
     type: object
-  os.FileMode:
-    enum:
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    format: int32
-    type: integer
-    x-enum-comments:
-      ModeAppend: 'a: append-only'
-      ModeCharDevice: 'c: Unix character device, when ModeDevice is set'
-      ModeDevice: 'D: device file'
-      ModeDir: 'd: is a directory'
-      ModeExclusive: 'l: exclusive use'
-      ModeIrregular: '?: non-regular file; nothing else is known about this file'
-      ModeNamedPipe: 'p: named pipe (FIFO)'
-      ModePerm: Unix permission bits, 0o777
-      ModeSetgid: 'g: setgid'
-      ModeSetuid: 'u: setuid'
-      ModeSocket: 'S: Unix domain socket'
-      ModeSticky: 't: sticky'
-      ModeSymlink: 'L: symbolic link'
-      ModeTemporary: 'T: temporary file; Plan 9 only'
-    x-enum-descriptions:
-    - 'd: is a directory'
-    - 'a: append-only'
-    - 'l: exclusive use'
-    - 'T: temporary file; Plan 9 only'
-    - 'L: symbolic link'
-    - 'D: device file'
-    - 'p: named pipe (FIFO)'
-    - 'S: Unix domain socket'
-    - 'u: setuid'
-    - 'g: setgid'
-    - 'c: Unix character device, when ModeDevice is set'
-    - 't: sticky'
-    - '?: non-regular file; nothing else is known about this file'
-    - ""
-    - Unix permission bits, 0o777
-    x-enum-varnames:
-    - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
-    - ModeSetuid
-    - ModeSetgid
-    - ModeCharDevice
-    - ModeSticky
-    - ModeIrregular
-    - ModeType
-    - ModePerm
   software.Binary:
     properties:
       cmdline:
@@ -4277,8 +4265,6 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -4296,8 +4282,6 @@ definitions:
     - Second
     - Minute
     - Hour
-    - minDuration
-    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond

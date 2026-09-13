@@ -189,9 +189,130 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.NodeProperty, er
 			ID:              infraInfo.Compute.OS.OS.ID,
 			IDLike:          infraInfo.Compute.OS.OS.IDLike,
 		},
+		GPUCards: gpuCardsFromInfra(infraInfo.GPU),
 	}
 
 	return &refinedInfraInfo, nil
+}
+
+// mibToGB converts a mebibyte reading into the gigabytes the refined model
+// declares (`MemoryTotalGB` and friends). The divisor is 1024, not 1e9/1048576:
+// accelerator memory is sized and catalogued in binary units even though the
+// field says GB, so an A100 with 40 GiB of HBM2 is listed as 40 both by NVIDIA
+// and by the target spec catalogues cm-beetle matches against. Converting to
+// decimal gigabytes would make the same card 42.95 and push it past the
+// `acceleratorMemoryGB >= ...` filter that is meant to select it.
+//
+// The reading itself is the usable framebuffer the driver reports, which is
+// below the capacity the card is marketed with on cards that reserve some (a
+// "16GB" Tesla T4 reports 15360 MiB). It is passed through as measured rather
+// than rounded up to the marketed figure, which would be a guess.
+func mibToGB(mib uint64) float32 {
+	return float32(mib) / 1024
+}
+
+// gpuCardsFromInfra flattens the per-vendor GPU collections into the single
+// card list the refined model expects. One physical device is one entry, so a
+// node holding different models keeps each of them intact.
+//
+// Memory is passed through as the driver reports it. A card with ECC enabled
+// reports less than its marketed capacity, and the shortfall is not added back
+// here: the consumer is told the state through ECCEnabled and MemoryReservedGB
+// and corrects for it itself, so MemoryTotalGB stays a reading rather than a
+// value whose provenance has to be guessed at.
+func gpuCardsFromInfra(gpu infra.GPU) []inframodel.GpuCardProperty {
+	cards := make([]inframodel.GpuCardProperty, 0, len(gpu.NVIDIA)+len(gpu.AMD))
+
+	for _, n := range gpu.NVIDIA {
+		card := inframodel.GpuCardProperty{
+			DriverIndex:   strconv.Itoa(n.DeviceAttribute.Index),
+			Uuid:          n.DeviceAttribute.GPUUUID,
+			Vendor:        "NVIDIA",
+			Model:         n.DeviceAttribute.ProductName,
+			Type:          "GPU",
+			Architecture:  n.DeviceAttribute.ProductArchitecture,
+			DriverVersion: n.DeviceAttribute.DriverVersion,
+			CudaVersion:   n.DeviceAttribute.CUDAVersion,
+			PciBusId:      n.DeviceAttribute.PCIBusID,
+			ECCEnabled:    n.ECC != nil && strings.EqualFold(n.ECC.Mode, "Enabled"),
+		}
+
+		// A nil reading means nvidia-smi did not report the value, which is not
+		// the same as zero, so it is left out rather than converted.
+		if n.Performance.FBMemoryTotal != nil {
+			card.MemoryTotalGB = mibToGB(*n.Performance.FBMemoryTotal)
+		}
+		if n.Performance.FBMemoryReserved != nil {
+			card.MemoryReservedGB = mibToGB(*n.Performance.FBMemoryReserved)
+		}
+		if n.Performance.FBMemoryFree != nil {
+			card.MemoryFreeGB = mibToGB(*n.Performance.FBMemoryFree)
+		}
+		if n.Performance.FBMemoryUsed != nil {
+			card.MemoryUsedGB = mibToGB(*n.Performance.FBMemoryUsed)
+		}
+
+		cards = append(cards, card)
+	}
+
+	for _, a := range gpu.AMD {
+		card := inframodel.GpuCardProperty{
+			DriverIndex:   a.DeviceAttribute.Card,
+			Uuid:          a.DeviceAttribute.GPUUUID,
+			Vendor:        "AMD",
+			Model:         a.DeviceAttribute.ProductName,
+			Type:          "GPU",
+			DriverVersion: a.DeviceAttribute.DriverVersion,
+			PciBusId:      a.DeviceAttribute.PCIBusID,
+		}
+
+		if a.Performance.VRAMMemoryTotal != nil {
+			card.MemoryTotalGB = mibToGB(*a.Performance.VRAMMemoryTotal)
+		}
+		if a.Performance.VRAMMemoryUsed != nil {
+			card.MemoryUsedGB = mibToGB(*a.Performance.VRAMMemoryUsed)
+		}
+		// rocm-smi reports neither a free nor a reserved figure, and deriving
+		// either from the two above would put a computed number in a field the
+		// consumer reads as measured, so both stay unset. It does not report
+		// the ECC state either.
+
+		cards = append(cards, card)
+	}
+
+	if len(cards) == 0 {
+		return nil
+	}
+
+	return cards
+}
+
+// gpuCardsFromK8s turns the GPU extended resources a node advertises into card
+// entries. Kubernetes counts devices rather than describing them, so one
+// resource with a capacity of N becomes N identical entries carrying whatever
+// the feature-discovery labels said. UUID and PCI address stay empty because
+// the cluster API never reports them.
+func gpuCardsFromK8s(gpus []kubernetes.NodeGPU) []inframodel.GpuCardProperty {
+	var cards []inframodel.GpuCardProperty
+
+	for _, g := range gpus {
+		for i := int64(0); i < g.Capacity; i++ {
+			card := inframodel.GpuCardProperty{
+				DriverIndex:   strconv.Itoa(len(cards)),
+				Vendor:        strings.ToUpper(g.Vendor),
+				Model:         g.Product,
+				Type:          "GPU",
+				DriverVersion: g.DriverVersion,
+			}
+			if g.Memory > 0 {
+				card.MemoryTotalGB = mibToGB(uint64(g.Memory))
+			}
+
+			cards = append(cards, card)
+		}
+	}
+
+	return cards
 }
 
 // tryGetKubernetesInfo returns the collected Kubernetes information of the
@@ -289,6 +410,7 @@ func buildNodeFromK8s(node kubernetes.Node) inframodel.NodeProperty {
 		RootDisk: inframodel.DiskProperty{
 			TotalSize: uint64(node.NodeSpec.EphemeralStorage / 1024), // MiB -> GiB
 		},
+		GPUCards: gpuCardsFromK8s(node.NodeSpec.GPU),
 	}
 }
 
