@@ -216,12 +216,8 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 		connectionInfo.ResourceType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.ResourceType))
 		connectionInfo.ResourceID = strings.TrimSpace(createConnectionInfoReq.ResourceID)
 		connectionInfo.Zone = strings.TrimSpace(createConnectionInfoReq.Zone)
-		switch connectionInfo.ResourceType {
-		case serverCommon.ResourceTypeVM,
-			serverCommon.ResourceTypeK8s,
-			serverCommon.ResourceTypeObjectStorage:
-		default:
-			return nil, errors.New("resource_type must be one of vm | k8s | object_storage")
+		if !serverCommon.IsValidCSPResourceType(connectionInfo.ResourceType) {
+			return nil, errors.New(serverCommon.CSPResourceTypesMsg)
 		}
 		if connectionInfo.ResourceID == "" {
 			return nil, errors.New("resource_id is empty")
@@ -672,14 +668,10 @@ func UpdateConnectionInfo(c echo.Context) error {
 	case serverCommon.SourceGroupTypeCSP:
 		if updateConnectionInfoReq.ResourceType != "" {
 			rt := strings.ToLower(strings.TrimSpace(updateConnectionInfoReq.ResourceType))
-			switch rt {
-			case serverCommon.ResourceTypeVM,
-				serverCommon.ResourceTypeK8s,
-				serverCommon.ResourceTypeObjectStorage:
-				oldConnectionInfo.ResourceType = rt
-			default:
-				return common.ReturnErrorMsg(c, "resource_type must be one of vm | k8s | object_storage")
+			if !serverCommon.IsValidCSPResourceType(rt) {
+				return common.ReturnErrorMsg(c, serverCommon.CSPResourceTypesMsg)
 			}
+			oldConnectionInfo.ResourceType = rt
 		}
 		if updateConnectionInfoReq.ResourceID != "" {
 			oldConnectionInfo.ResourceID = strings.TrimSpace(updateConnectionInfoReq.ResourceID)

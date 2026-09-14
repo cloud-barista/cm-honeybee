@@ -74,3 +74,32 @@ func EnsureDriver(provider string) (string, error) {
 	}
 	return created.DriverName, nil
 }
+
+// DriverCapability is the subset of cb-spider's DriverCapabilityInfo that
+// honeybee consults before asking a driver for a resource it may not implement.
+type DriverCapability struct {
+	NLBHandler     bool `json:"NLBHandler"`
+	ClusterHandler bool `json:"ClusterHandler"`
+	VMHandler      bool `json:"VMHandler"`
+}
+
+// GetDriverCapability reports which handlers the connection's driver implements.
+//
+// Note the shape of the cb-spider API: the route is "/driver/capability" and it
+// keys off ConnectionName, NOT DriverName. A capability check therefore needs a
+// live connection and can only run from inside withSpiderConnection().
+//
+// This matters because some drivers fail at handler-creation time rather than
+// returning an empty list — Oracle's CreateNLBHandler() errors out, so
+// /allnlbinfo answers 500. Asking first turns that into an honest "this CSP
+// cannot do NLB" instead of a discovery failure.
+func GetDriverCapability(connectionName string) (*DriverCapability, error) {
+	if err := mustNonEmpty("ConnectionName", connectionName); err != nil {
+		return nil, err
+	}
+	var out DriverCapability
+	if err := do("GET", "/driver/capability?ConnectionName="+encodePath(connectionName), nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

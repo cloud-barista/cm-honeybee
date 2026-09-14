@@ -52,4 +52,10 @@ type DiscoveredResource struct {
 // DiscoverRes is the response payload for the discovery endpoint.
 type DiscoverRes struct {
 	Items []DiscoveredResource `json:"items"`
+	// Unsupported marks a request the CSP's driver cannot serve at all — e.g.
+	// Oracle implements no NLBHandler. The call succeeded; the CSP simply cannot
+	// answer it. Without this an empty Items list reads as "this account has no
+	// such resource", which is a different and wrong conclusion.
+	Unsupported bool   `json:"unsupported,omitempty"`
+	Reason      string `json:"reason,omitempty"`
 }
