@@ -81,7 +81,9 @@ func (e errDriverUnsupported) Error() string { return e.msg }
 func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, error) {
 	switch resourceType {
 	case serverCommon.ResourceTypeVM:
-		vms, err := spider.ListVM(connName)
+		// ListAllVMInfo, not ListVM: the latter lists only what cb-spider
+		// manages, which never includes a source VM cb-spider did not create.
+		vms, err := spider.ListAllVMInfo(connName)
 		if err != nil {
 			return nil, err
 		}
@@ -89,12 +91,15 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 		for _, vm := range vms {
 			out = append(out, model.DiscoveredResource{
 				ResourceType: serverCommon.ResourceTypeVM,
-				ResourceID:   pickIIDName(vm.IId),
+				ResourceID:   pickIIDSystem(vm.IId),
 				Name:         vm.IId.NameId,
-				Region:       vm.Region.RegionName,
+				// VMInfo.Region carries the driver-level shape, which fills
+				// Region/Zone and leaves RegionName empty — see RegionInfo.
+				Region: firstNonEmpty(vm.Region.Region, vm.Region.RegionName),
 				Extra: map[string]string{
 					"vm_spec":   vm.VMSpecName,
 					"public_ip": vm.PublicIP,
+					"zone":      vm.Region.Zone,
 				},
 			})
 		}
@@ -108,7 +113,7 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 		for _, cl := range clusters {
 			out = append(out, model.DiscoveredResource{
 				ResourceType: serverCommon.ResourceTypeK8s,
-				ResourceID:   pickIIDName(cl.IId),
+				ResourceID:   pickIIDSystem(cl.IId),
 				Name:         cl.IId.NameId,
 				Extra: map[string]string{
 					"version": cl.Version,
@@ -158,7 +163,7 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 			// two drift apart.
 			out = append(out, model.DiscoveredResource{
 				ResourceType: serverCommon.ResourceTypeNLB,
-				ResourceID:   pickIIDName(n.IId),
+				ResourceID:   pickIIDSystem(n.IId),
 				Name:         n.IId.NameId,
 				Extra: map[string]string{
 					"type":  n.Type,
@@ -166,7 +171,7 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 					// SystemId fallback: AWS builds VpcIID from the raw driver
 					// value and sets only SystemId (irs.IID{SystemId: *nlbResInfo.VpcId}),
 					// so reading NameId alone leaves this blank for every AWS NLB.
-					"vpc":      pickIIDName(n.VpcIID),
+					"vpc":      pickIIDSystem(n.VpcIID),
 					"listener": n.Listener.Protocol + "/" + n.Listener.Port,
 					"endpoint": firstNonEmpty(n.Listener.DNSName, n.Listener.IP),
 					"vm_count": strconv.Itoa(len(n.VMGroup.VMs)),
@@ -189,9 +194,15 @@ func firstNonEmpty(vals ...string) string {
 	return ""
 }
 
-func pickIIDName(iid spider.IID) string {
-	if iid.NameId != "" {
-		return iid.NameId
+// pickIIDSystem returns the CSP's own identifier for a resource — an AWS
+// instance id, an ARN, an Azure ARM id — which is what ResourceID must carry:
+// collection feeds that value straight back to cb-spider, and the CSP-native
+// lookups reject anything else (AWS answers "InvalidInstanceID.Malformed" to a
+// Name tag). NameId is a display name: mutable, not unique, and empty on some
+// drivers, so it serves only as a fallback for drivers that leave SystemId blank.
+func pickIIDSystem(iid spider.IID) string {
+	if iid.SystemId != "" {
+		return iid.SystemId
 	}
-	return iid.SystemId
+	return iid.NameId
 }
