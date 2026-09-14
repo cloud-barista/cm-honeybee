@@ -257,14 +257,74 @@ func findClusterByID(connName, resourceID string) (*spider.ClusterInfo, error) {
 		return nil, err
 	}
 
-	for i := range clusters {
-		iid := clusters[i].IId
-		if iid.SystemId == resourceID || (iid.NameId != "" && iid.NameId == resourceID) {
-			return &clusters[i], nil
-		}
+	if cl := matchCluster(clusters, resourceID); cl != nil {
+		return cl, nil
 	}
 
 	return nil, errors.New("cluster '" + resourceID + "' was not found through connection '" + connName + "'")
+}
+
+// matchCluster picks the cluster whose identifier is resourceID. SystemId is
+// tried first because it is the identifier a CSP-only cluster carries; an empty
+// NameId never matches, so a listing full of them cannot match an empty id.
+func matchCluster(clusters []spider.ClusterInfo, resourceID string) *spider.ClusterInfo {
+	if resourceID == "" {
+		return nil
+	}
+
+	for i := range clusters {
+		iid := clusters[i].IId
+		if iid.SystemId == resourceID || (iid.NameId != "" && iid.NameId == resourceID) {
+			return &clusters[i]
+		}
+	}
+
+	return nil
+}
+
+// findBucketByName looks an object storage bucket up the same way clusters are
+// looked up, and for the same reason.
+//
+// GET /s3/{bucket}?location resolves the name against cb-spider's meta-DB
+// (GetS3BucketRegionInfo reads infostore and nothing else), which is empty for
+// the connection each honeybee request registers, so it cannot confirm a bucket
+// the source actually has. The listing already goes to the CSP, so existence is
+// decided there.
+//
+// The region is not in that listing, so it is still read from the location
+// route as a best effort: it succeeds for a bucket cb-spider manages and is
+// left empty otherwise, rather than failing the whole lookup.
+func findBucketByName(connName, bucketName string) (*spider.S3BucketInfo, error) {
+	buckets, err := spider.ListS3Buckets(connName)
+	if err != nil {
+		return nil, err
+	}
+
+	found := matchBucket(buckets, bucketName)
+	if found == nil {
+		return nil, errors.New("bucket '" + bucketName + "' was not found through connection '" + connName + "'")
+	}
+
+	if loc, err := spider.GetS3BucketLocation(connName, bucketName); err == nil && loc != nil {
+		found.Region = loc.Region
+	}
+
+	return found, nil
+}
+
+// matchBucket picks the bucket named bucketName out of a listing.
+func matchBucket(buckets []spider.S3BucketInfo, bucketName string) *spider.S3BucketInfo {
+	if bucketName == "" {
+		return nil
+	}
+
+	for i := range buckets {
+		if buckets[i].Name == bucketName {
+			return &buckets[i]
+		}
+	}
+
+	return nil
 }
 
 // checkCSPConnection verifies that cb-spider can identify the resource described
@@ -285,7 +345,7 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 			_, err := findClusterByID(connName, ci.ResourceID)
 			return err
 		case "object_storage":
-			_, err := spider.GetS3BucketLocation(connName, ci.ResourceID)
+			_, err := findBucketByName(connName, ci.ResourceID)
 			return err
 		default:
 			return errors.New("unsupported resource_type: " + ci.ResourceType)
@@ -318,7 +378,7 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error
 			}
 			return upsertSavedK8s(ci.ID, clusterInfoToK8s(cl))
 		case "object_storage":
-			b, err := spider.GetS3BucketLocation(connName, ci.ResourceID)
+			b, err := findBucketByName(connName, ci.ResourceID)
 			if err != nil {
 				return err
 			}
