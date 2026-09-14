@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
@@ -17,12 +18,12 @@ import (
 //
 //	@ID				discover-source-group-resources
 //	@Summary		Discover CSP resources for a SourceGroup
-//	@Description	Lists VMs / K8s clusters / object-storage buckets reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.
+//	@Description	Lists VMs / K8s clusters / object-storage buckets / network load balancers reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.
 //	@Tags			[CSP] Discovery
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the SourceGroup (must be type=csp)"
-//	@Param			resource_type query string true "Resource type to discover (vm | k8s | object_storage)"
+//	@Param			resource_type query string true "Resource type to discover (vm | k8s | object_storage | nlb)"
 //	@Success		200	{object}	model.DiscoverRes		"Discovered resources"
 //	@Failure		400	{object}	common.ErrorResponse	"Invalid request"
 //	@Failure		500	{object}	common.ErrorResponse	"Discovery failed"
@@ -43,7 +44,7 @@ func DiscoverSourceGroupResources(c echo.Context) error {
 
 	resourceType := strings.ToLower(strings.TrimSpace(c.QueryParam("resource_type")))
 	if resourceType == "" {
-		return common.ReturnErrorMsg(c, "resource_type query is required (vm | k8s | object_storage).")
+		return common.ReturnErrorMsg(c, "resource_type query is required (vm | k8s | object_storage | nlb).")
 	}
 
 	// Register a temporary cb-spider connection for the duration of the discovery
@@ -55,15 +56,34 @@ func DiscoverSourceGroupResources(c echo.Context) error {
 		return derr
 	})
 	if err != nil {
+		// A driver that has no handler for this resource type is not a failure of
+		// the request — report it as such instead of leaking cb-spider's 500.
+		var unsupported errDriverUnsupported
+		if errors.As(err, &unsupported) {
+			return c.JSONPretty(http.StatusOK, model.DiscoverRes{
+				Items:       []model.DiscoveredResource{},
+				Unsupported: true,
+				Reason:      unsupported.Error(),
+			}, " ")
+		}
 		return common.ReturnInternalError(c, err, "discovery failed")
 	}
 	return c.JSONPretty(http.StatusOK, model.DiscoverRes{Items: items}, " ")
 }
 
+// errDriverUnsupported marks a resource type the connection's driver implements
+// no handler for. It travels up from discoverByType so the HTTP layer can answer
+// 200 + Unsupported rather than 500.
+type errDriverUnsupported struct{ msg string }
+
+func (e errDriverUnsupported) Error() string { return e.msg }
+
 func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, error) {
 	switch resourceType {
 	case serverCommon.ResourceTypeVM:
-		vms, err := spider.ListVM(connName)
+		// ListAllVMInfo, not ListVM: the latter lists only what cb-spider
+		// manages, which never includes a source VM cb-spider did not create.
+		vms, err := spider.ListAllVMInfo(connName)
 		if err != nil {
 			return nil, err
 		}
@@ -71,12 +91,15 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 		for _, vm := range vms {
 			out = append(out, model.DiscoveredResource{
 				ResourceType: serverCommon.ResourceTypeVM,
-				ResourceID:   pickIIDName(vm.IId),
+				ResourceID:   pickIIDSystem(vm.IId),
 				Name:         vm.IId.NameId,
-				Region:       vm.Region.RegionName,
+				// VMInfo.Region carries the driver-level shape, which fills
+				// Region/Zone and leaves RegionName empty — see RegionInfo.
+				Region: firstNonEmpty(vm.Region.Region, vm.Region.RegionName),
 				Extra: map[string]string{
 					"vm_spec":   vm.VMSpecName,
 					"public_ip": vm.PublicIP,
+					"zone":      vm.Region.Zone,
 				},
 			})
 		}
@@ -90,7 +113,7 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 		for _, cl := range clusters {
 			out = append(out, model.DiscoveredResource{
 				ResourceType: serverCommon.ResourceTypeK8s,
-				ResourceID:   pickIIDName(cl.IId),
+				ResourceID:   pickIIDSystem(cl.IId),
 				Name:         cl.IId.NameId,
 				Extra: map[string]string{
 					"version": cl.Version,
@@ -116,14 +139,70 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 			})
 		}
 		return out, nil
+	case serverCommon.ResourceTypeNLB:
+		// Oracle's driver errors out in CreateNLBHandler(), which makes
+		// /allnlbinfo answer 500. Ask what the driver supports first.
+		capability, err := spider.GetDriverCapability(connName)
+		if err != nil {
+			return nil, err
+		}
+		if !capability.NLBHandler {
+			return nil, errDriverUnsupported{
+				msg: "this source group's CSP has no NLB support in its cb-spider driver",
+			}
+		}
+		nlbs, err := spider.ListAllNLBInfo(connName)
+		if err != nil {
+			return nil, err
+		}
+		out := make([]model.DiscoveredResource, 0, len(nlbs))
+		for _, n := range nlbs {
+			// Reported verbatim: this is the survey step, and several drivers
+			// hardcode or omit these fields. Normalising them is the collection
+			// step's job (nlbInfoToNLB) — doing it in both places guarantees the
+			// two drift apart.
+			out = append(out, model.DiscoveredResource{
+				ResourceType: serverCommon.ResourceTypeNLB,
+				ResourceID:   pickIIDSystem(n.IId),
+				Name:         n.IId.NameId,
+				Extra: map[string]string{
+					"type":  n.Type,
+					"scope": n.Scope,
+					// SystemId fallback: AWS builds VpcIID from the raw driver
+					// value and sets only SystemId (irs.IID{SystemId: *nlbResInfo.VpcId}),
+					// so reading NameId alone leaves this blank for every AWS NLB.
+					"vpc":      pickIIDSystem(n.VpcIID),
+					"listener": n.Listener.Protocol + "/" + n.Listener.Port,
+					"endpoint": firstNonEmpty(n.Listener.DNSName, n.Listener.IP),
+					"vm_count": strconv.Itoa(len(n.VMGroup.VMs)),
+				},
+			})
+		}
+		return out, nil
 	default:
-		return nil, errors.New("unsupported resource_type: " + resourceType + " (expected vm | k8s | object_storage)")
+		return nil, errors.New("unsupported resource_type: " + resourceType + " (expected vm | k8s | object_storage | nlb)")
 	}
 }
 
-func pickIIDName(iid spider.IID) string {
-	if iid.NameId != "" {
-		return iid.NameId
+// firstNonEmpty returns the first argument that is not blank.
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
 	}
-	return iid.SystemId
+	return ""
+}
+
+// pickIIDSystem returns the CSP's own identifier for a resource — an AWS
+// instance id, an ARN, an Azure ARM id — which is what ResourceID must carry:
+// collection feeds that value straight back to cb-spider, and the CSP-native
+// lookups reject anything else (AWS answers "InvalidInstanceID.Malformed" to a
+// Name tag). NameId is a display name: mutable, not unique, and empty on some
+// drivers, so it serves only as a fallback for drivers that leave SystemId blank.
+func pickIIDSystem(iid spider.IID) string {
+	if iid.SystemId != "" {
+		return iid.SystemId
+	}
+	return iid.NameId
 }
