@@ -238,6 +238,35 @@ func cspVMIdentifier(resourceID string) string {
 	return id
 }
 
+// findClusterByID looks a Kubernetes cluster up by the identifier discovery
+// reported for it.
+//
+// cb-spider has no "get one cluster by CSP id" route - /cluster/{Name} matches
+// on the NameId its meta-DB holds, and a cluster cb-spider did not create has
+// no entry there at all, so that route answers "does not exist in connection"
+// no matter what is passed. Measured against a live cb-spider through a freshly
+// registered connection: GET /cluster/{SystemId} returned 500 while
+// /allclusterinfo listed the same cluster.
+//
+// So the list is fetched and filtered here. SystemId is matched first because
+// it is the identifier a CSP-only cluster carries; NameId is accepted as well
+// for a cluster cb-spider does manage.
+func findClusterByID(connName, resourceID string) (*spider.ClusterInfo, error) {
+	clusters, err := spider.ListAllClusterInfo(connName)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range clusters {
+		iid := clusters[i].IId
+		if iid.SystemId == resourceID || (iid.NameId != "" && iid.NameId == resourceID) {
+			return &clusters[i], nil
+		}
+	}
+
+	return nil, errors.New("cluster '" + resourceID + "' was not found through connection '" + connName + "'")
+}
+
 // checkCSPConnection verifies that cb-spider can identify the resource described
 // by ci, WITHOUT persisting anything. This backs connection_status on
 // registration/refresh — those paths only report reachability. Actual data
@@ -253,7 +282,7 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 			_, err := spider.GetCSPVM(connName, cspVMIdentifier(ci.ResourceID))
 			return err
 		case "k8s":
-			_, err := spider.GetCluster(connName, ci.ResourceID)
+			_, err := findClusterByID(connName, ci.ResourceID)
 			return err
 		case "object_storage":
 			_, err := spider.GetS3BucketLocation(connName, ci.ResourceID)
@@ -283,7 +312,7 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error
 			}
 			return upsertSavedCSPData(ci.ID, buildCSPInfo(connName, sg, vm))
 		case "k8s":
-			cl, err := spider.GetCluster(connName, ci.ResourceID)
+			cl, err := findClusterByID(connName, ci.ResourceID)
 			if err != nil {
 				return err
 			}

@@ -105,7 +105,10 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 		}
 		return out, nil
 	case serverCommon.ResourceTypeK8s:
-		clusters, err := spider.ListCluster(connName)
+		// /allclusterinfo rather than /cluster: the latter reads cb-spider's
+		// meta-DB, which is empty for the connection this call just registered,
+		// so a migration source's clusters never show up there.
+		clusters, err := spider.ListAllClusterInfo(connName)
 		if err != nil {
 			return nil, err
 		}
