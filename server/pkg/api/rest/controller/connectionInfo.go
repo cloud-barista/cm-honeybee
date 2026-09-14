@@ -282,7 +282,7 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 		switch sourceGroup.Type {
 		case serverCommon.SourceGroupTypeCSP:
 			// connection_status reflects CSP reachability: whether cb-spider can
-			// identify this resource. This is a status-only check — CSP data is
+			// identify this resource. This is a status-only check - CSP data is
 			// collected/persisted by import/infra, not here (refresh/registration).
 			if err := checkCSPConnection(sourceGroup, connectionInfo); err != nil {
 				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
@@ -361,7 +361,7 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 	// OpenBao, so the row we just read has them empty. Consumers such as
 	// cm-grasshopper read these fields (encrypted here, decrypted on their side)
 	// to SSH into the source host; without this they receive empty credentials
-	// and fail with "failed to determine auth method". The DB is untouched — the
+	// and fail with "failed to determine auth method". The DB is untouched - the
 	// refresh status update above uses a field allowlist.
 	if err := hydrateConnectionSecrets(oldConnectionInfo); err != nil {
 		return nil, err
@@ -823,7 +823,7 @@ func UninstallAgent(c echo.Context) error {
 	}
 
 	// Keep the agent if another connection (in any source group) targets the same
-	// host — it is a host-wide service shared across connections.
+	// host - it is a host-wide service shared across connections.
 	shared, err := countConnectionsOnHost(connectionInfo.IPAddress, connectionInfo.ID)
 	if err != nil {
 		return common.ReturnInternalError(c, err, "failed to check other connections on the host")

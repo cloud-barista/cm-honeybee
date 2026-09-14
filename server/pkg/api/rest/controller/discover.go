@@ -48,7 +48,7 @@ func DiscoverSourceGroupResources(c echo.Context) error {
 	}
 
 	// Register a temporary cb-spider connection for the duration of the discovery
-	// call only — credentials are never persisted in cb-spider.
+	// call only - credentials are never persisted in cb-spider.
 	var items []model.DiscoveredResource
 	err = withSpiderConnection(sg, "", func(connName string) error {
 		var derr error
@@ -57,7 +57,7 @@ func DiscoverSourceGroupResources(c echo.Context) error {
 	})
 	if err != nil {
 		// A driver that has no handler for this resource type is not a failure of
-		// the request — report it as such instead of leaking cb-spider's 500.
+		// the request - report it as such instead of leaking cb-spider's 500.
 		var unsupported errDriverUnsupported
 		if errors.As(err, &unsupported) {
 			return c.JSONPretty(http.StatusOK, model.DiscoverRes{
@@ -94,7 +94,7 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 				ResourceID:   pickIIDSystem(vm.IId),
 				Name:         vm.IId.NameId,
 				// VMInfo.Region carries the driver-level shape, which fills
-				// Region/Zone and leaves RegionName empty — see RegionInfo.
+				// Region/Zone and leaves RegionName empty - see RegionInfo.
 				Region: firstNonEmpty(vm.Region.Region, vm.Region.RegionName),
 				Extra: map[string]string{
 					"vm_spec":   vm.VMSpecName,
@@ -159,7 +159,7 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 		for _, n := range nlbs {
 			// Reported verbatim: this is the survey step, and several drivers
 			// hardcode or omit these fields. Normalising them is the collection
-			// step's job (nlbInfoToNLB) — doing it in both places guarantees the
+			// step's job (nlbInfoToNLB) - doing it in both places guarantees the
 			// two drift apart.
 			out = append(out, model.DiscoveredResource{
 				ResourceType: serverCommon.ResourceTypeNLB,
@@ -194,8 +194,8 @@ func firstNonEmpty(vals ...string) string {
 	return ""
 }
 
-// pickIIDSystem returns the CSP's own identifier for a resource — an AWS
-// instance id, an ARN, an Azure ARM id — which is what ResourceID must carry:
+// pickIIDSystem returns the CSP's own identifier for a resource - an AWS
+// instance id, an ARN, an Azure ARM id - which is what ResourceID must carry:
 // collection feeds that value straight back to cb-spider, and the CSP-native
 // lookups reject anything else (AWS answers "InvalidInstanceID.Malformed" to a
 // Name tag). NameId is a display name: mutable, not unique, and empty on some

@@ -13,8 +13,8 @@ type allVMInfoResp struct {
 
 // ListVM returns the VMs cb-spider itself manages on the given connection.
 //
-// This walks cb-spider's own meta-DB, so a VM cb-spider did not create — i.e.
-// every VM in a migration source — never appears here. Use ListAllVMInfo for
+// This walks cb-spider's own meta-DB, so a VM cb-spider did not create - i.e.
+// every VM in a migration source - never appears here. Use ListAllVMInfo for
 // discovery; this is the list counterpart of GetVM, not of GetCSPVM.
 func ListVM(connectionName string) ([]VMInfo, error) {
 	if err := mustNonEmpty("ConnectionName", connectionName); err != nil {
@@ -27,7 +27,7 @@ func ListVM(connectionName string) ([]VMInfo, error) {
 	return out.VM, nil
 }
 
-// ListAllVMInfo returns every VM the CSP actually has — both the ones cb-spider
+// ListAllVMInfo returns every VM the CSP actually has - both the ones cb-spider
 // manages (MappedInfoList) and the ones it does not (OnlyCSPInfoList).
 //
 // Source discovery needs this rather than ListVM for the same reason collection
@@ -61,8 +61,8 @@ func GetVM(connectionName, vmName string) (*VMInfo, error) {
 }
 
 // GetCSPVM fetches an existing VM by its CSP native ID (e.g. an Azure ARM
-// resource ID). Unlike GetVM — which resolves names against cb-spider's own
-// managed-VM store and fails for VMs cb-spider did not create — GetCSPVM queries
+// resource ID). Unlike GetVM - which resolves names against cb-spider's own
+// managed-VM store and fails for VMs cb-spider did not create - GetCSPVM queries
 // the CSP live, which is what source discovery of a pre-existing VM requires.
 func GetCSPVM(connectionName, cspID string) (*VMInfo, error) {
 	if err := mustNonEmpty("ConnectionName", connectionName); err != nil {

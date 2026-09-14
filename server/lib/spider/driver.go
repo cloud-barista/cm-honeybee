@@ -90,7 +90,7 @@ type DriverCapability struct {
 // live connection and can only run from inside withSpiderConnection().
 //
 // This matters because some drivers fail at handler-creation time rather than
-// returning an empty list — Oracle's CreateNLBHandler() errors out, so
+// returning an empty list - Oracle's CreateNLBHandler() errors out, so
 // /allnlbinfo answers 500. Asking first turns that into an honest "this CSP
 // cannot do NLB" instead of a discovery failure.
 func GetDriverCapability(connectionName string) (*DriverCapability, error) {

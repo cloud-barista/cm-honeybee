@@ -108,7 +108,7 @@ type NodeGroupInfo struct {
 	Status          string `json:"Status"`
 }
 
-// BucketIID mirrors spider.BucketIID — stripped down to the fields we use.
+// BucketIID mirrors spider.BucketIID - stripped down to the fields we use.
 type BucketIID struct {
 	NameId   string `json:"NameId,omitempty"`
 	SystemId string `json:"SystemId,omitempty"`
@@ -130,7 +130,7 @@ type S3BucketInfo struct {
 type NLBInfo struct {
 	IId           IID               `json:"IId"`
 	VpcIID        IID               `json:"VpcIID"`
-	Type          string            `json:"Type"`  // PUBLIC | INTERNAL — see normalizeNLBType
+	Type          string            `json:"Type"`  // PUBLIC | INTERNAL - see normalizeNLBType
 	Scope         string            `json:"Scope"` // REGION | GLOBAL
 	Listener      ListenerInfo      `json:"Listener"`
 	VMGroup       VMGroupInfo       `json:"VMGroup"`

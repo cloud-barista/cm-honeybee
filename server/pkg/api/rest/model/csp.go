@@ -9,7 +9,7 @@ type CSPInfo struct {
 	// short description, so a client can render a self-documenting input form.
 	Credentials []CSPCredentialField `json:"credentials"`
 	// RegionKeys are the keys needed to define a region for this CSP (e.g.
-	// ["Region","Zone"]) — NOT the list of available regions. The actual region
+	// ["Region","Zone"]) - NOT the list of available regions. The actual region
 	// list requires a credential; get it via GET /source_group/{sgId}/region.
 	RegionKeys    []string `json:"region_keys"`
 	DefaultRegion string   `json:"default_region,omitempty"`
@@ -52,7 +52,7 @@ type DiscoveredResource struct {
 // DiscoverRes is the response payload for the discovery endpoint.
 type DiscoverRes struct {
 	Items []DiscoveredResource `json:"items"`
-	// Unsupported marks a request the CSP's driver cannot serve at all — e.g.
+	// Unsupported marks a request the CSP's driver cannot serve at all - e.g.
 	// Oracle implements no NLBHandler. The call succeeded; the CSP simply cannot
 	// answer it. Without this an empty Items list reads as "this account has no
 	// such resource", which is a different and wrong conclusion.
