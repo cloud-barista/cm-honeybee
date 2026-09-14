@@ -1735,7 +1735,7 @@ const docTemplate = `{
         },
         "/source_group/{sgId}/discover": {
             "get": {
-                "description": "Lists VMs / K8s clusters / object-storage buckets reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.",
+                "description": "Lists VMs / K8s clusters / object-storage buckets / network load balancers reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1757,7 +1757,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Resource type to discover (vm | k8s | object_storage)",
+                        "description": "Resource type to discover (vm | k8s | object_storage | nlb)",
                         "name": "resource_type",
                         "in": "query",
                         "required": true
@@ -3871,7 +3871,7 @@ const docTemplate = `{
                     "example": "AWS"
                 },
                 "region_keys": {
-                    "description": "RegionKeys are the keys needed to define a region for this CSP (e.g.\n[\"Region\",\"Zone\"]) — NOT the list of available regions. The actual region\nlist requires a credential; get it via GET /source_group/{sgId}/region.",
+                    "description": "RegionKeys are the keys needed to define a region for this CSP (e.g.\n[\"Region\",\"Zone\"]) - NOT the list of available regions. The actual region\nlist requires a credential; get it via GET /source_group/{sgId}/region.",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -4088,6 +4088,13 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DiscoveredResource"
                     }
+                },
+                "reason": {
+                    "type": "string"
+                },
+                "unsupported": {
+                    "description": "Unsupported marks a request the CSP's driver cannot serve at all - e.g.\nOracle implements no NLBHandler. The call succeeded; the CSP simply cannot\nanswer it. Without this an empty Items list reads as \"this account has no\nsuch resource\", which is a different and wrong conclusion.",
+                    "type": "boolean"
                 }
             }
         },
@@ -8200,6 +8207,8 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -8216,6 +8225,8 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
