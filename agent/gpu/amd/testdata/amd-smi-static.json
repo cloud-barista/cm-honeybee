@@ -1,0 +1,44 @@
+{
+  "gpu_data": [
+    {
+      "gpu": 0,
+      "asic": {
+        "market_name": "Instinct MI300X",
+        "vendor_id": "0x1002",
+        "vendor_name": "Advanced Micro Devices Inc. [AMD/ATI]",
+        "device_id": "0x74a1",
+        "rev_id": "0x00",
+        "asic_serial": "0x8B4F1C2D9E0A3B57",
+        "oam_id": 0
+      },
+      "bus": {
+        "bdf": "0000:0C:00.0",
+        "max_pcie_width": 16,
+        "max_pcie_speed": {"value": 32, "unit": "GT/s"},
+        "pcie_interface_version": "Gen 5",
+        "slot_type": "OAM"
+      },
+      "vram": {
+        "type": "HBM3",
+        "vendor": "N/A",
+        "size": {"value": 196608, "unit": "MB"},
+        "bit_width": 8192
+      },
+      "driver": {"name": "amdgpu", "version": "6.10.5"}
+    },
+    {
+      "gpu": 1,
+      "asic": {
+        "market_name": "Instinct MI300X",
+        "vendor_id": "0x1002",
+        "vendor_name": "Advanced Micro Devices Inc. [AMD/ATI]",
+        "device_id": "0x74a1",
+        "asic_serial": "N/A",
+        "oam_id": 1
+      },
+      "bus": {"bdf": "0000:22:00.0"},
+      "vram": {"size": "N/A"},
+      "driver": {"version": "6.10.5"}
+    }
+  ]
+}

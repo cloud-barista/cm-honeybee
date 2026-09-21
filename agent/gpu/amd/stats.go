@@ -43,12 +43,37 @@ var (
 	keyDriverSystem = []string{"Driver version"}
 )
 
-// QueryGPU collects every AMD GPU visible to rocm-smi.
+// QueryGPU collects every AMD GPU the host can be asked about.
 //
-// It returns an empty slice and an error when rocm-smi is missing or does not
-// answer. A host with no AMD GPU is not an error: rocm-smi answers with a
+// rocm-smi is asked first because it reports the live readings as well as the
+// card, and amd-smi answers where it cannot: rocm-smi takes only critical
+// fixes from ROCm 7.0 and is removed in 10.1, so a host on a current ROCm may
+// not carry it at all.
+//
+// It returns an empty slice and an error when neither tool is present or
+// answers. A host with no AMD GPU is not an error: rocm-smi answers with a
 // document that holds no card entry.
 func QueryGPU() ([]infra.AMD, error) {
+	gpus, err := queryROCmSMI()
+	if err == nil {
+		return gpus, nil
+	}
+
+	// Falling back on any rocm-smi failure, not only on its absence: a release
+	// that rejects the flags and a binary that is missing leave the caller with
+	// the same nothing, and amd-smi may still answer in both cases.
+	amdSMIGPUs, amdSMIErr := queryAMDSMI()
+	if amdSMIErr == nil {
+		return amdSMIGPUs, nil
+	}
+
+	logger.Println(logger.DEBUG, false, amdSMIErr.Error())
+
+	return []infra.AMD{}, err
+}
+
+// queryROCmSMI collects every AMD GPU visible to rocm-smi.
+func queryROCmSMI() ([]infra.AMD, error) {
 	output, err := runROCmSMI(queryArgs...)
 	if errors.Is(err, ErrNotAvailable) {
 		logger.Println(logger.DEBUG, false, err.Error())
