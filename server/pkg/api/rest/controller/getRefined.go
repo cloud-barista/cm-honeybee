@@ -69,6 +69,30 @@ func convertRouteToRefinedRoute(route *network.Route, gateway string) (*inframod
 	return &routeProperty, nil
 }
 
+// mibToGiB rounds a mebibyte reading to the gibibytes the refined model
+// carries. Truncating instead reports a 1 GiB machine as 0, because the OS
+// only ever sees 1020-ish MiB of it once the kernel's reserved pages are
+// taken out, and 1020/1024 is 0 in integer arithmetic.
+func mibToGiB(mib uint64) uint64 {
+	return (mib + 512) / 1024
+}
+
+// mibToGiBCapacity is mibToGiB for a total-capacity field. A 0 there is not a
+// small number, it is a missing one: a node advertising 0 GiB of memory or of
+// root disk drops out of every `memoryGiB >= ...` target-spec filter cm-beetle
+// matches against, so a machine that has some capacity reports at least 1.
+func mibToGiBCapacity(mib uint64) uint64 {
+	if gib := mibToGiB(mib); gib > 0 {
+		return gib
+	}
+
+	if mib > 0 {
+		return 1
+	}
+
+	return 0
+}
+
 func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.NodeProperty, error) {
 	var dataDisks []inframodel.DiskProperty
 
@@ -165,9 +189,9 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.NodeProperty, er
 		},
 		Memory: inframodel.MemoryProperty{
 			Type:      infraInfo.Compute.ComputeResource.Memory.Type,
-			TotalSize: uint64(infraInfo.Compute.ComputeResource.Memory.Size / 1024),      // GiB
-			Available: uint64(infraInfo.Compute.ComputeResource.Memory.Available / 1024), // GiB
-			Used:      uint64(infraInfo.Compute.ComputeResource.Memory.Used / 1024),      // GiB
+			TotalSize: mibToGiBCapacity(uint64(infraInfo.Compute.ComputeResource.Memory.Size)), // GiB
+			Available: mibToGiB(uint64(infraInfo.Compute.ComputeResource.Memory.Available)),    // GiB
+			Used:      mibToGiB(uint64(infraInfo.Compute.ComputeResource.Memory.Used)),         // GiB
 		},
 		RootDisk: inframodel.DiskProperty{
 			Label:     infraInfo.Compute.ComputeResource.RootDisk.Label,
@@ -405,10 +429,10 @@ func buildNodeFromK8s(node kubernetes.Node) inframodel.NodeProperty {
 			Threads:      uint32(node.NodeSpec.CPU),
 		},
 		Memory: inframodel.MemoryProperty{
-			TotalSize: uint64(node.NodeSpec.Memory / 1024), // MiB -> GiB
+			TotalSize: mibToGiBCapacity(uint64(node.NodeSpec.Memory)), // MiB -> GiB
 		},
 		RootDisk: inframodel.DiskProperty{
-			TotalSize: uint64(node.NodeSpec.EphemeralStorage / 1024), // MiB -> GiB
+			TotalSize: mibToGiBCapacity(uint64(node.NodeSpec.EphemeralStorage)), // MiB -> GiB
 		},
 		GPUCards: gpuCardsFromK8s(node.NodeSpec.GPU),
 	}

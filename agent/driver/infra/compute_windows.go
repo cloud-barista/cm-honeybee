@@ -444,18 +444,18 @@ func GetComputeInfo() (infra.Compute, error) {
 					Name:      name,
 					Label:     part.Name,
 					Type:      d.DriveType.String(),
-					Size:      uint(dUsage.Total / 1024 / 1024 / 1024),
-					Used:      uint(dUsage.Used / 1024 / 1024 / 1024),
-					Available: uint(dUsage.Free / 1024 / 1024 / 1024),
+					Size:      bytesToGiBCapacity(dUsage.Total),
+					Used:      bytesToGiB(dUsage.Used),
+					Available: bytesToGiB(dUsage.Free),
 				}
 			} else {
 				dataDisk = append(dataDisk, infra.Disk{
 					Name:      name,
 					Label:     part.Name,
 					Type:      d.DriveType.String(),
-					Size:      uint(dUsage.Total / 1024 / 1024 / 1024),
-					Used:      uint(dUsage.Used / 1024 / 1024 / 1024),
-					Available: uint(dUsage.Free / 1024 / 1024 / 1024),
+					Size:      bytesToGiBCapacity(dUsage.Total),
+					Used:      bytesToGiB(dUsage.Used),
+					Available: bytesToGiB(dUsage.Free),
 				})
 			}
 		}

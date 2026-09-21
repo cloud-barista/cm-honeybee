@@ -199,9 +199,9 @@ func GetComputeInfo() (infra.Compute, error) {
 						Name:      part.Name,
 						Label:     part.Label,
 						Type:      d.DriveType.String(),
-						Size:      uint(dUsage.Total / 1024 / 1024 / 1024),
-						Used:      uint(dUsage.Used / 1024 / 1024 / 1024),
-						Available: uint(dUsage.Free / 1024 / 1024 / 1024),
+						Size:      bytesToGiBCapacity(dUsage.Total),
+						Used:      bytesToGiB(dUsage.Used),
+						Available: bytesToGiB(dUsage.Free),
 					}
 				} else {
 					if !strings.Contains(strings.ToUpper(part.MountPoint), "EFI") && !strings.Contains(strings.ToUpper(part.Label), "EFI") {
@@ -213,9 +213,9 @@ func GetComputeInfo() (infra.Compute, error) {
 							Name:      part.Name,
 							Label:     part.Label,
 							Type:      d.DriveType.String(),
-							Size:      uint(dUsage.Total / 1024 / 1024 / 1024),
-							Used:      uint(dUsage.Used / 1024 / 1024 / 1024),
-							Available: uint(dUsage.Free / 1024 / 1024 / 1024),
+							Size:      bytesToGiBCapacity(dUsage.Total),
+							Used:      bytesToGiB(dUsage.Used),
+							Available: bytesToGiB(dUsage.Free),
 						})
 					}
 				}
