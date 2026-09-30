@@ -13,22 +13,22 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// DirectListCloudOS returns the supported CSP names from cloudos.yaml.
-func DirectListCloudOS() ([]string, error) {
+// ListCloudOS returns the supported CSP names from cloudos.yaml.
+func ListCloudOS() ([]string, error) {
 	if err := cbspiderFile(filepath.Join("cloud-driver-libs", "cloudos.yaml")); err != nil {
 		return nil, err
 	}
 	return cim.ListCloudOS(), nil
 }
 
-// DirectGetCloudOSMetaInfo returns the metadata for a Cloud OS from
+// GetCloudOSMetaInfo returns the metadata for a Cloud OS from
 // cloudos_meta.yaml. An unknown name yields empty metadata, as the REST
 // /cloudos/metainfo does.
-func DirectGetCloudOSMetaInfo(cloudOSName string) (*CloudOSMetaInfo, error) {
+func GetCloudOSMetaInfo(cloudOSName string) (*CloudOSMetaInfo, error) {
 	if err := mustNonEmpty("CloudOSName", cloudOSName); err != nil {
 		return nil, err
 	}
-	meta, err := directMetaInfo(cloudOSName)
+	meta, err := loadMetaInfo(cloudOSName)
 	if err != nil {
 		return nil, err
 	}
@@ -39,9 +39,9 @@ func DirectGetCloudOSMetaInfo(cloudOSName string) (*CloudOSMetaInfo, error) {
 	return &out, nil
 }
 
-// DirectGetDriverCapability reports which handlers the provider's driver
+// GetDriverCapability reports which handlers the provider's driver
 // implements. No connection is needed.
-func DirectGetDriverCapability(provider string) (*DriverCapability, error) {
+func GetDriverCapability(provider string) (*DriverCapability, error) {
 	drv, err := cloudDriver(provider)
 	if err != nil {
 		return nil, err
@@ -53,18 +53,18 @@ func DirectGetDriverCapability(provider string) (*DriverCapability, error) {
 	return &out, nil
 }
 
-// DirectListRegionZone lists the CSP's regions and zones with a credential
-// only, as ListRegionZonePreConfig does: the region to query comes from the
+// ListRegionZone lists the CSP's regions and zones with a credential
+// only, as cb-spider's GET /preconfig/regionzone does: the region to query comes from the
 // provider's DefaultRegionToQuery.
-func DirectListRegionZone(provider string, credential []KeyValue) ([]RegionZoneInfo, error) {
-	p, err := normalizeDirectProvider(provider)
+func ListRegionZone(provider string, credential []KeyValue) ([]RegionZoneInfo, error) {
+	p, err := upperProvider(provider)
 	if err != nil {
 		return nil, err
 	}
 	if _, err := cloudDriver(p); err != nil {
 		return nil, err
 	}
-	meta, err := directMetaInfo(p)
+	meta, err := loadMetaInfo(p)
 	if err != nil {
 		return nil, err
 	}

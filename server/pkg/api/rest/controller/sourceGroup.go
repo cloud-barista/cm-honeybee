@@ -134,9 +134,9 @@ func CreateSourceGroup(c echo.Context) error {
 	if serverCommon.IsCSPType(sgType) {
 		sourceGroup.ProviderName = createSourceGroupReq.ProviderName
 		sourceGroup.RegionName = createSourceGroupReq.RegionName
-		// Validate against CSP metainfo and record canonical values. No cb-spider
-		// writes happen here — credentials are registered only transiently at
-		// discovery/collection time (see withSpiderConnection).
+		// Validate against CSP metainfo and record canonical values. No writes
+		// outside honeybee happen here - credentials go to the drivers only in
+		// memory at discovery/collection time (see withCSPConn).
 		if err := validateAndCanonicalizeCSP(sourceGroup, createSourceGroupReq.Credential); err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}

@@ -141,10 +141,10 @@ func TestS3ConnRuleUnsupportedProvider(t *testing.T) {
 			t.Fatalf("%s: got %v", provider, err)
 		}
 	}
-	if _, err := DirectListS3Buckets(Conn{Provider: "ORACLE", Region: "r"}); err == nil {
+	if _, err := ListS3Buckets(Conn{Provider: "ORACLE", Region: "r"}); err == nil {
 		t.Fatal("ORACLE must fail")
 	}
-	if _, err := DirectGetS3BucketLocation(Conn{Provider: "", Region: "r"}, "b"); err == nil {
+	if _, err := GetS3BucketLocation(Conn{Provider: "", Region: "r"}, "b"); err == nil {
 		t.Fatal("empty provider must fail")
 	}
 }
@@ -205,7 +205,7 @@ func TestS3ConnectionInfoTencentAppId(t *testing.T) {
 		t.Fatal("location must not call the CAM API")
 		return "", nil
 	}
-	loc, err := DirectGetS3BucketLocation(Conn{Provider: "TENCENT", Region: "ap-seoul",
+	loc, err := GetS3BucketLocation(Conn{Provider: "TENCENT", Region: "ap-seoul",
 		Credential: []KeyValue{{Key: "SecretId", Value: "ak"}, {Key: "SecretKey", Value: "sk"}}}, "b-1250000000")
 	if err != nil || loc.Name != "b-1250000000" || loc.Region != "" {
 		t.Fatalf("got %+v, %v", loc, err)

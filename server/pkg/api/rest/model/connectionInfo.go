@@ -28,8 +28,9 @@ type ConnectionInfo struct {
 	// ResourceType: "vm" | "k8s" | "object_storage".
 	ResourceType string `gorm:"column:resource_type" json:"resource_type,omitempty"`
 	ResourceID   string `gorm:"column:resource_id" json:"resource_id,omitempty"`
-	// Zone overrides the CSP zone for this connection's cb-spider lookups.
-	// Empty → provider default (see buildRegionKV).
+	// Zone overrides the CSP zone for this connection's driver lookups.
+	// Empty → the zone in the source group's region_name "<region>/<zone>", if any
+	// (see splitRegionZone).
 	Zone string `gorm:"column:zone" json:"zone,omitempty"`
 
 	ConnectionStatus        string `gorm:"column:connection_status" json:"connection_status"`

@@ -200,11 +200,11 @@ var tencentAppId = func(accessKey, secretKey string) (string, error) {
 
 // s3ConnRuleFor runs s3ConnRule on c after mapping its credential keys.
 func s3ConnRuleFor(c Conn) (*s3ConnInfo, error) {
-	providerName, err := normalizeDirectProvider(c.Provider)
+	providerName, err := upperProvider(c.Provider)
 	if err != nil {
 		return nil, err
 	}
-	meta, err := directMetaInfo(providerName)
+	meta, err := loadMetaInfo(providerName)
 	if err != nil {
 		return nil, err
 	}
@@ -283,8 +283,8 @@ func listS3BucketEntries(connInfo *s3ConnInfo) ([]s3BucketEntry, error) {
 	return entries, nil
 }
 
-// s3BucketInfos turns CSP buckets into what ListS3Buckets returns from
-// /alls3info. With nothing registered in spider every bucket falls into
+// s3BucketInfos turns CSP buckets into what honeybee used to read from
+// cb-spider's GET /alls3info. With nothing registered in spider every bucket falls into
 // OnlyCSPInfoList with NameId = SystemId = the CSP name, and CreationDate is
 // the RFC3339Nano string time.Time marshals to.
 func s3BucketInfos(entries []s3BucketEntry) []S3BucketInfo {
@@ -298,9 +298,10 @@ func s3BucketInfos(entries []s3BucketEntry) []S3BucketInfo {
 	return out
 }
 
-// DirectListS3Buckets returns every bucket the CSP has, as ListS3Buckets
-// does through cb-spider's ListAllS3BucketInfo().
-func DirectListS3Buckets(c Conn) ([]S3BucketInfo, error) {
+// ListS3Buckets returns every bucket the CSP has, as cb-spider's
+// GET /alls3info does through ListAllS3BucketInfo(). SystemId, the real bucket
+// name on the CSP, is what Name carries.
+func ListS3Buckets(c Conn) ([]S3BucketInfo, error) {
 	connInfo, err := s3ConnectionInfo(c)
 	if err != nil {
 		return nil, err
@@ -312,13 +313,13 @@ func DirectListS3Buckets(c Conn) ([]S3BucketInfo, error) {
 	return s3BucketInfos(entries), nil
 }
 
-// DirectGetS3BucketLocation returns what GetS3BucketLocation gets from
-// cb-spider's getBucketLocation() (rest-runtime/S3Rest.go). That handler asks
+// GetS3BucketLocation returns what cb-spider's GET /s3/{Name}?location
+// answers through getBucketLocation() (rest-runtime/S3Rest.go). That handler asks
 // no CSP: it returns the Region stored in spider's meta-DB when the bucket was
 // created or registered there, and "" otherwise. honeybee registers nothing,
 // so LocationConstraint is always "". Only the provider and credential rules
 // are checked, without the Tencent CAM call, since the handler contacts nothing.
-func DirectGetS3BucketLocation(c Conn, bucketName string) (*S3BucketInfo, error) {
+func GetS3BucketLocation(c Conn, bucketName string) (*S3BucketInfo, error) {
 	if err := mustNonEmpty("BucketName", bucketName); err != nil {
 		return nil, err
 	}

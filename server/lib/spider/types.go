@@ -25,13 +25,6 @@ type CloudOSMetaInfo struct {
 	IdMaxLength          []string `json:"IdMaxLength"`
 }
 
-// CredentialInfo mirrors spider.cim.CredentialInfo.
-type CredentialInfo struct {
-	CredentialName   string     `json:"CredentialName"`
-	ProviderName     string     `json:"ProviderName"`
-	KeyValueInfoList []KeyValue `json:"KeyValueInfoList"`
-}
-
 // RegionInfo mirrors spider.cim.RegionInfo.
 type RegionInfo struct {
 	RegionName        string     `json:"RegionName"`
@@ -43,15 +36,6 @@ type RegionInfo struct {
 	// region-registration/list shape that uses RegionName/KeyValueInfoList.
 	Region string `json:"Region,omitempty"`
 	Zone   string `json:"Zone,omitempty"`
-}
-
-// ConnectionConfigInfo mirrors spider.cim.ConnectionConfigInfo.
-type ConnectionConfigInfo struct {
-	ConfigName     string `json:"ConfigName"`
-	ProviderName   string `json:"ProviderName"`
-	DriverName     string `json:"DriverName"`
-	CredentialName string `json:"CredentialName"`
-	RegionName     string `json:"RegionName"`
 }
 
 // VMInfo is a subset of spider.VMInfo.
@@ -106,12 +90,6 @@ type NodeGroupInfo struct {
 	MinNodeSize     int    `json:"MinNodeSize"`
 	MaxNodeSize     int    `json:"MaxNodeSize"`
 	Status          string `json:"Status"`
-}
-
-// BucketIID mirrors spider.BucketIID - stripped down to the fields we use.
-type BucketIID struct {
-	NameId   string `json:"NameId,omitempty"`
-	SystemId string `json:"SystemId,omitempty"`
 }
 
 // S3BucketInfo aggregates the fields cb-spider reports per bucket.

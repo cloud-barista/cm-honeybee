@@ -178,27 +178,26 @@ func ListSourceGroupRegions(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "regions are only available for csp-type source groups")
 	}
 
-	regions := make([]model.CSPRegion, 0)
-	err = withSpiderCredential(sourceGroup, func(driverName, credName string) error {
-		list, err := spider.ListRegionZonePreConfig(driverName, credName)
-		if err != nil {
-			return err
-		}
-		for _, r := range list {
-			zones := make([]string, 0, len(r.ZoneList))
-			for _, z := range r.ZoneList {
-				zones = append(zones, z.Name)
-			}
-			regions = append(regions, model.CSPRegion{
-				Name:        r.Name,
-				DisplayName: r.DisplayName,
-				Zones:       zones,
-			})
-		}
-		return nil
-	})
+	provider, credential, err := cspCredential(sourceGroup)
 	if err != nil {
 		return common.ReturnInternalError(c, err, "failed to list regions from cb-spider")
+	}
+	list, err := spider.ListRegionZone(provider, credential)
+	if err != nil {
+		return common.ReturnInternalError(c, err, "failed to list regions from cb-spider")
+	}
+
+	regions := make([]model.CSPRegion, 0, len(list))
+	for _, r := range list {
+		zones := make([]string, 0, len(r.ZoneList))
+		for _, z := range r.ZoneList {
+			zones = append(zones, z.Name)
+		}
+		regions = append(regions, model.CSPRegion{
+			Name:        r.Name,
+			DisplayName: r.DisplayName,
+			Zones:       zones,
+		})
 	}
 
 	return c.JSONPretty(http.StatusOK, model.ListRegionRes{

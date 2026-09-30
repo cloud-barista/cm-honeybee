@@ -30,7 +30,7 @@ func keyValueListToMap(in []spider.KeyValue) map[string]string {
 // disks, tags) plus the attached VPC/subnet/security groups. VPC and SG detail
 // (CIDR, subnets, rules) are resolved by listing all resources with full info
 // and matching the VM's VpcIID/SecurityGroupIIds by name.
-func buildCSPInfo(connName string, sg *model.SourceGroup, vm *spider.VMInfo) infra.CSPInfo {
+func buildCSPInfo(conn spider.Conn, sg *model.SourceGroup, vm *spider.VMInfo) infra.CSPInfo {
 	kvMap := keyValueListToMap(vm.KeyValueList)
 	platform := vm.Platform
 	if platform == "" {
@@ -80,7 +80,7 @@ func buildCSPInfo(connName string, sg *model.SourceGroup, vm *spider.VMInfo) inf
 	// VM's VPC by name. Best-effort — a lookup failure leaves detail empty.
 	csp.Network.VPC.Name = vm.VpcIID.NameId
 	if vm.VpcIID.NameId != "" {
-		if vpcs, err := spider.ListAllVPCInfo(connName); err == nil {
+		if vpcs, err := spider.ListVPC(conn); err == nil {
 			for _, v := range vpcs {
 				if v.IId.NameId != vm.VpcIID.NameId {
 					continue
@@ -103,7 +103,7 @@ func buildCSPInfo(connName string, sg *model.SourceGroup, vm *spider.VMInfo) inf
 	// Security group detail: list all SGs (with full info) and match the VM's SGs
 	// by name, carrying over their rules.
 	if len(vm.SecurityGroupIIds) > 0 {
-		sgAll, err := spider.ListAllSecurityGroupInfo(connName)
+		sgAll, err := spider.ListSecurityGroup(conn)
 		if err != nil {
 			logger.Println(logger.WARN, true, "CSP: failed to list security group info: "+err.Error())
 		}
@@ -223,13 +223,13 @@ func upsertSavedData(connID string, payload any) error {
 	return err
 }
 
-// cspVMIdentifier returns the identifier cb-spider expects for a VM lookup.
-// cb-spider's "GET /cspvm/:Id" path param is not URL-decoded, so a full CSP
-// resource ID that contains "/" (e.g. an Azure ARM ID) gets mangled into a
-// double-encoded request. cb-spider's drivers identify a VM by its name within
-// the connection's region/resource-group anyway, so we send the last path
-// segment (the VM name) — ".../virtualMachines/ish-test" -> "ish-test".
-// Slash-less IDs (e.g. an AWS instance id) pass through unchanged.
+// cspVMIdentifier returns the identifier a driver's GetVM expects. cb-spider's
+// drivers identify a VM by its name within the connection's
+// region/resource-group, so a full CSP resource ID that contains "/" (e.g. an
+// Azure ARM ID) is cut down to its last path segment (the VM name) -
+// ".../virtualMachines/ish-test" -> "ish-test". Slash-less IDs (e.g. an AWS
+// instance id) pass through unchanged. This is also what the REST client sent
+// to cb-spider's GET /cspvm/{Id}, so stored resource IDs resolve as before.
 func cspVMIdentifier(resourceID string) string {
 	id := strings.TrimRight(strings.TrimSpace(resourceID), "/")
 	if i := strings.LastIndex(id, "/"); i >= 0 {
@@ -241,18 +241,13 @@ func cspVMIdentifier(resourceID string) string {
 // findClusterByID looks a Kubernetes cluster up by the identifier discovery
 // reported for it.
 //
-// cb-spider has no "get one cluster by CSP id" route - /cluster/{Name} matches
-// on the NameId its meta-DB holds, and a cluster cb-spider did not create has
-// no entry there at all, so that route answers "does not exist in connection"
-// no matter what is passed. Measured against a live cb-spider through a freshly
-// registered connection: GET /cluster/{SystemId} returned 500 while
-// /allclusterinfo listed the same cluster.
-//
-// So the list is fetched and filtered here. SystemId is matched first because
+// The list is fetched and filtered here, as it was when honeybee went through
+// cb-spider's REST API: /cluster/{Name} matched on the NameId of cb-spider's
+// meta-DB, which never held a cluster cb-spider did not create. SystemId is matched first because
 // it is the identifier a CSP-only cluster carries; NameId is accepted as well
 // for a cluster cb-spider does manage.
-func findClusterByID(connName, resourceID string) (*spider.ClusterInfo, error) {
-	clusters, err := spider.ListAllClusterInfo(connName)
+func findClusterByID(conn spider.Conn, resourceID string) (*spider.ClusterInfo, error) {
+	clusters, err := spider.ListCluster(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -261,7 +256,7 @@ func findClusterByID(connName, resourceID string) (*spider.ClusterInfo, error) {
 		return cl, nil
 	}
 
-	return nil, errors.New("cluster '" + resourceID + "' was not found through connection '" + connName + "'")
+	return nil, errors.New("cluster '" + resourceID + "' was not found " + connLabel(conn))
 }
 
 // matchCluster picks the cluster whose identifier is resourceID. SystemId is
@@ -283,33 +278,37 @@ func matchCluster(clusters []spider.ClusterInfo, resourceID string) *spider.Clus
 }
 
 // findBucketByName looks an object storage bucket up the same way clusters are
-// looked up, and for the same reason.
+// looked up: the listing goes to the CSP, so existence is decided there.
 //
-// GET /s3/{bucket}?location resolves the name against cb-spider's meta-DB
-// (GetS3BucketRegionInfo reads infostore and nothing else), which is empty for
-// the connection each honeybee request registers, so it cannot confirm a bucket
-// the source actually has. The listing already goes to the CSP, so existence is
-// decided there.
-//
-// The region is not in that listing, so it is still read from the location
-// route as a best effort: it succeeds for a bucket cb-spider manages and is
-// left empty otherwise, rather than failing the whole lookup.
-func findBucketByName(connName, bucketName string) (*spider.S3BucketInfo, error) {
-	buckets, err := spider.ListS3Buckets(connName)
+// The region is not in that listing, so it is read from GetS3BucketLocation as
+// a best effort, which leaves it empty (see its comment) rather than failing
+// the whole lookup.
+func findBucketByName(conn spider.Conn, bucketName string) (*spider.S3BucketInfo, error) {
+	buckets, err := spider.ListS3Buckets(conn)
 	if err != nil {
 		return nil, err
 	}
 
 	found := matchBucket(buckets, bucketName)
 	if found == nil {
-		return nil, errors.New("bucket '" + bucketName + "' was not found through connection '" + connName + "'")
+		return nil, errors.New("bucket '" + bucketName + "' was not found " + connLabel(conn))
 	}
 
-	if loc, err := spider.GetS3BucketLocation(connName, bucketName); err == nil && loc != nil {
+	if loc, err := spider.GetS3BucketLocation(conn, bucketName); err == nil && loc != nil {
 		found.Region = loc.Region
 	}
 
 	return found, nil
+}
+
+// connLabel names the CSP connection in an error message; it never includes
+// the credential.
+func connLabel(conn spider.Conn) string {
+	label := "in " + strings.ToLower(conn.Provider) + " region '" + conn.Region + "'"
+	if conn.Zone != "" {
+		label += " zone '" + conn.Zone + "'"
+	}
+	return label
 }
 
 // matchBucket picks the bucket named bucketName out of a listing.
@@ -327,7 +326,7 @@ func matchBucket(buckets []spider.S3BucketInfo, bucketName string) *spider.S3Buc
 	return nil
 }
 
-// checkCSPConnection verifies that cb-spider can identify the resource described
+// checkCSPConnection verifies that the CSP driver can identify the resource described
 // by ci, WITHOUT persisting anything. This backs connection_status on
 // registration/refresh — those paths only report reachability. Actual data
 // collection + persistence is done by import (refreshCSPConnection).
@@ -336,16 +335,16 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 		return errors.New("resource_id is empty")
 	}
 
-	return withSpiderConnection(sg, ci.Zone, func(connName string) error {
+	return withCSPConn(sg, ci.Zone, func(conn spider.Conn) error {
 		switch ci.ResourceType {
 		case "vm":
-			_, err := spider.GetCSPVM(connName, cspVMIdentifier(ci.ResourceID))
+			_, err := spider.GetCSPVM(conn, cspVMIdentifier(ci.ResourceID))
 			return err
 		case "k8s":
-			_, err := findClusterByID(connName, ci.ResourceID)
+			_, err := findClusterByID(conn, ci.ResourceID)
 			return err
 		case "object_storage":
-			_, err := findBucketByName(connName, ci.ResourceID)
+			_, err := findBucketByName(conn, ci.ResourceID)
 			return err
 		default:
 			return errors.New("unsupported resource_type: " + ci.ResourceType)
@@ -353,7 +352,7 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 	})
 }
 
-// refreshCSPConnection contacts cb-spider for the resource described by ci and
+// refreshCSPConnection asks the CSP driver for the resource described by ci and
 // stores the adapted result in the relevant Saved*Info table. Used by import
 // (collection + persistence), not by the status-only refresh path.
 func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
@@ -361,24 +360,23 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error
 		return errors.New("resource_id is empty")
 	}
 
-	// Register a temporary cb-spider connection for the duration of this call only —
-	// credentials are never persisted in cb-spider.
-	return withSpiderConnection(sg, ci.Zone, func(connName string) error {
+	// The credential goes to the driver in memory for this call only.
+	return withCSPConn(sg, ci.Zone, func(conn spider.Conn) error {
 		switch ci.ResourceType {
 		case "vm":
-			vm, err := spider.GetCSPVM(connName, cspVMIdentifier(ci.ResourceID))
+			vm, err := spider.GetCSPVM(conn, cspVMIdentifier(ci.ResourceID))
 			if err != nil {
 				return err
 			}
-			return upsertSavedCSPData(ci.ID, buildCSPInfo(connName, sg, vm))
+			return upsertSavedCSPData(ci.ID, buildCSPInfo(conn, sg, vm))
 		case "k8s":
-			cl, err := findClusterByID(connName, ci.ResourceID)
+			cl, err := findClusterByID(conn, ci.ResourceID)
 			if err != nil {
 				return err
 			}
 			return upsertSavedK8s(ci.ID, clusterInfoToK8s(cl))
 		case "object_storage":
-			b, err := findBucketByName(connName, ci.ResourceID)
+			b, err := findBucketByName(conn, ci.ResourceID)
 			if err != nil {
 				return err
 			}

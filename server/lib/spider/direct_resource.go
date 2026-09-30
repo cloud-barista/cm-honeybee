@@ -15,8 +15,10 @@ func convertList[T any](in any) ([]T, error) {
 	return out, nil
 }
 
-// DirectListVM returns every VM the CSP has, as ListAllVMInfo does.
-func DirectListVM(c Conn) ([]VMInfo, error) {
+// ListVM returns every VM the CSP has, as cb-spider's GET /allvminfo does.
+// cb-spider's GET /vm lists only what its meta-DB holds, which never
+// includes a source VM cb-spider did not create.
+func ListVM(c Conn) ([]VMInfo, error) {
 	conn, err := connect(c)
 	if err != nil {
 		return nil, err
@@ -32,8 +34,9 @@ func DirectListVM(c Conn) ([]VMInfo, error) {
 	return convertList[VMInfo](list)
 }
 
-// DirectGetCSPVM fetches a VM by its CSP native ID, as GetCSPVM does.
-func DirectGetCSPVM(c Conn, cspID string) (*VMInfo, error) {
+// GetCSPVM fetches a VM by its CSP native ID, as cb-spider's GET /cspvm/{Id}
+// does: the driver is asked live, with no name lookup in a meta-DB.
+func GetCSPVM(c Conn, cspID string) (*VMInfo, error) {
 	if err := mustNonEmpty("Id", cspID); err != nil {
 		return nil, err
 	}
@@ -56,8 +59,9 @@ func DirectGetCSPVM(c Conn, cspID string) (*VMInfo, error) {
 	return &out, nil
 }
 
-// DirectListVPC returns every VPC the CSP has, as ListAllVPCInfo does.
-func DirectListVPC(c Conn) ([]VPCInfo, error) {
+// ListVPC returns every VPC the CSP has WITH full detail (CIDR, subnets), as
+// cb-spider's GET /allvpcinfo does.
+func ListVPC(c Conn) ([]VPCInfo, error) {
 	conn, err := connect(c)
 	if err != nil {
 		return nil, err
@@ -73,9 +77,9 @@ func DirectListVPC(c Conn) ([]VPCInfo, error) {
 	return convertList[VPCInfo](list)
 }
 
-// DirectListSecurityGroup returns every security group the CSP has, as
-// ListAllSecurityGroupInfo does.
-func DirectListSecurityGroup(c Conn) ([]SecurityGroupInfo, error) {
+// ListSecurityGroup returns every security group the CSP has, as
+// cb-spider's GET /allsecuritygroupinfo does.
+func ListSecurityGroup(c Conn) ([]SecurityGroupInfo, error) {
 	conn, err := connect(c)
 	if err != nil {
 		return nil, err
@@ -91,9 +95,12 @@ func DirectListSecurityGroup(c Conn) ([]SecurityGroupInfo, error) {
 	return convertList[SecurityGroupInfo](list)
 }
 
-// DirectListNLB returns every NLB the CSP has, as ListAllNLBInfo does. The
-// values are raw driver output; see ListAllNLBInfo.
-func DirectListNLB(c Conn) ([]NLBInfo, error) {
+// ListNLB returns every NLB the CSP has, as cb-spider's GET /allnlbinfo does.
+//
+// The values are raw driver output: cb-spider's transformArgsToUpper() never
+// runs on this path, so Type/Scope/Protocol keep whatever case the driver
+// produced. Normalising that is the caller's job - see nlbInfoToNLB().
+func ListNLB(c Conn) ([]NLBInfo, error) {
 	conn, err := connect(c)
 	if err != nil {
 		return nil, err
@@ -109,9 +116,10 @@ func DirectListNLB(c Conn) ([]NLBInfo, error) {
 	return convertList[NLBInfo](list)
 }
 
-// DirectListCluster returns every Kubernetes cluster the CSP has, as
-// ListAllClusterInfo does.
-func DirectListCluster(c Conn) ([]ClusterInfo, error) {
+// ListCluster returns every Kubernetes cluster the CSP has, as
+// cb-spider's GET /allclusterinfo does. A cluster cb-spider did not create
+// carries an empty NameId, so SystemId is the only identifier it has.
+func ListCluster(c Conn) ([]ClusterInfo, error) {
 	conn, err := connect(c)
 	if err != nil {
 		return nil, err
@@ -127,8 +135,8 @@ func DirectListCluster(c Conn) ([]ClusterInfo, error) {
 	return convertList[ClusterInfo](list)
 }
 
-// DirectGetCluster fetches a Kubernetes cluster by its CSP SystemId.
-func DirectGetCluster(c Conn, systemID string) (*ClusterInfo, error) {
+// GetCluster fetches a Kubernetes cluster by its CSP SystemId.
+func GetCluster(c Conn, systemID string) (*ClusterInfo, error) {
 	if err := mustNonEmpty("Id", systemID); err != nil {
 		return nil, err
 	}

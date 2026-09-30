@@ -27,11 +27,12 @@ import (
 	_ "github.com/cloud-barista/cm-honeybee/server/lib/spider/spiderroot"
 )
 
-// directConnectionName is the ConnectionName handed to drivers. Nothing is
+// driverConnectionName is the ConnectionName handed to drivers. Nothing is
 // registered under it; drivers only use it for their call logs.
-const directConnectionName = "honeybee"
+const driverConnectionName = "honeybee"
 
-// Conn describes a CSP connection for the driver-direct API. Credential keys
+// Conn describes a CSP connection. Nothing is registered anywhere for it; the
+// driver gets it from memory on every call. Credential keys
 // are the CSP-side names honeybee stores (e.g. aws_access_key_id); they are
 // mapped to cb-spider's names before the driver sees them.
 type Conn struct {
@@ -41,7 +42,15 @@ type Conn struct {
 	Credential []KeyValue
 }
 
-func normalizeDirectProvider(provider string) (string, error) {
+// mustNonEmpty errors out when a required value is empty.
+func mustNonEmpty(name, value string) error {
+	if strings.TrimSpace(value) == "" {
+		return errors.New(name + " is empty")
+	}
+	return nil
+}
+
+func upperProvider(provider string) (string, error) {
 	p := strings.ToUpper(strings.TrimSpace(provider))
 	if p == "" {
 		return "", errors.New("ProviderName is empty")
@@ -62,7 +71,7 @@ func cbspiderFile(rel string) error {
 	return nil
 }
 
-func directMetaInfo(provider string) (cim.CloudOSMetaInfo, error) {
+func loadMetaInfo(provider string) (cim.CloudOSMetaInfo, error) {
 	if err := cbspiderFile(filepath.Join("cloud-driver-libs", "cloudos_meta.yaml")); err != nil {
 		return cim.CloudOSMetaInfo{}, err
 	}
@@ -128,18 +137,18 @@ func credentialInfo(kvList []KeyValue) idrv.CredentialInfo {
 		RDSSecretAccessKey: kvValue(kvList, "Secret Access Key"),
 		RDSMySQLAppKey:     kvValue(kvList, "mysqlAppKey"),
 		RDSMariaDBAppKey:   kvValue(kvList, "mariadbAppKey"),
-		ConnectionName:     directConnectionName,
+		ConnectionName:     driverConnectionName,
 	}
 }
 
 // connectionInfo builds the driver input for c from memory; nothing is
 // registered with cb-spider's store.
 func connectionInfo(c Conn) (idrv.ConnectionInfo, error) {
-	provider, err := normalizeDirectProvider(c.Provider)
+	provider, err := upperProvider(c.Provider)
 	if err != nil {
 		return idrv.ConnectionInfo{}, err
 	}
-	meta, err := directMetaInfo(provider)
+	meta, err := loadMetaInfo(provider)
 	if err != nil {
 		return idrv.ConnectionInfo{}, err
 	}
@@ -155,7 +164,7 @@ func connectionInfo(c Conn) (idrv.ConnectionInfo, error) {
 // cloudDriver selects a static driver the same way as cb-spider's
 // getCloudDriver() in CloudDriverHandler_static.go, without MOCK.
 func cloudDriver(provider string) (idrv.CloudDriver, error) {
-	p, err := normalizeDirectProvider(provider)
+	p, err := upperProvider(provider)
 	if err != nil {
 		return nil, err
 	}

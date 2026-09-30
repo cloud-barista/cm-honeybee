@@ -47,17 +47,16 @@ func DiscoverSourceGroupResources(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "resource_type query is required (vm | k8s | object_storage | nlb).")
 	}
 
-	// Register a temporary cb-spider connection for the duration of the discovery
-	// call only - credentials are never persisted in cb-spider.
+	// The credential goes to the driver in memory for this call only.
 	var items []model.DiscoveredResource
-	err = withSpiderConnection(sg, "", func(connName string) error {
+	err = withCSPConn(sg, "", func(conn spider.Conn) error {
 		var derr error
-		items, derr = discoverByType(connName, resourceType)
+		items, derr = discoverByType(conn, resourceType)
 		return derr
 	})
 	if err != nil {
 		// A driver that has no handler for this resource type is not a failure of
-		// the request - report it as such instead of leaking cb-spider's 500.
+		// the request - report it as such instead of a 500.
 		var unsupported errDriverUnsupported
 		if errors.As(err, &unsupported) {
 			return c.JSONPretty(http.StatusOK, model.DiscoverRes{
@@ -71,19 +70,17 @@ func DiscoverSourceGroupResources(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, model.DiscoverRes{Items: items}, " ")
 }
 
-// errDriverUnsupported marks a resource type the connection's driver implements
+// errDriverUnsupported marks a resource type the provider's driver implements
 // no handler for. It travels up from discoverByType so the HTTP layer can answer
 // 200 + Unsupported rather than 500.
 type errDriverUnsupported struct{ msg string }
 
 func (e errDriverUnsupported) Error() string { return e.msg }
 
-func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, error) {
+func discoverByType(conn spider.Conn, resourceType string) ([]model.DiscoveredResource, error) {
 	switch resourceType {
 	case serverCommon.ResourceTypeVM:
-		// ListAllVMInfo, not ListVM: the latter lists only what cb-spider
-		// manages, which never includes a source VM cb-spider did not create.
-		vms, err := spider.ListAllVMInfo(connName)
+		vms, err := spider.ListVM(conn)
 		if err != nil {
 			return nil, err
 		}
@@ -105,10 +102,7 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 		}
 		return out, nil
 	case serverCommon.ResourceTypeK8s:
-		// /allclusterinfo rather than /cluster: the latter reads cb-spider's
-		// meta-DB, which is empty for the connection this call just registered,
-		// so a migration source's clusters never show up there.
-		clusters, err := spider.ListAllClusterInfo(connName)
+		clusters, err := spider.ListCluster(conn)
 		if err != nil {
 			return nil, err
 		}
@@ -126,7 +120,7 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 		}
 		return out, nil
 	case serverCommon.ResourceTypeObjectStorage:
-		buckets, err := spider.ListS3Buckets(connName)
+		buckets, err := spider.ListS3Buckets(conn)
 		if err != nil {
 			return nil, err
 		}
@@ -143,9 +137,9 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 		}
 		return out, nil
 	case serverCommon.ResourceTypeNLB:
-		// Oracle's driver errors out in CreateNLBHandler(), which makes
-		// /allnlbinfo answer 500. Ask what the driver supports first.
-		capability, err := spider.GetDriverCapability(connName)
+		// Oracle's driver errors out in CreateNLBHandler() and does not set
+		// NLBHandler in its capability. Ask what the driver supports first.
+		capability, err := spider.GetDriverCapability(conn.Provider)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +148,7 @@ func discoverByType(connName, resourceType string) ([]model.DiscoveredResource, 
 				msg: "this source group's CSP has no NLB support in its cb-spider driver",
 			}
 		}
-		nlbs, err := spider.ListAllNLBInfo(connName)
+		nlbs, err := spider.ListNLB(conn)
 		if err != nil {
 			return nil, err
 		}
@@ -199,7 +193,7 @@ func firstNonEmpty(vals ...string) string {
 
 // pickIIDSystem returns the CSP's own identifier for a resource - an AWS
 // instance id, an ARN, an Azure ARM id - which is what ResourceID must carry:
-// collection feeds that value straight back to cb-spider, and the CSP-native
+// collection feeds that value straight back to the driver, and the CSP-native
 // lookups reject anything else (AWS answers "InvalidInstanceID.Malformed" to a
 // Name tag). NameId is a display name: mutable, not unique, and empty on some
 // drivers, so it serves only as a fallback for drivers that leave SystemId blank.

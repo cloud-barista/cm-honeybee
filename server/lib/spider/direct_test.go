@@ -104,7 +104,7 @@ func TestConnectionInfoAWS(t *testing.T) {
 	if ci.StsToken != "Not set" {
 		t.Errorf("StsToken = %q, want \"Not set\"", ci.StsToken)
 	}
-	if ci.ConnectionName != directConnectionName {
+	if ci.ConnectionName != driverConnectionName {
 		t.Errorf("ConnectionName = %q", ci.ConnectionName)
 	}
 	if info.RegionInfo.Region != "ap-northeast-2" || info.RegionInfo.Zone != "ap-northeast-2a" {
@@ -154,20 +154,20 @@ func TestCloudDriver(t *testing.T) {
 	}
 }
 
-func TestDirectUnknownProvider(t *testing.T) {
-	if _, err := DirectListVM(Conn{Provider: "NOPE"}); err == nil {
-		t.Error("DirectListVM: expected an error")
+func TestUnknownProvider(t *testing.T) {
+	if _, err := ListVM(Conn{Provider: "NOPE"}); err == nil {
+		t.Error("ListVM: expected an error")
 	}
-	if _, err := DirectListRegionZone("NOPE", nil); err == nil {
-		t.Error("DirectListRegionZone: expected an error")
+	if _, err := ListRegionZone("NOPE", nil); err == nil {
+		t.Error("ListRegionZone: expected an error")
 	}
-	if _, err := DirectGetDriverCapability("NOPE"); err == nil {
-		t.Error("DirectGetDriverCapability: expected an error")
+	if _, err := GetDriverCapability("NOPE"); err == nil {
+		t.Error("GetDriverCapability: expected an error")
 	}
 }
 
-func TestDirectGetDriverCapabilityAWS(t *testing.T) {
-	c, err := DirectGetDriverCapability("aws")
+func TestGetDriverCapabilityAWS(t *testing.T) {
+	c, err := GetDriverCapability("aws")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,8 +176,8 @@ func TestDirectGetDriverCapabilityAWS(t *testing.T) {
 	}
 }
 
-func TestDirectCloudOS(t *testing.T) {
-	list, err := DirectListCloudOS()
+func TestCloudOS(t *testing.T) {
+	list, err := ListCloudOS()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,7 +191,7 @@ func TestDirectCloudOS(t *testing.T) {
 		t.Errorf("AWS not in %v", list)
 	}
 
-	meta, err := DirectGetCloudOSMetaInfo("aws")
+	meta, err := GetCloudOSMetaInfo("aws")
 	if err != nil {
 		t.Fatal(err)
 	}
