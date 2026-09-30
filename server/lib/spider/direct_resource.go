@@ -19,6 +19,10 @@ func convertList[T any](in any) ([]T, error) {
 // cb-spider's GET /vm lists only what its meta-DB holds, which never
 // includes a source VM cb-spider did not create.
 func ListVM(c Conn) ([]VMInfo, error) {
+	return withTimeout(driverCallTimeout, func() ([]VMInfo, error) { return listVM(c) })
+}
+
+func listVM(c Conn) ([]VMInfo, error) {
 	conn, err := connect(c)
 	if err != nil {
 		return nil, err
@@ -37,6 +41,10 @@ func ListVM(c Conn) ([]VMInfo, error) {
 // GetCSPVM fetches a VM by its CSP native ID, as cb-spider's GET /cspvm/{Id}
 // does: the driver is asked live, with no name lookup in a meta-DB.
 func GetCSPVM(c Conn, cspID string) (*VMInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*VMInfo, error) { return getCSPVM(c, cspID) })
+}
+
+func getCSPVM(c Conn, cspID string) (*VMInfo, error) {
 	if err := mustNonEmpty("Id", cspID); err != nil {
 		return nil, err
 	}
@@ -62,6 +70,10 @@ func GetCSPVM(c Conn, cspID string) (*VMInfo, error) {
 // ListVPC returns every VPC the CSP has WITH full detail (CIDR, subnets), as
 // cb-spider's GET /allvpcinfo does.
 func ListVPC(c Conn) ([]VPCInfo, error) {
+	return withTimeout(driverCallTimeout, func() ([]VPCInfo, error) { return listVPC(c) })
+}
+
+func listVPC(c Conn) ([]VPCInfo, error) {
 	conn, err := connect(c)
 	if err != nil {
 		return nil, err
@@ -80,6 +92,10 @@ func ListVPC(c Conn) ([]VPCInfo, error) {
 // ListSecurityGroup returns every security group the CSP has, as
 // cb-spider's GET /allsecuritygroupinfo does.
 func ListSecurityGroup(c Conn) ([]SecurityGroupInfo, error) {
+	return withTimeout(driverCallTimeout, func() ([]SecurityGroupInfo, error) { return listSecurityGroup(c) })
+}
+
+func listSecurityGroup(c Conn) ([]SecurityGroupInfo, error) {
 	conn, err := connect(c)
 	if err != nil {
 		return nil, err
@@ -101,6 +117,10 @@ func ListSecurityGroup(c Conn) ([]SecurityGroupInfo, error) {
 // runs on this path, so Type/Scope/Protocol keep whatever case the driver
 // produced. Normalising that is the caller's job - see nlbInfoToNLB().
 func ListNLB(c Conn) ([]NLBInfo, error) {
+	return withTimeout(driverCallTimeout, func() ([]NLBInfo, error) { return listNLB(c) })
+}
+
+func listNLB(c Conn) ([]NLBInfo, error) {
 	conn, err := connect(c)
 	if err != nil {
 		return nil, err
@@ -120,6 +140,10 @@ func ListNLB(c Conn) ([]NLBInfo, error) {
 // cb-spider's GET /allclusterinfo does. A cluster cb-spider did not create
 // carries an empty NameId, so SystemId is the only identifier it has.
 func ListCluster(c Conn) ([]ClusterInfo, error) {
+	return withTimeout(driverCallTimeout, func() ([]ClusterInfo, error) { return listCluster(c) })
+}
+
+func listCluster(c Conn) ([]ClusterInfo, error) {
 	conn, err := connect(c)
 	if err != nil {
 		return nil, err
@@ -137,6 +161,10 @@ func ListCluster(c Conn) ([]ClusterInfo, error) {
 
 // GetCluster fetches a Kubernetes cluster by its CSP SystemId.
 func GetCluster(c Conn, systemID string) (*ClusterInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*ClusterInfo, error) { return getCluster(c, systemID) })
+}
+
+func getCluster(c Conn, systemID string) (*ClusterInfo, error) {
 	if err := mustNonEmpty("Id", systemID); err != nil {
 		return nil, err
 	}

@@ -57,6 +57,10 @@ func GetDriverCapability(provider string) (*DriverCapability, error) {
 // only, as cb-spider's GET /preconfig/regionzone does: the region to query comes from the
 // provider's DefaultRegionToQuery.
 func ListRegionZone(provider string, credential []KeyValue) ([]RegionZoneInfo, error) {
+	return withTimeout(driverCallTimeout, func() ([]RegionZoneInfo, error) { return listRegionZone(provider, credential) })
+}
+
+func listRegionZone(provider string, credential []KeyValue) ([]RegionZoneInfo, error) {
 	p, err := upperProvider(provider)
 	if err != nil {
 		return nil, err

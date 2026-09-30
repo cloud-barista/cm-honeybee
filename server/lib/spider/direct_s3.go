@@ -302,6 +302,10 @@ func s3BucketInfos(entries []s3BucketEntry) []S3BucketInfo {
 // GET /alls3info does through ListAllS3BucketInfo(). SystemId, the real bucket
 // name on the CSP, is what Name carries.
 func ListS3Buckets(c Conn) ([]S3BucketInfo, error) {
+	return withTimeout(driverCallTimeout, func() ([]S3BucketInfo, error) { return listS3Buckets(c) })
+}
+
+func listS3Buckets(c Conn) ([]S3BucketInfo, error) {
 	connInfo, err := s3ConnectionInfo(c)
 	if err != nil {
 		return nil, err
@@ -320,6 +324,10 @@ func ListS3Buckets(c Conn) ([]S3BucketInfo, error) {
 // so LocationConstraint is always "". Only the provider and credential rules
 // are checked, without the Tencent CAM call, since the handler contacts nothing.
 func GetS3BucketLocation(c Conn, bucketName string) (*S3BucketInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*S3BucketInfo, error) { return getS3BucketLocation(c, bucketName) })
+}
+
+func getS3BucketLocation(c Conn, bucketName string) (*S3BucketInfo, error) {
 	if err := mustNonEmpty("BucketName", bucketName); err != nil {
 		return nil, err
 	}
