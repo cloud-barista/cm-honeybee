@@ -7,8 +7,10 @@ PKG_LIST := $(shell go list ${PROJECT_NAME}/... 2>&1)
 GOPROXY_OPTION := GOPROXY=direct
 GO_COMMAND := ${GOPROXY_OPTION} go
 GOPATH := $(shell go env GOPATH)
+CB_SPIDER_ROOT := $(or ${CBSPIDER_ROOT},$(or ${CMHONEYBEE_ROOT},${HOME}/.cm-honeybee)/cb-spider)
+CB_SPIDER_ENV := CBSPIDER_ROOT="${CB_SPIDER_ROOT}" CBLOG_ROOT="${CB_SPIDER_ROOT}"
 
-.PHONY: all milkyway dependency lint test race coverage coverhtml gofmt update swag swagger build build-only linux linux-arm64 windows run run_docker stop stop_docker clean help
+.PHONY: all milkyway dependency lint test race coverage coverhtml gofmt update swag swagger build build-only linux linux-arm64 windows cb-spider-root run run_docker stop stop_docker clean help
 
 all: build
 
@@ -127,7 +129,17 @@ windows: lint swag ## Build the binary file for Windows
 	@git rev-parse HEAD > .git_hash_last_build
 	@echo Build finished!
 
-run: ## Run the built binary
+cb-spider-root: ## Copy cb-spider driver metainfo and log configs into CB_SPIDER_ROOT
+	@${GO_COMMAND} mod download github.com/cloud-barista/cb-spider && \
+	  SPIDER_DIR=`go list -m -f '{{.Dir}}' github.com/cloud-barista/cb-spider` && \
+	  echo "Copying cb-spider files into ${CB_SPIDER_ROOT}..." && \
+	  mkdir -p "${CB_SPIDER_ROOT}/cloud-driver-libs/region" "${CB_SPIDER_ROOT}/conf" && \
+	  cp -f $$SPIDER_DIR/cloud-driver-libs/cloudos.yaml $$SPIDER_DIR/cloud-driver-libs/cloudos_meta.yaml "${CB_SPIDER_ROOT}/cloud-driver-libs/" && \
+	  cp -f $$SPIDER_DIR/cloud-driver-libs/region/*_region_meta.yaml "${CB_SPIDER_ROOT}/cloud-driver-libs/region/" && \
+	  cp -f $$SPIDER_DIR/conf/calllog_conf.yaml $$SPIDER_DIR/conf/log_conf.yaml "${CB_SPIDER_ROOT}/conf/" && \
+	  chmod -R u+w "${CB_SPIDER_ROOT}/cloud-driver-libs" "${CB_SPIDER_ROOT}/conf"
+
+run: cb-spider-root ## Run the built binary
 	@sudo killall ${MODULE_NAME} | true
 	@git diff > .diff_current
 	@STATUS=`diff .diff_last_build .diff_current 2>&1 > /dev/null; echo $$?` && \
@@ -139,9 +151,9 @@ run: ## Run the built binary
 	@@kernel_name=`uname -s` && \
 	  cp -RpPf conf cmd/${MODULE_NAME}/ && \
 	  if [[ $$kernel_name == "CYGWIN"* ]] || [[ $$kernel_name == "MINGW"* ]]; then \
-	    ./cmd/${MODULE_NAME}/${MODULE_NAME}.exe & \
+	    ${CB_SPIDER_ENV} ./cmd/${MODULE_NAME}/${MODULE_NAME}.exe & \
 	  else \
-        ./cmd/${MODULE_NAME}/${MODULE_NAME} || echo "Trying with sudo..." && sudo ./cmd/${MODULE_NAME}/${MODULE_NAME} & \
+        ${CB_SPIDER_ENV} ./cmd/${MODULE_NAME}/${MODULE_NAME} || echo "Trying with sudo..." && sudo ${CB_SPIDER_ENV} ./cmd/${MODULE_NAME}/${MODULE_NAME} & \
 	  fi
 
 run_docker: ## Run the built binary within Docker

@@ -15,6 +15,15 @@ WORKDIR /go/src/github.com/cloud-barista/cm-honeybee/server
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
+# cb-spider drivers read their CSP metainfo and log configs from
+# $CBSPIDER_ROOT and $CBLOG_ROOT at runtime. Take them from the cb-spider version pinned in go.mod.
+RUN SPIDER_DIR=`go list -m -f '{{.Dir}}' github.com/cloud-barista/cb-spider` && \
+    mkdir -p /cb-spider/cloud-driver-libs/region /cb-spider/conf && \
+    cp $SPIDER_DIR/cloud-driver-libs/cloudos.yaml $SPIDER_DIR/cloud-driver-libs/cloudos_meta.yaml /cb-spider/cloud-driver-libs/ && \
+    cp $SPIDER_DIR/cloud-driver-libs/region/*_region_meta.yaml /cb-spider/cloud-driver-libs/region/ && \
+    cp $SPIDER_DIR/conf/calllog_conf.yaml $SPIDER_DIR/conf/log_conf.yaml /cb-spider/conf/ && \
+    chmod -R u+w /cb-spider
+
 COPY . .
 
 RUN git config --global user.email "ish@innogrid.com"
@@ -32,6 +41,11 @@ RUN cp -f /usr/share/zoneinfo/Asia/Seoul /etc/localtime
 
 COPY --from=builder /go/src/github.com/cloud-barista/cm-honeybee/server/conf /conf
 COPY --from=builder /go/src/github.com/cloud-barista/cm-honeybee/server/cmd/cm-honeybee/cm-honeybee /cm-honeybee
+
+# Kept outside /root/.cm-honeybee, which deployments bind-mount from the host.
+COPY --from=builder /cb-spider /cb-spider
+ENV CBSPIDER_ROOT=/cb-spider
+ENV CBLOG_ROOT=/cb-spider
 
 RUN mkdir -p /root/.cm-honeybee/
 COPY --from=builder /go/src/github.com/cloud-barista/cm-honeybee/server/_default_key/honeybee.pub /root/.cm-honeybee/honeybee.pub
