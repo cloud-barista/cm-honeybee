@@ -1,7 +1,7 @@
 // Package openbao is cm-honeybee's optional secrets backend. When configured
 // (cm-honeybee.openbao.address), SSH access info and CSP credentials are stored
 // in OpenBao's KV v2 engine instead of the local SQLite store. Talks to OpenBao
-// over its REST API (no SDK dependency), mirroring the spider client style.
+// over its REST API (no SDK dependency).
 package openbao
 
 import (

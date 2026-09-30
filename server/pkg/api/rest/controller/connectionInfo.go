@@ -281,7 +281,7 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 
 		switch sourceGroup.Type {
 		case serverCommon.SourceGroupTypeCSP:
-			// connection_status reflects CSP reachability: whether cb-spider can
+			// connection_status reflects CSP reachability: whether the CSP driver can
 			// identify this resource. This is a status-only check - CSP data is
 			// collected/persisted by import/infra, not here (refresh/registration).
 			if err := checkCSPConnection(sourceGroup, connectionInfo); err != nil {

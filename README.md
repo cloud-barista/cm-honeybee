@@ -46,10 +46,10 @@ Collecting and Aggregating Information From Source Computing framework (codename
           `/etc/cloud-migrator/cm-honeybee-agent/port`, which the server reads
           over SSH before each request. This value is used only when that file
           is absent, i.e. against an agent old enough to sit on a fixed port.
-    - spider
-        - endpoint : cb-spider REST endpoint, used by CSP-type source groups.
-        - username : Basic auth user for cb-spider (default: `default`).
-        - password : Basic auth password for cb-spider (default: `default`).
+    - The `spider` block (endpoint, username, password) of earlier versions is
+      no longer read. honeybee links the cb-spider drivers and calls the CSPs
+      itself, so no cb-spider server is needed. A config file that still has
+      the block loads as before; the block is ignored.
 - Configuration file example
   ```yaml
   cm-honeybee:
@@ -58,13 +58,36 @@ Collecting and Aggregating Information From Source Computing framework (codename
       agent:
           # Fallback only; see the option description above.
           port: 8082
-      spider:
-          endpoint: http://localhost:1024/spider
-          username: default
-          password: default
   ```
 
-1.2. Build and run the server binary
+1.2. Prepare the cb-spider driver files
+
+CSP-type source groups go through the cb-spider drivers linked into the server.
+The drivers read files from two directories given by environment variables.
+
+- `CBSPIDER_ROOT` : `cloud-driver-libs/cloudos.yaml`, `cloudos_meta.yaml`,
+  `cloud-driver-libs/region/*_region_meta.yaml` and `conf/calllog_conf.yaml`.
+  The drivers also write `meta_db/` and `log/` here.
+  When unset, the server uses `$CMHONEYBEE_ROOT/cb-spider`, or
+  `~/.cm-honeybee/cb-spider` when `CMHONEYBEE_ROOT` is unset too.
+- `CBLOG_ROOT` : `conf/log_conf.yaml` for cb-log.
+
+`make run` (in `server/`) runs `make cb-spider-root`, which copies the files from
+the cb-spider version pinned in `go.mod` into `$CBSPIDER_ROOT` (or the default
+directory above), and starts the binary with both variables set to it. The Docker
+image already carries the files in `/cb-spider` and sets both variables to
+`/cb-spider`. `/cb-spider/log` in the image is not on a volume, so the driver
+logs are lost when the container is recreated.
+
+When you launch the binary yourself, run `make cb-spider-root` first and point
+both variables at the same directory. cb-log exits the server at startup when
+- `CBLOG_ROOT` is set but `$CBLOG_ROOT/conf/log_conf.yaml` does not exist, or
+- `log_conf.yaml` refers to `$CBSPIDER_ROOT` and the variable ends up empty
+  (the default above could not be set, e.g. no home directory).
+
+If `CBLOG_ROOT` is unset, cb-log falls back to its built-in settings.
+
+1.3. Build and run the server binary
 ```shell
 cd server
 make run
@@ -82,7 +105,7 @@ A source group has a `type` field:
 - `onprem` - on-premise sources. A connection is either a host reached over SSH
   (`resource_type: vm`) or a Kubernetes cluster registered by its kubeconfig
   (`resource_type: k8s`).
-- `csp` - collects from cloud sources (VM / Kubernetes / Object Storage) through cb-spider.
+- `csp` - collects from cloud sources (VM / Kubernetes / Object Storage) through the cb-spider drivers linked into the server.
 
 `onprem`, `ssh` and an omitted `type` are all treated as on-premise, so payloads
 written against earlier versions keep working unchanged. An omitted `type` is
@@ -118,7 +141,7 @@ curl -X 'POST' \
 ```
 
 #### 2.2 CSP source group
-A CSP group represents one cb-spider connection (provider + region + credential).
+A CSP group represents one CSP connection (provider + region + credential).
 Resources under the group (VMs, Kubernetes clusters, object-storage buckets) are
 registered as individual `connection_info` entries.
 
@@ -127,7 +150,7 @@ Discover the credential keys required by the target CSP first:
 curl 'http://127.0.0.1:8081/honeybee/csp'              # supported CSP names, lowercase
 curl 'http://127.0.0.1:8081/honeybee/csp/aws'          # case-insensitive
 ```
-The response includes `credential_keys`, queried live from cb-spider. Their
+The response includes `credential_keys`, read from the cb-spider driver metadata. Their
 spelling differs per CSP: AWS uses lowercase snake_case
 (`aws_access_key_id`, `aws_secret_access_key`) while Azure uses camelCase
 (`clientId`, `clientSecret`, `tenantId`, `subscriptionId`).
@@ -153,10 +176,9 @@ curl -X 'POST' \
     ]
   }'
 ```
-honeybee stores the credential in OpenBao and keeps it there. cb-spider never
-holds it: for each call honeybee registers a credential, region and connection
-config under a per-call unique name, uses it, then tears all three down in
-reverse order. No spider connection name is kept on the source group.
+honeybee stores the credential in OpenBao and keeps it there. For each call it
+hands the credential to the CSP driver in memory; it is not registered or
+written anywhere else. No connection name is kept on the source group.
 ### 3. Register connection info
 Register the connection information to the source group. The body shape
 depends on the group's `type`.
@@ -236,7 +258,7 @@ curl -X 'POST' \
 `resource_type` is one of `vm`, `k8s`, or `object_storage`.
 
 `PUT .../refresh` only re-checks the connection status; it stores nothing.
-Collection is done by `POST .../import/infra`, which queries cb-spider and
+Collection is done by `POST .../import/infra`, which queries the CSP and
 writes to a table chosen by `resource_type`:
 
 | `resource_type` | Stored in | Read back with |

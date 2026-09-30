@@ -1158,8 +1158,9 @@ definitions:
         type: string
       zone:
         description: |-
-          Zone overrides the CSP zone for this connection's cb-spider lookups.
-          Empty → provider default (see buildRegionKV).
+          Zone overrides the CSP zone for this connection's driver lookups.
+          Empty → the zone in the source group's region_name "<region>/<zone>", if any
+          (see splitRegionZone).
         type: string
     required:
     - id
@@ -1479,9 +1480,9 @@ definitions:
         description: |-
           CSP fields, populated only when Type == "csp".
           Credential lives in OpenBao, never in this table: the column is cleared on
-          write and rehydrated on demand. It is registered to cb-spider only
-          transiently (per discovery/collection call); honeybee is the single source
-          of truth, so no spider connection name is kept.
+          write and rehydrated on demand. It is handed to the CSP driver per
+          discovery/collection call and registered nowhere else; honeybee is the
+          single source of truth, so no connection name is kept.
         type: string
       region_name:
         type: string
@@ -4654,7 +4655,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Return the list of CSPs supported by the connected cb-spider.
+      description: Return the list of CSPs supported by the linked cb-spider drivers.
       operationId: list-csp
       produces:
       - application/json
@@ -4664,7 +4665,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListCSPRes'
         "500":
-          description: Failed to query cb-spider
+          description: Failed to read CSP metadata
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: List supported CSPs
@@ -4695,7 +4696,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
-          description: Failed to query cb-spider
+          description: Failed to read CSP metadata
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Get CSP metadata
@@ -6032,7 +6033,7 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
-          description: Failed to query cb-spider
+          description: Failed to load the CSP credential or query the CSP
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: List CSP regions for a source group

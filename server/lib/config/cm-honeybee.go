@@ -25,11 +25,6 @@ type cmHoneybeeConfig struct {
 			// exists to bound a hung agent, not to pace a slow one.
 			RequestTimeout string `yaml:"request_timeout"`
 		} `yaml:"agent"`
-		Spider struct {
-			Endpoint string `yaml:"endpoint"`
-			Username string `yaml:"username"`
-			Password string `yaml:"password"`
-		} `yaml:"spider"`
 		OpenBao struct {
 			// Address of the OpenBao server, e.g. http://openbao:8200. Empty
 			// disables OpenBao — secrets stay in the local (SQLite) store.
@@ -74,10 +69,6 @@ func checkCMHoneybeeConfigFile() error {
 		return errors.New("config error: cm-honeybee.agent.request_timeout has invalid value")
 	}
 
-	if CMHoneybeeConfig.CMHoneybee.Spider.Endpoint == "" {
-		return errors.New("config error: cm-honeybee.spider.endpoint is empty")
-	}
-
 	return nil
 }
 
@@ -87,9 +78,6 @@ func getCMHoneybeeDefaultConfig() cmHoneybeeConfig {
 	defaultConfig.CMHoneybee.Listen.Port = "8081"
 	defaultConfig.CMHoneybee.Agent.Port = "8082"
 	defaultConfig.CMHoneybee.Agent.RequestTimeout = defaultAgentRequestTimeout
-	defaultConfig.CMHoneybee.Spider.Endpoint = "http://localhost:1024/spider"
-	defaultConfig.CMHoneybee.Spider.Username = "default"
-	defaultConfig.CMHoneybee.Spider.Password = "default"
 
 	return defaultConfig
 }
@@ -116,7 +104,7 @@ func resolveEnvRef(s string) (value string, refUnset bool) {
 
 // expandConfigEnvRefs expands ${VAR} references in the loaded config values from
 // the process environment. Applied after unmarshal so operators can inject
-// endpoints and credentials from the environment (e.g. SPIDER_USERNAME) instead
+// endpoints from the environment (e.g. HONEYBEE_VAULT_ADDR) instead
 // of committing them to cm-honeybee.yaml. Literals are left unchanged.
 func expandConfigEnvRefs() {
 	fields := []struct {
@@ -127,9 +115,6 @@ func expandConfigEnvRefs() {
 		{"cm-honeybee.listen.port", &CMHoneybeeConfig.CMHoneybee.Listen.Port, false},
 		{"cm-honeybee.agent.port", &CMHoneybeeConfig.CMHoneybee.Agent.Port, false},
 		{"cm-honeybee.agent.request_timeout", &CMHoneybeeConfig.CMHoneybee.Agent.RequestTimeout, true},
-		{"cm-honeybee.spider.endpoint", &CMHoneybeeConfig.CMHoneybee.Spider.Endpoint, false},
-		{"cm-honeybee.spider.username", &CMHoneybeeConfig.CMHoneybee.Spider.Username, false},
-		{"cm-honeybee.spider.password", &CMHoneybeeConfig.CMHoneybee.Spider.Password, false},
 		{"cm-honeybee.openbao.address", &CMHoneybeeConfig.CMHoneybee.OpenBao.Address, true},
 	}
 
@@ -159,9 +144,6 @@ func applyConfigEnvOverrides() {
 	set(&c.Listen.Port, "HONEYBEE_LISTEN_PORT")
 	set(&c.Agent.Port, "HONEYBEE_AGENT_PORT")
 	set(&c.Agent.RequestTimeout, "HONEYBEE_AGENT_REQUEST_TIMEOUT")
-	set(&c.Spider.Endpoint, "HONEYBEE_SPIDER_ENDPOINT")
-	set(&c.Spider.Username, "HONEYBEE_SPIDER_USERNAME")
-	set(&c.Spider.Password, "HONEYBEE_SPIDER_PASSWORD")
 	set(&c.OpenBao.Address, "HONEYBEE_VAULT_ADDR")
 }
 
@@ -193,13 +175,13 @@ func readCMHoneybeeConfigFile() error {
 	}
 
 	// Expand ${VAR} references from the process environment before validation so
-	// endpoints and credentials can be injected via env (e.g. SPIDER_USERNAME /
-	// SPIDER_PASSWORD) instead of being committed to the config file. Plain
+	// endpoints can be injected via env (e.g. HONEYBEE_VAULT_ADDR) instead of
+	// being committed to the config file. Plain
 	// literals are left unchanged, keeping existing configs working. Mirrors
 	// cm-mayfly's ${VAR} resolution.
 	expandConfigEnvRefs()
 
-	// Native env overrides (HONEYBEE_SPIDER_*, HONEYBEE_VAULT_*, ...) so the
+	// Native env overrides (HONEYBEE_LISTEN_PORT, HONEYBEE_VAULT_ADDR, ...) so the
 	// stock image can be configured entirely from the environment — no mounted
 	// cm-honeybee.yaml required. A set env var wins over file/default values.
 	applyConfigEnvOverrides()

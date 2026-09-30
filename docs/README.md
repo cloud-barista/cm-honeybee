@@ -10,14 +10,14 @@ CM-Honeybee는 독립적으로 배포 가능한 두 개의 REST 모듈로 구성
 | 모듈 | 바이너리 / 모듈명 | Base path | 기본 포트 | 역할 |
 |------|------------------|-----------|-----------|------|
 | **Agent** (`cm-honeybee-agent`) | `HONEYBEE-AGENT` | `/honeybee-agent` | 자동 (루프백) | **각 소스 호스트에서 실행.** 로컬 인프라/소프트웨어/k8s/helm/데이터를 수집해 요청 시 반환합니다. |
-| **Server** (`cm-honeybee`) | `HONEYBEE` | `/honeybee` | `8081` | 중앙 컨트롤 플레인. SourceGroup / ConnectionInfo를 관리하고, 에이전트(또는 SSH / CSP / cb-spider)로부터 데이터를 수집·저장하며 **정제된 소스 모델**을 제공합니다. |
+| **Server** (`cm-honeybee`) | `HONEYBEE` | `/honeybee` | `8081` | 중앙 컨트롤 플레인. SourceGroup / ConnectionInfo를 관리하고, 에이전트(또는 SSH / CSP)로부터 데이터를 수집·저장하며 **정제된 소스 모델**을 제공합니다. CSP는 서버에 포함된 cb-spider 드라이버로 직접 조회합니다. |
 
 ```
                                        ┌─────────────────────────────┐
    마이그레이션 사용자 / cm-beetle ───▶ │  cm-honeybee SERVER  :8081  │
                                        │   /honeybee                 │
                                        └───────┬─────────────┬───────┘
-                                 agent (자동)  │             │  cb-spider / SSH
+                                 agent (자동)  │             │  CSP 드라이버 / SSH
                                    (REST pull)  ▼             ▼  (CSP 디스커버리)
                                 ┌──────────────────────┐  ┌──────────────────┐
                                 │ cm-honeybee AGENT     │  │  클라우드/온프렘  │
@@ -59,4 +59,4 @@ curl http://localhost:8081/honeybee/readyz
 
 "소스 등록 → 수집 → 정제 → cm-beetle 전달"의 전체 흐름은 [Server API 문서](./server-api.md)의
 전형적인 워크플로우 절(온프레미스 SSH 타입 / CSP 타입)을 참고하세요. 현재는 **온프레미스 SSH 타입
-등록을 권장**하며, CSP(cb-spider) 타입은 실험적/예정 기능입니다.
+등록을 권장**하며, CSP 타입(서버에 포함된 cb-spider 드라이버 사용)은 실험적/예정 기능입니다.

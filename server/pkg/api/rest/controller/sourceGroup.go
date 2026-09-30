@@ -408,8 +408,9 @@ func UpdateSourceGroup(c echo.Context) error {
 		oldSourceGroup.Description = updateSourceGroupReq.Description
 	}
 
-	// CSP-only: validate & persist region/credential changes. No cb-spider writes —
-	// credentials are registered only transiently at discovery/collection time.
+	// CSP-only: validate & persist region/credential changes. The credential goes
+	// only to OpenBao; at call time it is handed to the CSP driver in memory and
+	// is not registered anywhere.
 	if serverCommon.IsCSPType(oldSourceGroup.Type) &&
 		(updateSourceGroupReq.RegionName != "" || len(updateSourceGroupReq.Credential) > 0) {
 

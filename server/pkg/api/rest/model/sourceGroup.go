@@ -62,9 +62,9 @@ type SourceGroup struct {
 
 	// CSP fields, populated only when Type == "csp".
 	// Credential lives in OpenBao, never in this table: the column is cleared on
-	// write and rehydrated on demand. It is registered to cb-spider only
-	// transiently (per discovery/collection call); honeybee is the single source
-	// of truth, so no spider connection name is kept.
+	// write and rehydrated on demand. It is handed to the CSP driver per
+	// discovery/collection call and registered nowhere else; honeybee is the
+	// single source of truth, so no connection name is kept.
 	ProviderName string       `gorm:"column:provider_name" json:"provider_name,omitempty"`
 	RegionName   string       `gorm:"column:region_name" json:"region_name,omitempty"`
 	Credential   KeyValueList `gorm:"column:credential" json:"credential,omitempty"`

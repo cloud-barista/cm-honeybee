@@ -5,9 +5,6 @@
 #   listen.port       HONEYBEE_LISTEN_PORT
 #   agent.port        HONEYBEE_AGENT_PORT
 #   agent.request_timeout  HONEYBEE_AGENT_REQUEST_TIMEOUT
-#   spider.endpoint   HONEYBEE_SPIDER_ENDPOINT
-#   spider.username   HONEYBEE_SPIDER_USERNAME
-#   spider.password   HONEYBEE_SPIDER_PASSWORD
 #   openbao.address   HONEYBEE_VAULT_ADDR
 cm-honeybee:
     listen:
@@ -22,11 +19,6 @@ cm-honeybee:
         # large source can take a minute or more; this bounds a hung agent so an
         # import fails instead of holding the connection open forever.
         request_timeout: 600
-    spider:
-        endpoint: http://cb-spider:1024/spider
-        # cb-spider Basic Auth — inject via HONEYBEE_SPIDER_USERNAME/PASSWORD (env).
-        username: default
-        password: default
     # OpenBao secrets backend (KV v2) for SSH access secrets and CSP credentials.
     # cm-honeybee self-manages init/unseal/KV-enable and stores the unseal key +
     # root token RSA-encrypted in its DB.

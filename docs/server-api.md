@@ -1,7 +1,7 @@
 # CM-Honeybee Server API
 
 **Server**(`cm-honeybee`)는 컨트롤 플레인입니다. **SourceGroup**과 **ConnectionInfo**를 관리하고,
-원시 소스 데이터를 수집(에이전트 풀, SSH, 또는 CSP 소스의 경우 cb-spider 경유)·저장하며, `cm-beetle`이
+원시 소스 데이터를 수집(에이전트 풀, SSH, 또는 CSP 소스의 경우 서버에 포함된 cb-spider 드라이버 경유)·저장하며, `cm-beetle`이
 마이그레이션에 사용하는 **정제된 소스 모델**을 제공합니다.
 
 | 항목 | 값 |
@@ -9,12 +9,31 @@
 | 모듈명 | `HONEYBEE` |
 | Base path | `/honeybee` |
 | 기본 포트 | `8081` |
-| 의존성 | `cm-honeybee-agent` (소스 호스트의 루프백, 포트 자동), `cb-spider` (엔드포인트 설정 가능) |
+| 의존성 | `cm-honeybee-agent` (소스 호스트의 루프백, 포트 자동), cb-spider 드라이버 (서버 바이너리에 포함, 별도 cb-spider 서버 불필요. `CBSPIDER_ROOT`/`CBLOG_ROOT` 필요, 아래 참고) |
 | Swagger UI | `http://<host>:8081/honeybee/api/index.html` |
 | 인증 | 없음 |
 
 > 아래 모든 경로는 base path 기준 상대 경로입니다. 전체 URL 예시:
 > `http://localhost:8081/honeybee/source_group`
+
+> **cb-spider 드라이버 실행 환경:** CSP 조회는 서버에 링크된 cb-spider 드라이버가 CSP를 직접 호출합니다.
+> 이전 버전의 `cm-honeybee.spider`(endpoint/username/password) 설정과 `HONEYBEE_SPIDER_*` 환경 변수는
+> 더 이상 읽지 않습니다. 설정 파일에 `spider` 블록이 남아 있어도 무시될 뿐 기동은 실패하지 않습니다.
+> 드라이버는 두 디렉터리를 읽습니다.
+>
+> - `CBSPIDER_ROOT`: `cloud-driver-libs/cloudos.yaml`·`cloudos_meta.yaml`·`region/*_region_meta.yaml`,
+>   `conf/calllog_conf.yaml`. 드라이버가 `meta_db/`와 `log/`도 여기에 씁니다. 비어 있으면
+>   `$CMHONEYBEE_ROOT/cb-spider`(없으면 `~/.cm-honeybee/cb-spider`)를 씁니다.
+> - `CBLOG_ROOT`: cb-log 설정 `conf/log_conf.yaml`.
+>
+> Docker 이미지는 파일을 `/cb-spider`에 담고 두 변수를 `/cb-spider`로 지정합니다. 이미지의
+> `/cb-spider/log`는 볼륨이 아니라서 컨테이너를 다시 만들면 드라이버 로그가 사라집니다.
+> 로컬에서는 `cd server && make cb-spider-root`가 `go.mod`에 고정된 cb-spider 버전에서 파일을 복사하고,
+> `make run`은 이를 먼저 실행한 뒤 두 변수를 지정해 바이너리를 띄웁니다.
+> 바이너리를 직접 띄울 때 다음 경우에는 cb-log가 기동 중에 프로세스를 종료합니다.
+> `CBLOG_ROOT`는 지정했는데 `$CBLOG_ROOT/conf/log_conf.yaml`이 없을 때, 그리고 `log_conf.yaml`이
+> `$CBSPIDER_ROOT`를 참조하는데 그 값이 끝내 비어 있을 때(위 기본값도 정하지 못한 경우, 예: 홈 디렉터리 없음).
+> `CBLOG_ROOT`를 지정하지 않으면 cb-log는 내장 기본 설정을 씁니다.
 
 ## 핵심 개념
 
@@ -23,7 +42,7 @@
   결과)도 함께 가질 수 있습니다.
 - **ConnectionInfo** - SourceGroup에 속한 개별 소스의 연결 정보. SSH 대상이면 IP/SSH 포트/사용자·자격
   증명을, 온프렘 k8s 클러스터면 `kubeconfig`를, CSP 리소스면 `resource_type`/`resource_id`를 담습니다.
-  Server는 이를 사용해 호스트/에이전트/cb-spider에 접근하여 데이터를 수집합니다.
+  Server는 이를 사용해 호스트/에이전트/CSP에 접근하여 데이터를 수집합니다.
 - **원시(Raw) vs 정제(Refined)** - `/infra`, `/software`, `/kubernetes`, `/helm`, `/data`는 수집된
   원시 데이터를 반환합니다. `/.../refined` 엔드포인트는 다운스트림에서 사용하는 정규화된 모델
   (`github.com/cloud-barista/cm-beetle/imdl/on-premise-model`)을 반환합니다.
@@ -72,7 +91,7 @@
 ### CSP / Discovery
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
-| GET | `/csp` | 연결된 cb-spider가 지원하는 CSP 목록. |
+| GET | `/csp` | 서버에 포함된 cb-spider 드라이버가 지원하는 CSP 목록. |
 | GET | `/csp/{name}` | CSP 메타데이터(자격 증명 키+예시, 리전 키 등) 조회. 대소문자 무시, 미지원 시 지원목록 안내. |
 | GET | `/source_group/{sgId}/region` | `csp` SourceGroup의 **실제 리전/존 목록**(저장 credential로 live 조회). |
 | GET | `/source_group/{sgId}/discover` | `csp` SourceGroup의 VM / K8s 클러스터 / 오브젝트 스토리지 디스커버리. |
@@ -229,14 +248,13 @@ curl -s -X POST $BASE/source_group/$SG/target -d '{ ... }'
 
 ## 전형적인 워크플로우 (CSP 타입)
 
-CSP별로 credential 입력 항목이 다른 문제는 **cb-spider가 CSP마다 필요한 credential 키 목록을 알려주는
+CSP별로 credential 입력 항목이 다른 문제는 **cb-spider 드라이버 메타정보가 CSP마다 필요한 credential 키 목록을 알려주는
 방식**으로 해결합니다. 클라이언트는 이 키 목록으로 입력 폼을 동적으로 구성하고, 값은 제네릭
 `credential: [{key, value}]` 배열로 제출합니다(CSP별 하드코딩 불필요).
 
-> **credential 보관 정책:** credential은 **honeybee가 암호화하여 보관**하며, **cb-spider에는 영구
-> 등록하지 않습니다.** 조회가 필요한 시점에만 honeybee가 cb-spider에 credential/region/connection을
-> **임시로 등록 → 조회 → 즉시 해제(unregister)** 합니다. 따라서 spider 측에는 credential이 남지
-> 않으며, 영구 `ConnectionName` 바인딩도 두지 않습니다.
+> **credential 보관 정책:** credential은 **honeybee가 암호화하여 보관**하며, 다른 곳에 등록하지 않습니다.
+> 조회가 필요한 시점에만 honeybee가 credential을 메모리에서 CSP 드라이버에 넘겨 조회합니다.
+> 디스크에 따로 쓰지 않으며, 영구 `ConnectionName` 바인딩도 두지 않습니다.
 
 ```bash
 BASE=http://localhost:8081/honeybee
@@ -276,7 +294,7 @@ SG=$(curl -s -X POST $BASE/source_group \
           "ip_address":"40.82.136.176", "user":"ubuntu", "password":"...", "ssh_port":"22"
         }]
       }' | jq -r '.id')
-#   등록 시 honeybee는 상태만 확인합니다: (1) cb-spider가 VM을 식별하는지(connection_status),
+#   등록 시 honeybee는 상태만 확인합니다: (1) CSP 드라이버가 VM을 식별하는지(connection_status),
 #   (2) SSH 정보가 있으면 게스트에 에이전트 설치(agent_status). 이 단계에선 데이터를 저장하지 않음.
 #   응답의 connection_info_status_count로 connection/agent 성공 수를 확인.
 
@@ -284,7 +302,7 @@ SG=$(curl -s -X POST $BASE/source_group \
 curl -s -X POST $BASE/source_group/$SG/import/infra      # CSP 메타 + (SSH 있으면)게스트 내부
 curl -s -X POST $BASE/source_group/$SG/import/software    # 게스트 소프트웨어(SSH 필요)
 
-# 5. 통합 조회: compute/network(에이전트) + csp(cb-spider)가 함께 반환됨
+# 5. 통합 조회: compute/network(에이전트) + csp(CSP 드라이버)가 함께 반환됨
 curl -s $BASE/source_group/$SG/infra | jq '.servers[0] | {compute, csp}'
 
 # 6. 정제 소스 모델(cm-beetle용) / target 등록은 SSH 흐름과 동일
@@ -292,7 +310,7 @@ curl -s $BASE/source_group/$SG/infra/refined | jq
 ```
 
 > **디스커버리(선택):** resource_id를 모르면 `GET /source_group/{sgId}/discover?resource_type=vm|k8s|object_storage`로
-> 해당 CSP의 리소스 목록을 조회해 `resource_id`를 얻을 수 있습니다(이 호출도 임시 connection 등록→조회→해제).
+> 해당 CSP의 리소스 목록을 조회해 `resource_id`를 얻을 수 있습니다(이 호출도 저장된 credential로 CSP를 직접 조회).
 
 ---
 
@@ -301,16 +319,14 @@ curl -s $BASE/source_group/$SG/infra/refined | jq
 CSP 타입 소스에서 등록/갱신(`POST /source_group`, `PUT .../refresh`) 시 honeybee가 하는 일과,
 정보가 어디서 수집되어 어디에 저장·노출되는지의 전체 과정입니다.
 
-### 1) cb-spider 임시 연결 (credential/region/connection)
+### 1) CSP 연결 (credential/region/zone)
 
-honeybee는 조회 때마다 per-call 유니크 이름으로 **credential → region → connectionconfig**를 임시 등록하고,
-끝나면 역순으로 해제합니다. 이때 region은 **CSP 메타(`meta.Region`)가 요구하는 키를 모두** 채웁니다.
-예를 들어 Azure/AWS는 `Region`과 `Zone`을 모두 요구하므로 `Region`만 보내면 cb-spider가 거부합니다.
+honeybee는 조회 때마다 SourceGroup의 provider·region과 OpenBao에 저장된 credential로 접속 정보를 만들어
+cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 어디에도 등록하지 않습니다.
 
 - **Zone precedence**: ConnectionInfo의 `zone`(명시) > `region_name`에 `"<region>/<zone>"`로 임베드 >
-  provider 기본값 `1`. 즉 `region_name`은 `"koreacentral"` 또는 `"koreacentral/2"`를, ConnectionInfo는
-  `"zone":"2"`를 지원하며, 둘 다 있으면 ConnectionInfo의 `zone`이 우선합니다. (리소스 ID 기반 단건
-  조회에는 zone 값이 실제로 쓰이지 않지만, cb-spider가 zone 키를 요구하는 CSP가 있어 채워 보냅니다.)
+  빈 값. 즉 `region_name`은 `"koreacentral"` 또는 `"koreacentral/2"`를, ConnectionInfo는
+  `"zone":"2"`를 지원하며, 둘 다 있으면 ConnectionInfo의 `zone`이 우선합니다.
   선택 가능한 zone 목록은 `GET /source_group/{sgId}/region`의 각 리전 `zones`에서 확인합니다.
 - **Azure 주의:** cb-spider Azure 드라이버는 `RegionInfo.Region`을 **리소스 그룹**으로 사용합니다.
   따라서 Azure에서는 `region_name`에 **VM이 속한 리소스 그룹 이름**을 넣어야 합니다.
@@ -320,18 +336,18 @@ honeybee는 조회 때마다 per-call 유니크 이름으로 **credential → re
 **수집·저장은 `POST /import/infra` 하나가 담당합니다.** 리소스 종류에 관계없이 이 엔드포인트를
 부르며, `resource_type`에 따라 저장 위치와 조회 경로가 갈립니다.
 
-| resource_type | cb-spider 호출 | 저장 위치 | 조회 경로 |
+| resource_type | 드라이버 호출 | 저장 위치 | 조회 경로 |
 |---------------|----------------|-----------|-----------|
-| `vm` | `GET /cspvm/{id}` | `SavedInfraInfo.csp_data` | `GET /.../infra`의 `csp` 섹션 |
-| `k8s` | `GET /cluster/{id}` | `SavedKubernetesInfo` | `GET /.../kubernetes` |
-| `object_storage` | `GET /s3/{bucket}?location` | `SavedDataInfo` | `GET /.../data` |
+| `vm` | VM 핸들러 `GetVM` (CSP 리소스 ID) | `SavedInfraInfo.csp_data` | `GET /.../infra`의 `csp` 섹션 |
+| `k8s` | 클러스터 핸들러 `ListCluster` 후 ID 매칭 | `SavedKubernetesInfo` | `GET /.../kubernetes` |
+| `object_storage` | S3 버킷 목록 후 이름 매칭 + 버킷 location | `SavedDataInfo` | `GET /.../data` |
 
 > **주의:** CSP 소스의 k8s·오브젝트 스토리지 정보를 채우려면 `POST /import/kubernetes`나
 > `POST /import/data`가 아니라 **`POST /import/infra`** 를 불러야 합니다. `import/kubernetes`와
 > `import/data`는 게스트 안의 에이전트에 SSH로 붙는 경로라 CSP 리소스에는 해당하지 않습니다.
 
-아래는 `vm`의 경우입니다. VM 리소스는 `GET /cspvm/{id}`로 조회합니다. cb-spider는 관리하지 않는(기존) VM도 CSP에 직접 질의해
-정보를 돌려줍니다. 전체 ARM ID는 경로 인코딩 문제로 깨지므로 honeybee는 **VM 이름(리소스 ID의 마지막
+아래는 `vm`의 경우입니다. VM 리소스는 드라이버의 `GetVM`으로 CSP에 직접 질의하므로 cb-spider로 만들지 않은(기존) VM도
+정보를 돌려줍니다. 드라이버는 VM을 이름으로 식별하므로 honeybee는 전체 ARM ID 대신 **VM 이름(리소스 ID의 마지막
 세그먼트)** 을 넘깁니다. 이 **수집·저장은 `POST /import/infra`에서** 이뤄지며(등록/`refresh`는
 연결 상태만 확인하고 저장하지 않음), 결과는 `SavedInfraInfo.csp_data`에 저장되어 `GET /.../infra`의
 `csp` 섹션으로 노출됩니다:
@@ -360,10 +376,9 @@ honeybee는 조회 때마다 per-call 유니크 이름으로 **credential → re
 ```
 
 > **VPC/SG 상세 해석:** VM 조회는 VPC/SG의 **이름(IID)** 만 주므로, honeybee는
-> `GET /allvpcinfo`·`GET /allsecuritygroupinfo`로 해당 연결의 **모든** VPC/SG를 상세 포함해 조회한 뒤
+> 드라이버의 `ListVPC`·`ListSecurity`로 해당 연결의 **모든** VPC/SG를 상세 포함해 조회한 뒤
 > VM의 `VpcIID`/`SecurityGroupIIds`와 **이름으로 매칭**해 `cidr`·`subnets`·`rules`를 채웁니다.
-> 이 all-info 목록은 CSP를 live 질의하므로 cb-spider가 관리하지 않는(기존) VPC/SG도
-> `OnlyCSPInfoList`로 상세가 반환됩니다(별도 등록 불필요).
+> 이 목록은 CSP를 live 질의하므로 cb-spider로 만들지 않은(기존) VPC/SG도 상세가 반환됩니다(별도 등록 불필요).
 
 ### 3) 에이전트로 수집하는 것 (→ `compute`/`network.host`/소프트웨어 등)
 
@@ -379,7 +394,7 @@ SSH로 접속해 **에이전트(`cm-honeybee-agent`)를 설치·기동**하고, 
 
 | 필드 | CSP 타입에서의 의미 |
 |------|----------------------|
-| `connection_status` | **cb-spider가 해당 VM을 식별했는지**(CSP 도달성). SSH와 무관. |
+| `connection_status` | **CSP 드라이버가 해당 VM을 식별했는지**(CSP 도달성). SSH와 무관. |
 | `agent_status` | **실제 SSH 접속 + 에이전트 설치 결과.** SSH 정보가 없으면 성공으로 위장하지 않고 `"no SSH access configured..."`로 실패 표기. |
 
 ### 5) 저장 분리 (덮어쓰기 없음)
@@ -391,19 +406,19 @@ SSH로 접속해 **에이전트(`cm-honeybee-agent`)를 설치·기동**하고, 
 
 | 칼럼 | 채우는 주체 | 노출 위치 |
 |------|-------------|-----------|
-| `csp_data` | cb-spider 수집(`import/infra` 시) | `infra.csp` |
+| `csp_data` | CSP 드라이버 수집(`import/infra` 시) | `infra.csp` |
 | `infra_data` | 에이전트 수집(`import/infra` 시) | `infra.compute`/`infra.network.host` 등 |
 
-- **등록 / `refresh`**: 연결 상태만 확인합니다(저장 없음). `connection_status`는 cb-spider가 리소스를
+- **등록 / `refresh`**: 연결 상태만 확인합니다(저장 없음). `connection_status`는 CSP 드라이버가 리소스를
   식별하는지, `agent_status`는 실제 SSH+에이전트 설치 결과.
-- **`POST /import/infra`**: 실제 수집·저장 단계. CSP 소스면 **csp_data(cb-spider)와 infra_data(에이전트)를
+- **`POST /import/infra`**: 실제 수집·저장 단계. CSP 소스면 **csp_data(CSP 드라이버)와 infra_data(에이전트)를
   함께 갱신**합니다(SSH 정보가 없는 CSP 소스는 csp_data만 갱신하고 성공 처리).
 - 한쪽을 갱신해도 다른 칼럼은 보존되므로, **에이전트 import가 CSP 정보를 덮어쓰지 않고 함께 조회**됩니다.
 
 ### 6) 통합 조회 예시 (`GET /source_group/{sgId}/infra`)
 
 SSH 정보를 함께 준 CSP(Azure) VM 소스의 실제 응답 예시입니다. `compute`/`network.host`는 **에이전트**가
-게스트 내부에서 수집한 값, `csp`는 **cb-spider**가 클라우드에서 수집한 값입니다(반복되는 배열은 `…`로 축약).
+게스트 내부에서 수집한 값, `csp`는 **CSP 드라이버**가 클라우드에서 수집한 값입니다(반복되는 배열은 `…`로 축약).
 
 ```jsonc
 {
@@ -444,7 +459,7 @@ SSH 정보를 함께 준 CSP(Azure) VM 소스의 실제 응답 예시입니다. 
       "haproxy": { "version": "", … },
       "minio": { "version": "", "errors": ["… MinIO process not found", …] },
 
-      // ── cb-spider 수집: 클라우드 관점 (별도 저장, 덮어쓰이지 않음) ──
+      // ── CSP 드라이버 수집: 클라우드 관점 (별도 저장, 덮어쓰이지 않음) ──
       "csp": {
         "provider": "azure", "region": "koreacentral", "zone": "1",
         "name": "ish-test",
@@ -541,7 +556,7 @@ ConnectionInfo 자체는 남습니다.
 ## CSP & Discovery
 
 ### `GET /csp` — 지원 CSP 목록
-연결된 cb-spider가 지원하는 CSP 목록을 반환합니다.
+서버에 포함된 cb-spider 드라이버가 지원하는 CSP 목록을 반환합니다.
 
 ```bash
 curl http://localhost:8081/honeybee/csp
@@ -563,11 +578,11 @@ curl http://localhost:8081/honeybee/csp/azure
 #    "region_keys":["Region","Zone"], "default_region":"koreacentral" }
 ```
 
-`default_region`은 cb-spider가 그 CSP에 대해 기본으로 질의하는 리전입니다(비어 있으면 생략).
+`default_region`은 cb-spider 드라이버 메타정보에 적힌 그 CSP의 기본 질의 리전입니다(비어 있으면 생략).
 
 > **`credential_keys`의 표기는 CSP마다 다릅니다.** 하나로 뭉뚱그리지 마세요.
 > AWS는 snake_case 소문자(`aws_access_key_id`), Azure는 camelCase(`clientId`)입니다.
-> 이 값은 cb-spider의 `credentialcsp`를 그대로 내보내므로 연결된 cb-spider를 따릅니다.
+> 이 값은 cb-spider 메타정보의 `credentialcsp`를 그대로 내보내므로 `go.mod`에 고정된 cb-spider 버전을 따릅니다.
 > `credentials[]`의 예시·설명은 honeybee가 키 이름을 **정확히 일치**시켜 붙이므로
 > (`controller/csp.go`의 `credentialExamples`), 이름이 어긋나면 `example`/`description`이
 > 빈 값으로 내려옵니다.
@@ -576,7 +591,7 @@ curl http://localhost:8081/honeybee/csp/azure
 > 실제 리전 목록은 credential이 필요하므로 아래 `GET /source_group/{sgId}/region`을 쓰세요.
 
 ### `GET /source_group/{sgId}/region` — CSP 실제 리전/존 목록 (live)
-`csp` SourceGroup의 **저장된 credential로 cb-spider에 live 질의**하여 그 CSP의 실제 리전 목록과
+`csp` SourceGroup의 **저장된 credential로 CSP에 live 질의**하여 그 CSP의 실제 리전 목록과
 각 리전의 zone을 반환합니다(등록 후 사용). 등록 前 단계(`GET /csp/{name}`)에서는 credential이 없어
 실제 리전을 못 주므로, 소스그룹 등록 후 이 API로 리전/zone 선택지를 채웁니다.
 

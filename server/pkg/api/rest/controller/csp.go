@@ -80,17 +80,17 @@ func buildCredentialFields(canonical string, keys []string) []model.CSPCredentia
 //
 //	@ID				list-csp
 //	@Summary		List supported CSPs
-//	@Description	Return the list of CSPs supported by the connected cb-spider.
+//	@Description	Return the list of CSPs supported by the linked cb-spider drivers.
 //	@Tags			[CSP] Metadata
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	model.ListCSPRes		"List of CSP names"
-//	@Failure		500	{object}	common.ErrorResponse	"Failed to query cb-spider"
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to read CSP metadata"
 //	@Router			/csp [get]
 func ListCSP(c echo.Context) error {
 	list, err := spider.ListCloudOS()
 	if err != nil {
-		return common.ReturnInternalError(c, err, "failed to list CSPs from cb-spider")
+		return common.ReturnInternalError(c, err, "failed to list CSPs from the driver metadata")
 	}
 	// Output provider names in lowercase (e.g. "aws", "azure"); they are matched
 	// case-insensitively on input.
@@ -111,7 +111,7 @@ func ListCSP(c echo.Context) error {
 //	@Param			name path string true "CSP name (case-insensitive, e.g. aws or AWS)"
 //	@Success		200	{object}	model.CSPInfo			"CSP metadata"
 //	@Failure		400	{object}	common.ErrorResponse	"Unsupported or missing CSP name"
-//	@Failure		500	{object}	common.ErrorResponse	"Failed to query cb-spider"
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to read CSP metadata"
 //	@Router			/csp/{name} [get]
 func GetCSP(c echo.Context) error {
 	name := c.Param("name")
@@ -126,7 +126,7 @@ func GetCSP(c echo.Context) error {
 
 	meta, err := spider.GetCloudOSMetaInfo(canonical)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "failed to get CSP metainfo from cb-spider")
+		return common.ReturnInternalError(c, err, "failed to get CSP metainfo from the driver metadata")
 	}
 
 	defaultRegion := ""
@@ -162,7 +162,7 @@ func GetCSP(c echo.Context) error {
 //	@Param			sgId path string true "ID of the SourceGroup (csp type)"
 //	@Success		200	{object}	model.ListRegionRes		"Regions and zones"
 //	@Failure		400	{object}	common.ErrorResponse	"Not a csp-type source group / missing sgId"
-//	@Failure		500	{object}	common.ErrorResponse	"Failed to query cb-spider"
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to load the CSP credential or query the CSP"
 //	@Router			/source_group/{sgId}/region [get]
 func ListSourceGroupRegions(c echo.Context) error {
 	sgID := c.Param("sgId")
@@ -180,11 +180,11 @@ func ListSourceGroupRegions(c echo.Context) error {
 
 	provider, credential, err := cspCredential(sourceGroup)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "failed to list regions from cb-spider")
+		return common.ReturnInternalError(c, err, "failed to load the source group's CSP credential")
 	}
 	list, err := spider.ListRegionZone(provider, credential)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "failed to list regions from cb-spider")
+		return common.ReturnInternalError(c, err, "failed to list regions from the CSP")
 	}
 
 	regions := make([]model.CSPRegion, 0, len(list))

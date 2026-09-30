@@ -253,7 +253,7 @@ const docTemplate = `{
         },
         "/csp": {
             "get": {
-                "description": "Return the list of CSPs supported by the connected cb-spider.",
+                "description": "Return the list of CSPs supported by the linked cb-spider drivers.",
                 "consumes": [
                     "application/json"
                 ],
@@ -273,7 +273,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to query cb-spider",
+                        "description": "Failed to read CSP metadata",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -318,7 +318,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to query cb-spider",
+                        "description": "Failed to read CSP metadata",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -2293,7 +2293,7 @@ const docTemplate = `{
                         }
                     },
                     "500": {
-                        "description": "Failed to query cb-spider",
+                        "description": "Failed to load the CSP credential or query the CSP",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -3960,7 +3960,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "zone": {
-                    "description": "Zone overrides the CSP zone for this connection's cb-spider lookups.\nEmpty → provider default (see buildRegionKV).",
+                    "description": "Zone overrides the CSP zone for this connection's driver lookups.\nEmpty → the zone in the source group's region_name \"\u003cregion\u003e/\u003czone\u003e\", if any\n(see splitRegionZone).",
                     "type": "string"
                 }
             }
@@ -4426,7 +4426,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "provider_name": {
-                    "description": "CSP fields, populated only when Type == \"csp\".\nCredential lives in OpenBao, never in this table: the column is cleared on\nwrite and rehydrated on demand. It is registered to cb-spider only\ntransiently (per discovery/collection call); honeybee is the single source\nof truth, so no spider connection name is kept.",
+                    "description": "CSP fields, populated only when Type == \"csp\".\nCredential lives in OpenBao, never in this table: the column is cleared on\nwrite and rehydrated on demand. It is handed to the CSP driver per\ndiscovery/collection call and registered nowhere else; honeybee is the\nsingle source of truth, so no connection name is kept.",
                     "type": "string"
                 },
                 "region_name": {
