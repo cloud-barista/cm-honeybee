@@ -17,7 +17,7 @@ require (
 	github.com/cloud-barista/cm-beetle/imdl v0.1.15
 	github.com/cloud-barista/cm-centipede/dmdl v0.1.0
 	github.com/cloud-barista/cm-centipede/transx-ex v0.1.0
-	github.com/cloud-barista/cm-grasshopper/smdl v0.1.3
+	github.com/cloud-barista/cm-grasshopper/smdl v0.1.4
 	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20260904055431-58b62a1f9522
 	github.com/docker/docker v28.5.2+incompatible
 	github.com/glebarez/sqlite v1.11.0
