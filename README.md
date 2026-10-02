@@ -22,7 +22,7 @@ Collecting and Aggregating Information From Source Computing framework (codename
 * Tested operating systems (OSs):
   * Ubuntu 24.04, Ubuntu 22.04, Ubuntu 18.04, Rocky Linux 9, Windows 11
 * Language:
-  * Go: 1.26.2
+  * Go: 1.27.1
 
 ## How to run
 
