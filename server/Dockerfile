@@ -1,7 +1,7 @@
 # Run the toolchain on the native build platform and cross-compile to the
 # target platform so multi-arch builds (e.g. linux/arm64) don't emulate the
 # whole Go compile under QEMU.
-FROM --platform=$BUILDPLATFORM golang:1.26.2-bookworm AS builder
+FROM --platform=$BUILDPLATFORM golang:1.27.1-bookworm AS builder
 
 # Populated automatically by BuildKit (e.g. TARGETARCH=arm64). Empty when built
 # with the legacy builder, in which case the build falls back to the host arch.
@@ -33,7 +33,7 @@ RUN git commit --allow-empty -m "a commit for the build"
 
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} make build-only
 
-FROM alpine:3.20.1 as prod
+FROM alpine:3.24.2 as prod
 
 RUN apk --no-cache add tzdata
 RUN echo "Asia/Seoul" >  /etc/timezone
