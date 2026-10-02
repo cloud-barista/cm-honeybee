@@ -4,22 +4,21 @@ import (
 	"context"
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/logger"
+	"github.com/moby/moby/client"
 	"os"
 	"strings"
 )
 
 func isRealDocker(cli *client.Client) (bool, error) {
-	info, err := cli.Info(context.Background())
+	info, err := cli.Info(context.Background(), client.InfoOptions{})
 	if err != nil {
 		logger.Println(logger.DEBUG, true, "DOCKER: Failed to get information of the docker.")
 		return false, err
 	}
 
-	initBinary := info.InitBinary
+	initBinary := info.Info.InitBinary
 	if strings.Contains(strings.ToLower(initBinary), "docker") {
 		return true, nil
 	}
@@ -62,15 +61,11 @@ func newDockerClient() (*client.Client, error) {
 		opts = append(opts, client.WithHost(host))
 	}
 
-	cli, err := client.NewClientWithOpts(opts...)
+	cli, err := client.New(opts...)
 	if err != nil {
 		logger.Println(logger.DEBUG, true, "DOCKER: "+err.Error())
 		return nil, err
 	}
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	cli.NegotiateAPIVersion(ctx)
 
 	return cli, nil
 }
@@ -99,14 +94,14 @@ func GetDockerContainers() ([]software.Container, error) {
 		return []software.Container{}, nil
 	}
 
-	containers, err := cli.ContainerList(ctx, container.ListOptions{All: true})
+	containers, err := cli.ContainerList(ctx, client.ContainerListOptions{All: true})
 	if err != nil {
 		logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
 		return []software.Container{}, err
 	}
 
-	for _, c := range containers {
-		containerInspect, err := cli.ContainerInspect(ctx, c.ID)
+	for _, c := range containers.Items {
+		containerInspect, err := cli.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
 		if err != nil {
 			logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
 		}
@@ -118,8 +113,8 @@ func GetDockerContainers() ([]software.Container, error) {
 
 		result = append(result, software.Container{
 			ContainerSummary: c,
-			ContainerInspect: containerInspect,
-			ImageInspect:     imageInspect,
+			ContainerInspect: containerInspect.Container,
+			ImageInspect:     imageInspect.InspectResponse,
 		})
 	}
 

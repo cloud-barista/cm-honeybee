@@ -12,11 +12,10 @@ import (
 	"time"
 
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"github.com/minio/madmin-go/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/moby/moby/client"
 )
 
 // minioConnectionInfo holds MinIO connection information
@@ -257,7 +256,7 @@ func parseMinIOPorts(processInfo string) (apiPort, consolePort int) {
 
 // getMinIODockerInfo checks if MinIO is running in Docker and extracts connection info
 func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.New(client.FromEnv)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Docker client: %w", err)
 	}
@@ -265,16 +264,14 @@ func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	cli.NegotiateAPIVersion(ctx)
-
 	// List all containers
-	containers, err := cli.ContainerList(ctx, container.ListOptions{All: false})
+	containers, err := cli.ContainerList(ctx, client.ContainerListOptions{All: false})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
 
 	// Look for MinIO container
-	for _, c := range containers {
+	for _, c := range containers.Items {
 		// Check if container image or name contains "minio"
 		isMinIO := strings.Contains(strings.ToLower(c.Image), "minio")
 		if !isMinIO {
@@ -291,14 +288,14 @@ func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
 		}
 
 		// Inspect container to get environment variables
-		containerInspect, err := cli.ContainerInspect(ctx, c.ID)
+		containerInspect, err := cli.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
 		if err != nil {
 			continue
 		}
 
 		// Extract credentials from environment variables
 		var accessKey, secretKey string
-		for _, env := range containerInspect.Config.Env {
+		for _, env := range containerInspect.Container.Config.Env {
 			parts := strings.SplitN(env, "=", 2)
 			if len(parts) != 2 {
 				continue
@@ -332,10 +329,10 @@ func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
 		}
 
 		// Check NetworkSettings for IP address (these are internal Docker IPs, lower priority)
-		if containerInspect.NetworkSettings != nil {
+		if containerInspect.Container.NetworkSettings != nil {
 			// Try all networks (including default bridge network)
-			for _, network := range containerInspect.NetworkSettings.Networks {
-				if network.IPAddress != "" {
+			for _, network := range containerInspect.Container.NetworkSettings.Networks {
+				if network.IPAddress.IsValid() {
 					internalEndpoints = append(internalEndpoints, fmt.Sprintf("%s:%d", network.IPAddress, apiPort))
 				}
 			}
@@ -345,14 +342,14 @@ func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
 		seenPorts := make(map[string]bool)
 
 		// First, check HostConfig.PortBindings for accurate port mapping info
-		if containerInspect.HostConfig != nil && containerInspect.HostConfig.PortBindings != nil {
-			for containerPort, bindings := range containerInspect.HostConfig.PortBindings {
-				portNum := containerPort.Int()
+		if containerInspect.Container.HostConfig != nil && containerInspect.Container.HostConfig.PortBindings != nil {
+			for containerPort, bindings := range containerInspect.Container.HostConfig.PortBindings {
+				portNum := int(containerPort.Num())
 				// Accept any port (not just 9000-9010 range)
 				for _, binding := range bindings {
-					hostIP := binding.HostIP
-					if hostIP == "" || hostIP == "0.0.0.0" || hostIP == "::" {
-						hostIP = "localhost"
+					hostIP := "localhost"
+					if binding.HostIP.IsValid() && !binding.HostIP.IsUnspecified() {
+						hostIP = binding.HostIP.String()
 					}
 					hostPort := binding.HostPort
 					if hostPort != "" {
@@ -378,7 +375,7 @@ func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
 			if port.PublicPort > 0 {
 				// Port is exposed to host
 				endpoint = fmt.Sprintf("localhost:%d", port.PublicPort)
-			} else if port.IP != "" {
+			} else if port.IP.IsValid() {
 				// Port is bound to specific IP
 				endpoint = fmt.Sprintf("%s:%d", port.IP, port.PrivatePort)
 			}
@@ -395,7 +392,7 @@ func getMinIODockerInfo(processInfo string) (*minioConnectionInfo, error) {
 		}
 
 		// Check for host network mode
-		isHostNetwork := containerInspect.HostConfig != nil && containerInspect.HostConfig.NetworkMode.IsHost()
+		isHostNetwork := containerInspect.Container.HostConfig != nil && containerInspect.Container.HostConfig.NetworkMode.IsHost()
 
 		// If host network mode or no port mappings found, use localhost with parsed port
 		if isHostNetwork || (len(endpoints) == 0 && len(internalEndpoints) == 0) {

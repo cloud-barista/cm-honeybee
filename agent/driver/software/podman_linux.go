@@ -9,10 +9,9 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"github.com/jollaman999/utils/cmd"
 	"github.com/jollaman999/utils/logger"
+	"github.com/moby/moby/client"
 	"os"
 	"os/exec"
 )
@@ -96,14 +95,11 @@ func newPodmanClient() (*client.Client, error) {
 		return nil, err
 	}
 
-	cli, err := client.NewClientWithOpts(client.FromEnv)
+	cli, err := client.New(client.FromEnv)
 	if err != nil {
 		logger.Println(logger.ERROR, true, "PODMAN: "+err.Error())
 		return nil, err
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	cli.NegotiateAPIVersion(ctx)
 
 	return cli, nil
 }
@@ -116,7 +112,7 @@ func GetPodmanContainers() ([]software.Container, error) {
 		return []software.Container{}, err
 	}
 
-	containers, err := cli.ContainerList(context.Background(), container.ListOptions{All: true})
+	containers, err := cli.ContainerList(context.Background(), client.ContainerListOptions{All: true})
 	if err != nil {
 		logger.Println(logger.ERROR, true, "PODMAN: "+err.Error())
 		return []software.Container{}, err
@@ -125,8 +121,8 @@ func GetPodmanContainers() ([]software.Container, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	for _, c := range containers {
-		containerInspect, err := cli.ContainerInspect(ctx, c.ID)
+	for _, c := range containers.Items {
+		containerInspect, err := cli.ContainerInspect(ctx, c.ID, client.ContainerInspectOptions{})
 		if err != nil {
 			logger.Println(logger.ERROR, true, "DOCKER: "+err.Error())
 		}
@@ -138,8 +134,8 @@ func GetPodmanContainers() ([]software.Container, error) {
 
 		result = append(result, software.Container{
 			ContainerSummary: c,
-			ContainerInspect: containerInspect,
-			ImageInspect:     imageInspect,
+			ContainerInspect: containerInspect.Container,
+			ImageInspect:     imageInspect.InspectResponse,
 		})
 	}
 

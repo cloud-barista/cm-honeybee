@@ -1,8 +1,8 @@
 package software
 
 import (
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/image"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/image"
 )
 
 type Container struct {
