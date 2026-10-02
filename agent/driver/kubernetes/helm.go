@@ -103,13 +103,14 @@ func GetReleaseInfo() ([]kubernetes.Release, error) {
 
 		for _, release := range releaseList {
 			releases = append(releases, kubernetes.Release{
-				Name:             release.Name,
-				Namespace:        release.Namespace,
-				Revision:         release.Version,
-				Updated:          release.Info.LastDeployed.Time,
-				Status:           string(release.Info.Status),
-				AppVersion:       release.Chart.AppVersion(),
-				ChartNameVersion: fmt.Sprintf("%s-%s", release.Chart.Metadata.Name, release.Chart.Metadata.Version),
+				Name:         release.Name,
+				Namespace:    release.Namespace,
+				Revision:     release.Version,
+				Updated:      release.Info.LastDeployed.Time,
+				Status:       string(release.Info.Status),
+				AppVersion:   release.Chart.AppVersion(),
+				ChartName:    release.Chart.Metadata.Name,
+				ChartVersion: release.Chart.Metadata.Version,
 			})
 		}
 	}

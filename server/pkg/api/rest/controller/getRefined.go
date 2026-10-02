@@ -991,7 +991,7 @@ func dropSnapShadowedDebs(debs, snaps []softwaremodel.Package) []softwaremodel.P
 	return kept
 }
 
-func doGetRefinedSoftwareInfo(softwareInfo *software.Software) (*softwaremodel.SoftwareList, error) {
+func doGetRefinedSoftwareInfo(softwareInfo *software.Software, connID string) (*softwaremodel.SoftwareList, error) {
 	binaries := convertToBinaries(softwareInfo.Legacy)
 
 	var packages []softwaremodel.Package
@@ -1020,9 +1020,9 @@ func doGetRefinedSoftwareInfo(softwareInfo *software.Software) (*softwaremodel.S
 	containers = append(containers, dockerContainers...)
 	containers = append(containers, podmanContainers...)
 
-	var kubernetes []softwaremodel.Kubernetes
-
-	// TODO: Refine kubernetes resources
+	// Only a control plane connection carries cluster data, so every other
+	// connection in the group yields no kubernetes entry.
+	kubernetes := buildK8sSoftware(tryGetKubernetesInfo(connID), tryGetHelmInfo(connID))
 
 	refinedSoftwareInfo := &softwaremodel.SoftwareList{
 		Binaries:   binaries,
@@ -1082,7 +1082,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 
 	// Reflect the collected Kubernetes cluster: its metadata, the node roles,
 	// and any cluster nodes (e.g. workers) only visible through the API.
-	if k8sInfo := tryGetKubernetesInfo(connID); k8sInfo != nil {
+	if k8sInfo := tryGetKubernetesInfo(connID); hasK8sClusterData(k8sInfo) {
 		onpremiseInfra.K8sCluster = buildK8sCluster(k8sInfo)
 		onpremiseInfra.Nodes = mergeK8sNodes(onpremiseInfra.Nodes, k8sInfo)
 	}
@@ -1140,8 +1140,10 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		// The Kubernetes cluster is collected once per source group, from the
 		// connection of a control plane node whose kubeconfig enumerates the
 		// whole cluster.
-		if k8sInfo == nil {
-			k8sInfo = tryGetKubernetesInfo(conn.ID)
+		if !hasK8sClusterData(k8sInfo) {
+			if candidate := tryGetKubernetesInfo(conn.ID); hasK8sClusterData(candidate) {
+				k8sInfo = candidate
+			}
 		}
 	}
 
@@ -1192,7 +1194,7 @@ func GetSoftwareInfoRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	refinedSoftwareInfo, err := doGetRefinedSoftwareInfo(softwareInfo)
+	refinedSoftwareInfo, err := doGetRefinedSoftwareInfo(softwareInfo, connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -1248,7 +1250,7 @@ func GetSoftwareInfoSourceGroupRefined(c echo.Context) error {
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
-		refinedSoftwareInfo, err := doGetRefinedSoftwareInfo(softwareInfo)
+		refinedSoftwareInfo, err := doGetRefinedSoftwareInfo(softwareInfo, conn.ID)
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}

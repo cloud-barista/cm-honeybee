@@ -21,14 +21,14 @@ var kindList = []string{
 	"daemonsets",
 	"replicasets",
 	"statefulsets",
-	"job",
+	"jobs",
 	"cronjobs",
 	"ingresses",
 	"persistentvolumes",
 	"persistentvolumeclaims",
 	"storageclasses",
 	"configmaps",
-	"servicesaccounts",
+	"serviceaccounts",
 	"secrets",
 	"roles",
 	"rolebindings",
@@ -41,7 +41,7 @@ var clientFilter = map[string]string{
 	"pods":                   "CoreV1.Pods.\"\"",
 	"services":               "CoreV1.Services.\"\"",
 	"configmaps":             "CoreV1.ConfigMaps.\"\"",
-	"servicesaccounts":       "CoreV1.ServiceAccounts.\"\"",
+	"serviceaccounts":        "CoreV1.ServiceAccounts.\"\"",
 	"secrets":                "CoreV1.Secrets.\"\"",
 	"persistentvolumes":      "CoreV1.PersistentVolumes",
 	"persistentvolumeclaims": "CoreV1.PersistentVolumeClaims.\"\"",
@@ -49,10 +49,14 @@ var clientFilter = map[string]string{
 	"daemonsets":             "AppsV1.DaemonSets.\"\"",
 	"replicasets":            "AppsV1.ReplicaSets.\"\"",
 	"statefulsets":           "AppsV1.StatefulSets.\"\"",
-	"job":                    "BatchV1.Jobs.\"\"",
+	"jobs":                   "BatchV1.Jobs.\"\"",
 	"cronjobs":               "BatchV1.CronJobs.\"\"",
 	"ingresses":              "NetworkingV1.Ingresses.\"\"",
 	"storageclasses":         "StorageV1.StorageClasses",
+	"roles":                  "RbacV1.Roles.\"\"",
+	"rolebindings":           "RbacV1.RoleBindings.\"\"",
+	"clusterroles":           "RbacV1.ClusterRoles",
+	"clusterrolebindings":    "RbacV1.ClusterRoleBindings",
 }
 
 func GetWorkloadInfo() (map[string]interface{}, error) {
@@ -151,6 +155,30 @@ func processObjects(kind string, objects interface{}, workloads map[string]inter
 		}
 		if status := common.GoJq(objectMap, fmt.Sprintf(".items[%d].status.phase", i)); status != nil {
 			item["Status"] = status
+		}
+		// A StorageClass carries provisioner at the top level, not under spec.
+		if provisioner := common.GoJq(objectMap, fmt.Sprintf(".items[%d].provisioner", i)); provisioner != nil {
+			item["Provisioner"] = provisioner
+		}
+		if storageClass := common.GoJq(objectMap, fmt.Sprintf(".items[%d].spec.storageClassName", i)); storageClass != nil {
+			item["StorageClass"] = storageClass
+		}
+		if capacity := common.GoJq(objectMap, fmt.Sprintf(".items[%d].spec.capacity.storage", i)); capacity != nil {
+			item["Capacity"] = capacity
+		}
+		if accessModes := common.GoJq(objectMap, fmt.Sprintf(".items[%d].spec.accessModes", i)); accessModes != nil {
+			item["AccessModes"] = accessModes
+		}
+		if reclaimPolicy := common.GoJq(objectMap, fmt.Sprintf(".items[%d].spec.persistentVolumeReclaimPolicy", i)); reclaimPolicy != nil {
+			item["ReclaimPolicy"] = reclaimPolicy
+		}
+		// A PV is cluster-scoped, so its bound PVC is kept under its own keys:
+		// writing Namespace here would count the PV inside that namespace.
+		if claimNamespace := common.GoJq(objectMap, fmt.Sprintf(".items[%d].spec.claimRef.namespace", i)); claimNamespace != nil {
+			item["ClaimNamespace"] = claimNamespace
+		}
+		if claimName := common.GoJq(objectMap, fmt.Sprintf(".items[%d].spec.claimRef.name", i)); claimName != nil {
+			item["ClaimName"] = claimName
 		}
 
 		if len(item) > 0 {

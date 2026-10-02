@@ -80,11 +80,12 @@ type Repo struct {
 }
 
 type Release struct {
-	Name             string    `json:"name"`
-	Namespace        string    `json:"namespace"`
-	Revision         int       `json:"revision"`
-	Updated          time.Time `json:"updated"`
-	Status           string    `json:"status"`
-	ChartNameVersion string    `json:"chart"`
-	AppVersion       string    `json:"app_version"`
+	Name         string    `json:"name"`
+	Namespace    string    `json:"namespace"`
+	Revision     int       `json:"revision"`
+	Updated      time.Time `json:"updated"`
+	Status       string    `json:"status"`
+	ChartName    string    `json:"chart_name"`
+	ChartVersion string    `json:"chart_version"`
+	AppVersion   string    `json:"app_version"`
 }
