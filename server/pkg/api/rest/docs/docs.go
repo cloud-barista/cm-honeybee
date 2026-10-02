@@ -2532,7 +2532,7 @@ const docTemplate = `{
                     "description": "List of exposed ports",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/nat.PortSet"
+                            "$ref": "#/definitions/network.PortSet"
                         }
                     ]
                 },
@@ -2558,10 +2558,6 @@ const docTemplate = `{
                     "additionalProperties": {
                         "type": "string"
                     }
-                },
-                "macAddress": {
-                    "description": "Mac Address of the container.\n\nDeprecated: this field is deprecated since API v1.44. Use EndpointSettings.MacAddress instead.",
-                    "type": "string"
                 },
                 "networkDisabled": {
                     "description": "Is network disabled",
@@ -2807,6 +2803,23 @@ const docTemplate = `{
                 "Unhealthy"
             ]
         },
+        "container.HealthSummary": {
+            "type": "object",
+            "properties": {
+                "failingStreak": {
+                    "description": "FailingStreak is the number of consecutive failures",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "Status is one of [NoHealthcheck], [Starting], [Healthy] or [Unhealthy].",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.HealthStatus"
+                        }
+                    ]
+                }
+            }
+        },
         "container.HealthcheckResult": {
             "type": "object",
             "properties": {
@@ -2831,6 +2844,14 @@ const docTemplate = `{
         "container.InspectResponse": {
             "type": "object",
             "properties": {
+                "GraphDriver": {
+                    "description": "GraphDriver contains information about the container's graph driver.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/storage.DriverData"
+                        }
+                    ]
+                },
                 "Id": {
                     "type": "string"
                 },
@@ -2839,6 +2860,14 @@ const docTemplate = `{
                     "allOf": [
                         {
                             "$ref": "#/definitions/v1.Descriptor"
+                        }
+                    ]
+                },
+                "Storage": {
+                    "description": "Storage contains information about the storage used for the container's filesystem.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/storage.Storage"
                         }
                     ]
                 },
@@ -2866,11 +2895,8 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "graphDriver": {
-                    "$ref": "#/definitions/storage.DriverData"
-                },
                 "hostConfig": {
-                    "$ref": "#/definitions/github_com_docker_docker_api_types_container.HostConfig"
+                    "$ref": "#/definitions/github_com_moby_moby_api_types_container.HostConfig"
                 },
                 "hostnamePath": {
                     "type": "string"
@@ -3019,7 +3045,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "type": {
-                    "description": "Type is the type of mount, see ` + "`" + `Type\u003cfoo\u003e` + "`" + ` definitions in\ngithub.com/docker/docker/api/types/mount.Type",
+                    "description": "Type is the type of mount, see [mount.Type] definitions for details.",
                     "allOf": [
                         {
                             "$ref": "#/definitions/mount.Type"
@@ -3031,54 +3057,6 @@ const docTemplate = `{
         "container.NetworkSettings": {
             "type": "object",
             "properties": {
-                "bridge": {
-                    "description": "Deprecated: This field is only set when the daemon is started with the --bridge flag specified.",
-                    "type": "string"
-                },
-                "endpointID": {
-                    "description": "EndpointID uniquely represents a service endpoint in a Sandbox\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
-                    "type": "string"
-                },
-                "gateway": {
-                    "description": "Gateway holds the gateway address for the network\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
-                    "type": "string"
-                },
-                "globalIPv6Address": {
-                    "description": "GlobalIPv6Address holds network's global IPv6 address\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
-                    "type": "string"
-                },
-                "globalIPv6PrefixLen": {
-                    "description": "GlobalIPv6PrefixLen represents mask length of network's global IPv6 address\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
-                    "type": "integer"
-                },
-                "hairpinMode": {
-                    "description": "HairpinMode specifies if hairpin NAT should be enabled on the virtual interface\n\nDeprecated: This field is never set and will be removed in a future release.",
-                    "type": "boolean"
-                },
-                "ipaddress": {
-                    "description": "IPAddress holds the IPv4 address for the network\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
-                    "type": "string"
-                },
-                "ipprefixLen": {
-                    "description": "IPPrefixLen represents mask length of network's IPv4 address\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
-                    "type": "integer"
-                },
-                "ipv6Gateway": {
-                    "description": "IPv6Gateway holds gateway address specific for IPv6\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
-                    "type": "string"
-                },
-                "linkLocalIPv6Address": {
-                    "description": "LinkLocalIPv6Address is an IPv6 unicast address using the link-local prefix\n\nDeprecated: This field is never set and will be removed in a future release.",
-                    "type": "string"
-                },
-                "linkLocalIPv6PrefixLen": {
-                    "description": "LinkLocalIPv6PrefixLen is the prefix length of an IPv6 unicast address\n\nDeprecated: This field is never set and will be removed in a future release.",
-                    "type": "integer"
-                },
-                "macAddress": {
-                    "description": "MacAddress holds the MAC address for the network\n\nDeprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.",
-                    "type": "string"
-                },
                 "networks": {
                     "type": "object",
                     "additionalProperties": {
@@ -3086,10 +3064,10 @@ const docTemplate = `{
                     }
                 },
                 "ports": {
-                    "description": "Ports is a collection of PortBinding indexed by Port",
+                    "description": "Ports is a collection of [network.PortBinding] indexed by [network.Port]",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/nat.PortMap"
+                            "$ref": "#/definitions/network.PortMap"
                         }
                     ]
                 },
@@ -3100,20 +3078,6 @@ const docTemplate = `{
                 "sandboxKey": {
                     "description": "SandboxKey identifies the sandbox",
                     "type": "string"
-                },
-                "secondaryIPAddresses": {
-                    "description": "Deprecated: This field is never set and will be removed in a future release.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/network.Address"
-                    }
-                },
-                "secondaryIPv6Addresses": {
-                    "description": "Deprecated: This field is never set and will be removed in a future release.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/network.Address"
-                    }
                 }
             }
         },
@@ -3128,12 +3092,16 @@ const docTemplate = `{
                 }
             }
         },
-        "container.Port": {
+        "container.PortSummary": {
             "type": "object",
             "properties": {
                 "IP": {
                     "description": "Host IP address that the container's port is mapped to",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/netip.Addr"
+                        }
+                    ]
                 },
                 "PrivatePort": {
                     "description": "Port on the container\nRequired: true",
@@ -3144,7 +3112,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "Type": {
-                    "description": "type\nRequired: true",
+                    "description": "type\nRequired: true\nEnum: [\"tcp\",\"udp\",\"sctp\"]",
                     "type": "string"
                 }
             }
@@ -3237,6 +3205,9 @@ const docTemplate = `{
                     "type": "integer",
                     "format": "int64"
                 },
+                "health": {
+                    "$ref": "#/definitions/container.HealthSummary"
+                },
                 "hostConfig": {
                     "type": "object",
                     "properties": {
@@ -3281,7 +3252,7 @@ const docTemplate = `{
                 "ports": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/container.Port"
+                        "$ref": "#/definitions/container.PortSummary"
                     }
                 },
                 "sizeRootFs": {
@@ -3389,6 +3360,17 @@ const docTemplate = `{
                 "versioned": {
                     "description": "Required for migration planning",
                     "type": "boolean"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.Network": {
+            "type": "object",
+            "properties": {
+                "csp": {
+                    "$ref": "#/definitions/network.CSP"
+                },
+                "host": {
+                    "$ref": "#/definitions/network.Host"
                 }
             }
         },
@@ -4105,7 +4087,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_docker_docker_api_types_container.HostConfig": {
+        "github_com_moby_moby_api_types_container.HostConfig": {
             "type": "object",
             "properties": {
                 "CpuCount": {
@@ -4140,7 +4122,7 @@ const docTemplate = `{
                     "description": "List of DNS server to lookup",
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/netip.Addr"
                     }
                 },
                 "DnsOptions": {
@@ -4328,14 +4310,6 @@ const docTemplate = `{
                         }
                     ]
                 },
-                "kernelMemory": {
-                    "description": "KernelMemory specifies the kernel memory limit (in bytes) for the container.\nDeprecated: kernel 5.4 deprecated kmem.limit_in_bytes.",
-                    "type": "integer"
-                },
-                "kernelMemoryTCP": {
-                    "description": "Hard limit for kernel TCP buffer memory (in bytes).\n\nDeprecated: This field is deprecated and will be removed in the next release.\nStarting with 6.12, the kernel has deprecated kernel memory tcp accounting\nfor cgroups v1.",
-                    "type": "integer"
-                },
                 "links": {
                     "description": "List of links (in the name:alias form)",
                     "type": "array",
@@ -4410,7 +4384,7 @@ const docTemplate = `{
                     "description": "Port mapping between the exposed port (container) and the host",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/nat.PortMap"
+                            "$ref": "#/definitions/network.PortMap"
                         }
                     ]
                 },
@@ -4485,6 +4459,10 @@ const docTemplate = `{
                         "$ref": "#/definitions/container.Ulimit"
                     }
                 },
+                "umask": {
+                    "description": "Initial process umask",
+                    "type": "integer"
+                },
                 "usernsMode": {
                     "description": "The user namespace to use for the container",
                     "type": "string"
@@ -4515,6 +4493,45 @@ const docTemplate = `{
                 }
             }
         },
+        "image.BuildIdentity": {
+            "type": "object",
+            "properties": {
+                "CreatedAt": {
+                    "description": "CreatedAt is the time when the build ran.",
+                    "type": "string"
+                },
+                "Ref": {
+                    "description": "Ref is the identifier for the build request. This reference can be used to\nlook up the build details in BuildKit history API.",
+                    "type": "string"
+                }
+            }
+        },
+        "image.Identity": {
+            "type": "object",
+            "properties": {
+                "Build": {
+                    "description": "Build contains build reference information if image was created via build.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/image.BuildIdentity"
+                    }
+                },
+                "Pull": {
+                    "description": "Pull contains remote location information if image was created via pull.\nIf image was pulled via mirror, this contains the original repository location.\nAfter successful push this images also contains the pushed repository location.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/image.PullIdentity"
+                    }
+                },
+                "Signature": {
+                    "description": "Signature contains the properties of verified signatures for the image.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/image.SignatureIdentity"
+                    }
+                }
+            }
+        },
         "image.ImageProperties": {
             "type": "object",
             "properties": {
@@ -4524,6 +4541,14 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "Identity": {
+                    "description": "Identity holds information about the identity and origin of the image.\nFor image list responses, this can duplicate Build/Pull fields across\nimage manifests, because those parts of identity are image-level metadata.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/image.Identity"
+                        }
+                    ]
                 },
                 "Platform": {
                     "description": "Platform is the OCI platform object describing the platform of the image.\n\nRequired: true",
@@ -4555,9 +4580,25 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "GraphDriver": {
+                    "description": "GraphDriver holds information about the storage driver used to store the\ncontainer's and image's filesystem.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/storage.DriverData"
+                        }
+                    ]
+                },
                 "Id": {
                     "description": "ID is the content-addressable ID of an image.\n\nThis identifier is a content-addressable digest calculated from the\nimage's configuration (which includes the digests of layers used by\nthe image).\n\nNote that this digest differs from the ` + "`" + `RepoDigests` + "`" + ` below, which\nholds digests of image manifests that reference the image.",
                     "type": "string"
+                },
+                "Identity": {
+                    "description": "Identity holds information about the identity and origin of the image.\nThis is trusted information verified by the daemon and cannot be modified\nby tagging an image to a different name.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/image.Identity"
+                        }
+                    ]
                 },
                 "Manifests": {
                     "description": "Manifests is a list of image manifests available in this image. It\nprovides a more detailed view of the platform-specific image manifests or\nother image-attached data like build attestations.\n\nOnly available if the daemon provides a multi-platform image store, the client\nrequests manifests AND does not request a specific platform.\n\nWARNING: This is experimental and may change at any time without any backward\ncompatibility.",
@@ -4566,52 +4607,24 @@ const docTemplate = `{
                         "$ref": "#/definitions/image.ManifestSummary"
                     }
                 },
-                "VirtualSize": {
-                    "description": "VirtualSize is the total size of the image including all layers it is\ncomposed of.\n\nDeprecated: this field is omitted in API v1.44, but kept for backward compatibility. Use Size instead.",
-                    "type": "integer"
-                },
                 "architecture": {
                     "description": "Architecture is the hardware CPU architecture that the image runs on.",
                     "type": "string"
                 },
                 "author": {
-                    "description": "Author is the name of the author that was specified when committing the\nimage, or as specified through MAINTAINER (deprecated) in the Dockerfile.",
+                    "description": "Author is the name of the author that was specified when committing the\nimage, or as specified through MAINTAINER (deprecated) in the Dockerfile.\nThis field is omitted if not set.",
                     "type": "string"
                 },
                 "comment": {
-                    "description": "Comment is an optional message that can be set when committing or\nimporting the image.",
+                    "description": "Comment is an optional message that can be set when committing or\nimporting the image. This field is omitted if not set.",
                     "type": "string"
                 },
                 "config": {
                     "$ref": "#/definitions/v1.DockerOCIImageConfig"
                 },
-                "container": {
-                    "description": "Container is the ID of the container that was used to create the image.\n\nDepending on how the image was created, this field may be empty.\n\nDeprecated: this field is omitted in API v1.45, but kept for backward compatibility.",
-                    "type": "string"
-                },
-                "containerConfig": {
-                    "description": "ContainerConfig is an optional field containing the configuration of the\ncontainer that was last committed when creating the image.\n\nPrevious versions of Docker builder used this field to store build cache,\nand it is not in active use anymore.\n\nDeprecated: this field is omitted in API v1.45, but kept for backward compatibility.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/container.Config"
-                        }
-                    ]
-                },
                 "created": {
                     "description": "Created is the date and time at which the image was created, formatted in\nRFC 3339 nano-seconds (time.RFC3339Nano).\n\nThis information is only available if present in the image,\nand omitted otherwise.",
                     "type": "string"
-                },
-                "dockerVersion": {
-                    "description": "DockerVersion is the version of Docker that was used to build the image.\n\nDepending on how the image was created, this field may be empty.\n\nDeprecated: this field is deprecated, and will be removed in the next release.",
-                    "type": "string"
-                },
-                "graphDriver": {
-                    "description": "GraphDriver holds information about the storage driver used to store the\ncontainer's and image's filesystem.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/storage.DriverData"
-                        }
-                    ]
                 },
                 "metadata": {
                     "description": "Metadata of the image in the local cache.\n\nThis information is local to the daemon, and not part of the image itself.",
@@ -4627,10 +4640,6 @@ const docTemplate = `{
                 },
                 "osVersion": {
                     "description": "OsVersion is the version of the Operating System the image is built to\nrun on (especially for Windows).",
-                    "type": "string"
-                },
-                "parent": {
-                    "description": "Parent is the ID of the parent image.\n\nDepending on how the image was created, this field may be empty and\nis only set for images that were built/created locally. This field\nis empty if the image was pulled from an image registry.\n\nDeprecated: this field is deprecated, and will be removed in the next release.",
                     "type": "string"
                 },
                 "repoDigests": {
@@ -4656,7 +4665,7 @@ const docTemplate = `{
                     ]
                 },
                 "size": {
-                    "description": "Size is the total size of the image including all layers it is composed of.",
+                    "description": "Size is the total size of the selected image variant, including all layers\nit is composed of.\n\nWhen using the containerd image store, this includes both the image content\nthat's present locally and the unpacked snapshot data.",
                     "type": "integer",
                     "format": "int64"
                 },
@@ -4665,6 +4674,15 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "image.KnownSignerIdentity": {
+            "type": "string",
+            "enum": [
+                "DHI"
+            ],
+            "x-enum-varnames": [
+                "KnownSignerDHI"
+            ]
         },
         "image.ManifestKind": {
             "type": "string",
@@ -4747,6 +4765,15 @@ const docTemplate = `{
                 }
             }
         },
+        "image.PullIdentity": {
+            "type": "object",
+            "properties": {
+                "Repository": {
+                    "description": "Repository is the remote repository location the image was pulled from.",
+                    "type": "string"
+                }
+            }
+        },
         "image.RootFS": {
             "type": "object",
             "properties": {
@@ -4757,6 +4784,168 @@ const docTemplate = `{
                     }
                 },
                 "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "image.SignatureIdentity": {
+            "type": "object",
+            "properties": {
+                "DockerReference": {
+                    "description": "DockerReference is the Docker image reference associated with the signature.\nThis is an optional field only present in older hashedrecord signatures.",
+                    "type": "string"
+                },
+                "Error": {
+                    "description": "Error contains error information if signature verification failed.\nOther fields will be empty in this case.",
+                    "type": "string"
+                },
+                "KnownSigner": {
+                    "description": "KnownSigner is an identifier for a special signer identity that is known to the implementation.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/image.KnownSignerIdentity"
+                        }
+                    ]
+                },
+                "Name": {
+                    "description": "Name is a textual description summarizing the type of signature.",
+                    "type": "string"
+                },
+                "SignatureType": {
+                    "description": "SignatureType is the type of signature format. E.g. \"bundle-v0.3\" or \"hashedrecord\".",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/image.SignatureType"
+                        }
+                    ]
+                },
+                "Signer": {
+                    "description": "Signer contains information about the signer certificate used to sign the image.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/image.SignerIdentity"
+                        }
+                    ]
+                },
+                "Timestamps": {
+                    "description": "Timestamps contains a list of verified signed timestamps for the signature.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/image.SignatureTimestamp"
+                    }
+                },
+                "Warnings": {
+                    "description": "Warnings contains any warnings that occurred during signature verification.\nFor example, if there was no internet connectivity and cached trust roots were used.\nWarning does not indicate a failed verification but may point to configuration issues.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "image.SignatureTimestamp": {
+            "type": "object",
+            "properties": {
+                "Timestamp": {
+                    "type": "string"
+                },
+                "Type": {
+                    "$ref": "#/definitions/image.SignatureTimestampType"
+                },
+                "URI": {
+                    "type": "string"
+                }
+            }
+        },
+        "image.SignatureTimestampType": {
+            "type": "string",
+            "enum": [
+                "Tlog",
+                "TimestampAuthority"
+            ],
+            "x-enum-varnames": [
+                "SignatureTimestampTlog",
+                "SignatureTimestampAuthority"
+            ]
+        },
+        "image.SignatureType": {
+            "type": "string",
+            "enum": [
+                "bundle-v0.3",
+                "simplesigning-v1"
+            ],
+            "x-enum-varnames": [
+                "SignatureTypeBundleV03",
+                "SignatureTypeSimpleSigningV1"
+            ]
+        },
+        "image.SignerIdentity": {
+            "type": "object",
+            "properties": {
+                "BuildConfigDigest": {
+                    "description": "Immutable reference to the specific version of the top-level/initiating build instructions.",
+                    "type": "string"
+                },
+                "BuildConfigURI": {
+                    "description": "Build Config URL to the top-level/initiating build instructions.",
+                    "type": "string"
+                },
+                "BuildSignerDigest": {
+                    "description": "Immutable reference to the specific version of the build instructions that is responsible for signing.",
+                    "type": "string"
+                },
+                "BuildSignerURI": {
+                    "description": "Reference to specific build instructions that are responsible for signing.",
+                    "type": "string"
+                },
+                "BuildTrigger": {
+                    "description": "Event or action that initiated the build.",
+                    "type": "string"
+                },
+                "CertificateIssuer": {
+                    "type": "string"
+                },
+                "Issuer": {
+                    "description": "The OIDC issuer. Should match ` + "`" + `iss` + "`" + ` claim of ID token or, in the case of\na federated login like Dex it should match the issuer URL of the\nupstream issuer. The issuer is not set the extensions are invalid and\nwill fail to render.",
+                    "type": "string"
+                },
+                "RunInvocationURI": {
+                    "description": "Run Invocation URL to uniquely identify the build execution.",
+                    "type": "string"
+                },
+                "RunnerEnvironment": {
+                    "description": "Specifies whether the build took place in platform-hosted cloud infrastructure or customer/self-hosted infrastructure.",
+                    "type": "string"
+                },
+                "SourceRepositoryDigest": {
+                    "description": "Immutable reference to a specific version of the source code that the build was based upon.",
+                    "type": "string"
+                },
+                "SourceRepositoryIdentifier": {
+                    "description": "Immutable identifier for the source repository the workflow was based upon.",
+                    "type": "string"
+                },
+                "SourceRepositoryOwnerIdentifier": {
+                    "description": "Immutable identifier for the owner of the source repository that the workflow was based upon.",
+                    "type": "string"
+                },
+                "SourceRepositoryOwnerURI": {
+                    "description": "Source repository owner URL of the owner of the source repository that the build was based on.",
+                    "type": "string"
+                },
+                "SourceRepositoryRef": {
+                    "description": "Source Repository Ref that the build run was based upon.",
+                    "type": "string"
+                },
+                "SourceRepositoryURI": {
+                    "description": "Source repository URL that the build was based on.",
+                    "type": "string"
+                },
+                "SourceRepositoryVisibilityAtSigning": {
+                    "description": "Source repository visibility at the time of signing the certificate.",
+                    "type": "string"
+                },
+                "SubjectAlternativeName": {
                     "type": "string"
                 }
             }
@@ -5364,7 +5553,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/infra.MinIO"
                 },
                 "network": {
-                    "$ref": "#/definitions/network.Network"
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.Network"
                 },
                 "storage": {
                     "$ref": "#/definitions/infra.Storage"
@@ -6342,44 +6531,8 @@ const docTemplate = `{
                 }
             }
         },
-        "nat.PortBinding": {
-            "type": "object",
-            "properties": {
-                "HostIp": {
-                    "description": "HostIP is the host IP Address",
-                    "type": "string"
-                },
-                "hostPort": {
-                    "description": "HostPort is the host port number",
-                    "type": "string"
-                }
-            }
-        },
-        "nat.PortMap": {
-            "type": "object",
-            "additionalProperties": {
-                "type": "array",
-                "items": {
-                    "$ref": "#/definitions/nat.PortBinding"
-                }
-            }
-        },
-        "nat.PortSet": {
-            "type": "object",
-            "additionalProperties": {
-                "type": "object"
-            }
-        },
-        "network.Address": {
-            "type": "object",
-            "properties": {
-                "addr": {
-                    "type": "string"
-                },
-                "prefixLen": {
-                    "type": "integer"
-                }
-            }
+        "netip.Addr": {
+            "type": "object"
         },
         "network.CSP": {
             "type": "object",
@@ -6422,16 +6575,16 @@ const docTemplate = `{
         "network.EndpointIPAMConfig": {
             "type": "object",
             "properties": {
-                "ipv4Address": {
-                    "type": "string"
+                "IPv4Address": {
+                    "$ref": "#/definitions/netip.Addr"
                 },
-                "ipv6Address": {
-                    "type": "string"
+                "IPv6Address": {
+                    "$ref": "#/definitions/netip.Addr"
                 },
-                "linkLocalIPs": {
+                "LinkLocalIPs": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/netip.Addr"
                     }
                 }
             }
@@ -6447,7 +6600,7 @@ const docTemplate = `{
                     }
                 },
                 "dnsnames": {
-                    "description": "DNSNames holds all the (non fully qualified) DNS names associated to this endpoint. First entry is used to\ngenerate PTR records.",
+                    "description": "DNSNames holds all the (non fully qualified) DNS names associated to this\nendpoint. The first entry is used to generate PTR records.",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -6463,10 +6616,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "gateway": {
-                    "type": "string"
+                    "$ref": "#/definitions/netip.Addr"
                 },
                 "globalIPv6Address": {
-                    "type": "string"
+                    "$ref": "#/definitions/netip.Addr"
                 },
                 "globalIPv6PrefixLen": {
                     "type": "integer"
@@ -6476,10 +6629,10 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "ipaddress": {
-                    "type": "string"
+                    "$ref": "#/definitions/netip.Addr"
                 },
                 "ipamconfig": {
-                    "description": "Configurations",
+                    "description": "Configuration data",
                     "allOf": [
                         {
                             "$ref": "#/definitions/network.EndpointIPAMConfig"
@@ -6490,7 +6643,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "ipv6Gateway": {
-                    "type": "string"
+                    "$ref": "#/definitions/netip.Addr"
                 },
                 "links": {
                     "type": "array",
@@ -6500,10 +6653,13 @@ const docTemplate = `{
                 },
                 "macAddress": {
                     "description": "MacAddress may be used to specify a MAC address when the container is created.\nOnce the container is running, it becomes operational data (it may contain a\ngenerated address).",
-                    "type": "string"
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
                 },
                 "networkID": {
-                    "description": "Operational data",
                     "type": "string"
                 }
             }
@@ -6617,15 +6773,36 @@ const docTemplate = `{
                 }
             }
         },
-        "network.Network": {
+        "network.PortBinding": {
             "type": "object",
             "properties": {
-                "csp": {
-                    "$ref": "#/definitions/network.CSP"
+                "HostIp": {
+                    "description": "HostIP is the host IP Address",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/netip.Addr"
+                        }
+                    ]
                 },
-                "host": {
-                    "$ref": "#/definitions/network.Host"
+                "HostPort": {
+                    "description": "HostPort is the host port number",
+                    "type": "string"
                 }
+            }
+        },
+        "network.PortMap": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/network.PortBinding"
+                }
+            }
+        },
+        "network.PortSet": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object"
             }
         },
         "network.Route": {
@@ -8432,15 +8609,50 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "Data": {
-                    "description": "Low-level storage metadata, provided as key/value pairs.\n\nThis information is driver-specific, and depends on the storage-driver\nin use, and should be used for informational purposes only.\n\nRequired: true",
+                    "description": "Low-level storage metadata, provided as key/value pairs.\n\nThis information is driver-specific, and depends on the storage-driver\nin use, and should be used for informational purposes only.\n\nExample: {\"MergedDir\":\"/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/merged\",\"UpperDir\":\"/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/diff\",\"WorkDir\":\"/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/work\"}\nRequired: true",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
                     }
                 },
                 "Name": {
-                    "description": "Name of the storage driver.\nRequired: true",
+                    "description": "Name of the storage driver.\nExample: overlay2\nRequired: true",
                     "type": "string"
+                }
+            }
+        },
+        "storage.RootFSStorage": {
+            "type": "object",
+            "properties": {
+                "Snapshot": {
+                    "description": "Information about the snapshot used for the container's root filesystem.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/storage.RootFSStorageSnapshot"
+                        }
+                    ]
+                }
+            }
+        },
+        "storage.RootFSStorageSnapshot": {
+            "type": "object",
+            "properties": {
+                "Name": {
+                    "description": "Name of the snapshotter.",
+                    "type": "string"
+                }
+            }
+        },
+        "storage.Storage": {
+            "type": "object",
+            "properties": {
+                "RootFS": {
+                    "description": "Information about the storage used for the container's root filesystem.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/storage.RootFSStorage"
+                        }
+                    ]
                 }
             }
         },

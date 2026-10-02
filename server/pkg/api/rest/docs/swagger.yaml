@@ -61,7 +61,7 @@ definitions:
         type: array
       exposedPorts:
         allOf:
-        - $ref: '#/definitions/nat.PortSet'
+        - $ref: '#/definitions/network.PortSet'
         description: List of exposed ports
       healthcheck:
         allOf:
@@ -79,12 +79,6 @@ definitions:
           type: string
         description: List of labels set to this container
         type: object
-      macAddress:
-        description: |-
-          Mac Address of the container.
-
-          Deprecated: this field is deprecated since API v1.44. Use EndpointSettings.MacAddress instead.
-        type: string
       networkDisabled:
         description: Is network disabled
         type: boolean
@@ -274,6 +268,16 @@ definitions:
     - Starting
     - Healthy
     - Unhealthy
+  container.HealthSummary:
+    properties:
+      failingStreak:
+        description: FailingStreak is the number of consecutive failures
+        type: integer
+      status:
+        allOf:
+        - $ref: '#/definitions/container.HealthStatus'
+        description: Status is one of [NoHealthcheck], [Starting], [Healthy] or [Unhealthy].
+    type: object
   container.HealthcheckResult:
     properties:
       end:
@@ -292,6 +296,11 @@ definitions:
     type: object
   container.InspectResponse:
     properties:
+      GraphDriver:
+        allOf:
+        - $ref: '#/definitions/storage.DriverData'
+        description: GraphDriver contains information about the container's graph
+          driver.
       Id:
         type: string
       ImageManifestDescriptor:
@@ -299,6 +308,11 @@ definitions:
         - $ref: '#/definitions/v1.Descriptor'
         description: ImageManifestDescriptor is the descriptor of a platform-specific
           manifest of the image used to create the container.
+      Storage:
+        allOf:
+        - $ref: '#/definitions/storage.Storage'
+        description: Storage contains information about the storage used for the container's
+          filesystem.
       appArmorProfile:
         type: string
       args:
@@ -315,10 +329,8 @@ definitions:
         items:
           type: string
         type: array
-      graphDriver:
-        $ref: '#/definitions/storage.DriverData'
       hostConfig:
-        $ref: '#/definitions/github_com_docker_docker_api_types_container.HostConfig'
+        $ref: '#/definitions/github_com_moby_moby_api_types_container.HostConfig'
       hostnamePath:
         type: string
       hostsPath:
@@ -448,108 +460,24 @@ definitions:
       type:
         allOf:
         - $ref: '#/definitions/mount.Type'
-        description: |-
-          Type is the type of mount, see `Type<foo>` definitions in
-          github.com/docker/docker/api/types/mount.Type
+        description: Type is the type of mount, see [mount.Type] definitions for details.
     type: object
   container.NetworkSettings:
     properties:
-      bridge:
-        description: 'Deprecated: This field is only set when the daemon is started
-          with the --bridge flag specified.'
-        type: string
-      endpointID:
-        description: |-
-          EndpointID uniquely represents a service endpoint in a Sandbox
-
-          Deprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.
-        type: string
-      gateway:
-        description: |-
-          Gateway holds the gateway address for the network
-
-          Deprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.
-        type: string
-      globalIPv6Address:
-        description: |-
-          GlobalIPv6Address holds network's global IPv6 address
-
-          Deprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.
-        type: string
-      globalIPv6PrefixLen:
-        description: |-
-          GlobalIPv6PrefixLen represents mask length of network's global IPv6 address
-
-          Deprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.
-        type: integer
-      hairpinMode:
-        description: |-
-          HairpinMode specifies if hairpin NAT should be enabled on the virtual interface
-
-          Deprecated: This field is never set and will be removed in a future release.
-        type: boolean
-      ipaddress:
-        description: |-
-          IPAddress holds the IPv4 address for the network
-
-          Deprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.
-        type: string
-      ipprefixLen:
-        description: |-
-          IPPrefixLen represents mask length of network's IPv4 address
-
-          Deprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.
-        type: integer
-      ipv6Gateway:
-        description: |-
-          IPv6Gateway holds gateway address specific for IPv6
-
-          Deprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.
-        type: string
-      linkLocalIPv6Address:
-        description: |-
-          LinkLocalIPv6Address is an IPv6 unicast address using the link-local prefix
-
-          Deprecated: This field is never set and will be removed in a future release.
-        type: string
-      linkLocalIPv6PrefixLen:
-        description: |-
-          LinkLocalIPv6PrefixLen is the prefix length of an IPv6 unicast address
-
-          Deprecated: This field is never set and will be removed in a future release.
-        type: integer
-      macAddress:
-        description: |-
-          MacAddress holds the MAC address for the network
-
-          Deprecated: This field will be removed in v29. You should look for the default network in NetworkSettings.Networks instead.
-        type: string
       networks:
         additionalProperties:
           $ref: '#/definitions/network.EndpointSettings'
         type: object
       ports:
         allOf:
-        - $ref: '#/definitions/nat.PortMap'
-        description: Ports is a collection of PortBinding indexed by Port
+        - $ref: '#/definitions/network.PortMap'
+        description: Ports is a collection of [network.PortBinding] indexed by [network.Port]
       sandboxID:
         description: SandboxID uniquely represents a container's network stack
         type: string
       sandboxKey:
         description: SandboxKey identifies the sandbox
         type: string
-      secondaryIPAddresses:
-        description: 'Deprecated: This field is never set and will be removed in a
-          future release.'
-        items:
-          $ref: '#/definitions/network.Address'
-        type: array
-      secondaryIPv6Addresses:
-        description: 'Deprecated: This field is never set and will be removed in a
-          future release.'
-        items:
-          $ref: '#/definitions/network.Address'
-        type: array
     type: object
   container.NetworkSettingsSummary:
     properties:
@@ -558,11 +486,12 @@ definitions:
           $ref: '#/definitions/network.EndpointSettings'
         type: object
     type: object
-  container.Port:
+  container.PortSummary:
     properties:
       IP:
+        allOf:
+        - $ref: '#/definitions/netip.Addr'
         description: Host IP address that the container's port is mapped to
-        type: string
       PrivatePort:
         description: |-
           Port on the container
@@ -575,6 +504,7 @@ definitions:
         description: |-
           type
           Required: true
+          Enum: ["tcp","udp","sctp"]
         type: string
     type: object
   container.RestartPolicy:
@@ -637,6 +567,8 @@ definitions:
       created:
         format: int64
         type: integer
+      health:
+        $ref: '#/definitions/container.HealthSummary'
       hostConfig:
         properties:
           annotations:
@@ -666,7 +598,7 @@ definitions:
         $ref: '#/definitions/container.NetworkSettingsSummary'
       ports:
         items:
-          $ref: '#/definitions/container.Port'
+          $ref: '#/definitions/container.PortSummary'
         type: array
       sizeRootFs:
         type: integer
@@ -742,6 +674,13 @@ definitions:
       versioned:
         description: Required for migration planning
         type: boolean
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.Network:
+    properties:
+      csp:
+        $ref: '#/definitions/network.CSP'
+      host:
+        $ref: '#/definitions/network.Host'
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse:
     properties:
@@ -1247,7 +1186,7 @@ definitions:
     required:
     - name
     type: object
-  github_com_docker_docker_api_types_container.HostConfig:
+  github_com_moby_moby_api_types_container.HostConfig:
     properties:
       CpuCount:
         description: Applicable to Windows
@@ -1273,7 +1212,7 @@ definitions:
       Dns:
         description: List of DNS server to lookup
         items:
-          type: string
+          $ref: '#/definitions/netip.Addr'
         type: array
       DnsOptions:
         description: List of DNSOption to look for
@@ -1406,19 +1345,6 @@ definitions:
         allOf:
         - $ref: '#/definitions/container.Isolation'
         description: Applicable to Windows
-      kernelMemory:
-        description: |-
-          KernelMemory specifies the kernel memory limit (in bytes) for the container.
-          Deprecated: kernel 5.4 deprecated kmem.limit_in_bytes.
-        type: integer
-      kernelMemoryTCP:
-        description: |-
-          Hard limit for kernel TCP buffer memory (in bytes).
-
-          Deprecated: This field is deprecated and will be removed in the next release.
-          Starting with 6.12, the kernel has deprecated kernel memory tcp accounting
-          for cgroups v1.
-        type: integer
       links:
         description: List of links (in the name:alias form)
         items:
@@ -1475,7 +1401,7 @@ definitions:
         type: integer
       portBindings:
         allOf:
-        - $ref: '#/definitions/nat.PortMap'
+        - $ref: '#/definitions/network.PortMap'
         description: Port mapping between the exposed port (container) and the host
       privileged:
         description: Is the container in privileged mode
@@ -1529,6 +1455,9 @@ definitions:
         items:
           $ref: '#/definitions/container.Ulimit'
         type: array
+      umask:
+        description: Initial process umask
+        type: integer
       usernsMode:
         description: The user namespace to use for the container
         type: string
@@ -1551,6 +1480,40 @@ definitions:
           is for.
         type: string
     type: object
+  image.BuildIdentity:
+    properties:
+      CreatedAt:
+        description: CreatedAt is the time when the build ran.
+        type: string
+      Ref:
+        description: |-
+          Ref is the identifier for the build request. This reference can be used to
+          look up the build details in BuildKit history API.
+        type: string
+    type: object
+  image.Identity:
+    properties:
+      Build:
+        description: Build contains build reference information if image was created
+          via build.
+        items:
+          $ref: '#/definitions/image.BuildIdentity'
+        type: array
+      Pull:
+        description: |-
+          Pull contains remote location information if image was created via pull.
+          If image was pulled via mirror, this contains the original repository location.
+          After successful push this images also contains the pushed repository location.
+        items:
+          $ref: '#/definitions/image.PullIdentity'
+        type: array
+      Signature:
+        description: Signature contains the properties of verified signatures for
+          the image.
+        items:
+          $ref: '#/definitions/image.SignatureIdentity'
+        type: array
+    type: object
   image.ImageProperties:
     properties:
       Containers:
@@ -1562,6 +1525,13 @@ definitions:
         items:
           type: string
         type: array
+      Identity:
+        allOf:
+        - $ref: '#/definitions/image.Identity'
+        description: |-
+          Identity holds information about the identity and origin of the image.
+          For image list responses, this can duplicate Build/Pull fields across
+          image manifests, because those parts of identity are image-level metadata.
       Platform:
         allOf:
         - $ref: '#/definitions/v1.Platform'
@@ -1596,6 +1566,12 @@ definitions:
 
           WARNING: This is experimental and may change at any time without any backward
           compatibility.
+      GraphDriver:
+        allOf:
+        - $ref: '#/definitions/storage.DriverData'
+        description: |-
+          GraphDriver holds information about the storage driver used to store the
+          container's and image's filesystem.
       Id:
         description: |-
           ID is the content-addressable ID of an image.
@@ -1607,6 +1583,13 @@ definitions:
           Note that this digest differs from the `RepoDigests` below, which
           holds digests of image manifests that reference the image.
         type: string
+      Identity:
+        allOf:
+        - $ref: '#/definitions/image.Identity'
+        description: |-
+          Identity holds information about the identity and origin of the image.
+          This is trusted information verified by the daemon and cannot be modified
+          by tagging an image to a different name.
       Manifests:
         description: |-
           Manifests is a list of image manifests available in this image. It
@@ -1621,13 +1604,6 @@ definitions:
         items:
           $ref: '#/definitions/image.ManifestSummary'
         type: array
-      VirtualSize:
-        description: |-
-          VirtualSize is the total size of the image including all layers it is
-          composed of.
-
-          Deprecated: this field is omitted in API v1.44, but kept for backward compatibility. Use Size instead.
-        type: integer
       architecture:
         description: Architecture is the hardware CPU architecture that the image
           runs on.
@@ -1636,33 +1612,15 @@ definitions:
         description: |-
           Author is the name of the author that was specified when committing the
           image, or as specified through MAINTAINER (deprecated) in the Dockerfile.
+          This field is omitted if not set.
         type: string
       comment:
         description: |-
           Comment is an optional message that can be set when committing or
-          importing the image.
+          importing the image. This field is omitted if not set.
         type: string
       config:
         $ref: '#/definitions/v1.DockerOCIImageConfig'
-      container:
-        description: |-
-          Container is the ID of the container that was used to create the image.
-
-          Depending on how the image was created, this field may be empty.
-
-          Deprecated: this field is omitted in API v1.45, but kept for backward compatibility.
-        type: string
-      containerConfig:
-        allOf:
-        - $ref: '#/definitions/container.Config'
-        description: |-
-          ContainerConfig is an optional field containing the configuration of the
-          container that was last committed when creating the image.
-
-          Previous versions of Docker builder used this field to store build cache,
-          and it is not in active use anymore.
-
-          Deprecated: this field is omitted in API v1.45, but kept for backward compatibility.
       created:
         description: |-
           Created is the date and time at which the image was created, formatted in
@@ -1671,20 +1629,6 @@ definitions:
           This information is only available if present in the image,
           and omitted otherwise.
         type: string
-      dockerVersion:
-        description: |-
-          DockerVersion is the version of Docker that was used to build the image.
-
-          Depending on how the image was created, this field may be empty.
-
-          Deprecated: this field is deprecated, and will be removed in the next release.
-        type: string
-      graphDriver:
-        allOf:
-        - $ref: '#/definitions/storage.DriverData'
-        description: |-
-          GraphDriver holds information about the storage driver used to store the
-          container's and image's filesystem.
       metadata:
         allOf:
         - $ref: '#/definitions/image.Metadata'
@@ -1699,16 +1643,6 @@ definitions:
         description: |-
           OsVersion is the version of the Operating System the image is built to
           run on (especially for Windows).
-        type: string
-      parent:
-        description: |-
-          Parent is the ID of the parent image.
-
-          Depending on how the image was created, this field may be empty and
-          is only set for images that were built/created locally. This field
-          is empty if the image was pulled from an image registry.
-
-          Deprecated: this field is deprecated, and will be removed in the next release.
         type: string
       repoDigests:
         description: |-
@@ -1740,14 +1674,24 @@ definitions:
           RootFS contains information about the image's RootFS, including the
           layer IDs.
       size:
-        description: Size is the total size of the image including all layers it is
-          composed of.
+        description: |-
+          Size is the total size of the selected image variant, including all layers
+          it is composed of.
+
+          When using the containerd image store, this includes both the image content
+          that's present locally and the unpacked snapshot data.
         format: int64
         type: integer
       variant:
         description: Variant is the CPU architecture variant (presently ARM-only).
         type: string
     type: object
+  image.KnownSignerIdentity:
+    enum:
+    - DHI
+    type: string
+    x-enum-varnames:
+    - KnownSignerDHI
   image.ManifestKind:
     enum:
     - image
@@ -1830,6 +1774,13 @@ definitions:
           tagged.
         type: string
     type: object
+  image.PullIdentity:
+    properties:
+      Repository:
+        description: Repository is the remote repository location the image was pulled
+          from.
+        type: string
+    type: object
   image.RootFS:
     properties:
       layers:
@@ -1837,6 +1788,140 @@ definitions:
           type: string
         type: array
       type:
+        type: string
+    type: object
+  image.SignatureIdentity:
+    properties:
+      DockerReference:
+        description: |-
+          DockerReference is the Docker image reference associated with the signature.
+          This is an optional field only present in older hashedrecord signatures.
+        type: string
+      Error:
+        description: |-
+          Error contains error information if signature verification failed.
+          Other fields will be empty in this case.
+        type: string
+      KnownSigner:
+        allOf:
+        - $ref: '#/definitions/image.KnownSignerIdentity'
+        description: KnownSigner is an identifier for a special signer identity that
+          is known to the implementation.
+      Name:
+        description: Name is a textual description summarizing the type of signature.
+        type: string
+      SignatureType:
+        allOf:
+        - $ref: '#/definitions/image.SignatureType'
+        description: SignatureType is the type of signature format. E.g. "bundle-v0.3"
+          or "hashedrecord".
+      Signer:
+        allOf:
+        - $ref: '#/definitions/image.SignerIdentity'
+        description: Signer contains information about the signer certificate used
+          to sign the image.
+      Timestamps:
+        description: Timestamps contains a list of verified signed timestamps for
+          the signature.
+        items:
+          $ref: '#/definitions/image.SignatureTimestamp'
+        type: array
+      Warnings:
+        description: |-
+          Warnings contains any warnings that occurred during signature verification.
+          For example, if there was no internet connectivity and cached trust roots were used.
+          Warning does not indicate a failed verification but may point to configuration issues.
+        items:
+          type: string
+        type: array
+    type: object
+  image.SignatureTimestamp:
+    properties:
+      Timestamp:
+        type: string
+      Type:
+        $ref: '#/definitions/image.SignatureTimestampType'
+      URI:
+        type: string
+    type: object
+  image.SignatureTimestampType:
+    enum:
+    - Tlog
+    - TimestampAuthority
+    type: string
+    x-enum-varnames:
+    - SignatureTimestampTlog
+    - SignatureTimestampAuthority
+  image.SignatureType:
+    enum:
+    - bundle-v0.3
+    - simplesigning-v1
+    type: string
+    x-enum-varnames:
+    - SignatureTypeBundleV03
+    - SignatureTypeSimpleSigningV1
+  image.SignerIdentity:
+    properties:
+      BuildConfigDigest:
+        description: Immutable reference to the specific version of the top-level/initiating
+          build instructions.
+        type: string
+      BuildConfigURI:
+        description: Build Config URL to the top-level/initiating build instructions.
+        type: string
+      BuildSignerDigest:
+        description: Immutable reference to the specific version of the build instructions
+          that is responsible for signing.
+        type: string
+      BuildSignerURI:
+        description: Reference to specific build instructions that are responsible
+          for signing.
+        type: string
+      BuildTrigger:
+        description: Event or action that initiated the build.
+        type: string
+      CertificateIssuer:
+        type: string
+      Issuer:
+        description: |-
+          The OIDC issuer. Should match `iss` claim of ID token or, in the case of
+          a federated login like Dex it should match the issuer URL of the
+          upstream issuer. The issuer is not set the extensions are invalid and
+          will fail to render.
+        type: string
+      RunInvocationURI:
+        description: Run Invocation URL to uniquely identify the build execution.
+        type: string
+      RunnerEnvironment:
+        description: Specifies whether the build took place in platform-hosted cloud
+          infrastructure or customer/self-hosted infrastructure.
+        type: string
+      SourceRepositoryDigest:
+        description: Immutable reference to a specific version of the source code
+          that the build was based upon.
+        type: string
+      SourceRepositoryIdentifier:
+        description: Immutable identifier for the source repository the workflow was
+          based upon.
+        type: string
+      SourceRepositoryOwnerIdentifier:
+        description: Immutable identifier for the owner of the source repository that
+          the workflow was based upon.
+        type: string
+      SourceRepositoryOwnerURI:
+        description: Source repository owner URL of the owner of the source repository
+          that the build was based on.
+        type: string
+      SourceRepositoryRef:
+        description: Source Repository Ref that the build run was based upon.
+        type: string
+      SourceRepositoryURI:
+        description: Source repository URL that the build was based on.
+        type: string
+      SourceRepositoryVisibilityAtSigning:
+        description: Source repository visibility at the time of signing the certificate.
+        type: string
+      SubjectAlternativeName:
         type: string
     type: object
   infra.AMD:
@@ -2250,7 +2335,7 @@ definitions:
       minio:
         $ref: '#/definitions/infra.MinIO'
       network:
-        $ref: '#/definitions/network.Network'
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_network.Network'
       storage:
         $ref: '#/definitions/infra.Storage'
     type: object
@@ -2942,31 +3027,7 @@ definitions:
       subpath:
         type: string
     type: object
-  nat.PortBinding:
-    properties:
-      HostIp:
-        description: HostIP is the host IP Address
-        type: string
-      hostPort:
-        description: HostPort is the host port number
-        type: string
-    type: object
-  nat.PortMap:
-    additionalProperties:
-      items:
-        $ref: '#/definitions/nat.PortBinding'
-      type: array
-    type: object
-  nat.PortSet:
-    additionalProperties:
-      type: object
-    type: object
-  network.Address:
-    properties:
-      addr:
-        type: string
-      prefixLen:
-        type: integer
+  netip.Addr:
     type: object
   network.CSP:
     properties:
@@ -2995,13 +3056,13 @@ definitions:
     type: object
   network.EndpointIPAMConfig:
     properties:
-      ipv4Address:
-        type: string
-      ipv6Address:
-        type: string
-      linkLocalIPs:
+      IPv4Address:
+        $ref: '#/definitions/netip.Addr'
+      IPv6Address:
+        $ref: '#/definitions/netip.Addr'
+      LinkLocalIPs:
         items:
-          type: string
+          $ref: '#/definitions/netip.Addr'
         type: array
     type: object
   network.EndpointSettings:
@@ -3014,8 +3075,8 @@ definitions:
         type: array
       dnsnames:
         description: |-
-          DNSNames holds all the (non fully qualified) DNS names associated to this endpoint. First entry is used to
-          generate PTR records.
+          DNSNames holds all the (non fully qualified) DNS names associated to this
+          endpoint. The first entry is used to generate PTR records.
         items:
           type: string
         type: array
@@ -3026,9 +3087,9 @@ definitions:
       endpointID:
         type: string
       gateway:
-        type: string
+        $ref: '#/definitions/netip.Addr'
       globalIPv6Address:
-        type: string
+        $ref: '#/definitions/netip.Addr'
       globalIPv6PrefixLen:
         type: integer
       gwPriority:
@@ -3039,15 +3100,15 @@ definitions:
           sorted based on their network name, and the one that sorts first is picked.
         type: integer
       ipaddress:
-        type: string
+        $ref: '#/definitions/netip.Addr'
       ipamconfig:
         allOf:
         - $ref: '#/definitions/network.EndpointIPAMConfig'
-        description: Configurations
+        description: Configuration data
       ipprefixLen:
         type: integer
       ipv6Gateway:
-        type: string
+        $ref: '#/definitions/netip.Addr'
       links:
         items:
           type: string
@@ -3057,9 +3118,11 @@ definitions:
           MacAddress may be used to specify a MAC address when the container is created.
           Once the container is running, it becomes operational data (it may contain a
           generated address).
-        type: string
+        items:
+          format: int32
+          type: integer
+        type: array
       networkID:
-        description: Operational data
         type: string
     type: object
   network.FirewallRule:
@@ -3138,12 +3201,25 @@ definitions:
       target_group:
         type: string
     type: object
-  network.Network:
+  network.PortBinding:
     properties:
-      csp:
-        $ref: '#/definitions/network.CSP'
-      host:
-        $ref: '#/definitions/network.Host'
+      HostIp:
+        allOf:
+        - $ref: '#/definitions/netip.Addr'
+        description: HostIP is the host IP Address
+      HostPort:
+        description: HostPort is the host port number
+        type: string
+    type: object
+  network.PortMap:
+    additionalProperties:
+      items:
+        $ref: '#/definitions/network.PortBinding'
+      type: array
+    type: object
+  network.PortSet:
+    additionalProperties:
+      type: object
     type: object
   network.Route:
     properties:
@@ -4452,13 +4528,36 @@ definitions:
           This information is driver-specific, and depends on the storage-driver
           in use, and should be used for informational purposes only.
 
+          Example: {"MergedDir":"/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/merged","UpperDir":"/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/diff","WorkDir":"/var/lib/docker/overlay2/ef749362d13333e65fc95c572eb525abbe0052e16e086cb64bc3b98ae9aa6d74/work"}
           Required: true
         type: object
       Name:
         description: |-
           Name of the storage driver.
+          Example: overlay2
           Required: true
         type: string
+    type: object
+  storage.RootFSStorage:
+    properties:
+      Snapshot:
+        allOf:
+        - $ref: '#/definitions/storage.RootFSStorageSnapshot'
+        description: Information about the snapshot used for the container's root
+          filesystem.
+    type: object
+  storage.RootFSStorageSnapshot:
+    properties:
+      Name:
+        description: Name of the snapshotter.
+        type: string
+    type: object
+  storage.Storage:
+    properties:
+      RootFS:
+        allOf:
+        - $ref: '#/definitions/storage.RootFSStorage'
+        description: Information about the storage used for the container's root filesystem.
     type: object
   time.Duration:
     enum:

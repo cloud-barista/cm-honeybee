@@ -9,13 +9,13 @@ require (
 	github.com/cloud-barista/cm-centipede/dmdl v0.1.0
 	github.com/cloud-barista/cm-centipede/transx-ex v0.1.0
 	github.com/cloud-barista/cm-grasshopper/smdl v0.1.4
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20261002095523-bbf42e221751
-	github.com/docker/docker v28.5.2+incompatible
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20261002100848-6357ff574fc6
 	github.com/glebarez/sqlite v1.11.0
 	github.com/google/uuid v1.6.0
 	github.com/jollaman999/utils v1.0.10 // Original codes from https://github.com/hcloud-classic/hcc-harp
 	github.com/labstack/echo/v4 v4.16.0
 	github.com/minio/minio-go/v7 v7.3.0
+	github.com/moby/moby/api v1.56.1
 	github.com/pkg/sftp v1.13.11
 	github.com/swaggo/echo-swagger v1.5.2
 	github.com/swaggo/swag v1.16.6
@@ -91,7 +91,6 @@ require (
 	github.com/cloud-barista/nhncloud-sdk-go v0.0.2-0.20260522111605-48d0ba7e7251 // indirect
 	github.com/cyphar/filepath-securejoin v0.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/docker/go-connections v0.8.1 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.13.0 // indirect

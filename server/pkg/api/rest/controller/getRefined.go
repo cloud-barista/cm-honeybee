@@ -13,8 +13,8 @@ import (
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/kubernetes"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
-	"github.com/docker/docker/api/types/container"
 	"github.com/jollaman999/utils/logger"
+	"github.com/moby/moby/api/types/container"
 
 	inframodel "github.com/cloud-barista/cm-beetle/imdl/on-premise-model"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
@@ -759,15 +759,19 @@ func getImageTag(image *string) string {
 	return "latest"
 }
 
-func convertPorts(ports *[]container.Port) []softwaremodel.ContainerPort {
+func convertPorts(ports *[]container.PortSummary) []softwaremodel.ContainerPort {
 	var result []softwaremodel.ContainerPort
 
 	for _, port := range *ports {
+		var hostIP string
+		if port.IP.IsValid() {
+			hostIP = port.IP.String()
+		}
 		result = append(result, softwaremodel.ContainerPort{
 			ContainerPort: int(port.PrivatePort),
 			HostPort:      int(port.PublicPort),
 			Protocol:      port.Type,
-			HostIP:        port.IP,
+			HostIP:        hostIP,
 		})
 	}
 
@@ -958,7 +962,7 @@ func convertToContainers(containers *[]software.Container, runtime softwaremodel
 				ImageHash:         c.ContainerInspect.Image,
 			},
 			ContainerPorts:    convertPorts(&c.ContainerSummary.Ports),
-			ContainerStatus:   c.ContainerInspect.State.Status,
+			ContainerStatus:   string(c.ContainerInspect.State.Status),
 			DockerComposePath: getDockerComposePath(c.ContainerSummary.Labels),
 			MountPaths:        convertMountPaths(&c.ContainerInspect.Mounts),
 			Envs:              convertEnvs(&c.ContainerInspect.Config.Env),
