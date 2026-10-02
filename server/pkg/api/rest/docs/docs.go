@@ -2828,407 +2828,6 @@ const docTemplate = `{
                 }
             }
         },
-        "container.HostConfig": {
-            "type": "object",
-            "properties": {
-                "CpuCount": {
-                    "description": "Applicable to Windows",
-                    "type": "integer"
-                },
-                "CpuPercent": {
-                    "description": "CPU percent",
-                    "type": "integer"
-                },
-                "CpuPeriod": {
-                    "description": "CPU CFS (Completely Fair Scheduler) period",
-                    "type": "integer"
-                },
-                "CpuQuota": {
-                    "description": "CPU CFS (Completely Fair Scheduler) quota",
-                    "type": "integer"
-                },
-                "CpuRealtimePeriod": {
-                    "description": "CPU real-time period",
-                    "type": "integer"
-                },
-                "CpuRealtimeRuntime": {
-                    "description": "CPU real-time runtime",
-                    "type": "integer"
-                },
-                "CpuShares": {
-                    "description": "Applicable to all platforms",
-                    "type": "integer"
-                },
-                "Dns": {
-                    "description": "List of DNS server to lookup",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "DnsOptions": {
-                    "description": "List of DNSOption to look for",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "DnsSearch": {
-                    "description": "List of DNSSearch to look for",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "NanoCpus": {
-                    "description": "CPU quota in units of 10\u003csup\u003e-9\u003c/sup\u003e CPUs.",
-                    "type": "integer"
-                },
-                "annotations": {
-                    "description": "Arbitrary non-identifying metadata attached to container and provided to the runtime",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "autoRemove": {
-                    "description": "Automatically remove container when it exits",
-                    "type": "boolean"
-                },
-                "binds": {
-                    "description": "Applicable to all platforms",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "blkioDeviceReadBps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
-                    }
-                },
-                "blkioDeviceReadIOps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
-                    }
-                },
-                "blkioDeviceWriteBps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
-                    }
-                },
-                "blkioDeviceWriteIOps": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
-                    }
-                },
-                "blkioWeight": {
-                    "description": "Block IO weight (relative weight vs. other containers)",
-                    "type": "integer",
-                    "format": "int32"
-                },
-                "blkioWeightDevice": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/blkiodev.WeightDevice"
-                    }
-                },
-                "capAdd": {
-                    "description": "Applicable to UNIX platforms",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "capDrop": {
-                    "description": "List of kernel capabilities to remove from the container",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "cgroup": {
-                    "description": "Cgroup to use for the container",
-                    "type": "string"
-                },
-                "cgroupParent": {
-                    "description": "Applicable to UNIX platforms",
-                    "type": "string"
-                },
-                "cgroupnsMode": {
-                    "description": "Cgroup namespace mode to use for the container",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/container.CgroupnsMode"
-                        }
-                    ]
-                },
-                "consoleSize": {
-                    "description": "Initial console size (height,width)",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "containerIDFile": {
-                    "description": "File (path) where the containerId is written",
-                    "type": "string"
-                },
-                "cpusetCpus": {
-                    "description": "CpusetCpus 0-2, 0,1",
-                    "type": "string"
-                },
-                "cpusetMems": {
-                    "description": "CpusetMems 0-2, 0,1",
-                    "type": "string"
-                },
-                "deviceCgroupRules": {
-                    "description": "List of rule to be added to the device cgroup",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "deviceRequests": {
-                    "description": "List of device requests for device drivers",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/container.DeviceRequest"
-                    }
-                },
-                "devices": {
-                    "description": "List of devices to map inside the container",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/container.DeviceMapping"
-                    }
-                },
-                "extraHosts": {
-                    "description": "List of extra hosts",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "groupAdd": {
-                    "description": "List of additional groups that the container process will run as",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "init": {
-                    "description": "Run a custom init inside the container, if null, use the daemon's configured settings",
-                    "type": "boolean"
-                },
-                "iomaximumBandwidth": {
-                    "description": "Maximum IO in bytes per second for the container system drive",
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "iomaximumIOps": {
-                    "description": "Maximum IOps for the container system drive",
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "ipcMode": {
-                    "description": "IPC namespace to use for the container",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/container.IpcMode"
-                        }
-                    ]
-                },
-                "isolation": {
-                    "description": "Applicable to Windows",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/container.Isolation"
-                        }
-                    ]
-                },
-                "kernelMemory": {
-                    "description": "KernelMemory specifies the kernel memory limit (in bytes) for the container.\nDeprecated: kernel 5.4 deprecated kmem.limit_in_bytes.",
-                    "type": "integer"
-                },
-                "kernelMemoryTCP": {
-                    "description": "Hard limit for kernel TCP buffer memory (in bytes).\n\nDeprecated: This field is deprecated and will be removed in the next release.\nStarting with 6.12, the kernel has deprecated kernel memory tcp accounting\nfor cgroups v1.",
-                    "type": "integer"
-                },
-                "links": {
-                    "description": "List of links (in the name:alias form)",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "logConfig": {
-                    "description": "Configuration of the logs for this container",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/container.LogConfig"
-                        }
-                    ]
-                },
-                "maskedPaths": {
-                    "description": "MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "memory": {
-                    "description": "Memory limit (in bytes)",
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "memoryReservation": {
-                    "description": "Memory soft limit (in bytes)",
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "memorySwap": {
-                    "description": "Total memory usage (memory + swap); set ` + "`" + `-1` + "`" + ` to enable unlimited swap",
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "memorySwappiness": {
-                    "description": "Tuning container memory swappiness behaviour",
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "mounts": {
-                    "description": "Mounts specs used by the container",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/mount.Mount"
-                    }
-                },
-                "networkMode": {
-                    "description": "Network mode to use for the container",
-                    "type": "string"
-                },
-                "oomKillDisable": {
-                    "description": "Whether to disable OOM Killer or not",
-                    "type": "boolean"
-                },
-                "oomScoreAdj": {
-                    "description": "Container preference for OOM-killing",
-                    "type": "integer"
-                },
-                "pidMode": {
-                    "description": "PID namespace to use for the container",
-                    "type": "string"
-                },
-                "pidsLimit": {
-                    "description": "Setting PIDs limit for a container; Set ` + "`" + `0` + "`" + ` or ` + "`" + `-1` + "`" + ` for unlimited, or ` + "`" + `null` + "`" + ` to not change.",
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "portBindings": {
-                    "description": "Port mapping between the exposed port (container) and the host",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/nat.PortMap"
-                        }
-                    ]
-                },
-                "privileged": {
-                    "description": "Is the container in privileged mode",
-                    "type": "boolean"
-                },
-                "publishAllPorts": {
-                    "description": "Should docker publish all exposed port for the container",
-                    "type": "boolean"
-                },
-                "readonlyPaths": {
-                    "description": "ReadonlyPaths is the list of paths to be set as read-only inside the container (this overrides the default set of paths)",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "readonlyRootfs": {
-                    "description": "Is the container root filesystem in read-only",
-                    "type": "boolean"
-                },
-                "restartPolicy": {
-                    "description": "Restart policy to be used for the container",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/container.RestartPolicy"
-                        }
-                    ]
-                },
-                "runtime": {
-                    "description": "Runtime to use with this container",
-                    "type": "string"
-                },
-                "securityOpt": {
-                    "description": "List of string values to customize labels for MLS systems, such as SELinux.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "shmSize": {
-                    "description": "Total shm memory usage",
-                    "type": "integer",
-                    "format": "int64"
-                },
-                "storageOpt": {
-                    "description": "Storage driver options per container.",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "sysctls": {
-                    "description": "List of Namespaced sysctls used for the container",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "tmpfs": {
-                    "description": "List of tmpfs (mounts) used for the container",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "ulimits": {
-                    "description": "List of ulimits to be set in the container",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/container.Ulimit"
-                    }
-                },
-                "usernsMode": {
-                    "description": "The user namespace to use for the container",
-                    "type": "string"
-                },
-                "utsmode": {
-                    "description": "UTS namespace to use for the container",
-                    "type": "string"
-                },
-                "volumeDriver": {
-                    "description": "Name of the volume driver used to mount volumes",
-                    "type": "string"
-                },
-                "volumesFrom": {
-                    "description": "List of volumes to take from other container",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
         "container.InspectResponse": {
             "type": "object",
             "properties": {
@@ -3271,7 +2870,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/storage.DriverData"
                 },
                 "hostConfig": {
-                    "$ref": "#/definitions/container.HostConfig"
+                    "$ref": "#/definitions/github_com_docker_docker_api_types_container.HostConfig"
                 },
                 "hostnamePath": {
                     "type": "string"
@@ -4503,6 +4102,407 @@ const docTemplate = `{
                 "region_name": {
                     "description": "CSP fields — only honored for CSP groups.",
                     "type": "string"
+                }
+            }
+        },
+        "github_com_docker_docker_api_types_container.HostConfig": {
+            "type": "object",
+            "properties": {
+                "CpuCount": {
+                    "description": "Applicable to Windows",
+                    "type": "integer"
+                },
+                "CpuPercent": {
+                    "description": "CPU percent",
+                    "type": "integer"
+                },
+                "CpuPeriod": {
+                    "description": "CPU CFS (Completely Fair Scheduler) period",
+                    "type": "integer"
+                },
+                "CpuQuota": {
+                    "description": "CPU CFS (Completely Fair Scheduler) quota",
+                    "type": "integer"
+                },
+                "CpuRealtimePeriod": {
+                    "description": "CPU real-time period",
+                    "type": "integer"
+                },
+                "CpuRealtimeRuntime": {
+                    "description": "CPU real-time runtime",
+                    "type": "integer"
+                },
+                "CpuShares": {
+                    "description": "Applicable to all platforms",
+                    "type": "integer"
+                },
+                "Dns": {
+                    "description": "List of DNS server to lookup",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "DnsOptions": {
+                    "description": "List of DNSOption to look for",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "DnsSearch": {
+                    "description": "List of DNSSearch to look for",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "NanoCpus": {
+                    "description": "CPU quota in units of 10\u003csup\u003e-9\u003c/sup\u003e CPUs.",
+                    "type": "integer"
+                },
+                "annotations": {
+                    "description": "Arbitrary non-identifying metadata attached to container and provided to the runtime",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "autoRemove": {
+                    "description": "Automatically remove container when it exits",
+                    "type": "boolean"
+                },
+                "binds": {
+                    "description": "Applicable to all platforms",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "blkioDeviceReadBps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
+                    }
+                },
+                "blkioDeviceReadIOps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
+                    }
+                },
+                "blkioDeviceWriteBps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
+                    }
+                },
+                "blkioDeviceWriteIOps": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/blkiodev.ThrottleDevice"
+                    }
+                },
+                "blkioWeight": {
+                    "description": "Block IO weight (relative weight vs. other containers)",
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "blkioWeightDevice": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/blkiodev.WeightDevice"
+                    }
+                },
+                "capAdd": {
+                    "description": "Applicable to UNIX platforms",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "capDrop": {
+                    "description": "List of kernel capabilities to remove from the container",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "cgroup": {
+                    "description": "Cgroup to use for the container",
+                    "type": "string"
+                },
+                "cgroupParent": {
+                    "description": "Applicable to UNIX platforms",
+                    "type": "string"
+                },
+                "cgroupnsMode": {
+                    "description": "Cgroup namespace mode to use for the container",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.CgroupnsMode"
+                        }
+                    ]
+                },
+                "consoleSize": {
+                    "description": "Initial console size (height,width)",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "containerIDFile": {
+                    "description": "File (path) where the containerId is written",
+                    "type": "string"
+                },
+                "cpusetCpus": {
+                    "description": "CpusetCpus 0-2, 0,1",
+                    "type": "string"
+                },
+                "cpusetMems": {
+                    "description": "CpusetMems 0-2, 0,1",
+                    "type": "string"
+                },
+                "deviceCgroupRules": {
+                    "description": "List of rule to be added to the device cgroup",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "deviceRequests": {
+                    "description": "List of device requests for device drivers",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container.DeviceRequest"
+                    }
+                },
+                "devices": {
+                    "description": "List of devices to map inside the container",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container.DeviceMapping"
+                    }
+                },
+                "extraHosts": {
+                    "description": "List of extra hosts",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "groupAdd": {
+                    "description": "List of additional groups that the container process will run as",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "init": {
+                    "description": "Run a custom init inside the container, if null, use the daemon's configured settings",
+                    "type": "boolean"
+                },
+                "iomaximumBandwidth": {
+                    "description": "Maximum IO in bytes per second for the container system drive",
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "iomaximumIOps": {
+                    "description": "Maximum IOps for the container system drive",
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "ipcMode": {
+                    "description": "IPC namespace to use for the container",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.IpcMode"
+                        }
+                    ]
+                },
+                "isolation": {
+                    "description": "Applicable to Windows",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.Isolation"
+                        }
+                    ]
+                },
+                "kernelMemory": {
+                    "description": "KernelMemory specifies the kernel memory limit (in bytes) for the container.\nDeprecated: kernel 5.4 deprecated kmem.limit_in_bytes.",
+                    "type": "integer"
+                },
+                "kernelMemoryTCP": {
+                    "description": "Hard limit for kernel TCP buffer memory (in bytes).\n\nDeprecated: This field is deprecated and will be removed in the next release.\nStarting with 6.12, the kernel has deprecated kernel memory tcp accounting\nfor cgroups v1.",
+                    "type": "integer"
+                },
+                "links": {
+                    "description": "List of links (in the name:alias form)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "logConfig": {
+                    "description": "Configuration of the logs for this container",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.LogConfig"
+                        }
+                    ]
+                },
+                "maskedPaths": {
+                    "description": "MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "memory": {
+                    "description": "Memory limit (in bytes)",
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "memoryReservation": {
+                    "description": "Memory soft limit (in bytes)",
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "memorySwap": {
+                    "description": "Total memory usage (memory + swap); set ` + "`" + `-1` + "`" + ` to enable unlimited swap",
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "memorySwappiness": {
+                    "description": "Tuning container memory swappiness behaviour",
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "mounts": {
+                    "description": "Mounts specs used by the container",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/mount.Mount"
+                    }
+                },
+                "networkMode": {
+                    "description": "Network mode to use for the container",
+                    "type": "string"
+                },
+                "oomKillDisable": {
+                    "description": "Whether to disable OOM Killer or not",
+                    "type": "boolean"
+                },
+                "oomScoreAdj": {
+                    "description": "Container preference for OOM-killing",
+                    "type": "integer"
+                },
+                "pidMode": {
+                    "description": "PID namespace to use for the container",
+                    "type": "string"
+                },
+                "pidsLimit": {
+                    "description": "Setting PIDs limit for a container; Set ` + "`" + `0` + "`" + ` or ` + "`" + `-1` + "`" + ` for unlimited, or ` + "`" + `null` + "`" + ` to not change.",
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "portBindings": {
+                    "description": "Port mapping between the exposed port (container) and the host",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/nat.PortMap"
+                        }
+                    ]
+                },
+                "privileged": {
+                    "description": "Is the container in privileged mode",
+                    "type": "boolean"
+                },
+                "publishAllPorts": {
+                    "description": "Should docker publish all exposed port for the container",
+                    "type": "boolean"
+                },
+                "readonlyPaths": {
+                    "description": "ReadonlyPaths is the list of paths to be set as read-only inside the container (this overrides the default set of paths)",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "readonlyRootfs": {
+                    "description": "Is the container root filesystem in read-only",
+                    "type": "boolean"
+                },
+                "restartPolicy": {
+                    "description": "Restart policy to be used for the container",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/container.RestartPolicy"
+                        }
+                    ]
+                },
+                "runtime": {
+                    "description": "Runtime to use with this container",
+                    "type": "string"
+                },
+                "securityOpt": {
+                    "description": "List of string values to customize labels for MLS systems, such as SELinux.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "shmSize": {
+                    "description": "Total shm memory usage",
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "storageOpt": {
+                    "description": "Storage driver options per container.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "sysctls": {
+                    "description": "List of Namespaced sysctls used for the container",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "tmpfs": {
+                    "description": "List of tmpfs (mounts) used for the container",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "ulimits": {
+                    "description": "List of ulimits to be set in the container",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/container.Ulimit"
+                    }
+                },
+                "usernsMode": {
+                    "description": "The user namespace to use for the container",
+                    "type": "string"
+                },
+                "utsmode": {
+                    "description": "UTS namespace to use for the container",
+                    "type": "string"
+                },
+                "volumeDriver": {
+                    "description": "Name of the volume driver used to mount volumes",
+                    "type": "string"
+                },
+                "volumesFrom": {
+                    "description": "List of volumes to take from other container",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -6124,7 +6124,10 @@ const docTemplate = `{
                 "app_version": {
                     "type": "string"
                 },
-                "chart": {
+                "chart_name": {
+                    "type": "string"
+                },
+                "chart_version": {
                     "type": "string"
                 },
                 "name": {
@@ -6278,7 +6281,11 @@ const docTemplate = `{
             "properties": {
                 "mode": {
                     "description": "Mode of the tmpfs upon creation",
-                    "type": "integer"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/os.FileMode"
+                        }
+                    ]
                 },
                 "options": {
                     "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
@@ -7346,6 +7353,92 @@ const docTemplate = `{
                 }
             }
         },
+        "os.FileMode": {
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511
+            ],
+            "x-enum-comments": {
+                "ModeAppend": "a: append-only",
+                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
+                "ModeDevice": "D: device file",
+                "ModeDir": "d: is a directory",
+                "ModeExclusive": "l: exclusive use",
+                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
+                "ModeNamedPipe": "p: named pipe (FIFO)",
+                "ModePerm": "Unix permission bits, 0o777",
+                "ModeSetgid": "g: setgid",
+                "ModeSetuid": "u: setuid",
+                "ModeSocket": "S: Unix domain socket",
+                "ModeSticky": "t: sticky",
+                "ModeSymlink": "L: symbolic link",
+                "ModeTemporary": "T: temporary file; Plan 9 only"
+            },
+            "x-enum-descriptions": [
+                "d: is a directory",
+                "a: append-only",
+                "l: exclusive use",
+                "T: temporary file; Plan 9 only",
+                "L: symbolic link",
+                "D: device file",
+                "p: named pipe (FIFO)",
+                "S: Unix domain socket",
+                "u: setuid",
+                "g: setgid",
+                "c: Unix character device, when ModeDevice is set",
+                "t: sticky",
+                "?: non-regular file; nothing else is known about this file",
+                "",
+                "Unix permission bits, 0o777"
+            ],
+            "x-enum-varnames": [
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm"
+            ]
+        },
         "software.Binary": {
             "type": "object",
             "properties": {
@@ -7950,20 +8043,176 @@ const docTemplate = `{
         "softwaremodel.Kubernetes": {
             "type": "object",
             "required": [
-                "kube_config",
                 "resources",
                 "version"
             ],
             "properties": {
                 "kube_config": {
+                    "description": "Empty: the consumer fetches it from cm-honeybee by connection id",
                     "type": "string"
                 },
                 "resources": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "$ref": "#/definitions/softwaremodel.KubernetesResources"
                 },
                 "version": {
                     "description": "Same as release",
+                    "type": "string"
+                }
+            }
+        },
+        "softwaremodel.KubernetesHelmRelease": {
+            "type": "object",
+            "required": [
+                "name",
+                "namespace"
+            ],
+            "properties": {
+                "chart": {
+                    "type": "string"
+                },
+                "chartVersion": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                }
+            }
+        },
+        "softwaremodel.KubernetesPersistentVolume": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "accessModes": {
+                    "description": "ReadWriteOnce, ReadWriteMany, ...; the target storage has to offer the same",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "capacity": {
+                    "description": "as the cluster reports it, e.g. \"1Gi\"",
+                    "type": "string"
+                },
+                "claimName": {
+                    "type": "string"
+                },
+                "claimNamespace": {
+                    "description": "the PVC it is bound to; a PV is cluster-scoped",
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "reclaimPolicy": {
+                    "description": "Retain leaves the source volume behind, Delete does not",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "Bound, Available, Released, Failed",
+                    "type": "string"
+                },
+                "storageClass": {
+                    "description": "the class that provisioned it",
+                    "type": "string"
+                }
+            }
+        },
+        "softwaremodel.KubernetesPersistentVolumeClaim": {
+            "type": "object",
+            "required": [
+                "name",
+                "namespace"
+            ],
+            "properties": {
+                "accessModes": {
+                    "description": "ReadWriteOnce, ReadWriteMany, ...; the target storage has to offer the same",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "namespace": {
+                    "type": "string"
+                },
+                "storageClass": {
+                    "description": "the class it was bound through, mapped onto a target class",
+                    "type": "string"
+                }
+            }
+        },
+        "softwaremodel.KubernetesResources": {
+            "type": "object",
+            "properties": {
+                "clusterScopedWorkloads": {
+                    "description": "kind -\u003e count, for the kinds that belong to no namespace",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "helmReleases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/softwaremodel.KubernetesHelmRelease"
+                    }
+                },
+                "namespaces": {
+                    "description": "what included namespaces are picked from",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "persistentVolumeClaims": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/softwaremodel.KubernetesPersistentVolumeClaim"
+                    }
+                },
+                "persistentVolumes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/softwaremodel.KubernetesPersistentVolume"
+                    }
+                },
+                "storageClasses": {
+                    "description": "what storage class mappings are picked from",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/softwaremodel.KubernetesStorageClass"
+                    }
+                },
+                "workloads": {
+                    "description": "namespace -\u003e kind -\u003e count; Velero migrates a namespace at a time",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "softwaremodel.KubernetesStorageClass": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "provisioner": {
+                    "description": "what a source class is matched to a target class on",
                     "type": "string"
                 }
             }

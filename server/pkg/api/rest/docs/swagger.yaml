@@ -290,303 +290,6 @@ definitions:
         description: Start is the time this check started
         type: string
     type: object
-  container.HostConfig:
-    properties:
-      CpuCount:
-        description: Applicable to Windows
-        type: integer
-      CpuPercent:
-        description: CPU percent
-        type: integer
-      CpuPeriod:
-        description: CPU CFS (Completely Fair Scheduler) period
-        type: integer
-      CpuQuota:
-        description: CPU CFS (Completely Fair Scheduler) quota
-        type: integer
-      CpuRealtimePeriod:
-        description: CPU real-time period
-        type: integer
-      CpuRealtimeRuntime:
-        description: CPU real-time runtime
-        type: integer
-      CpuShares:
-        description: Applicable to all platforms
-        type: integer
-      Dns:
-        description: List of DNS server to lookup
-        items:
-          type: string
-        type: array
-      DnsOptions:
-        description: List of DNSOption to look for
-        items:
-          type: string
-        type: array
-      DnsSearch:
-        description: List of DNSSearch to look for
-        items:
-          type: string
-        type: array
-      NanoCpus:
-        description: CPU quota in units of 10<sup>-9</sup> CPUs.
-        type: integer
-      annotations:
-        additionalProperties:
-          type: string
-        description: Arbitrary non-identifying metadata attached to container and
-          provided to the runtime
-        type: object
-      autoRemove:
-        description: Automatically remove container when it exits
-        type: boolean
-      binds:
-        description: Applicable to all platforms
-        items:
-          type: string
-        type: array
-      blkioDeviceReadBps:
-        items:
-          $ref: '#/definitions/blkiodev.ThrottleDevice'
-        type: array
-      blkioDeviceReadIOps:
-        items:
-          $ref: '#/definitions/blkiodev.ThrottleDevice'
-        type: array
-      blkioDeviceWriteBps:
-        items:
-          $ref: '#/definitions/blkiodev.ThrottleDevice'
-        type: array
-      blkioDeviceWriteIOps:
-        items:
-          $ref: '#/definitions/blkiodev.ThrottleDevice'
-        type: array
-      blkioWeight:
-        description: Block IO weight (relative weight vs. other containers)
-        format: int32
-        type: integer
-      blkioWeightDevice:
-        items:
-          $ref: '#/definitions/blkiodev.WeightDevice'
-        type: array
-      capAdd:
-        description: Applicable to UNIX platforms
-        items:
-          type: string
-        type: array
-      capDrop:
-        description: List of kernel capabilities to remove from the container
-        items:
-          type: string
-        type: array
-      cgroup:
-        description: Cgroup to use for the container
-        type: string
-      cgroupParent:
-        description: Applicable to UNIX platforms
-        type: string
-      cgroupnsMode:
-        allOf:
-        - $ref: '#/definitions/container.CgroupnsMode'
-        description: Cgroup namespace mode to use for the container
-      consoleSize:
-        description: Initial console size (height,width)
-        items:
-          type: integer
-        type: array
-      containerIDFile:
-        description: File (path) where the containerId is written
-        type: string
-      cpusetCpus:
-        description: CpusetCpus 0-2, 0,1
-        type: string
-      cpusetMems:
-        description: CpusetMems 0-2, 0,1
-        type: string
-      deviceCgroupRules:
-        description: List of rule to be added to the device cgroup
-        items:
-          type: string
-        type: array
-      deviceRequests:
-        description: List of device requests for device drivers
-        items:
-          $ref: '#/definitions/container.DeviceRequest'
-        type: array
-      devices:
-        description: List of devices to map inside the container
-        items:
-          $ref: '#/definitions/container.DeviceMapping'
-        type: array
-      extraHosts:
-        description: List of extra hosts
-        items:
-          type: string
-        type: array
-      groupAdd:
-        description: List of additional groups that the container process will run
-          as
-        items:
-          type: string
-        type: array
-      init:
-        description: Run a custom init inside the container, if null, use the daemon's
-          configured settings
-        type: boolean
-      iomaximumBandwidth:
-        description: Maximum IO in bytes per second for the container system drive
-        format: int64
-        type: integer
-      iomaximumIOps:
-        description: Maximum IOps for the container system drive
-        format: int64
-        type: integer
-      ipcMode:
-        allOf:
-        - $ref: '#/definitions/container.IpcMode'
-        description: IPC namespace to use for the container
-      isolation:
-        allOf:
-        - $ref: '#/definitions/container.Isolation'
-        description: Applicable to Windows
-      kernelMemory:
-        description: |-
-          KernelMemory specifies the kernel memory limit (in bytes) for the container.
-          Deprecated: kernel 5.4 deprecated kmem.limit_in_bytes.
-        type: integer
-      kernelMemoryTCP:
-        description: |-
-          Hard limit for kernel TCP buffer memory (in bytes).
-
-          Deprecated: This field is deprecated and will be removed in the next release.
-          Starting with 6.12, the kernel has deprecated kernel memory tcp accounting
-          for cgroups v1.
-        type: integer
-      links:
-        description: List of links (in the name:alias form)
-        items:
-          type: string
-        type: array
-      logConfig:
-        allOf:
-        - $ref: '#/definitions/container.LogConfig'
-        description: Configuration of the logs for this container
-      maskedPaths:
-        description: MaskedPaths is the list of paths to be masked inside the container
-          (this overrides the default set of paths)
-        items:
-          type: string
-        type: array
-      memory:
-        description: Memory limit (in bytes)
-        format: int64
-        type: integer
-      memoryReservation:
-        description: Memory soft limit (in bytes)
-        format: int64
-        type: integer
-      memorySwap:
-        description: Total memory usage (memory + swap); set `-1` to enable unlimited
-          swap
-        format: int64
-        type: integer
-      memorySwappiness:
-        description: Tuning container memory swappiness behaviour
-        format: int64
-        type: integer
-      mounts:
-        description: Mounts specs used by the container
-        items:
-          $ref: '#/definitions/mount.Mount'
-        type: array
-      networkMode:
-        description: Network mode to use for the container
-        type: string
-      oomKillDisable:
-        description: Whether to disable OOM Killer or not
-        type: boolean
-      oomScoreAdj:
-        description: Container preference for OOM-killing
-        type: integer
-      pidMode:
-        description: PID namespace to use for the container
-        type: string
-      pidsLimit:
-        description: Setting PIDs limit for a container; Set `0` or `-1` for unlimited,
-          or `null` to not change.
-        format: int64
-        type: integer
-      portBindings:
-        allOf:
-        - $ref: '#/definitions/nat.PortMap'
-        description: Port mapping between the exposed port (container) and the host
-      privileged:
-        description: Is the container in privileged mode
-        type: boolean
-      publishAllPorts:
-        description: Should docker publish all exposed port for the container
-        type: boolean
-      readonlyPaths:
-        description: ReadonlyPaths is the list of paths to be set as read-only inside
-          the container (this overrides the default set of paths)
-        items:
-          type: string
-        type: array
-      readonlyRootfs:
-        description: Is the container root filesystem in read-only
-        type: boolean
-      restartPolicy:
-        allOf:
-        - $ref: '#/definitions/container.RestartPolicy'
-        description: Restart policy to be used for the container
-      runtime:
-        description: Runtime to use with this container
-        type: string
-      securityOpt:
-        description: List of string values to customize labels for MLS systems, such
-          as SELinux.
-        items:
-          type: string
-        type: array
-      shmSize:
-        description: Total shm memory usage
-        format: int64
-        type: integer
-      storageOpt:
-        additionalProperties:
-          type: string
-        description: Storage driver options per container.
-        type: object
-      sysctls:
-        additionalProperties:
-          type: string
-        description: List of Namespaced sysctls used for the container
-        type: object
-      tmpfs:
-        additionalProperties:
-          type: string
-        description: List of tmpfs (mounts) used for the container
-        type: object
-      ulimits:
-        description: List of ulimits to be set in the container
-        items:
-          $ref: '#/definitions/container.Ulimit'
-        type: array
-      usernsMode:
-        description: The user namespace to use for the container
-        type: string
-      utsmode:
-        description: UTS namespace to use for the container
-        type: string
-      volumeDriver:
-        description: Name of the volume driver used to mount volumes
-        type: string
-      volumesFrom:
-        description: List of volumes to take from other container
-        items:
-          type: string
-        type: array
-    type: object
   container.InspectResponse:
     properties:
       Id:
@@ -615,7 +318,7 @@ definitions:
       graphDriver:
         $ref: '#/definitions/storage.DriverData'
       hostConfig:
-        $ref: '#/definitions/container.HostConfig'
+        $ref: '#/definitions/github_com_docker_docker_api_types_container.HostConfig'
       hostnamePath:
         type: string
       hostsPath:
@@ -1543,6 +1246,303 @@ definitions:
         type: string
     required:
     - name
+    type: object
+  github_com_docker_docker_api_types_container.HostConfig:
+    properties:
+      CpuCount:
+        description: Applicable to Windows
+        type: integer
+      CpuPercent:
+        description: CPU percent
+        type: integer
+      CpuPeriod:
+        description: CPU CFS (Completely Fair Scheduler) period
+        type: integer
+      CpuQuota:
+        description: CPU CFS (Completely Fair Scheduler) quota
+        type: integer
+      CpuRealtimePeriod:
+        description: CPU real-time period
+        type: integer
+      CpuRealtimeRuntime:
+        description: CPU real-time runtime
+        type: integer
+      CpuShares:
+        description: Applicable to all platforms
+        type: integer
+      Dns:
+        description: List of DNS server to lookup
+        items:
+          type: string
+        type: array
+      DnsOptions:
+        description: List of DNSOption to look for
+        items:
+          type: string
+        type: array
+      DnsSearch:
+        description: List of DNSSearch to look for
+        items:
+          type: string
+        type: array
+      NanoCpus:
+        description: CPU quota in units of 10<sup>-9</sup> CPUs.
+        type: integer
+      annotations:
+        additionalProperties:
+          type: string
+        description: Arbitrary non-identifying metadata attached to container and
+          provided to the runtime
+        type: object
+      autoRemove:
+        description: Automatically remove container when it exits
+        type: boolean
+      binds:
+        description: Applicable to all platforms
+        items:
+          type: string
+        type: array
+      blkioDeviceReadBps:
+        items:
+          $ref: '#/definitions/blkiodev.ThrottleDevice'
+        type: array
+      blkioDeviceReadIOps:
+        items:
+          $ref: '#/definitions/blkiodev.ThrottleDevice'
+        type: array
+      blkioDeviceWriteBps:
+        items:
+          $ref: '#/definitions/blkiodev.ThrottleDevice'
+        type: array
+      blkioDeviceWriteIOps:
+        items:
+          $ref: '#/definitions/blkiodev.ThrottleDevice'
+        type: array
+      blkioWeight:
+        description: Block IO weight (relative weight vs. other containers)
+        format: int32
+        type: integer
+      blkioWeightDevice:
+        items:
+          $ref: '#/definitions/blkiodev.WeightDevice'
+        type: array
+      capAdd:
+        description: Applicable to UNIX platforms
+        items:
+          type: string
+        type: array
+      capDrop:
+        description: List of kernel capabilities to remove from the container
+        items:
+          type: string
+        type: array
+      cgroup:
+        description: Cgroup to use for the container
+        type: string
+      cgroupParent:
+        description: Applicable to UNIX platforms
+        type: string
+      cgroupnsMode:
+        allOf:
+        - $ref: '#/definitions/container.CgroupnsMode'
+        description: Cgroup namespace mode to use for the container
+      consoleSize:
+        description: Initial console size (height,width)
+        items:
+          type: integer
+        type: array
+      containerIDFile:
+        description: File (path) where the containerId is written
+        type: string
+      cpusetCpus:
+        description: CpusetCpus 0-2, 0,1
+        type: string
+      cpusetMems:
+        description: CpusetMems 0-2, 0,1
+        type: string
+      deviceCgroupRules:
+        description: List of rule to be added to the device cgroup
+        items:
+          type: string
+        type: array
+      deviceRequests:
+        description: List of device requests for device drivers
+        items:
+          $ref: '#/definitions/container.DeviceRequest'
+        type: array
+      devices:
+        description: List of devices to map inside the container
+        items:
+          $ref: '#/definitions/container.DeviceMapping'
+        type: array
+      extraHosts:
+        description: List of extra hosts
+        items:
+          type: string
+        type: array
+      groupAdd:
+        description: List of additional groups that the container process will run
+          as
+        items:
+          type: string
+        type: array
+      init:
+        description: Run a custom init inside the container, if null, use the daemon's
+          configured settings
+        type: boolean
+      iomaximumBandwidth:
+        description: Maximum IO in bytes per second for the container system drive
+        format: int64
+        type: integer
+      iomaximumIOps:
+        description: Maximum IOps for the container system drive
+        format: int64
+        type: integer
+      ipcMode:
+        allOf:
+        - $ref: '#/definitions/container.IpcMode'
+        description: IPC namespace to use for the container
+      isolation:
+        allOf:
+        - $ref: '#/definitions/container.Isolation'
+        description: Applicable to Windows
+      kernelMemory:
+        description: |-
+          KernelMemory specifies the kernel memory limit (in bytes) for the container.
+          Deprecated: kernel 5.4 deprecated kmem.limit_in_bytes.
+        type: integer
+      kernelMemoryTCP:
+        description: |-
+          Hard limit for kernel TCP buffer memory (in bytes).
+
+          Deprecated: This field is deprecated and will be removed in the next release.
+          Starting with 6.12, the kernel has deprecated kernel memory tcp accounting
+          for cgroups v1.
+        type: integer
+      links:
+        description: List of links (in the name:alias form)
+        items:
+          type: string
+        type: array
+      logConfig:
+        allOf:
+        - $ref: '#/definitions/container.LogConfig'
+        description: Configuration of the logs for this container
+      maskedPaths:
+        description: MaskedPaths is the list of paths to be masked inside the container
+          (this overrides the default set of paths)
+        items:
+          type: string
+        type: array
+      memory:
+        description: Memory limit (in bytes)
+        format: int64
+        type: integer
+      memoryReservation:
+        description: Memory soft limit (in bytes)
+        format: int64
+        type: integer
+      memorySwap:
+        description: Total memory usage (memory + swap); set `-1` to enable unlimited
+          swap
+        format: int64
+        type: integer
+      memorySwappiness:
+        description: Tuning container memory swappiness behaviour
+        format: int64
+        type: integer
+      mounts:
+        description: Mounts specs used by the container
+        items:
+          $ref: '#/definitions/mount.Mount'
+        type: array
+      networkMode:
+        description: Network mode to use for the container
+        type: string
+      oomKillDisable:
+        description: Whether to disable OOM Killer or not
+        type: boolean
+      oomScoreAdj:
+        description: Container preference for OOM-killing
+        type: integer
+      pidMode:
+        description: PID namespace to use for the container
+        type: string
+      pidsLimit:
+        description: Setting PIDs limit for a container; Set `0` or `-1` for unlimited,
+          or `null` to not change.
+        format: int64
+        type: integer
+      portBindings:
+        allOf:
+        - $ref: '#/definitions/nat.PortMap'
+        description: Port mapping between the exposed port (container) and the host
+      privileged:
+        description: Is the container in privileged mode
+        type: boolean
+      publishAllPorts:
+        description: Should docker publish all exposed port for the container
+        type: boolean
+      readonlyPaths:
+        description: ReadonlyPaths is the list of paths to be set as read-only inside
+          the container (this overrides the default set of paths)
+        items:
+          type: string
+        type: array
+      readonlyRootfs:
+        description: Is the container root filesystem in read-only
+        type: boolean
+      restartPolicy:
+        allOf:
+        - $ref: '#/definitions/container.RestartPolicy'
+        description: Restart policy to be used for the container
+      runtime:
+        description: Runtime to use with this container
+        type: string
+      securityOpt:
+        description: List of string values to customize labels for MLS systems, such
+          as SELinux.
+        items:
+          type: string
+        type: array
+      shmSize:
+        description: Total shm memory usage
+        format: int64
+        type: integer
+      storageOpt:
+        additionalProperties:
+          type: string
+        description: Storage driver options per container.
+        type: object
+      sysctls:
+        additionalProperties:
+          type: string
+        description: List of Namespaced sysctls used for the container
+        type: object
+      tmpfs:
+        additionalProperties:
+          type: string
+        description: List of tmpfs (mounts) used for the container
+        type: object
+      ulimits:
+        description: List of ulimits to be set in the container
+        items:
+          $ref: '#/definitions/container.Ulimit'
+        type: array
+      usernsMode:
+        description: The user namespace to use for the container
+        type: string
+      utsmode:
+        description: UTS namespace to use for the container
+        type: string
+      volumeDriver:
+        description: Name of the volume driver used to mount volumes
+        type: string
+      volumesFrom:
+        description: List of volumes to take from other container
+        items:
+          type: string
+        type: array
     type: object
   image.AttestationProperties:
     properties:
@@ -2772,7 +2772,9 @@ definitions:
     properties:
       app_version:
         type: string
-      chart:
+      chart_name:
+        type: string
+      chart_version:
         type: string
       name:
         type: string
@@ -2885,8 +2887,9 @@ definitions:
   mount.TmpfsOptions:
     properties:
       mode:
+        allOf:
+        - $ref: '#/definitions/os.FileMode'
         description: Mode of the tmpfs upon creation
-        type: integer
       options:
         description: |-
           Options to be passed to the tmpfs mount. An array of arrays. Flag
@@ -3661,6 +3664,87 @@ definitions:
         description: Optionally stores the source address (used for policy-based routing)
         type: string
     type: object
+  os.FileMode:
+    enum:
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    format: int32
+    type: integer
+    x-enum-comments:
+      ModeAppend: 'a: append-only'
+      ModeCharDevice: 'c: Unix character device, when ModeDevice is set'
+      ModeDevice: 'D: device file'
+      ModeDir: 'd: is a directory'
+      ModeExclusive: 'l: exclusive use'
+      ModeIrregular: '?: non-regular file; nothing else is known about this file'
+      ModeNamedPipe: 'p: named pipe (FIFO)'
+      ModePerm: Unix permission bits, 0o777
+      ModeSetgid: 'g: setgid'
+      ModeSetuid: 'u: setuid'
+      ModeSocket: 'S: Unix domain socket'
+      ModeSticky: 't: sticky'
+      ModeSymlink: 'L: symbolic link'
+      ModeTemporary: 'T: temporary file; Plan 9 only'
+    x-enum-descriptions:
+    - 'd: is a directory'
+    - 'a: append-only'
+    - 'l: exclusive use'
+    - 'T: temporary file; Plan 9 only'
+    - 'L: symbolic link'
+    - 'D: device file'
+    - 'p: named pipe (FIFO)'
+    - 'S: Unix domain socket'
+    - 'u: setuid'
+    - 'g: setgid'
+    - 'c: Unix character device, when ModeDevice is set'
+    - 't: sticky'
+    - '?: non-regular file; nothing else is known about this file'
+    - ""
+    - Unix permission bits, 0o777
+    x-enum-varnames:
+    - ModeDir
+    - ModeAppend
+    - ModeExclusive
+    - ModeTemporary
+    - ModeSymlink
+    - ModeDevice
+    - ModeNamedPipe
+    - ModeSocket
+    - ModeSetuid
+    - ModeSetgid
+    - ModeCharDevice
+    - ModeSticky
+    - ModeIrregular
+    - ModeType
+    - ModePerm
   software.Binary:
     properties:
       cmdline:
@@ -4081,17 +4165,128 @@ definitions:
   softwaremodel.Kubernetes:
     properties:
       kube_config:
+        description: 'Empty: the consumer fetches it from cm-honeybee by connection
+          id'
         type: string
       resources:
-        additionalProperties: true
-        type: object
+        $ref: '#/definitions/softwaremodel.KubernetesResources'
       version:
         description: Same as release
         type: string
     required:
-    - kube_config
     - resources
     - version
+    type: object
+  softwaremodel.KubernetesHelmRelease:
+    properties:
+      chart:
+        type: string
+      chartVersion:
+        type: string
+      name:
+        type: string
+      namespace:
+        type: string
+    required:
+    - name
+    - namespace
+    type: object
+  softwaremodel.KubernetesPersistentVolume:
+    properties:
+      accessModes:
+        description: ReadWriteOnce, ReadWriteMany, ...; the target storage has to
+          offer the same
+        items:
+          type: string
+        type: array
+      capacity:
+        description: as the cluster reports it, e.g. "1Gi"
+        type: string
+      claimName:
+        type: string
+      claimNamespace:
+        description: the PVC it is bound to; a PV is cluster-scoped
+        type: string
+      name:
+        type: string
+      reclaimPolicy:
+        description: Retain leaves the source volume behind, Delete does not
+        type: string
+      status:
+        description: Bound, Available, Released, Failed
+        type: string
+      storageClass:
+        description: the class that provisioned it
+        type: string
+    required:
+    - name
+    type: object
+  softwaremodel.KubernetesPersistentVolumeClaim:
+    properties:
+      accessModes:
+        description: ReadWriteOnce, ReadWriteMany, ...; the target storage has to
+          offer the same
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+      namespace:
+        type: string
+      storageClass:
+        description: the class it was bound through, mapped onto a target class
+        type: string
+    required:
+    - name
+    - namespace
+    type: object
+  softwaremodel.KubernetesResources:
+    properties:
+      clusterScopedWorkloads:
+        additionalProperties:
+          type: integer
+        description: kind -> count, for the kinds that belong to no namespace
+        type: object
+      helmReleases:
+        items:
+          $ref: '#/definitions/softwaremodel.KubernetesHelmRelease'
+        type: array
+      namespaces:
+        description: what included namespaces are picked from
+        items:
+          type: string
+        type: array
+      persistentVolumeClaims:
+        items:
+          $ref: '#/definitions/softwaremodel.KubernetesPersistentVolumeClaim'
+        type: array
+      persistentVolumes:
+        items:
+          $ref: '#/definitions/softwaremodel.KubernetesPersistentVolume'
+        type: array
+      storageClasses:
+        description: what storage class mappings are picked from
+        items:
+          $ref: '#/definitions/softwaremodel.KubernetesStorageClass'
+        type: array
+      workloads:
+        additionalProperties:
+          additionalProperties:
+            type: integer
+          type: object
+        description: namespace -> kind -> count; Velero migrates a namespace at a
+          time
+        type: object
+    type: object
+  softwaremodel.KubernetesStorageClass:
+    properties:
+      name:
+        type: string
+      provisioner:
+        description: what a source class is matched to a target class on
+        type: string
+    required:
+    - name
     type: object
   softwaremodel.Package:
     properties:
