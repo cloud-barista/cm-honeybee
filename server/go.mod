@@ -186,7 +186,7 @@ require (
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cdb v1.3.183 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cfs v1.3.188 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/clb v1.3.187 // indirect
-	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.3.183 // indirect
+	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.1064 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tag v1.3.110 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/tke v1.3.180 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/vpc v1.3.188 // indirect
