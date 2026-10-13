@@ -186,3 +186,58 @@ func getCluster(c Conn, systemID string) (*ClusterInfo, error) {
 	}
 	return &out, nil
 }
+
+// ListRDBMS returns every managed database instance the CSP has. Like ListVM,
+// it asks the driver directly, so instances cb-spider did not create are
+// included.
+func ListRDBMS(c Conn) ([]RDBMSInfo, error) {
+	return withTimeout(driverCallTimeout, func() ([]RDBMSInfo, error) { return listRDBMS(c) })
+}
+
+func listRDBMS(c Conn) ([]RDBMSInfo, error) {
+	conn, err := connect(c)
+	if err != nil {
+		return nil, err
+	}
+	handler, err := conn.CreateRDBMSHandler()
+	if err != nil {
+		return nil, err
+	}
+	list, err := handler.ListRDBMS()
+	if err != nil {
+		return nil, err
+	}
+	return convertList[RDBMSInfo](list)
+}
+
+// GetDBSpec fetches the vCPU and memory size of a managed database spec, which
+// RDBMSInfo names (DBSpec) but does not describe.
+func GetDBSpec(c Conn, dbEngine, name string) (*DBSpecInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*DBSpecInfo, error) { return getDBSpec(c, dbEngine, name) })
+}
+
+func getDBSpec(c Conn, dbEngine, name string) (*DBSpecInfo, error) {
+	if err := mustNonEmpty("DBEngine", dbEngine); err != nil {
+		return nil, err
+	}
+	if err := mustNonEmpty("Name", name); err != nil {
+		return nil, err
+	}
+	conn, err := connect(c)
+	if err != nil {
+		return nil, err
+	}
+	handler, err := conn.CreateDBSpecHandler()
+	if err != nil {
+		return nil, err
+	}
+	info, err := handler.GetDBSpec(dbEngine, name)
+	if err != nil {
+		return nil, err
+	}
+	out, err := convertJSON[DBSpecInfo](info)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

@@ -171,7 +171,7 @@ func TestGetDriverCapabilityAWS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !c.VMHandler || !c.NLBHandler || !c.ClusterHandler {
+	if !c.VMHandler || !c.NLBHandler || !c.ClusterHandler || !c.RDBMSHandler || !c.DBSpecHandler {
 		t.Errorf("capability = %+v", *c)
 	}
 }

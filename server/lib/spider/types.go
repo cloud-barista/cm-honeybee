@@ -152,3 +152,58 @@ type HealthCheckerInfo struct {
 	CspID        string     `json:"CspID,omitempty"`
 	KeyValueList []KeyValue `json:"KeyValueList,omitempty"`
 }
+
+// RDBMSInfo is a subset of cb-spider's RDBMSInfo
+// (cloud-driver/interfaces/resources/RDBMSHandler.go).
+//
+// MasterUserPassword is deliberately absent: cb-spider only uses it on create,
+// and leaving the field out of this struct means a driver that ever echoes it
+// back cannot get it decoded, stored or served.
+//
+// CreatedTime is a time.Time on the spider side; it is kept as the RFC3339
+// string it marshals to, as NLBInfo does.
+type RDBMSInfo struct {
+	IId    IID `json:"IId"`
+	VpcIID IID `json:"VpcIID"`
+
+	DBEngine        string `json:"DBEngine"` // mysql | mariadb | postgresql - AWS reports its own "postgres"
+	DBEngineVersion string `json:"DBEngineVersion"`
+
+	DBSpec         string `json:"DBSpec"`                   // CSP instance class/type, e.g. db.t3.medium
+	DBInstanceType string `json:"DBInstanceType,omitempty"` // meaning differs per CSP; not a role
+
+	StorageType string `json:"StorageType,omitempty"`
+	StorageSize string `json:"StorageSize"` // GB
+	Iops        string `json:"Iops,omitempty"`
+
+	MasterUserName      string `json:"MasterUserName"`
+	HighAvailability    bool   `json:"HighAvailability,omitempty"`
+	BackupRetentionDays int    `json:"BackupRetentionDays,omitempty"`
+	PublicAccess        bool   `json:"PublicAccess,omitempty"`
+	Endpoint            string `json:"Endpoint,omitempty"` // "host:port" on most drivers, host only on some
+	Encryption          bool   `json:"Encryption,omitempty"`
+	DeletionProtection  bool   `json:"DeletionProtection,omitempty"`
+
+	Status       string     `json:"Status,omitempty"`
+	CreatedTime  string     `json:"CreatedTime,omitempty"`
+	TagList      []KeyValue `json:"TagList,omitempty"`
+	KeyValueList []KeyValue `json:"KeyValueList,omitempty"`
+}
+
+// VCpuInfo mirrors cb-spider's VCpuInfo. Count and ClockGHz are "-1" when the
+// CSP does not expose them.
+type VCpuInfo struct {
+	Count    string `json:"Count"`
+	ClockGHz string `json:"ClockGHz,omitempty"`
+}
+
+// DBSpecInfo is a subset of cb-spider's DBSpecInfo
+// (cloud-driver/interfaces/resources/DBSpecHandler.go): the compute size behind
+// an RDBMSInfo.DBSpec name, which RDBMSInfo itself does not carry.
+type DBSpecInfo struct {
+	Region     string   `json:"Region"`
+	DBEngine   string   `json:"DBEngine"`
+	Name       string   `json:"Name"`
+	VCpu       VCpuInfo `json:"VCpu"`
+	MemSizeMiB string   `json:"MemSizeMiB"` // "-1" when the CSP's unit cannot be confirmed
+}

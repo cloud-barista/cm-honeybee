@@ -10,6 +10,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/data"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/kubernetes"
+	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/spider"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
@@ -204,6 +205,25 @@ func upsertSavedK8s(connID string, payload any) error {
 	return err
 }
 
+// upsertSavedRDBMS writes (or replaces) SavedRDBMSInfo for a connection.
+func upsertSavedRDBMS(connID string, payload model.RDBMSInfo) error {
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	rec := &model.SavedRDBMSInfo{
+		ConnectionID: connID,
+		RDBMSData:    string(raw),
+		Status:       model.ConnectionInfoStatusSuccess,
+		SavedTime:    time.Now(),
+	}
+	if existing, _ := dao.SavedRDBMSInfoGet(connID); existing != nil {
+		return dao.SavedRDBMSInfoUpdate(rec)
+	}
+	_, err = dao.SavedRDBMSInfoRegister(rec)
+	return err
+}
+
 // upsertSavedData writes (or replaces) SavedDataInfo for a connection.
 func upsertSavedData(connID string, payload any) error {
 	raw, err := json.Marshal(payload)
@@ -277,6 +297,62 @@ func matchCluster(clusters []spider.ClusterInfo, resourceID string) *spider.Clus
 	return nil
 }
 
+// findRDBMSByID looks a managed database instance up by the identifier
+// discovery reported for it. It lists and filters, as findClusterByID does,
+// rather than calling the driver's GetRDBMS: drivers' GetRDBMS takes a SystemId,
+// but discovery falls back to NameId when a driver leaves SystemId blank
+// (pickIIDSystem), and only a listing can resolve both.
+func findRDBMSByID(conn spider.Conn, resourceID string) (*spider.RDBMSInfo, error) {
+	instances, err := spider.ListRDBMS(conn)
+	if err != nil {
+		return nil, err
+	}
+
+	if db := matchRDBMS(instances, resourceID); db != nil {
+		return db, nil
+	}
+
+	return nil, errors.New("rdbms '" + resourceID + "' was not found " + connLabel(conn))
+}
+
+// matchRDBMS picks the instance whose identifier is resourceID, SystemId first
+// and then NameId, by the same rule as matchCluster; an empty id never matches.
+func matchRDBMS(instances []spider.RDBMSInfo, resourceID string) *spider.RDBMSInfo {
+	if resourceID == "" {
+		return nil
+	}
+
+	for i := range instances {
+		iid := instances[i].IId
+		if iid.SystemId == resourceID || (iid.NameId != "" && iid.NameId == resourceID) {
+			return &instances[i]
+		}
+	}
+
+	return nil
+}
+
+// collectRDBMS looks the instance up and attaches its spec size. The spec
+// lookup is best-effort: without it the refined model leaves CPU and memory
+// empty for cm-beetle to fill in, which is still a usable result, whereas
+// failing here would lose the engine, version and storage as well.
+func collectRDBMS(conn spider.Conn, resourceID string) (model.RDBMSInfo, error) {
+	db, err := findRDBMSByID(conn, resourceID)
+	if err != nil {
+		return model.RDBMSInfo{}, err
+	}
+
+	payload := model.RDBMSInfo{RDBMS: db}
+	spec, err := spider.GetDBSpec(conn, db.DBEngine, db.DBSpec)
+	if err != nil {
+		logger.Println(logger.WARN, true, "CSP: failed to get db spec '"+db.DBSpec+"' "+connLabel(conn)+": "+err.Error())
+	} else {
+		payload.DBSpec = spec
+	}
+
+	return payload, nil
+}
+
 // findBucketByName looks an object storage bucket up the same way clusters are
 // looked up: the listing goes to the CSP, so existence is decided there.
 //
@@ -346,6 +422,9 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 		case "object_storage":
 			_, err := findBucketByName(conn, ci.ResourceID)
 			return err
+		case serverCommon.ResourceTypeRDBMS:
+			_, err := findRDBMSByID(conn, ci.ResourceID)
+			return err
 		default:
 			return errors.New("unsupported resource_type: " + ci.ResourceType)
 		}
@@ -381,6 +460,12 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error
 				return err
 			}
 			return upsertSavedData(ci.ID, bucketToData(b))
+		case serverCommon.ResourceTypeRDBMS:
+			payload, err := collectRDBMS(conn, ci.ResourceID)
+			if err != nil {
+				return err
+			}
+			return upsertSavedRDBMS(ci.ID, payload)
 		default:
 			return errors.New("unsupported resource_type: " + ci.ResourceType)
 		}

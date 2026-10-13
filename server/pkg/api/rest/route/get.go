@@ -18,4 +18,6 @@ func RegisterGet(e *echo.Echo) {
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/helm", controller.GetHelmInfoSourceGroup)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/data", controller.GetDataInfo)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/data", controller.GetDataInfoSourceGroup)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/rdbms", controller.GetRDBMSInfo)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/rdbms", controller.GetRDBMSInfoSourceGroup)
 }

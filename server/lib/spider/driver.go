@@ -6,4 +6,6 @@ type DriverCapability struct {
 	NLBHandler     bool `json:"NLBHandler"`
 	ClusterHandler bool `json:"ClusterHandler"`
 	VMHandler      bool `json:"VMHandler"`
+	RDBMSHandler   bool `json:"RDBMSHandler"`
+	DBSpecHandler  bool `json:"DBSpecHandler"`
 }
