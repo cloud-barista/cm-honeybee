@@ -682,6 +682,93 @@ definitions:
       host:
         $ref: '#/definitions/network.Host'
     type: object
+  github_com_cloud-barista_cm-honeybee_server_lib_spider.DBSpecInfo:
+    properties:
+      DBEngine:
+        type: string
+      MemSizeMiB:
+        description: '"-1" when the CSP''s unit cannot be confirmed'
+        type: string
+      Name:
+        type: string
+      Region:
+        type: string
+      VCpu:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.VCpuInfo'
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_lib_spider.IID:
+    properties:
+      NameId:
+        type: string
+      SystemId:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_lib_spider.KeyValue:
+    properties:
+      Key:
+        type: string
+      Value:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_lib_spider.RDBMSInfo:
+    properties:
+      BackupRetentionDays:
+        type: integer
+      CreatedTime:
+        type: string
+      DBEngine:
+        description: mysql | mariadb | postgresql - AWS reports its own "postgres"
+        type: string
+      DBEngineVersion:
+        type: string
+      DBInstanceType:
+        description: meaning differs per CSP; not a role
+        type: string
+      DBSpec:
+        description: CSP instance class/type, e.g. db.t3.medium
+        type: string
+      DeletionProtection:
+        type: boolean
+      Encryption:
+        type: boolean
+      Endpoint:
+        description: '"host:port" on most drivers, host only on some'
+        type: string
+      HighAvailability:
+        type: boolean
+      IId:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.IID'
+      Iops:
+        type: string
+      KeyValueList:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.KeyValue'
+        type: array
+      MasterUserName:
+        type: string
+      PublicAccess:
+        type: boolean
+      Status:
+        type: string
+      StorageSize:
+        description: GB
+        type: string
+      StorageType:
+        type: string
+      TagList:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.KeyValue'
+        type: array
+      VpcIID:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.IID'
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_lib_spider.VCpuInfo:
+    properties:
+      ClockGHz:
+        type: string
+      Count:
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse:
     properties:
       error:
@@ -790,7 +877,7 @@ definitions:
       resource_type:
         description: |-
           CSP fields — required when parent SourceGroup.Type == "csp".
-          ResourceType: "vm" | "k8s" | "object_storage".
+          ResourceType: "vm" | "k8s" | "object_storage" | "nlb" | "rdbms".
         type: string
       source_group_id:
         type: string
@@ -938,6 +1025,36 @@ definitions:
     required:
     - servers
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InstalledRDBMSInfo:
+    properties:
+      container:
+        type: string
+      engine:
+        type: string
+      executable_path:
+        type: string
+      image:
+        type: string
+      package:
+        type: string
+      pid:
+        type: integer
+      ports:
+        description: |-
+          Ports are the ports the database listens on; empty when it is stopped or
+          the ports could not be read.
+        items:
+          type: integer
+        type: array
+      source:
+        type: string
+      syft:
+        $ref: '#/definitions/software.SyftMatch'
+      version:
+        type: string
+      version_raw:
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue:
     properties:
       key:
@@ -987,6 +1104,24 @@ definitions:
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes'
         type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfo:
+    properties:
+      db_spec:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.DBSpecInfo'
+      installed:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InstalledRDBMSInfo'
+      rdbms:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.RDBMSInfo'
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfoList:
+    properties:
+      servers:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfo'
+        type: array
+    required:
+    - servers
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RegisterTargetInfoReq:
     properties:
@@ -3772,6 +3907,66 @@ definitions:
     - 524288
     - 2401763328
     - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
     format: int32
     type: integer
     x-enum-comments:
@@ -3805,6 +4000,36 @@ definitions:
     - '?: non-regular file; nothing else is known about this file'
     - ""
     - Unix permission bits, 0o777
+    - 'd: is a directory'
+    - 'a: append-only'
+    - 'l: exclusive use'
+    - 'T: temporary file; Plan 9 only'
+    - 'L: symbolic link'
+    - 'D: device file'
+    - 'p: named pipe (FIFO)'
+    - 'S: Unix domain socket'
+    - 'u: setuid'
+    - 'g: setgid'
+    - 'c: Unix character device, when ModeDevice is set'
+    - 't: sticky'
+    - '?: non-regular file; nothing else is known about this file'
+    - ""
+    - Unix permission bits, 0o777
+    - 'd: is a directory'
+    - 'a: append-only'
+    - 'l: exclusive use'
+    - 'T: temporary file; Plan 9 only'
+    - 'L: symbolic link'
+    - 'D: device file'
+    - 'p: named pipe (FIFO)'
+    - 'S: Unix domain socket'
+    - 'u: setuid'
+    - 'g: setgid'
+    - 'c: Unix character device, when ModeDevice is set'
+    - 't: sticky'
+    - '?: non-regular file; nothing else is known about this file'
+    - ""
+    - Unix permission bits, 0o777
     x-enum-varnames:
     - ModeDir
     - ModeAppend
@@ -3821,6 +4046,244 @@ definitions:
     - ModeIrregular
     - ModeType
     - ModePerm
+    - ModeDir
+    - ModeAppend
+    - ModeExclusive
+    - ModeTemporary
+    - ModeSymlink
+    - ModeDevice
+    - ModeNamedPipe
+    - ModeSocket
+    - ModeSetuid
+    - ModeSetgid
+    - ModeCharDevice
+    - ModeSticky
+    - ModeIrregular
+    - ModeType
+    - ModePerm
+    - ModeDir
+    - ModeAppend
+    - ModeExclusive
+    - ModeTemporary
+    - ModeSymlink
+    - ModeDevice
+    - ModeNamedPipe
+    - ModeSocket
+    - ModeSetuid
+    - ModeSetgid
+    - ModeCharDevice
+    - ModeSticky
+    - ModeIrregular
+    - ModeType
+    - ModePerm
+  rdbmsmodel.CloudProperty:
+    properties:
+      csp:
+        description: Cloud service provider (e.g., aws, azure, gcp, ncp, alibaba,
+          etc.)
+        example: aws
+        type: string
+      region:
+        description: Region identifier
+        example: ap-northeast-2
+        type: string
+      zone:
+        description: Optional Zone identifier
+        example: ap-northeast-2a
+        type: string
+    type: object
+  rdbmsmodel.CpuProperty:
+    properties:
+      architecture:
+        example: x86_64
+        type: string
+      cores:
+        description: Number of physical cores per CPU
+        example: 2
+        type: integer
+      cpus:
+        description: Number of physical CPUs (sockets)
+        example: 1
+        type: integer
+      maxSpeed:
+        description: Maximum speed in GHz
+        example: 3.6
+        type: number
+      model:
+        example: Intel(R) Xeon(R) Gold 6140 CPU @ 2.30GHz
+        type: string
+      threads:
+        description: Number of logical CPUs (threads) per CPU
+        example: 2
+        type: integer
+      vendor:
+        example: GenuineIntel
+        type: string
+    required:
+    - cores
+    - cpus
+    - threads
+    type: object
+  rdbmsmodel.DBEngineProperty:
+    properties:
+      engine:
+        description: '"mysql", "mariadb", "postgresql"'
+        example: mysql
+        type: string
+      engineVersion:
+        description: e.g. "8.0", "10.5"
+        example: "8.0"
+        type: string
+      port:
+        description: 'DB port (default: 3306)'
+        example: 3306
+        type: integer
+      role:
+        description: '"primary" (writer), "replica" (reader), "standalone"'
+        example: primary
+        type: string
+    required:
+    - engine
+    - engineVersion
+    type: object
+  rdbmsmodel.DBNodeProperty:
+    properties:
+      cpu:
+        $ref: '#/definitions/rdbmsmodel.CpuProperty'
+      dataDisks:
+        items:
+          $ref: '#/definitions/rdbmsmodel.DiskProperty'
+        type: array
+      hostname:
+        example: db-node-01
+        type: string
+      machineId:
+        example: node-550e8400-e29b-41d4-a716-446655440000
+        type: string
+      memory:
+        $ref: '#/definitions/rdbmsmodel.MemoryProperty'
+      rootDisk:
+        $ref: '#/definitions/rdbmsmodel.DiskProperty'
+    required:
+    - cpu
+    - memory
+    type: object
+  rdbmsmodel.DiskProperty:
+    properties:
+      available:
+        description: Unit GB
+        type: integer
+      label:
+        example: /
+        type: string
+      totalSize:
+        description: Unit GB
+        example: 100
+        type: integer
+      type:
+        description: SSD, HDD
+        example: SSD
+        type: string
+      used:
+        description: Unit GB
+        type: integer
+    required:
+    - totalSize
+    - type
+    type: object
+  rdbmsmodel.InnerDatabaseProperty:
+    properties:
+      characterSet:
+        example: utf8mb4
+        type: string
+      collation:
+        example: utf8mb4_unicode_ci
+        type: string
+      databaseName:
+        example: sampledb
+        type: string
+      rowCount:
+        example: 150000
+        type: integer
+      sizeMb:
+        example: 512.5
+        type: number
+      tableCount:
+        example: 24
+        type: integer
+    required:
+    - databaseName
+    type: object
+  rdbmsmodel.MemoryProperty:
+    properties:
+      available:
+        description: Unit GiB
+        type: integer
+      totalSize:
+        description: Unit GiB
+        example: 4
+        type: integer
+      type:
+        example: DDR4
+        type: string
+      used:
+        description: Unit GiB
+        type: integer
+    required:
+    - totalSize
+    type: object
+  rdbmsmodel.SourceRDBMS:
+    properties:
+      description:
+        type: string
+      sourceCloud:
+        $ref: '#/definitions/rdbmsmodel.CloudProperty'
+      sourceRDBMSInstances:
+        items:
+          $ref: '#/definitions/rdbmsmodel.SourceRDBMSProperty'
+        minItems: 1
+        type: array
+    required:
+    - sourceRDBMSInstances
+    type: object
+  rdbmsmodel.SourceRDBMSModel:
+    properties:
+      sourceRDBMSModel:
+        $ref: '#/definitions/rdbmsmodel.SourceRDBMS'
+    required:
+    - sourceRDBMSModel
+    type: object
+  rdbmsmodel.SourceRDBMSProperty:
+    properties:
+      dbEngine:
+        allOf:
+        - $ref: '#/definitions/rdbmsmodel.DBEngineProperty'
+        description: DBEngine represents the database engine software (type, version,
+          port, role, HA).
+      dbNode:
+        allOf:
+        - $ref: '#/definitions/rdbmsmodel.DBNodeProperty'
+        description: DBNode represents the underlying host/server infrastructure specs
+          (CPU, Memory, Disks).
+      description:
+        description: Description is an optional free-form note or business purpose.
+        example: Production billing service master database
+        type: string
+      displayName:
+        description: DisplayName is an optional human-friendly alias or cloud DB identifier
+          (e.g. "billing-db").
+        example: billing-db
+        type: string
+      innerDatabases:
+        description: InnerDatabases lists the logical tenant databases residing inside
+          this RDBMS instance.
+        items:
+          $ref: '#/definitions/rdbmsmodel.InnerDatabaseProperty'
+        type: array
+    required:
+    - dbEngine
+    - dbNode
+    type: object
   software.Binary:
     properties:
       cmdline:
@@ -3911,6 +4374,12 @@ definitions:
         type: array
       version:
         type: string
+      version_raw:
+        description: |-
+          VersionRaw is the raw output of the version command Version was parsed
+          from. It is kept so consumers can tell apart products the version regex
+          cannot (e.g. MariaDB reports a MySQL-compatible version).
+        type: string
       wine_prefix:
         type: string
       working_directory:
@@ -3992,6 +4461,30 @@ definitions:
       version:
         type: string
     type: object
+  software.Listener:
+    properties:
+      executable_path:
+        type: string
+      name:
+        type: string
+      package:
+        description: Package is the OS package owning ExecutablePath; empty when no
+          package owns it.
+        type: string
+      pid:
+        type: integer
+      ports:
+        description: Ports are the local ports of the process's LISTEN sockets, sorted
+          and unique.
+        items:
+          type: integer
+        type: array
+      syft:
+        allOf:
+        - $ref: '#/definitions/software.SyftMatch'
+        description: Syft is what syft's binary classifier recognized ExecutablePath
+          as, if anything.
+    type: object
   software.RPM:
     properties:
       arch:
@@ -4065,6 +4558,10 @@ definitions:
         items:
           $ref: '#/definitions/software.Binary'
         type: array
+      listeners:
+        items:
+          $ref: '#/definitions/software.Listener'
+        type: array
       podman:
         items:
           $ref: '#/definitions/software.Container'
@@ -4077,6 +4574,13 @@ definitions:
         items:
           $ref: '#/definitions/software.Snap'
         type: array
+    type: object
+  software.SyftMatch:
+    properties:
+      name:
+        type: string
+      version:
+        type: string
     type: object
   softwaremodel.Binary:
     properties:
@@ -4569,8 +5073,16 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
     - 1
     - 1000
     - 1000000
@@ -4588,8 +5100,16 @@ definitions:
     - Second
     - Minute
     - Hour
-    - minDuration
-    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -5812,6 +6332,80 @@ paths:
       summary: Get Kubernetes Information
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/rdbms:
+    get:
+      consumes:
+      - application/json
+      description: Get the database information of the connection information. A CSP
+        managed database (resource_type rdbms) gives what the CSP driver reported;
+        a VM gives the databases installed on it.
+      operationId: get-rdbms-info
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the rdbms.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the rdbms.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get RDBMS Information
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/rdbms/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined database information of the connection information,
+        in the source model cm-beetle recommends from. A value the source did not
+        report is left empty for cm-beetle to fill in.
+      operationId: get-rdbms-info-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the rdbms.
+          schema:
+            $ref: '#/definitions/rdbmsmodel.SourceRDBMSModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the rdbms.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined RDBMS Information
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/connection_info/{connId}/refresh:
     put:
       consumes:
@@ -5952,8 +6546,8 @@ paths:
       consumes:
       - application/json
       description: Lists VMs / K8s clusters / object-storage buckets / network load
-        balancers reachable through the CSP connection bound to this SourceGroup.
-        Used by the UI to populate ConnectionInfo selection.
+        balancers / managed databases reachable through the CSP connection bound to
+        this SourceGroup. Used by the UI to populate ConnectionInfo selection.
       operationId: discover-source-group-resources
       parameters:
       - description: ID of the SourceGroup (must be type=csp)
@@ -5961,7 +6555,8 @@ paths:
         name: sgId
         required: true
         type: string
-      - description: Resource type to discover (vm | k8s | object_storage | nlb)
+      - description: Resource type to discover (vm | k8s | object_storage | nlb |
+          rdbms)
         in: query
         name: resource_type
         required: true
@@ -6272,6 +6867,70 @@ paths:
       summary: Get Kubernetes Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/rdbms:
+    get:
+      consumes:
+      - application/json
+      description: Get the database information for all connections in the source
+        group. Connections that cannot hold a database or have not been collected
+        are skipped.
+      operationId: get-rdbms-info-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the rdbms.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the rdbms.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get RDBMS Information Source Group
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/rdbms/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined database information for all connections in the
+        source group, in the source model cm-beetle recommends from. Connections that
+        cannot hold a database or have not been collected are skipped.
+      operationId: get-rdbms-info-source-group-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the rdbms.
+          schema:
+            $ref: '#/definitions/rdbmsmodel.SourceRDBMSModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the rdbms.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined RDBMS Information Source Group
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/refresh:
     put:
       consumes:

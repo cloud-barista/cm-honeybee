@@ -1525,6 +1525,110 @@
                 }
             }
         },
+        "/source_group/{sgId}/connection_info/{connId}/rdbms": {
+            "get": {
+                "description": "Get the database information of the connection information. A CSP managed database (resource_type rdbms) gives what the CSP driver reported; a VM gives the databases installed on it.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get RDBMS Information",
+                "operationId": "get-rdbms-info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the rdbms.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfoList"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the rdbms.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/rdbms/refined": {
+            "get": {
+                "description": "Get the refined database information of the connection information, in the source model cm-beetle recommends from. A value the source did not report is left empty for cm-beetle to fill in.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined RDBMS Information",
+                "operationId": "get-rdbms-info-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the rdbms.",
+                        "schema": {
+                            "$ref": "#/definitions/rdbmsmodel.SourceRDBMSModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the rdbms.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/connection_info/{connId}/refresh": {
             "put": {
                 "description": "Refresh the connection info status.",
@@ -1728,7 +1832,7 @@
         },
         "/source_group/{sgId}/discover": {
             "get": {
-                "description": "Lists VMs / K8s clusters / object-storage buckets / network load balancers reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.",
+                "description": "Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1750,7 +1854,7 @@
                     },
                     {
                         "type": "string",
-                        "description": "Resource type to discover (vm | k8s | object_storage | nlb)",
+                        "description": "Resource type to discover (vm | k8s | object_storage | nlb | rdbms)",
                         "name": "resource_type",
                         "in": "query",
                         "required": true
@@ -2197,6 +2301,96 @@
                     },
                     "500": {
                         "description": "Failed to get information of the kubernetes.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/rdbms": {
+            "get": {
+                "description": "Get the database information for all connections in the source group. Connections that cannot hold a database or have not been collected are skipped.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get RDBMS Information Source Group",
+                "operationId": "get-rdbms-info-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the rdbms.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfoList"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the rdbms.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/rdbms/refined": {
+            "get": {
+                "description": "Get the refined database information for all connections in the source group, in the source model cm-beetle recommends from. Connections that cannot hold a database or have not been collected are skipped.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined RDBMS Information Source Group",
+                "operationId": "get-rdbms-info-source-group-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the rdbms.",
+                        "schema": {
+                            "$ref": "#/definitions/rdbmsmodel.SourceRDBMSModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the rdbms.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -3367,6 +3561,136 @@
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_lib_spider.DBSpecInfo": {
+            "type": "object",
+            "properties": {
+                "DBEngine": {
+                    "type": "string"
+                },
+                "MemSizeMiB": {
+                    "description": "\"-1\" when the CSP's unit cannot be confirmed",
+                    "type": "string"
+                },
+                "Name": {
+                    "type": "string"
+                },
+                "Region": {
+                    "type": "string"
+                },
+                "VCpu": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.VCpuInfo"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_lib_spider.IID": {
+            "type": "object",
+            "properties": {
+                "NameId": {
+                    "type": "string"
+                },
+                "SystemId": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_lib_spider.KeyValue": {
+            "type": "object",
+            "properties": {
+                "Key": {
+                    "type": "string"
+                },
+                "Value": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_lib_spider.RDBMSInfo": {
+            "type": "object",
+            "properties": {
+                "BackupRetentionDays": {
+                    "type": "integer"
+                },
+                "CreatedTime": {
+                    "type": "string"
+                },
+                "DBEngine": {
+                    "description": "mysql | mariadb | postgresql - AWS reports its own \"postgres\"",
+                    "type": "string"
+                },
+                "DBEngineVersion": {
+                    "type": "string"
+                },
+                "DBInstanceType": {
+                    "description": "meaning differs per CSP; not a role",
+                    "type": "string"
+                },
+                "DBSpec": {
+                    "description": "CSP instance class/type, e.g. db.t3.medium",
+                    "type": "string"
+                },
+                "DeletionProtection": {
+                    "type": "boolean"
+                },
+                "Encryption": {
+                    "type": "boolean"
+                },
+                "Endpoint": {
+                    "description": "\"host:port\" on most drivers, host only on some",
+                    "type": "string"
+                },
+                "HighAvailability": {
+                    "type": "boolean"
+                },
+                "IId": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.IID"
+                },
+                "Iops": {
+                    "type": "string"
+                },
+                "KeyValueList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.KeyValue"
+                    }
+                },
+                "MasterUserName": {
+                    "type": "string"
+                },
+                "PublicAccess": {
+                    "type": "boolean"
+                },
+                "Status": {
+                    "type": "string"
+                },
+                "StorageSize": {
+                    "description": "GB",
+                    "type": "string"
+                },
+                "StorageType": {
+                    "type": "string"
+                },
+                "TagList": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.KeyValue"
+                    }
+                },
+                "VpcIID": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.IID"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_lib_spider.VCpuInfo": {
+            "type": "object",
+            "properties": {
+                "ClockGHz": {
+                    "type": "string"
+                },
+                "Count": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -3521,7 +3845,7 @@
                     "type": "string"
                 },
                 "resource_type": {
-                    "description": "CSP fields — required when parent SourceGroup.Type == \"csp\".\nResourceType: \"vm\" | \"k8s\" | \"object_storage\".",
+                    "description": "CSP fields — required when parent SourceGroup.Type == \"csp\".\nResourceType: \"vm\" | \"k8s\" | \"object_storage\" | \"nlb\" | \"rdbms\".",
                     "type": "string"
                 },
                 "source_group_id": {
@@ -3725,6 +4049,48 @@
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InstalledRDBMSInfo": {
+            "type": "object",
+            "properties": {
+                "container": {
+                    "type": "string"
+                },
+                "engine": {
+                    "type": "string"
+                },
+                "executable_path": {
+                    "type": "string"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "package": {
+                    "type": "string"
+                },
+                "pid": {
+                    "type": "integer"
+                },
+                "ports": {
+                    "description": "Ports are the ports the database listens on; empty when it is stopped or\nthe ports could not be read.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "source": {
+                    "type": "string"
+                },
+                "syft": {
+                    "$ref": "#/definitions/software.SyftMatch"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "version_raw": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue": {
             "type": "object",
             "properties": {
@@ -3799,6 +4165,34 @@
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfo": {
+            "type": "object",
+            "properties": {
+                "db_spec": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.DBSpecInfo"
+                },
+                "installed": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InstalledRDBMSInfo"
+                },
+                "rdbms": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_lib_spider.RDBMSInfo"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfoList": {
+            "type": "object",
+            "required": [
+                "servers"
+            ],
+            "properties": {
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfo"
                     }
                 }
             }
@@ -7556,6 +7950,66 @@
                 1048576,
                 524288,
                 2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
                 511
             ],
             "x-enum-comments": {
@@ -7589,6 +8043,36 @@
                 "t: sticky",
                 "?: non-regular file; nothing else is known about this file",
                 "",
+                "Unix permission bits, 0o777",
+                "d: is a directory",
+                "a: append-only",
+                "l: exclusive use",
+                "T: temporary file; Plan 9 only",
+                "L: symbolic link",
+                "D: device file",
+                "p: named pipe (FIFO)",
+                "S: Unix domain socket",
+                "u: setuid",
+                "g: setgid",
+                "c: Unix character device, when ModeDevice is set",
+                "t: sticky",
+                "?: non-regular file; nothing else is known about this file",
+                "",
+                "Unix permission bits, 0o777",
+                "d: is a directory",
+                "a: append-only",
+                "l: exclusive use",
+                "T: temporary file; Plan 9 only",
+                "L: symbolic link",
+                "D: device file",
+                "p: named pipe (FIFO)",
+                "S: Unix domain socket",
+                "u: setuid",
+                "g: setgid",
+                "c: Unix character device, when ModeDevice is set",
+                "t: sticky",
+                "?: non-regular file; nothing else is known about this file",
+                "",
                 "Unix permission bits, 0o777"
             ],
             "x-enum-varnames": [
@@ -7606,8 +8090,323 @@
                 "ModeSticky",
                 "ModeIrregular",
                 "ModeType",
+                "ModePerm",
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm",
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
                 "ModePerm"
             ]
+        },
+        "rdbmsmodel.CloudProperty": {
+            "type": "object",
+            "properties": {
+                "csp": {
+                    "description": "Cloud service provider (e.g., aws, azure, gcp, ncp, alibaba, etc.)",
+                    "type": "string",
+                    "example": "aws"
+                },
+                "region": {
+                    "description": "Region identifier",
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                },
+                "zone": {
+                    "description": "Optional Zone identifier",
+                    "type": "string",
+                    "example": "ap-northeast-2a"
+                }
+            }
+        },
+        "rdbmsmodel.CpuProperty": {
+            "type": "object",
+            "required": [
+                "cores",
+                "cpus",
+                "threads"
+            ],
+            "properties": {
+                "architecture": {
+                    "type": "string",
+                    "example": "x86_64"
+                },
+                "cores": {
+                    "description": "Number of physical cores per CPU",
+                    "type": "integer",
+                    "example": 2
+                },
+                "cpus": {
+                    "description": "Number of physical CPUs (sockets)",
+                    "type": "integer",
+                    "example": 1
+                },
+                "maxSpeed": {
+                    "description": "Maximum speed in GHz",
+                    "type": "number",
+                    "example": 3.6
+                },
+                "model": {
+                    "type": "string",
+                    "example": "Intel(R) Xeon(R) Gold 6140 CPU @ 2.30GHz"
+                },
+                "threads": {
+                    "description": "Number of logical CPUs (threads) per CPU",
+                    "type": "integer",
+                    "example": 2
+                },
+                "vendor": {
+                    "type": "string",
+                    "example": "GenuineIntel"
+                }
+            }
+        },
+        "rdbmsmodel.DBEngineProperty": {
+            "type": "object",
+            "required": [
+                "engine",
+                "engineVersion"
+            ],
+            "properties": {
+                "engine": {
+                    "description": "\"mysql\", \"mariadb\", \"postgresql\"",
+                    "type": "string",
+                    "example": "mysql"
+                },
+                "engineVersion": {
+                    "description": "e.g. \"8.0\", \"10.5\"",
+                    "type": "string",
+                    "example": "8.0"
+                },
+                "port": {
+                    "description": "DB port (default: 3306)",
+                    "type": "integer",
+                    "example": 3306
+                },
+                "role": {
+                    "description": "\"primary\" (writer), \"replica\" (reader), \"standalone\"",
+                    "type": "string",
+                    "example": "primary"
+                }
+            }
+        },
+        "rdbmsmodel.DBNodeProperty": {
+            "type": "object",
+            "required": [
+                "cpu",
+                "memory"
+            ],
+            "properties": {
+                "cpu": {
+                    "$ref": "#/definitions/rdbmsmodel.CpuProperty"
+                },
+                "dataDisks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rdbmsmodel.DiskProperty"
+                    }
+                },
+                "hostname": {
+                    "type": "string",
+                    "example": "db-node-01"
+                },
+                "machineId": {
+                    "type": "string",
+                    "example": "node-550e8400-e29b-41d4-a716-446655440000"
+                },
+                "memory": {
+                    "$ref": "#/definitions/rdbmsmodel.MemoryProperty"
+                },
+                "rootDisk": {
+                    "$ref": "#/definitions/rdbmsmodel.DiskProperty"
+                }
+            }
+        },
+        "rdbmsmodel.DiskProperty": {
+            "type": "object",
+            "required": [
+                "totalSize",
+                "type"
+            ],
+            "properties": {
+                "available": {
+                    "description": "Unit GB",
+                    "type": "integer"
+                },
+                "label": {
+                    "type": "string",
+                    "example": "/"
+                },
+                "totalSize": {
+                    "description": "Unit GB",
+                    "type": "integer",
+                    "example": 100
+                },
+                "type": {
+                    "description": "SSD, HDD",
+                    "type": "string",
+                    "example": "SSD"
+                },
+                "used": {
+                    "description": "Unit GB",
+                    "type": "integer"
+                }
+            }
+        },
+        "rdbmsmodel.InnerDatabaseProperty": {
+            "type": "object",
+            "required": [
+                "databaseName"
+            ],
+            "properties": {
+                "characterSet": {
+                    "type": "string",
+                    "example": "utf8mb4"
+                },
+                "collation": {
+                    "type": "string",
+                    "example": "utf8mb4_unicode_ci"
+                },
+                "databaseName": {
+                    "type": "string",
+                    "example": "sampledb"
+                },
+                "rowCount": {
+                    "type": "integer",
+                    "example": 150000
+                },
+                "sizeMb": {
+                    "type": "number",
+                    "example": 512.5
+                },
+                "tableCount": {
+                    "type": "integer",
+                    "example": 24
+                }
+            }
+        },
+        "rdbmsmodel.MemoryProperty": {
+            "type": "object",
+            "required": [
+                "totalSize"
+            ],
+            "properties": {
+                "available": {
+                    "description": "Unit GiB",
+                    "type": "integer"
+                },
+                "totalSize": {
+                    "description": "Unit GiB",
+                    "type": "integer",
+                    "example": 4
+                },
+                "type": {
+                    "type": "string",
+                    "example": "DDR4"
+                },
+                "used": {
+                    "description": "Unit GiB",
+                    "type": "integer"
+                }
+            }
+        },
+        "rdbmsmodel.SourceRDBMS": {
+            "type": "object",
+            "required": [
+                "sourceRDBMSInstances"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "sourceCloud": {
+                    "$ref": "#/definitions/rdbmsmodel.CloudProperty"
+                },
+                "sourceRDBMSInstances": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/rdbmsmodel.SourceRDBMSProperty"
+                    }
+                }
+            }
+        },
+        "rdbmsmodel.SourceRDBMSModel": {
+            "type": "object",
+            "required": [
+                "sourceRDBMSModel"
+            ],
+            "properties": {
+                "sourceRDBMSModel": {
+                    "$ref": "#/definitions/rdbmsmodel.SourceRDBMS"
+                }
+            }
+        },
+        "rdbmsmodel.SourceRDBMSProperty": {
+            "type": "object",
+            "required": [
+                "dbEngine",
+                "dbNode"
+            ],
+            "properties": {
+                "dbEngine": {
+                    "description": "DBEngine represents the database engine software (type, version, port, role, HA).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/rdbmsmodel.DBEngineProperty"
+                        }
+                    ]
+                },
+                "dbNode": {
+                    "description": "DBNode represents the underlying host/server infrastructure specs (CPU, Memory, Disks).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/rdbmsmodel.DBNodeProperty"
+                        }
+                    ]
+                },
+                "description": {
+                    "description": "Description is an optional free-form note or business purpose.",
+                    "type": "string",
+                    "example": "Production billing service master database"
+                },
+                "displayName": {
+                    "description": "DisplayName is an optional human-friendly alias or cloud DB identifier (e.g. \"billing-db\").",
+                    "type": "string",
+                    "example": "billing-db"
+                },
+                "innerDatabases": {
+                    "description": "InnerDatabases lists the logical tenant databases residing inside this RDBMS instance.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/rdbmsmodel.InnerDatabaseProperty"
+                    }
+                }
+            }
         },
         "software.Binary": {
             "type": "object",
@@ -7732,6 +8531,10 @@
                 "version": {
                     "type": "string"
                 },
+                "version_raw": {
+                    "description": "VersionRaw is the raw output of the version command Version was parsed\nfrom. It is kept so consumers can tell apart products the version regex\ncannot (e.g. MariaDB reports a MySQL-compatible version).",
+                    "type": "string"
+                },
                 "wine_prefix": {
                     "type": "string"
                 },
@@ -7854,6 +8657,39 @@
                 }
             }
         },
+        "software.Listener": {
+            "type": "object",
+            "properties": {
+                "executable_path": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "package": {
+                    "description": "Package is the OS package owning ExecutablePath; empty when no package owns it.",
+                    "type": "string"
+                },
+                "pid": {
+                    "type": "integer"
+                },
+                "ports": {
+                    "description": "Ports are the local ports of the process's LISTEN sockets, sorted and unique.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "syft": {
+                    "description": "Syft is what syft's binary classifier recognized ExecutablePath as, if anything.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/software.SyftMatch"
+                        }
+                    ]
+                }
+            }
+        },
         "software.RPM": {
             "type": "object",
             "properties": {
@@ -7962,6 +8798,12 @@
                         "$ref": "#/definitions/software.Binary"
                     }
                 },
+                "listeners": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/software.Listener"
+                    }
+                },
                 "podman": {
                     "type": "array",
                     "items": {
@@ -7979,6 +8821,17 @@
                     "items": {
                         "$ref": "#/definitions/software.Snap"
                     }
+                }
+            }
+        },
+        "software.SyftMatch": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
                 }
             }
         },
@@ -8661,8 +9514,16 @@
                 1000000000,
                 60000000000,
                 3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
                 1,
                 1000,
                 1000000,
@@ -8679,8 +9540,16 @@
                 "Second",
                 "Minute",
                 "Hour",
-                "minDuration",
-                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
