@@ -10,11 +10,17 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 const versionDetectTimeout = 5 * time.Second
 
 var versionFlags = []string{"--version", "-version", "-v", "version"}
+
+// maxVersionRawLen caps the version command output kept as VersionRaw. A version
+// banner is a few lines; anything longer is a misbehaving program (e.g. one that
+// ignored the flag and printed its usage) and is not worth shipping in full.
+const maxVersionRawLen = 4 * 1024
 
 // versionRegex matches a dotted version token (at least major.minor), e.g.
 // "10.1.34", "24.0.1". Bare single integers are intentionally not matched to
@@ -31,16 +37,19 @@ var versionRegex = regexp.MustCompile(`[0-9]+\.[0-9]+(\.[0-9]+)*`)
 //     other Java apps fall back to the JDK version.
 //   - Native binaries use exec (`--version`) then an install-path token.
 //
+// It also returns the raw version command output the version was parsed from,
+// or "" when the version came from somewhere else (files, install path).
+//
 // Returns "" when no version could be determined.
-func detectBinaryVersion(exePath string, cmdSlice []string, environ []string) string {
+func detectBinaryVersion(exePath string, cmdSlice []string, environ []string) (version, raw string) {
 	if isJavaProcess(exePath, cmdSlice) {
 		return detectJavaAppVersion(exePath, cmdSlice, environ)
 	}
 
-	if v := versionByExec(exePath); v != "" {
-		return v
+	if v, out := versionByExec(exePath); v != "" {
+		return v, out
 	}
-	return versionFromPath(filepath.Dir(exePath))
+	return versionFromPath(filepath.Dir(exePath)), ""
 }
 
 // isJavaProcess reports whether the process runs on the JVM (executable or argv[0]
@@ -64,23 +73,24 @@ func isJavaBinary(p string) bool {
 }
 
 // detectJavaAppVersion resolves the version of a JVM-hosted application: Tomcat if
-// catalina.home is present, otherwise the backing JDK version.
-func detectJavaAppVersion(exePath string, cmdSlice []string, environ []string) string {
+// catalina.home is present, otherwise the backing JDK version. raw is set only
+// when the version came from running the JVM, as in detectBinaryVersion.
+func detectJavaAppVersion(exePath string, cmdSlice []string, environ []string) (version, raw string) {
 	if home := catalinaHomeFrom(cmdSlice); home != "" {
 		if v := tomcatVersion(home); v != "" {
-			return v
+			return v, ""
 		}
 		if v := versionFromPath(home); v != "" {
-			return v
+			return v, ""
 		}
 	}
 
 	if javaHome := javaHomeFrom(environ, exePath); javaHome != "" {
 		if v := jdkVersion(javaHome); v != "" {
-			return v
+			return v, ""
 		}
 		if v := versionFromPath(javaHome); v != "" {
-			return v
+			return v, ""
 		}
 	}
 
@@ -159,9 +169,12 @@ func jdkVersion(javaHome string) string {
 // bounded by a timeout; if the process does not finish in time it is force-killed
 // (CommandContext sends SIGKILL on timeout, and WaitDelay closes inherited pipes so
 // a lingering child cannot block us).
-func versionByExec(exePath string) string {
+//
+// Besides the parsed version it returns the output of the flag that produced it
+// (see versionRawOutput), so callers keep the text without running it again.
+func versionByExec(exePath string) (version, raw string) {
 	if exePath == "" {
-		return ""
+		return "", ""
 	}
 
 	for _, flag := range versionFlags {
@@ -172,11 +185,27 @@ func versionByExec(exePath string) string {
 		cancel()
 
 		if v := versionRegex.FindString(string(out)); v != "" {
-			return v
+			return v, versionRawOutput(out)
 		}
 	}
 
-	return ""
+	return "", ""
+}
+
+// versionRawOutput trims surrounding whitespace from a version command's output
+// and caps it at maxVersionRawLen bytes, cutting on a UTF-8 rune boundary so the
+// result stays valid text in JSON.
+func versionRawOutput(out []byte) string {
+	s := strings.TrimSpace(string(out))
+	if len(s) <= maxVersionRawLen {
+		return s
+	}
+
+	cut := maxVersionRawLen
+	for cut > 0 && !utf8.RuneStart(s[cut]) {
+		cut--
+	}
+	return s[:cut]
 }
 
 // versionFromPath parses a version token from a directory name, resolving symlinks
