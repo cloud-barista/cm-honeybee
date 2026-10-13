@@ -592,7 +592,7 @@ definitions:
         type: string
       ImageManifestDescriptor:
         allOf:
-        - $ref: '#/definitions/v1.Descriptor'
+        - $ref: '#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Descriptor'
         description: ImageManifestDescriptor is the descriptor of a platform-specific
           manifest of the image used to create the container.
       Storage:
@@ -848,7 +848,7 @@ definitions:
       Id:
         type: string
       ImageManifestDescriptor:
-        $ref: '#/definitions/v1.Descriptor'
+        $ref: '#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Descriptor'
       command:
         type: string
       created:
@@ -2194,6 +2194,12 @@ definitions:
         type: array
       version:
         type: string
+      version_raw:
+        description: |-
+          VersionRaw is the raw output of the version command Version was parsed
+          from. It is kept so consumers can tell apart products the version regex
+          cannot (e.g. MariaDB reports a MySQL-compatible version).
+        type: string
       wine_prefix:
         type: string
       working_directory:
@@ -2275,6 +2281,30 @@ definitions:
       version:
         type: string
     type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Listener:
+    properties:
+      executable_path:
+        type: string
+      name:
+        type: string
+      package:
+        description: Package is the OS package owning ExecutablePath; empty when no
+          package owns it.
+        type: string
+      pid:
+        type: integer
+      ports:
+        description: Ports are the local ports of the process's LISTEN sockets, sorted
+          and unique.
+        items:
+          type: integer
+        type: array
+      syft:
+        allOf:
+        - $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.SyftMatch'
+        description: Syft is what syft's binary classifier recognized ExecutablePath
+          as, if anything.
+    type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.RPM:
     properties:
       arch:
@@ -2348,6 +2378,10 @@ definitions:
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Binary'
         type: array
+      listeners:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Listener'
+        type: array
       podman:
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Container'
@@ -2361,12 +2395,96 @@ definitions:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Snap'
         type: array
     type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.SyftMatch:
+    properties:
+      name:
+        type: string
+      version:
+        type: string
+    type: object
+  github_com_moby_moby_api_types_image.Metadata:
+    properties:
+      lastTagTime:
+        description: LastTagTime is the date and time at which the image was last
+          tagged.
+        type: string
+    type: object
   github_com_moby_moby_api_types_storage.Storage:
     properties:
       RootFS:
         allOf:
         - $ref: '#/definitions/storage.RootFSStorage'
         description: Information about the storage used for the container's root filesystem.
+    type: object
+  github_com_opencontainers_image-spec_specs-go_v1.Descriptor:
+    properties:
+      annotations:
+        additionalProperties:
+          type: string
+        description: Annotations contains arbitrary metadata relating to the targeted
+          content.
+        type: object
+      artifactType:
+        description: ArtifactType is the IANA media type of this artifact.
+        type: string
+      data:
+        description: |-
+          Data is an embedding of the targeted content. This is encoded as a base64
+          string when marshalled to JSON (automatically, by encoding/json). If
+          present, Data can be used directly to avoid fetching the targeted content.
+        items:
+          type: integer
+        type: array
+      digest:
+        description: Digest is the digest of the targeted content.
+        type: string
+      mediaType:
+        description: MediaType is the media type of the object this schema refers
+          to.
+        type: string
+      platform:
+        allOf:
+        - $ref: '#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Platform'
+        description: |-
+          Platform describes the platform which the image in the manifest runs on.
+
+          This should only be used when referring to a manifest.
+      size:
+        description: Size specifies the size in bytes of the blob.
+        type: integer
+      urls:
+        description: URLs specifies a list of URLs from which this object MAY be downloaded
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_opencontainers_image-spec_specs-go_v1.Platform:
+    properties:
+      architecture:
+        description: |-
+          Architecture field specifies the CPU architecture, for example
+          `amd64` or `ppc64le`.
+        type: string
+      os:
+        description: OS specifies the operating system, for example `linux` or `windows`.
+        type: string
+      os.features:
+        description: |-
+          OSFeatures is an optional field specifying an array of strings,
+          each listing a required OS feature (for example on Windows `win32k`).
+        items:
+          type: string
+        type: array
+      os.version:
+        description: |-
+          OSVersion is an optional field specifying the operating system
+          version, for example on Windows `10.0.14393.1066`.
+        type: string
+      variant:
+        description: |-
+          Variant is an optional field specifying a variant of the CPU, for
+          example `v7` to specify ARMv7 when architecture is `arm`.
+        type: string
     type: object
   image.AttestationProperties:
     properties:
@@ -2429,7 +2547,7 @@ definitions:
           image manifests, because those parts of identity are image-level metadata.
       Platform:
         allOf:
-        - $ref: '#/definitions/v1.Platform'
+        - $ref: '#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Platform'
         description: |-
           Platform is the OCI platform object describing the platform of the image.
 
@@ -2454,7 +2572,7 @@ definitions:
     properties:
       Descriptor:
         allOf:
-        - $ref: '#/definitions/v1.Descriptor'
+        - $ref: '#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Descriptor'
         description: |-
           Descriptor is the OCI descriptor of the image target.
           It's only set if the daemon provides a multi-platform image store.
@@ -2526,7 +2644,7 @@ definitions:
         type: string
       metadata:
         allOf:
-        - $ref: '#/definitions/image.Metadata'
+        - $ref: '#/definitions/github_com_moby_moby_api_types_image.Metadata'
         description: |-
           Metadata of the image in the local cache.
 
@@ -2612,7 +2730,7 @@ definitions:
         type: boolean
       Descriptor:
         allOf:
-        - $ref: '#/definitions/v1.Descriptor'
+        - $ref: '#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Descriptor'
         description: |-
           Descriptor is the OCI descriptor of the image.
 
@@ -2661,13 +2779,6 @@ definitions:
               image snapshots ([Size.Content] + [ImageData.Size.Unpacked]).
             type: integer
         type: object
-    type: object
-  image.Metadata:
-    properties:
-      lastTagTime:
-        description: LastTagTime is the date and time at which the image was last
-          tagged.
-        type: string
     type: object
   image.PullIdentity:
     properties:
@@ -3078,19 +3189,9 @@ definitions:
     - 2401763328
     - 511
     - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
     - 8388608
     - 4194304
-    - 2097152
     - 1048576
-    - 524288
-    - 2401763328
     - 511
     - 2147483648
     - 1073741824
@@ -3136,6 +3237,11 @@ definitions:
     - 1048576
     - 524288
     - 2401763328
+    - 511
+    - 2147483648
+    - 8388608
+    - 4194304
+    - 1048576
     - 511
     format: int32
     type: integer
@@ -3201,19 +3307,9 @@ definitions:
     - ""
     - Unix permission bits, 0o777
     - 'd: is a directory'
-    - 'a: append-only'
-    - 'l: exclusive use'
-    - 'T: temporary file; Plan 9 only'
-    - 'L: symbolic link'
-    - 'D: device file'
-    - 'p: named pipe (FIFO)'
-    - 'S: Unix domain socket'
     - 'u: setuid'
     - 'g: setgid'
-    - 'c: Unix character device, when ModeDevice is set'
     - 't: sticky'
-    - '?: non-regular file; nothing else is known about this file'
-    - ""
     - Unix permission bits, 0o777
     x-enum-varnames:
     - ModeDir
@@ -3262,19 +3358,9 @@ definitions:
     - ModeType
     - ModePerm
     - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
     - ModeSetuid
     - ModeSetgid
-    - ModeCharDevice
     - ModeSticky
-    - ModeIrregular
-    - ModeType
     - ModePerm
   pkg_api_rest_controller.SimpleMsg:
     properties:
@@ -3326,19 +3412,78 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
+    - -9223372036854775808
+    - 9223372036854775807
     - 1
     - 1000
     - 1000000
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
     format: int64
     type: integer
     x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
     - minDuration
     - maxDuration
     - Nanosecond
@@ -3351,54 +3496,7 @@ definitions:
     - Microsecond
     - Millisecond
     - Second
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
     - Minute
-    - Hour
-  v1.Descriptor:
-    properties:
-      annotations:
-        additionalProperties:
-          type: string
-        description: Annotations contains arbitrary metadata relating to the targeted
-          content.
-        type: object
-      artifactType:
-        description: ArtifactType is the IANA media type of this artifact.
-        type: string
-      data:
-        description: |-
-          Data is an embedding of the targeted content. This is encoded as a base64
-          string when marshalled to JSON (automatically, by encoding/json). If
-          present, Data can be used directly to avoid fetching the targeted content.
-        items:
-          type: integer
-        type: array
-      digest:
-        description: Digest is the digest of the targeted content.
-        type: string
-      mediaType:
-        description: MediaType is the media type of the object this schema refers
-          to.
-        type: string
-      platform:
-        allOf:
-        - $ref: '#/definitions/v1.Platform'
-        description: |-
-          Platform describes the platform which the image in the manifest runs on.
-
-          This should only be used when referring to a manifest.
-      size:
-        description: Size specifies the size in bytes of the blob.
-        type: integer
-      urls:
-        description: URLs specifies a list of URLs from which this object MAY be downloaded
-        items:
-          type: string
-        type: array
-    type: object
   v1.DockerOCIImageConfig:
     properties:
       ArgsEscaped:
@@ -3510,34 +3608,6 @@ definitions:
         - $ref: '#/definitions/time.Duration'
         description: Timeout is the time to wait before considering the check to have
           hung.
-    type: object
-  v1.Platform:
-    properties:
-      architecture:
-        description: |-
-          Architecture field specifies the CPU architecture, for example
-          `amd64` or `ppc64le`.
-        type: string
-      os:
-        description: OS specifies the operating system, for example `linux` or `windows`.
-        type: string
-      os.features:
-        description: |-
-          OSFeatures is an optional field specifying an array of strings,
-          each listing a required OS feature (for example on Windows `win32k`).
-        items:
-          type: string
-        type: array
-      os.version:
-        description: |-
-          OSVersion is an optional field specifying the operating system
-          version, for example on Windows `10.0.14393.1066`.
-        type: string
-      variant:
-        description: |-
-          Variant is an optional field specifying a variant of the CPU, for
-          example `v7` to specify ARMv7 when architecture is `arm`.
-        type: string
     type: object
 info:
   contact: {}
