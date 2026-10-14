@@ -7,7 +7,7 @@ replace github.com/knqyf263/go-rpmdb v0.1.1 => ./go-rpmdb
 require (
 	github.com/NeowayLabs/drm v0.0.0-20190824133025-4939fc0ad345
 	github.com/cavaliergopher/rpm v1.3.0
-	github.com/cloud-barista/cm-centipede/transx-ex v0.1.0
+	github.com/cloud-barista/cm-centipede/transx-ex v0.1.1
 	github.com/coreos/go-iptables v0.8.0
 	github.com/glebarez/go-sqlite v1.23.0
 	github.com/google/uuid v1.6.0

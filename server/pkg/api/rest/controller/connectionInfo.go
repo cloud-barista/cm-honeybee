@@ -3,11 +3,15 @@ package controller
 import (
 	"encoding/base64"
 	"errors"
+	"net"
 	"net/http"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
+	transxex "github.com/cloud-barista/cm-centipede/transx-ex"
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/openbao"
@@ -19,8 +23,13 @@ import (
 	"github.com/jollaman999/utils/iputil"
 	"github.com/jollaman999/utils/logger"
 	"github.com/labstack/echo/v4"
+	cryptossh "golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v3"
 )
+
+// defaultProbeTimeout bounds the TCP reachability check of a direct db or
+// minio connection when the connection sets no timeout of its own.
+const defaultProbeTimeout = 5 * time.Second
 
 // validateKubeconfig checks that s is a non-empty, structurally valid kubeconfig.
 func validateKubeconfig(s string) error {
@@ -64,6 +73,168 @@ func checkPort(port string) error {
 	return nil
 }
 
+// checkDBType rejects a db_type transx-ex cannot inspect, so a typo fails at
+// registration instead of at the first import.
+func checkDBType(dbType string) error {
+	switch dbType {
+	case transxex.DBMSTypeMySQL, transxex.DBMSTypeMariaDB, transxex.DBMSTypePostgreSQL, transxex.DBMSTypeMongoDB:
+		return nil
+	}
+	return errors.New("db_type must be one of mysql | mariadb | postgresql | mongodb")
+}
+
+// checkAccessType rejects an access type other than direct or ssh-tunnel.
+// field names the request field in the error.
+func checkAccessType(field string, accessType string) error {
+	switch accessType {
+	case model.AccessTypeDirect, model.AccessTypeSSHTunnel:
+		return nil
+	}
+	return errors.New(field + " must be one of direct | ssh-tunnel")
+}
+
+// checkTLSMode rejects an unknown db_tls_mode. transx-ex rejects one as well,
+// but only when an import runs; this keeps a connection that can never connect
+// from being stored. Empty means disable.
+func checkTLSMode(mode string) error {
+	switch mode {
+	case "", transxex.TLSModeDisable, transxex.TLSModePrefer, transxex.TLSModeRequire,
+		transxex.TLSModeVerifyCA, transxex.TLSModeVerifyFull:
+		return nil
+	}
+	return errors.New("db_tls_mode must be one of disable | prefer | require | verify-ca | verify-full")
+}
+
+// checkPgSchema checks what honeybee can judge about a db_pg_schema selection.
+// The rules on the names themselves (length, characters, pg_ system schemas)
+// are transx-ex's and are not repeated here.
+func checkPgSchema(dbType string, dbName string, schemas []string) error {
+	if len(schemas) == 0 {
+		return nil
+	}
+	// MySQL and MariaDB have no schema within a database, MongoDB none at all.
+	if dbType != transxex.DBMSTypePostgreSQL {
+		return errors.New("db_pg_schema is only supported for postgresql")
+	}
+	// Enumerating every database reuses one location for all of them, so a
+	// schema selection would skip each database that lacks those schemas.
+	if dbName == "" {
+		return errors.New("db_pg_schema requires db_name")
+	}
+	seen := make(map[string]bool, len(schemas))
+	for _, s := range schemas {
+		if strings.TrimSpace(s) == "" {
+			return errors.New("db_pg_schema has an empty name")
+		}
+		if seen[s] {
+			return errors.New("db_pg_schema has a duplicate name: " + s)
+		}
+		seen[s] = true
+	}
+	return nil
+}
+
+// sameStringSet reports whether a and b hold the same strings, ignoring order
+// and repeats.
+func sameStringSet(a []string, b []string) bool {
+	setA := make(map[string]bool, len(a))
+	for _, s := range a {
+		setA[s] = true
+	}
+	setB := make(map[string]bool, len(b))
+	for _, s := range b {
+		setB[s] = true
+	}
+	if len(setA) != len(setB) {
+		return false
+	}
+	for s := range setA {
+		if !setB[s] {
+			return false
+		}
+	}
+	return true
+}
+
+// checkFSScanPath requires an absolute path: the agent would resolve a relative
+// one against its own working directory, which the caller cannot predict.
+func checkFSScanPath(scanPath string) error {
+	if !path.IsAbs(scanPath) {
+		return errors.New("fs_scan_path must be an absolute path")
+	}
+	return nil
+}
+
+// checkOSScanBucket rejects a bucket name with a slash. The scan root is built
+// as bucket + "/" + prefix, and a slash in the name makes a root that is
+// neither, which the inspection reports as an empty result, not an error.
+func checkOSScanBucket(bucket string) error {
+	if strings.Contains(bucket, "/") {
+		return errors.New("os_scan_bucket must not contain '/'")
+	}
+	return nil
+}
+
+// normalizeOSScanPrefix drops leading slashes: object keys do not start with
+// one. It also makes "/" mean "no prefix" on update, where an empty value
+// already means "no change".
+func normalizeOSScanPrefix(prefix string) string {
+	return strings.TrimLeft(prefix, "/")
+}
+
+// checkSSHKeyOnly checks the SSH credentials of fs, db and minio connections.
+// cm-centipede reaches these hosts too when migrating, and it authenticates by
+// private key only, so a password-only connection would collect here and fail
+// there. The key is parsed so that one unusable for authentication is refused
+// now rather than at the first SSH connection; "\n" escapes are expanded first,
+// as lib/ssh does.
+func checkSSHKeyOnly(password string, privateKey string) error {
+	if password != "" {
+		return errors.New("password is not allowed; use private_key")
+	}
+	if privateKey == "" || privateKey == "-" {
+		return errors.New("private_key is empty")
+	}
+	if _, err := cryptossh.ParsePrivateKey([]byte(strings.ReplaceAll(privateKey, "\\n", "\n"))); err != nil {
+		return errors.New("private_key is invalid (" + err.Error() + ")")
+	}
+	return nil
+}
+
+// invalidateSavedFSInfo marks the connection's file system result stale after
+// its scan path changed. A connection never collected has no row; that is not
+// an error.
+func invalidateSavedFSInfo(connID string) error {
+	saved, _ := dao.SavedFSInfoGet(connID)
+	if saved == nil {
+		return nil
+	}
+	saved.Status = model.SavedFSInfoStatusStale
+	return dao.SavedFSInfoUpdate(saved)
+}
+
+// invalidateSavedObjectStorageInfo marks the connection's object storage result
+// stale after its bucket or prefix changed.
+func invalidateSavedObjectStorageInfo(connID string) error {
+	saved, _ := dao.SavedObjectStorageInfoGet(connID)
+	if saved == nil {
+		return nil
+	}
+	saved.Status = model.SavedObjectStorageInfoStatusStale
+	return dao.SavedObjectStorageInfoUpdate(saved)
+}
+
+// invalidateSavedDBInfo marks the connection's DBMS result stale after its
+// db_type, db_name or db_pg_schema changed.
+func invalidateSavedDBInfo(connID string) error {
+	saved, _ := dao.SavedDBInfoGet(connID)
+	if saved == nil {
+		return nil
+	}
+	saved.Status = model.SavedDBInfoStatusStale
+	return dao.SavedDBInfoUpdate(saved)
+}
+
 func encryptField(plaintext string, label string) (string, error) {
 	if plaintext == "" {
 		return "", nil
@@ -102,6 +273,30 @@ func encryptSecrets(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo
 	}
 	connectionInfo.Kubeconfig = kubeconfig
 
+	dbUsername, err := encryptField(connectionInfo.DBUsername, "db username")
+	if err != nil {
+		return nil, err
+	}
+	connectionInfo.DBUsername = dbUsername
+
+	dbPassword, err := encryptField(connectionInfo.DBPassword, "db password")
+	if err != nil {
+		return nil, err
+	}
+	connectionInfo.DBPassword = dbPassword
+
+	osAccessKeyId, err := encryptField(connectionInfo.OSAccessKeyId, "object storage access key id")
+	if err != nil {
+		return nil, err
+	}
+	connectionInfo.OSAccessKeyId = osAccessKeyId
+
+	osSecretAccessKey, err := encryptField(connectionInfo.OSSecretAccessKey, "object storage secret access key")
+	if err != nil {
+		return nil, err
+	}
+	connectionInfo.OSSecretAccessKey = osSecretAccessKey
+
 	return connectionInfo, nil
 }
 
@@ -110,22 +305,36 @@ func encryptSecrets(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo
 func connectionSecretPath(connID string) string { return "honeybee/ssh/" + connID }
 
 // storeConnectionSecrets moves the connection secrets (SSH password/private key,
-// or kubeconfig) into OpenBao when enabled, clearing them from ci so the DB row
-// holds no secrets. Errors when there are secrets but OpenBao is off.
+// kubeconfig, db password, object storage keys) into OpenBao when enabled,
+// clearing them from ci so the DB row holds no secrets. Errors when there are
+// secrets but OpenBao is off. Which secrets a connection has follows from its
+// fields, not its source group type: checkCreateConnectionInfoReq fills only
+// the fields of the group's type.
 func storeConnectionSecrets(ci *model.ConnectionInfo) error {
-	if ci.Password == "" && (ci.PrivateKey == "" || ci.PrivateKey == "-") && ci.Kubeconfig == "" {
+	if ci.Password == "" && (ci.PrivateKey == "" || ci.PrivateKey == "-") && ci.Kubeconfig == "" &&
+		ci.DBPassword == "" && ci.OSAccessKeyId == "" && ci.OSSecretAccessKey == "" {
 		return nil // nothing sensitive to store (e.g. CSP connection without SSH)
 	}
 	if !openbao.Enabled() {
 		return errors.New("OpenBao is required to store connection secrets (set cm-honeybee.openbao.address)")
 	}
-	data := map[string]string{"password": ci.Password, "private_key": ci.PrivateKey, "kubeconfig": ci.Kubeconfig}
+	data := map[string]string{
+		"password":             ci.Password,
+		"private_key":          ci.PrivateKey,
+		"kubeconfig":           ci.Kubeconfig,
+		"db_password":          ci.DBPassword,
+		"os_access_key_id":     ci.OSAccessKeyId,
+		"os_secret_access_key": ci.OSSecretAccessKey,
+	}
 	if err := openbao.Put(connectionSecretPath(ci.ID), data); err != nil {
 		return err
 	}
 	ci.Password = ""
 	ci.PrivateKey = ""
 	ci.Kubeconfig = ""
+	ci.DBPassword = ""
+	ci.OSAccessKeyId = ""
+	ci.OSSecretAccessKey = ""
 	return nil
 }
 
@@ -149,6 +358,9 @@ func hydrateConnectionSecrets(ci *model.ConnectionInfo) error {
 		ci.PrivateKey = "-"
 	}
 	ci.Kubeconfig = data["kubeconfig"]
+	ci.DBPassword = data["db_password"]
+	ci.OSAccessKeyId = data["os_access_key_id"]
+	ci.OSSecretAccessKey = data["os_secret_access_key"]
 	return nil
 }
 
@@ -246,9 +458,164 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 			if connectionInfo.Password == "" && connectionInfo.PrivateKey == "" {
 				return nil, errors.New("password or private_key must be provided when ip_address is provided")
 			}
+			if connectionInfo.PrivateKey == "" {
+				connectionInfo.PrivateKey = "-"
+			}
 		}
-		if connectionInfo.PrivateKey == "" {
-			connectionInfo.PrivateKey = "-"
+	case serverCommon.SourceGroupTypeFS:
+		// The host the agent walks, reached over SSH by key only (see
+		// checkSSHKeyOnly). No resource_type: an fs group holds hosts only.
+		connectionInfo.IPAddress = createConnectionInfoReq.IPAddress
+		connectionInfo.SSHPort = createConnectionInfoReq.SSHPort
+		connectionInfo.User = createConnectionInfoReq.User
+		connectionInfo.PrivateKey = createConnectionInfoReq.PrivateKey
+
+		if err := checkIPAddress(connectionInfo.IPAddress); err != nil {
+			return nil, err
+		}
+		if err := checkPort(connectionInfo.SSHPort); err != nil {
+			return nil, err
+		}
+		if connectionInfo.User == "" {
+			return nil, errors.New("user is empty")
+		}
+		if err := checkSSHKeyOnly(createConnectionInfoReq.Password, connectionInfo.PrivateKey); err != nil {
+			return nil, err
+		}
+
+		// The default is applied here so that a stored path is never empty and
+		// the import has no default of its own.
+		connectionInfo.FSScanPath = strings.TrimSpace(createConnectionInfoReq.FSScanPath)
+		if connectionInfo.FSScanPath == "" {
+			connectionInfo.FSScanPath = "/home"
+		}
+		if err := checkFSScanPath(connectionInfo.FSScanPath); err != nil {
+			return nil, err
+		}
+	case serverCommon.SourceGroupTypeDB:
+		connectionInfo.DBType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.DBType))
+		connectionInfo.DBName = strings.TrimSpace(createConnectionInfoReq.DBName)
+		connectionInfo.DBHost = strings.TrimSpace(createConnectionInfoReq.DBHost)
+		connectionInfo.DBPort = strings.TrimSpace(createConnectionInfoReq.DBPort)
+		connectionInfo.DBUsername = createConnectionInfoReq.DBUsername
+		connectionInfo.DBPassword = createConnectionInfoReq.DBPassword
+		connectionInfo.DBConnectTimeout = createConnectionInfoReq.DBConnectTimeout
+		connectionInfo.DBTLSMode = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.DBTLSMode))
+		connectionInfo.DBTLSCAPEM = createConnectionInfoReq.DBTLSCAPEM
+		connectionInfo.DBAuthSource = strings.TrimSpace(createConnectionInfoReq.DBAuthSource)
+		connectionInfo.DBPgSchema = createConnectionInfoReq.DBPgSchema
+
+		if err := checkDBType(connectionInfo.DBType); err != nil {
+			return nil, err
+		}
+		if connectionInfo.DBHost == "" {
+			return nil, errors.New("db_host is empty")
+		}
+		if err := checkPort(connectionInfo.DBPort); err != nil {
+			return nil, errors.New("db_port value is invalid")
+		}
+		if connectionInfo.DBUsername == "" {
+			return nil, errors.New("db_username is empty")
+		}
+		if connectionInfo.DBPassword == "" {
+			return nil, errors.New("db_password is empty")
+		}
+		if connectionInfo.DBConnectTimeout < 0 {
+			return nil, errors.New("db_connect_timeout must not be negative")
+		}
+		if err := checkTLSMode(connectionInfo.DBTLSMode); err != nil {
+			return nil, err
+		}
+		if err := checkPgSchema(connectionInfo.DBType, connectionInfo.DBName, connectionInfo.DBPgSchema); err != nil {
+			return nil, err
+		}
+
+		connectionInfo.DBAccessType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.DBAccessType))
+		if connectionInfo.DBAccessType == "" {
+			connectionInfo.DBAccessType = model.AccessTypeDirect
+		}
+		if err := checkAccessType("db_access_type", connectionInfo.DBAccessType); err != nil {
+			return nil, err
+		}
+		// direct takes no SSH fields, even when the request carries them. No "-"
+		// default for private_key either way: ssh-tunnel requires a key, and on
+		// direct the "-" would be encrypted into every response.
+		if connectionInfo.DBAccessType == model.AccessTypeSSHTunnel {
+			connectionInfo.IPAddress = strings.TrimSpace(createConnectionInfoReq.IPAddress)
+			connectionInfo.SSHPort = strings.TrimSpace(createConnectionInfoReq.SSHPort)
+			connectionInfo.User = createConnectionInfoReq.User
+			connectionInfo.PrivateKey = createConnectionInfoReq.PrivateKey
+
+			if err := checkIPAddress(connectionInfo.IPAddress); err != nil {
+				return nil, errors.New(err.Error() + " (required for a " + model.AccessTypeSSHTunnel + " connection)")
+			}
+			if connectionInfo.SSHPort == "" {
+				connectionInfo.SSHPort = "22"
+			}
+			if err := checkPort(connectionInfo.SSHPort); err != nil {
+				return nil, err
+			}
+			if connectionInfo.User == "" {
+				return nil, errors.New("user is empty (required for a " + model.AccessTypeSSHTunnel + " connection)")
+			}
+			if err := checkSSHKeyOnly(createConnectionInfoReq.Password, connectionInfo.PrivateKey); err != nil {
+				return nil, errors.New(err.Error() + " (" + model.AccessTypeSSHTunnel + " connection)")
+			}
+		}
+	case serverCommon.SourceGroupTypeMinIO:
+		connectionInfo.OSEndpoint = strings.TrimSpace(createConnectionInfoReq.OSEndpoint)
+		connectionInfo.OSAccessKeyId = strings.TrimSpace(createConnectionInfoReq.OSAccessKeyId)
+		connectionInfo.OSSecretAccessKey = createConnectionInfoReq.OSSecretAccessKey
+		connectionInfo.OSUseSSL = createConnectionInfoReq.OSUseSSL
+		connectionInfo.OSScanBucket = strings.TrimSpace(createConnectionInfoReq.OSScanBucket)
+		connectionInfo.OSScanPrefix = normalizeOSScanPrefix(strings.TrimSpace(createConnectionInfoReq.OSScanPrefix))
+
+		if connectionInfo.OSAccessKeyId == "" {
+			return nil, errors.New("os_access_key_id is empty")
+		}
+		if connectionInfo.OSSecretAccessKey == "" {
+			return nil, errors.New("os_secret_access_key is empty")
+		}
+		if connectionInfo.OSScanBucket == "" {
+			return nil, errors.New("os_scan_bucket is empty")
+		}
+		if err := checkOSScanBucket(connectionInfo.OSScanBucket); err != nil {
+			return nil, err
+		}
+		// The os_endpoint rules per provider live in resolveS3Endpoint only.
+		if _, _, _, _, err := resolveS3Endpoint(sourceGroup, connectionInfo); err != nil {
+			return nil, err
+		}
+
+		connectionInfo.OSAccessType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.OSAccessType))
+		if connectionInfo.OSAccessType == "" {
+			connectionInfo.OSAccessType = model.AccessTypeDirect
+		}
+		if err := checkAccessType("os_access_type", connectionInfo.OSAccessType); err != nil {
+			return nil, err
+		}
+		// Same as db: SSH fields only for ssh-tunnel, and no "-" default.
+		if connectionInfo.OSAccessType == model.AccessTypeSSHTunnel {
+			connectionInfo.IPAddress = strings.TrimSpace(createConnectionInfoReq.IPAddress)
+			connectionInfo.SSHPort = strings.TrimSpace(createConnectionInfoReq.SSHPort)
+			connectionInfo.User = createConnectionInfoReq.User
+			connectionInfo.PrivateKey = createConnectionInfoReq.PrivateKey
+
+			if err := checkIPAddress(connectionInfo.IPAddress); err != nil {
+				return nil, errors.New(err.Error() + " (required for a " + model.AccessTypeSSHTunnel + " connection)")
+			}
+			if connectionInfo.SSHPort == "" {
+				connectionInfo.SSHPort = "22"
+			}
+			if err := checkPort(connectionInfo.SSHPort); err != nil {
+				return nil, err
+			}
+			if connectionInfo.User == "" {
+				return nil, errors.New("user is empty (required for a " + model.AccessTypeSSHTunnel + " connection)")
+			}
+			if err := checkSSHKeyOnly(createConnectionInfoReq.Password, connectionInfo.PrivateKey); err != nil {
+				return nil, errors.New(err.Error() + " (" + model.AccessTypeSSHTunnel + " connection)")
+			}
 		}
 	default:
 		return nil, errors.New("unsupported source group type: " + sourceGroup.Type)
@@ -310,6 +677,114 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 					oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
 					oldConnectionInfo.AgentFailedMessage = ""
 				}
+			}
+		case serverCommon.SourceGroupTypeDB:
+			// connection_status is TCP reachability of the DBMS from where it is
+			// inspected: this server for direct, the SSH host for ssh-tunnel, from
+			// whose side db_host is resolved. Whether the credentials work is
+			// decided by an import, not here.
+			timeout := defaultProbeTimeout
+			if connectionInfo.DBConnectTimeout > 0 {
+				timeout = time.Duration(connectionInfo.DBConnectTimeout) * time.Second
+			}
+			addr := net.JoinHostPort(connectionInfo.DBHost, connectionInfo.DBPort)
+			var probeErr error
+			if connectionInfo.DBAccessType == model.AccessTypeSSHTunnel {
+				// telnet:// is curl's raw-TCP scheme: no DB protocol is spoken,
+				// which keeps this a reachability check like the dial below.
+				c := &ssh.SSH{}
+				probeErr = c.ProbeFromHost(*connectionInfo, "telnet://"+addr, timeout)
+			} else {
+				conn, dialErr := net.DialTimeout("tcp", addr, timeout)
+				if dialErr == nil {
+					_ = conn.Close()
+				}
+				probeErr = dialErr
+			}
+			if probeErr != nil {
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.ConnectionFailedMessage = probeErr.Error()
+			} else {
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
+				oldConnectionInfo.ConnectionFailedMessage = ""
+			}
+
+			// ssh-tunnel collects through the agent on the SSH host. direct is
+			// inspected by this server and installs no agent, marked the way
+			// on-prem k8s is.
+			if connectionInfo.DBAccessType == model.AccessTypeSSHTunnel {
+				c := &ssh.SSH{}
+				if err := c.RunAgent(*connectionInfo); err != nil {
+					oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+					oldConnectionInfo.AgentFailedMessage = err.Error()
+				} else {
+					c.Close()
+					oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
+					oldConnectionInfo.AgentFailedMessage = ""
+				}
+			} else {
+				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.AgentFailedMessage = "agent-based collection is not applicable to direct db connections"
+			}
+		case serverCommon.SourceGroupTypeMinIO:
+			// Both access types need the endpoint, so it is resolved first. A
+			// connection that cannot be resolved can be neither probed nor
+			// collected, and both statuses say why.
+			endpoint, _, useSSL, _, resolveErr := resolveS3Endpoint(sourceGroup, connectionInfo)
+			if resolveErr != nil {
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.ConnectionFailedMessage = resolveErr.Error()
+				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.AgentFailedMessage = resolveErr.Error()
+				break
+			}
+			// resolveS3Endpoint already returns host[:port]; a missing port is the
+			// scheme's default.
+			if _, _, splitErr := net.SplitHostPort(endpoint); splitErr != nil {
+				if useSSL {
+					endpoint = net.JoinHostPort(endpoint, "443")
+				} else {
+					endpoint = net.JoinHostPort(endpoint, "80")
+				}
+			}
+			// A tunnelled endpoint is resolved from the SSH host's side, where the
+			// agent inspects it, so that is where it is probed.
+			var probeErr error
+			if connectionInfo.OSAccessType == model.AccessTypeSSHTunnel {
+				scheme := "http"
+				if useSSL {
+					scheme = "https"
+				}
+				c := &ssh.SSH{}
+				probeErr = c.ProbeFromHost(*connectionInfo, scheme+"://"+endpoint+"/", defaultProbeTimeout)
+			} else {
+				conn, dialErr := net.DialTimeout("tcp", endpoint, defaultProbeTimeout)
+				if dialErr == nil {
+					_ = conn.Close()
+				}
+				probeErr = dialErr
+			}
+			if probeErr != nil {
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.ConnectionFailedMessage = probeErr.Error()
+			} else {
+				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
+				oldConnectionInfo.ConnectionFailedMessage = ""
+			}
+
+			if connectionInfo.OSAccessType == model.AccessTypeSSHTunnel {
+				c := &ssh.SSH{}
+				if err := c.RunAgent(*connectionInfo); err != nil {
+					oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+					oldConnectionInfo.AgentFailedMessage = err.Error()
+				} else {
+					c.Close()
+					oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
+					oldConnectionInfo.AgentFailedMessage = ""
+				}
+			} else {
+				oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
+				oldConnectionInfo.AgentFailedMessage = "agent-based collection is not applicable to direct object storage connections"
 			}
 		default:
 			if connectionInfo.ResourceType == serverCommon.ResourceTypeK8s {
@@ -664,6 +1139,10 @@ func UpdateConnectionInfo(c echo.Context) error {
 		oldConnectionInfo.Description = updateConnectionInfoReq.Description
 	}
 
+	// ConnectionInfoUpdate skips zero values; the arms list the columns that may
+	// be cleared on purpose, written by name after the save.
+	var explicitColumns []string
+
 	switch sourceGroup.Type {
 	case serverCommon.SourceGroupTypeCSP:
 		if updateConnectionInfoReq.ResourceType != "" {
@@ -676,6 +1155,228 @@ func UpdateConnectionInfo(c echo.Context) error {
 		if updateConnectionInfoReq.ResourceID != "" {
 			oldConnectionInfo.ResourceID = strings.TrimSpace(updateConnectionInfoReq.ResourceID)
 		}
+	case serverCommon.SourceGroupTypeFS:
+		// scanTargetChanged records that the update changes what the connection
+		// collects (not where the source is), so the saved result no longer matches.
+		scanTargetChanged := false
+
+		// password is not taken: fs authenticates by key only (checked below).
+		err = checkIPAddress(updateConnectionInfoReq.IPAddress)
+		if err == nil {
+			oldConnectionInfo.IPAddress = updateConnectionInfoReq.IPAddress
+		}
+		err = checkPort(updateConnectionInfoReq.SSHPort)
+		if err == nil {
+			oldConnectionInfo.SSHPort = updateConnectionInfoReq.SSHPort
+		}
+		if updateConnectionInfoReq.User != "" {
+			oldConnectionInfo.User = updateConnectionInfoReq.User
+		}
+		if updateConnectionInfoReq.PrivateKey != "" {
+			oldConnectionInfo.PrivateKey = updateConnectionInfoReq.PrivateKey
+		}
+		if scanPath := strings.TrimSpace(updateConnectionInfoReq.FSScanPath); scanPath != "" {
+			if err := checkFSScanPath(scanPath); err != nil {
+				return common.ReturnErrorMsg(c, err.Error())
+			}
+			if scanPath != oldConnectionInfo.FSScanPath {
+				scanTargetChanged = true
+			}
+			oldConnectionInfo.FSScanPath = scanPath
+		}
+
+		// fs always reaches its host over SSH, by key only. Checked on the merged
+		// values so that keeping the stored key is covered too, and before the
+		// invalidation so that a refused request marks nothing. A password stored
+		// before the rule is dropped here, and from OpenBao with the store below.
+		if err := checkSSHKeyOnly(updateConnectionInfoReq.Password, oldConnectionInfo.PrivateKey); err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		oldConnectionInfo.Password = ""
+
+		// Mark the saved result stale before the connection is saved: should the
+		// save then fail, the worst left behind is an unchanged target marked
+		// stale, which the next import clears, never a new target next to a success.
+		if scanTargetChanged {
+			if err := invalidateSavedFSInfo(oldConnectionInfo.ID); err != nil {
+				return common.ReturnErrorMsg(c, "failed to mark the saved result stale: "+err.Error())
+			}
+		}
+	case serverCommon.SourceGroupTypeDB:
+		// Same as fs: what the connection collects, not where the server is.
+		scanTargetChanged := false
+
+		if dbType := strings.ToLower(strings.TrimSpace(updateConnectionInfoReq.DBType)); dbType != "" {
+			if err := checkDBType(dbType); err != nil {
+				return common.ReturnErrorMsg(c, err.Error())
+			}
+			if dbType != oldConnectionInfo.DBType {
+				scanTargetChanged = true
+			}
+			oldConnectionInfo.DBType = dbType
+		}
+		if dbName := strings.TrimSpace(updateConnectionInfoReq.DBName); dbName != "" {
+			if dbName != oldConnectionInfo.DBName {
+				scanTargetChanged = true
+			}
+			oldConnectionInfo.DBName = dbName
+		}
+		if accessType := strings.ToLower(strings.TrimSpace(updateConnectionInfoReq.DBAccessType)); accessType != "" {
+			if err := checkAccessType("db_access_type", accessType); err != nil {
+				return common.ReturnErrorMsg(c, err.Error())
+			}
+			oldConnectionInfo.DBAccessType = accessType
+		}
+		if dbHost := strings.TrimSpace(updateConnectionInfoReq.DBHost); dbHost != "" {
+			oldConnectionInfo.DBHost = dbHost
+		}
+		if dbPort := strings.TrimSpace(updateConnectionInfoReq.DBPort); dbPort != "" {
+			if err := checkPort(dbPort); err != nil {
+				return common.ReturnErrorMsg(c, "db_port value is invalid")
+			}
+			oldConnectionInfo.DBPort = dbPort
+		}
+		if updateConnectionInfoReq.DBUsername != "" {
+			oldConnectionInfo.DBUsername = updateConnectionInfoReq.DBUsername
+		}
+		if updateConnectionInfoReq.DBPassword != "" {
+			oldConnectionInfo.DBPassword = updateConnectionInfoReq.DBPassword
+		}
+		if updateConnectionInfoReq.DBConnectTimeout < 0 {
+			return common.ReturnErrorMsg(c, "db_connect_timeout must not be negative")
+		}
+		if updateConnectionInfoReq.DBConnectTimeout > 0 {
+			oldConnectionInfo.DBConnectTimeout = updateConnectionInfoReq.DBConnectTimeout
+		}
+		if updateConnectionInfoReq.DBAuthSource != "" {
+			oldConnectionInfo.DBAuthSource = strings.TrimSpace(updateConnectionInfoReq.DBAuthSource)
+		}
+		// Taken as sent, unlike the fields above: an empty mode is the real
+		// value "disable", not "no change", or a connection once set to require
+		// could never be turned back. The CA follows the mode.
+		tlsMode := strings.ToLower(strings.TrimSpace(updateConnectionInfoReq.DBTLSMode))
+		if err := checkTLSMode(tlsMode); err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		oldConnectionInfo.DBTLSMode = tlsMode
+		oldConnectionInfo.DBTLSCAPEM = updateConnectionInfoReq.DBTLSCAPEM
+		// Also as sent: a list cannot say "no change" with an empty value, so
+		// omitting it means every user schema again.
+		if !sameStringSet(updateConnectionInfoReq.DBPgSchema, oldConnectionInfo.DBPgSchema) {
+			scanTargetChanged = true
+		}
+		oldConnectionInfo.DBPgSchema = updateConnectionInfoReq.DBPgSchema
+		// db_type, db_name and db_pg_schema may change together, so the check
+		// runs on the merged values.
+		if err := checkPgSchema(oldConnectionInfo.DBType, oldConnectionInfo.DBName, oldConnectionInfo.DBPgSchema); err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		if oldConnectionInfo.DBAccessType == model.AccessTypeSSHTunnel {
+			err = checkIPAddress(updateConnectionInfoReq.IPAddress)
+			if err == nil {
+				oldConnectionInfo.IPAddress = updateConnectionInfoReq.IPAddress
+			}
+			err = checkPort(updateConnectionInfoReq.SSHPort)
+			if err == nil {
+				oldConnectionInfo.SSHPort = updateConnectionInfoReq.SSHPort
+			}
+			if updateConnectionInfoReq.User != "" {
+				oldConnectionInfo.User = updateConnectionInfoReq.User
+			}
+			if updateConnectionInfoReq.PrivateKey != "" {
+				oldConnectionInfo.PrivateKey = updateConnectionInfoReq.PrivateKey
+			}
+
+			// Key-only SSH, as for fs. Placed after the merge so that switching
+			// db_access_type to ssh-tunnel is checked as well.
+			if err := checkSSHKeyOnly(updateConnectionInfoReq.Password, oldConnectionInfo.PrivateKey); err != nil {
+				return common.ReturnErrorMsg(c, err.Error())
+			}
+			oldConnectionInfo.Password = ""
+		}
+
+		// Before the save, for the reason given in the fs arm.
+		if scanTargetChanged {
+			if err := invalidateSavedDBInfo(oldConnectionInfo.ID); err != nil {
+				return common.ReturnErrorMsg(c, "failed to mark the saved result stale: "+err.Error())
+			}
+		}
+
+		explicitColumns = []string{"db_tls_mode", "db_tls_ca_pem", "db_pg_schema"}
+	case serverCommon.SourceGroupTypeMinIO:
+		// Same as fs: which bucket and prefix are collected, not where the
+		// endpoint is.
+		scanTargetChanged := false
+
+		if accessType := strings.ToLower(strings.TrimSpace(updateConnectionInfoReq.OSAccessType)); accessType != "" {
+			if err := checkAccessType("os_access_type", accessType); err != nil {
+				return common.ReturnErrorMsg(c, err.Error())
+			}
+			oldConnectionInfo.OSAccessType = accessType
+		}
+		if endpoint := strings.TrimSpace(updateConnectionInfoReq.OSEndpoint); endpoint != "" {
+			oldConnectionInfo.OSEndpoint = endpoint
+		}
+		if accessKeyId := strings.TrimSpace(updateConnectionInfoReq.OSAccessKeyId); accessKeyId != "" {
+			oldConnectionInfo.OSAccessKeyId = accessKeyId
+		}
+		if updateConnectionInfoReq.OSSecretAccessKey != "" {
+			oldConnectionInfo.OSSecretAccessKey = updateConnectionInfoReq.OSSecretAccessKey
+		}
+		// A bool cannot say "no change": omitting it turns SSL off.
+		oldConnectionInfo.OSUseSSL = updateConnectionInfoReq.OSUseSSL
+		if bucket := strings.TrimSpace(updateConnectionInfoReq.OSScanBucket); bucket != "" {
+			if err := checkOSScanBucket(bucket); err != nil {
+				return common.ReturnErrorMsg(c, err.Error())
+			}
+			if bucket != oldConnectionInfo.OSScanBucket {
+				scanTargetChanged = true
+			}
+			oldConnectionInfo.OSScanBucket = bucket
+		}
+		// Empty means "no change", so clearing the prefix is sent as "/", which
+		// normalizes to "" (the whole bucket).
+		if prefix := strings.TrimSpace(updateConnectionInfoReq.OSScanPrefix); prefix != "" {
+			prefix = normalizeOSScanPrefix(prefix)
+			if prefix != oldConnectionInfo.OSScanPrefix {
+				scanTargetChanged = true
+			}
+			oldConnectionInfo.OSScanPrefix = prefix
+		}
+		if _, _, _, _, err := resolveS3Endpoint(sourceGroup, oldConnectionInfo); err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		if oldConnectionInfo.OSAccessType == model.AccessTypeSSHTunnel {
+			err = checkIPAddress(updateConnectionInfoReq.IPAddress)
+			if err == nil {
+				oldConnectionInfo.IPAddress = updateConnectionInfoReq.IPAddress
+			}
+			err = checkPort(updateConnectionInfoReq.SSHPort)
+			if err == nil {
+				oldConnectionInfo.SSHPort = updateConnectionInfoReq.SSHPort
+			}
+			if updateConnectionInfoReq.User != "" {
+				oldConnectionInfo.User = updateConnectionInfoReq.User
+			}
+			if updateConnectionInfoReq.PrivateKey != "" {
+				oldConnectionInfo.PrivateKey = updateConnectionInfoReq.PrivateKey
+			}
+
+			// Key-only SSH, as for db.
+			if err := checkSSHKeyOnly(updateConnectionInfoReq.Password, oldConnectionInfo.PrivateKey); err != nil {
+				return common.ReturnErrorMsg(c, err.Error())
+			}
+			oldConnectionInfo.Password = ""
+		}
+
+		// Before the save, for the reason given in the fs arm.
+		if scanTargetChanged {
+			if err := invalidateSavedObjectStorageInfo(oldConnectionInfo.ID); err != nil {
+				return common.ReturnErrorMsg(c, "failed to mark the saved result stale: "+err.Error())
+			}
+		}
+
+		explicitColumns = []string{"os_use_ssl", "os_scan_prefix"}
 	default:
 		if oldConnectionInfo.ResourceType == serverCommon.ResourceTypeK8s {
 			if updateConnectionInfoReq.Kubeconfig != "" {
@@ -713,6 +1414,14 @@ func UpdateConnectionInfo(c echo.Context) error {
 	err = dao.ConnectionInfoUpdate(oldConnectionInfo)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	// After the save, never before: written ahead of it, a failing save would
+	// leave these columns changed and the rest of the row not.
+	if len(explicitColumns) > 0 {
+		if err := dao.ConnectionInfoUpdateWithSelect(oldConnectionInfo, explicitColumns); err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
 	}
 
 	connectionInfo, err := doGetConnectionInfo(oldConnectionInfo.ID, true)
