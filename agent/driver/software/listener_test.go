@@ -106,3 +106,43 @@ func TestDedupeListenerWorkers(t *testing.T) {
 		})
 	}
 }
+
+func TestParsePackageVersions(t *testing.T) {
+	tests := []struct {
+		name string
+		out  string
+		want map[string]string
+	}{
+		{
+			name: "dpkg-query",
+			out:  "mysql-server-core-8.0\t8.0.46-0ubuntu0.22.04.4\npostgresql-14\t14.24-0ubuntu0.22.04.1\n",
+			want: map[string]string{
+				"mysql-server-core-8.0": "8.0.46-0ubuntu0.22.04.4",
+				"postgresql-14":         "14.24-0ubuntu0.22.04.1",
+			},
+		},
+		{
+			name: "rpm with a missing package",
+			out:  "mysql-server\t8.0.36\npackage nginx is not installed\n",
+			want: map[string]string{"mysql-server": "8.0.36"},
+		},
+		{
+			name: "multiarch package listed twice keeps the first",
+			out:  "libfoo\t1.0\nlibfoo\t1.0\n",
+			want: map[string]string{"libfoo": "1.0"},
+		},
+		{
+			name: "empty",
+			out:  "",
+			want: map[string]string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := parsePackageVersions(tt.out); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("parsePackageVersions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -11,6 +11,10 @@ type Listener struct {
 	Ports []int `json:"ports"`
 	// Package is the OS package owning ExecutablePath; empty when no package owns it.
 	Package string `json:"package,omitempty"`
+	// PackageVersion is the installed version of Package. The DEB and RPM lists
+	// leave out packages other packages depend on, which is where a server's
+	// binary usually lives (e.g. mysql-server-core-8.0), so it is recorded here.
+	PackageVersion string `json:"package_version,omitempty"`
 	// Syft is what syft's binary classifier recognized ExecutablePath as, if anything.
 	Syft *SyftMatch `json:"syft,omitempty"`
 }

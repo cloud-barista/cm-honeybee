@@ -3,7 +3,9 @@ package software
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/cloud-barista/cm-honeybee/agent/common"
@@ -103,8 +105,16 @@ func GetListeners() ([]software.Listener, error) {
 		exes = append(exes, l.ExecutablePath)
 	}
 	owners := packagesOwningPaths(ownershipLookupPaths(exes))
+	var ownerNames []string
 	for i := range listeners {
 		listeners[i].Package = packageOwningPath(listeners[i].ExecutablePath, owners)
+		if listeners[i].Package != "" {
+			ownerNames = append(ownerNames, listeners[i].Package)
+		}
+	}
+	versions := packageVersions(ownerNames)
+	for i := range listeners {
+		listeners[i].PackageVersion = versions[listeners[i].Package]
 	}
 	elapsedOwned = time.Since(ownedStart)
 
@@ -140,6 +150,50 @@ func listenPorts(conns []net.ConnectionStat) []int {
 
 	sort.Ints(ports)
 	return ports
+}
+
+// packageVersions asks the package manager for the installed version of each
+// named package, with one invocation for all of them. The package manager is
+// chosen in the same order as packagesOwningPaths, so the versions belong to the
+// packages it reported. A package the manager does not know is left out.
+func packageVersions(names []string) map[string]string {
+	if len(names) == 0 {
+		return map[string]string{}
+	}
+
+	var cmd *exec.Cmd
+	if _, err := exec.LookPath("dpkg-query"); err == nil {
+		cmd = exec.Command("dpkg-query", append([]string{"-W", "-f=${Package}\t${Version}\n"}, names...)...)
+	} else if _, err := exec.LookPath("rpm"); err == nil {
+		cmd = exec.Command("rpm", append([]string{"-q", "--queryformat", "%{NAME}\t%{VERSION}\n"}, names...)...)
+	} else {
+		return map[string]string{}
+	}
+
+	// Both exit non-zero when any name is unknown but still print the others.
+	out, err := cmd.Output()
+	if err != nil && len(out) == 0 {
+		logger.Println(logger.DEBUG, false, "Listeners: Failed to get package versions ("+err.Error()+")")
+	}
+
+	return parsePackageVersions(string(out))
+}
+
+// parsePackageVersions reads "name\tversion" lines. Other lines, such as rpm's
+// "package X is not installed", have no tab and are skipped.
+func parsePackageVersions(out string) map[string]string {
+	versions := map[string]string{}
+	for _, line := range strings.Split(out, "\n") {
+		name, version, ok := strings.Cut(line, "\t")
+		if !ok || name == "" || version == "" {
+			continue
+		}
+		if _, exists := versions[name]; !exists {
+			versions[name] = version
+		}
+	}
+
+	return versions
 }
 
 // dedupeListenerWorkers collapses the workers of a multi-process service into
