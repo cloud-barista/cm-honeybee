@@ -4059,6 +4059,10 @@ const docTemplate = `{
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InstalledRDBMSInfo": {
             "type": "object",
             "properties": {
+                "cmdline": {
+                    "description": "Cmdline is the command line the database was started with: an\nunpackaged process's, or a container's command. Empty for a database\nrun from a package, whose command line is not collected.",
+                    "type": "string"
+                },
                 "container": {
                     "type": "string"
                 },

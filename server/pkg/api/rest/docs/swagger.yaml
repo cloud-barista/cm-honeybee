@@ -1027,6 +1027,12 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InstalledRDBMSInfo:
     properties:
+      cmdline:
+        description: |-
+          Cmdline is the command line the database was started with: an
+          unpackaged process's, or a container's command. Empty for a database
+          run from a package, whose command line is not collected.
+        type: string
       container:
         type: string
       container_ports:
