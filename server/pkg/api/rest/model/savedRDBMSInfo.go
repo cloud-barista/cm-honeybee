@@ -35,8 +35,8 @@ type InstalledRDBMSInfo struct {
 	Engine  string `json:"engine"`
 	Version string `json:"version"`
 	Source  string `json:"source"`
-	// Ports are the ports the database listens on; empty when it is stopped or
-	// the ports could not be read.
+	// Ports are the ports the database listens on; empty when the ports could
+	// not be read.
 	Ports          []int               `json:"ports"`
 	Package        string              `json:"package,omitempty"`
 	PID            int32               `json:"pid,omitempty"`

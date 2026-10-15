@@ -15,6 +15,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/jollaman999/utils/logger"
+	"github.com/moby/moby/api/types/container"
 )
 
 // The engine names cm-beetle recommends for.
@@ -164,14 +165,15 @@ func listenerPackageSource(sw *software.Software) string {
 }
 
 // findInstalledRDBMS judges which of a VM's collected software is a database
-// server. One running server process is one database, so a host running two
-// instances of the same package reports both; a database package with no
-// running process is reported once, without ports, as a stopped database.
+// server. Only running databases are reported: one running server process is
+// one database, so a host running two instances of the same package reports
+// both, and an installed database package with no running process is not
+// reported.
 //
 // A process is matched to its software by what the agent recorded for it: the
 // package owning its executable, or its PID among the processes no package
 // owns. Software collected before the agent reported listeners has none, and
-// its databases are reported from the package and process lists without ports.
+// only its unpackaged server processes are reported, without ports.
 func findInstalledRDBMS(sw *software.Software) []model.InstalledRDBMSInfo {
 	packages := installedPackages(sw)
 	legacyByPID := make(map[int32]software.Binary, len(sw.Legacy))
@@ -180,7 +182,6 @@ func findInstalledRDBMS(sw *software.Software) []model.InstalledRDBMSInfo {
 	}
 
 	found := []model.InstalledRDBMSInfo{}
-	runningPackages := make(map[string]bool)
 	matchedPIDs := make(map[int32]bool)
 
 	for _, l := range sw.Listeners {
@@ -225,7 +226,6 @@ func findInstalledRDBMS(sw *software.Software) []model.InstalledRDBMSInfo {
 			db.Version = l.Syft.Version
 		}
 
-		runningPackages[l.Package] = true
 		matchedPIDs[l.PID] = true
 		found = append(found, db)
 	}
@@ -249,39 +249,23 @@ func findInstalledRDBMS(sw *software.Software) []model.InstalledRDBMSInfo {
 		})
 	}
 
-	names := make([]string, 0, len(packages))
-	for name := range packages {
-		names = append(names, name)
-	}
-	sort.Strings(names)
-	for _, name := range names {
-		engine := rdbmsEngineOfPackage(name)
-		if engine == "" || runningPackages[name] {
-			continue
-		}
-		pkg := packages[name]
-		found = append(found, model.InstalledRDBMSInfo{
-			Engine:  engine,
-			Version: rdbmsVersion(pkg.version),
-			Source:  pkg.source,
-			Ports:   []int{},
-			Package: name,
-		})
-	}
-
 	found = append(found, containerRDBMS(sw.Docker, installedRDBMSSourceDocker)...)
 	found = append(found, containerRDBMS(sw.Podman, installedRDBMSSourcePodman)...)
 
 	return found
 }
 
-// containerRDBMS judges containers by their image. The port reported is the
-// one the database listens on inside the container, which is its configured
-// port; the host port it is published on is a property of the container.
+// containerRDBMS judges running containers by their image. The port reported
+// is the one the database listens on inside the container, which is its
+// configured port; the host port it is published on is a property of the
+// container.
 func containerRDBMS(containers []software.Container, source string) []model.InstalledRDBMSInfo {
 	var found []model.InstalledRDBMSInfo
 
 	for _, c := range containers {
+		if c.ContainerSummary.State != container.StateRunning {
+			continue
+		}
 		engine := rdbmsEngineOfImage(c.ContainerSummary.Image)
 		if engine == "" {
 			continue

@@ -165,17 +165,13 @@ func TestFindInstalledRDBMS(t *testing.T) {
 		}
 	})
 
-	t.Run("stopped package reported once without ports", func(t *testing.T) {
+	t.Run("stopped package is not reported", func(t *testing.T) {
 		sw := &software.Software{
 			RPM: []software.RPM{{Name: "mysql-server", Version: "8.0.36"}},
 		}
 
-		got := findInstalledRDBMS(sw)
-		want := []model.InstalledRDBMSInfo{{
-			Engine: rdbmsEngineMySQL, Version: "8.0.36", Source: installedRDBMSSourceRPM, Ports: []int{}, Package: "mysql-server",
-		}}
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("got %+v, want %+v", got, want)
+		if got := findInstalledRDBMS(sw); len(got) != 0 {
+			t.Errorf("got %+v, want none", got)
 		}
 	})
 
@@ -214,14 +210,11 @@ func TestFindInstalledRDBMS(t *testing.T) {
 		}
 
 		got := findInstalledRDBMS(sw)
-		if len(got) != 2 {
-			t.Fatalf("got %d databases, want 2: %+v", len(got), got)
+		if len(got) != 1 {
+			t.Fatalf("got %d databases, want 1: %+v", len(got), got)
 		}
 		if got[0].Engine != rdbmsEnginePostgreSQL || got[0].PID != 400 || len(got[0].Ports) != 0 {
 			t.Errorf("legacy = %+v", got[0])
-		}
-		if got[1].Engine != rdbmsEngineMySQL || got[1].Package != "mysql-server-core-8.0" || len(got[1].Ports) != 0 {
-			t.Errorf("package = %+v", got[1])
 		}
 	})
 
@@ -231,13 +224,15 @@ func TestFindInstalledRDBMS(t *testing.T) {
 				{ContainerSummary: container.Summary{
 					Names: []string{"/billing-db"},
 					Image: "docker.io/bitnami/mysql:8.0.39",
+					State: container.StateRunning,
 					Ports: []container.PortSummary{
 						{PrivatePort: 33060, Type: "tcp"},
 						{PrivatePort: 3306, PublicPort: 13306, Type: "tcp"},
 						{PrivatePort: 3306, PublicPort: 13306, Type: "tcp"},
 					},
 				}},
-				{ContainerSummary: container.Summary{Names: []string{"/web"}, Image: "nginx:1.27"}},
+				{ContainerSummary: container.Summary{Names: []string{"/old-db"}, Image: "postgres:16", State: container.StateExited}},
+				{ContainerSummary: container.Summary{Names: []string{"/web"}, Image: "nginx:1.27", State: container.StateRunning}},
 			},
 		}
 
