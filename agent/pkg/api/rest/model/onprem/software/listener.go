@@ -1,8 +1,8 @@
 package software
 
-// Listener is a host process that owns at least one listening socket. It is
-// collected for every such process, package-owned or not, so consumers can tell
-// which installed software is actually serving on which port.
+// Listener is a process that owns at least one listening socket on the host's
+// network. It is collected for every such process, package-owned or not, so
+// consumers can tell which installed software is actually serving on which port.
 type Listener struct {
 	PID            int32  `json:"pid"`
 	Name           string `json:"name"`
@@ -17,6 +17,12 @@ type Listener struct {
 	PackageVersion string `json:"package_version,omitempty"`
 	// Syft is what syft's binary classifier recognized ExecutablePath as, if anything.
 	Syft *SyftMatch `json:"syft,omitempty"`
+	// ContainerID is the ID of the Docker or Podman container the process runs
+	// in; empty for a host process. Only containers on the host's network are
+	// collected: the runtime records no ports for them, so their process is the
+	// only record of where they listen. ExecutablePath is then a path inside the
+	// container, and Package and Syft are left empty.
+	ContainerID string `json:"container_id,omitempty"`
 }
 
 // SyftMatch is a syft binary-classifier match for an executable. It is evidence

@@ -17,14 +17,15 @@ import (
 // embedded version strings, so it identifies a product even when it was not
 // installed by a package and its version flag is missing or ambiguous. Only the
 // listeners' executables are scanned, never the whole disk, and each distinct
-// executable once. A failed or empty classification leaves Syft nil.
+// executable once. A failed or empty classification leaves Syft nil, and so does
+// a container's executable, whose path names a file inside the container.
 func attachSyftMatches(listeners []software.Listener) {
 	cataloger := binary.NewClassifierCataloger(binary.DefaultClassifierCatalogerConfig())
 	matches := map[string]*software.SyftMatch{}
 
 	for i := range listeners {
 		exe := listeners[i].ExecutablePath
-		if exe == "" {
+		if exe == "" || listeners[i].ContainerID != "" {
 			continue
 		}
 

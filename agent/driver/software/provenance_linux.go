@@ -198,6 +198,79 @@ func cgroupIndicatesContainer(cgroup string) bool {
 	return false
 }
 
+// containerIDOfProcess returns the ID of the Docker or Podman container the
+// process runs in, as the runtime reports it; "" when the process is in no such
+// container or its cgroup cannot be read.
+func containerIDOfProcess(pid int32) string {
+	data, err := os.ReadFile(fmt.Sprintf("/proc/%d/cgroup", pid))
+	if err != nil {
+		return ""
+	}
+	return containerIDFromCgroup(string(data))
+}
+
+// containerIDFromCgroup finds a container ID in the cgroup paths the Docker and
+// Podman runtimes create for a container: "docker-<id>.scope" and
+// "libpod-<id>.scope" under the systemd cgroup driver, "/docker/<id>" under
+// Docker's cgroupfs one. Only a full 64-digit hex ID is taken, which leaves out
+// e.g. Podman's "libpod-conmon-<id>.scope" monitor.
+func containerIDFromCgroup(cgroup string) string {
+	for _, line := range strings.Split(cgroup, "\n") {
+		path := strings.TrimSpace(line)
+		if idx := strings.LastIndex(path, ":"); idx >= 0 {
+			path = path[idx+1:]
+		}
+
+		segments := strings.Split(path, "/")
+		for i, s := range segments {
+			id := ""
+			if i > 0 && segments[i-1] == "docker" {
+				id = s
+			} else if scope, ok := strings.CutSuffix(s, ".scope"); ok {
+				for _, prefix := range []string{"docker-", "libpod-"} {
+					if after, ok := strings.CutPrefix(scope, prefix); ok {
+						id = after
+					}
+				}
+			}
+			if isContainerID(id) {
+				return id
+			}
+		}
+	}
+
+	return ""
+}
+
+func isContainerID(s string) bool {
+	if len(s) != 64 {
+		return false
+	}
+	for _, r := range s {
+		if !strings.ContainsRune("0123456789abcdef", r) {
+			return false
+		}
+	}
+	return true
+}
+
+// sharesHostNetwork reports whether the process is in the host's network
+// namespace, i.e. that of PID 1, which every process inherits unless it is given
+// its own. A container run with the host network is, and listens on host ports.
+// Reading another process's namespace needs root, as the agent runs; without it
+// the answer is false.
+func sharesHostNetwork(pid int32) bool {
+	host, err := os.Readlink("/proc/1/ns/net")
+	if err != nil {
+		return false
+	}
+	ns, err := os.Readlink(fmt.Sprintf("/proc/%d/ns/net", pid))
+	if err != nil {
+		return false
+	}
+	return ns == host
+}
+
 // parseSystemdServiceUnit extracts the managing <name>.service unit from the
 // contents of /proc/<pid>/cgroup. Handles cgroup v2 ("0::/system.slice/foo.service")
 // and v1 ("N:controllers:/system.slice/foo.service") layouts. Returns "" when the

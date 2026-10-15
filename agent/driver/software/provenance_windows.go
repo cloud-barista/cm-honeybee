@@ -13,3 +13,14 @@ func getLaunchProvenance(_ int32) launchProvenance {
 func isContainerizedProcess(_ int32) bool {
 	return false
 }
+
+// containerIDOfProcess is Linux-specific (cgroup based); see isContainerizedProcess.
+func containerIDOfProcess(_ int32) string {
+	return ""
+}
+
+// sharesHostNetwork is Linux-specific (network namespace based); see
+// isContainerizedProcess.
+func sharesHostNetwork(_ int32) bool {
+	return false
+}

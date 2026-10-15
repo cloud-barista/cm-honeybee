@@ -19,8 +19,9 @@ import (
 // with its listening ports and the OS package owning its executable. Unlike
 // GetLegacySWs it keeps package-owned processes: its purpose is to say which
 // installed software is serving on which port, whatever installed it.
-// Containerized processes are left to the container collectors, and workers of a
-// multi-process service are collapsed into the service's master.
+// Containerized processes are left to the container collectors, except those of
+// a container on the host's network, whose ports the runtime does not record;
+// workers of a multi-process service are collapsed into the service's master.
 //
 // Only a failure to list processes is returned as an error; a process whose
 // details cannot be read is skipped.
@@ -60,8 +61,15 @@ func GetListeners() ([]software.Listener, error) {
 			continue
 		}
 
+		containerID := ""
 		if isContainerizedProcess(p.Pid) {
-			continue
+			if !sharesHostNetwork(p.Pid) {
+				continue
+			}
+			containerID = containerIDOfProcess(p.Pid)
+			if containerID == "" {
+				continue
+			}
 		}
 
 		connsStart := time.Now()
@@ -92,21 +100,29 @@ func GetListeners() ([]software.Listener, error) {
 			Name:           name,
 			ExecutablePath: exe,
 			Ports:          ports,
+			ContainerID:    containerID,
 		})
 	}
 
 	listeners = dedupeListenerWorkers(listeners, ppidByPID)
 
 	// Resolved in one batch because each lookup searches the whole package
-	// database.
+	// database. A container's executable path names a file inside the
+	// container, so looking it up on the host would describe whatever host
+	// file has the same path.
 	ownedStart := time.Now()
 	exes := make([]string, 0, len(listeners))
 	for _, l := range listeners {
-		exes = append(exes, l.ExecutablePath)
+		if l.ContainerID == "" {
+			exes = append(exes, l.ExecutablePath)
+		}
 	}
 	owners := packagesOwningPaths(ownershipLookupPaths(exes))
 	var ownerNames []string
 	for i := range listeners {
+		if listeners[i].ContainerID != "" {
+			continue
+		}
 		listeners[i].Package = packageOwningPath(listeners[i].ExecutablePath, owners)
 		if listeners[i].Package != "" {
 			ownerNames = append(ownerNames, listeners[i].Package)
