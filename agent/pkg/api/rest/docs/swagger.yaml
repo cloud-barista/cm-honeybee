@@ -2283,6 +2283,14 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Listener:
     properties:
+      container_id:
+        description: |-
+          ContainerID is the ID of the Docker or Podman container the process runs
+          in; empty for a host process. Only containers on the host's network are
+          collected: the runtime records no ports for them, so their process is the
+          only record of where they listen. ExecutablePath is then a path inside the
+          container, and Package and Syft are left empty.
+        type: string
       executable_path:
         type: string
       name:
