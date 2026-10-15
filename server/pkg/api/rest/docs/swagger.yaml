@@ -1041,8 +1041,8 @@ definitions:
         type: integer
       ports:
         description: |-
-          Ports are the ports the database listens on; empty when it is stopped or
-          the ports could not be read.
+          Ports are the ports the database listens on; empty when the ports could
+          not be read.
         items:
           type: integer
         type: array

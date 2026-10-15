@@ -4078,7 +4078,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "ports": {
-                    "description": "Ports are the ports the database listens on; empty when it is stopped or\nthe ports could not be read.",
+                    "description": "Ports are the ports the database listens on; empty when the ports could\nnot be read.",
                     "type": "array",
                     "items": {
                         "type": "integer"
