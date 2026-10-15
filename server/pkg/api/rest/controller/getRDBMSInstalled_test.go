@@ -93,20 +93,27 @@ func TestRDBMSEngineOfProcess(t *testing.T) {
 
 func TestRDBMSPort(t *testing.T) {
 	tests := []struct {
-		name   string
-		engine string
-		ports  []int
-		want   int
+		name    string
+		engine  string
+		ports   []int
+		cmdline string
+		want    int
 	}{
-		{"default among several", rdbmsEngineMySQL, []int{3306, 33060}, 3306},
-		{"default not first", rdbmsEnginePostgreSQL, []int{5433, 5432}, 5432},
-		{"no default gives lowest", rdbmsEngineMySQL, []int{33061, 3307}, 3307},
-		{"none", rdbmsEngineMySQL, []int{}, 0},
+		{"default among several", rdbmsEngineMySQL, []int{3306, 33060}, "", 3306},
+		{"default not first", rdbmsEnginePostgreSQL, []int{5433, 5432}, "", 5432},
+		{"no default gives lowest", rdbmsEngineMySQL, []int{33061, 3307}, "", 3307},
+		{"none", rdbmsEngineMySQL, []int{}, "", 0},
+		{"command line port", rdbmsEngineMySQL, []int{33070, 33306}, "docker-entrypoint.sh --port=33306 --mysqlx-port=33070", 33306},
+		{"command line port as next argument", rdbmsEngineMariaDB, []int{3310, 3311}, "/opt/mariadb/bin/mariadbd --port 3311", 3311},
+		{"mysqlx port alone is left out", rdbmsEngineMySQL, []int{33070, 33306}, "/opt/mysql/bin/mysqld --mysqlx_port=33070", 33306},
+		{"command line port not listened on", rdbmsEngineMySQL, []int{3307, 33060}, "mysqld --port=3999", 3307},
+		{"mysqlx port as the only port", rdbmsEngineMySQL, []int{33070}, "mysqld --mysqlx-port=33070", 33070},
+		{"other engines ignore the command line", rdbmsEnginePostgreSQL, []int{5433, 5434}, "postgres --port=5434", 5433},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if got := rdbmsPort(tc.engine, tc.ports); got != tc.want {
+			if got := rdbmsPort(tc.engine, tc.ports, tc.cmdline); got != tc.want {
 				t.Errorf("rdbmsPort() = %d, want %d", got, tc.want)
 			}
 		})
@@ -191,13 +198,15 @@ func TestFindInstalledRDBMS(t *testing.T) {
 			Legacy: []software.Binary{{
 				PID: 300, Name: "mysqld", Version: "10.3.39", ExecutablePath: "/opt/mariadb/bin/mysqld",
 				VersionRaw: "mysqld  Ver 10.3.39-MariaDB for Linux on x86_64",
+				Cmdline:    "/opt/mariadb/bin/mysqld --datadir=/data",
 			}},
 			Listeners: []software.Listener{{PID: 300, Name: "mysqld", ExecutablePath: "/opt/mariadb/bin/mysqld", Ports: []int{3306}}},
 		}
 
 		got := findInstalledRDBMS(sw)
 		if len(got) != 1 || got[0].Engine != rdbmsEngineMariaDB || got[0].Version != "10.3.39" ||
-			got[0].Source != installedRDBMSSourceLegacy || !reflect.DeepEqual(got[0].Ports, []int{3306}) {
+			got[0].Source != installedRDBMSSourceLegacy || !reflect.DeepEqual(got[0].Ports, []int{3306}) ||
+			got[0].Cmdline != "/opt/mariadb/bin/mysqld --datadir=/data" {
 			t.Errorf("got %+v", got)
 		}
 	})
@@ -274,6 +283,7 @@ func TestFindInstalledRDBMS(t *testing.T) {
 			},
 			Docker: []software.Container{{ContainerSummary: container.Summary{
 				ID: id, Names: []string{"/t-mysql-host"}, Image: "mysql:8.0", State: container.StateRunning,
+				Command: "docker-entrypoint.sh --port=33306 --mysqlx-port=33070",
 			}}},
 		}
 
@@ -284,6 +294,30 @@ func TestFindInstalledRDBMS(t *testing.T) {
 		if got[0].Source != installedRDBMSSourceDocker || got[0].Container != "t-mysql-host" ||
 			!reflect.DeepEqual(got[0].Ports, []int{33070, 33306}) || !reflect.DeepEqual(got[0].ContainerPorts, []int{33070, 33306}) {
 			t.Errorf("got %+v", got[0])
+		}
+		if p := refineInstalledRDBMS(got[0], rdbmsmodel.DBNodeProperty{}).DBEngine.Port; p != 33306 {
+			t.Errorf("refined port = %d, want the command line's server port 33306", p)
+		}
+	})
+
+	t.Run("published container ignores the command line's inside ports", func(t *testing.T) {
+		sw := &software.Software{
+			Docker: []software.Container{{ContainerSummary: container.Summary{
+				Names: []string{"/app-db"}, Image: "mysql:8.0", State: container.StateRunning,
+				Command: "docker-entrypoint.sh --port=3307 --mysqlx-port=13306",
+				Ports: []container.PortSummary{
+					{PrivatePort: 3307, PublicPort: 13307, Type: "tcp"},
+					{PrivatePort: 33060, PublicPort: 13306, Type: "tcp"},
+				},
+			}}},
+		}
+
+		got := findInstalledRDBMS(sw)
+		if len(got) != 1 || got[0].Cmdline != "docker-entrypoint.sh --port=3307 --mysqlx-port=13306" {
+			t.Fatalf("got %+v", got)
+		}
+		if p := refineInstalledRDBMS(got[0], rdbmsmodel.DBNodeProperty{}).DBEngine.Port; p != 13306 {
+			t.Errorf("refined port = %d, want the lowest published port 13306", p)
 		}
 	})
 

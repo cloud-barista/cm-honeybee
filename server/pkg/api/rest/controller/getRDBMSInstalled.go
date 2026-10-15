@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	rdbmsmodel "github.com/cloud-barista/cm-beetle/imdl/rdbms-model"
@@ -221,6 +223,7 @@ func findInstalledRDBMS(sw *software.Software) []model.InstalledRDBMSInfo {
 			db.Source = installedRDBMSSourceLegacy
 			db.Version = b.Version
 			db.VersionRaw = b.VersionRaw
+			db.Cmdline = b.Cmdline
 			db.Engine = rdbmsEngineOfProcess(l.ExecutablePath, b.VersionRaw, l.Syft)
 		}
 		if db.Engine == "" {
@@ -250,6 +253,7 @@ func findInstalledRDBMS(sw *software.Software) []model.InstalledRDBMSInfo {
 			PID:            b.PID,
 			ExecutablePath: b.ExecutablePath,
 			VersionRaw:     b.VersionRaw,
+			Cmdline:        b.Cmdline,
 		})
 	}
 
@@ -305,6 +309,7 @@ func containerRDBMS(containers []software.Container, source string, listenerPort
 			Source:         source,
 			Ports:          ports,
 			ContainerPorts: containerPorts,
+			Cmdline:        c.ContainerSummary.Command,
 			Container:      getContainerName(&c.ContainerSummary),
 			Image:          c.ContainerSummary.Image,
 		})
@@ -329,16 +334,30 @@ func uniquePorts(ports []int) []int {
 	return unique
 }
 
-// rdbmsPort picks the one port the source model holds: the engine's default
-// port when the database listens on it, otherwise the lowest one. A database
-// with no known port gives 0, which cm-beetle fills with the default.
-func rdbmsPort(engine string, ports []int) int {
+// rdbmsPort picks the one port the source model holds. The port the command
+// line gives the server (--port) comes first, and the X Protocol port MySQL
+// also listens on (--mysqlx-port) is never picked; otherwise it is the
+// engine's default port when the database listens on it, or the lowest one.
+// Ports set in a configuration file are not seen. A database with no known
+// port gives 0, which cm-beetle fills with the default.
+func rdbmsPort(engine string, ports []int, cmdline string) int {
 	if len(ports) == 0 {
 		return 0
 	}
 
-	lowest := ports[0]
-	for _, p := range ports {
+	candidates := ports
+	if engine == rdbmsEngineMySQL || engine == rdbmsEngineMariaDB {
+		port, xPort := mysqlCmdlinePorts(cmdline)
+		if slices.Contains(ports, port) {
+			return port
+		}
+		if xPort > 0 && slices.Contains(ports, xPort) && len(ports) > 1 {
+			candidates = slices.DeleteFunc(slices.Clone(ports), func(p int) bool { return p == xPort })
+		}
+	}
+
+	lowest := candidates[0]
+	for _, p := range candidates {
 		if p == rdbmsDefaultPorts[engine] {
 			return p
 		}
@@ -347,6 +366,31 @@ func rdbmsPort(engine string, ports []int) int {
 		}
 	}
 	return lowest
+}
+
+// mysqlCmdlinePorts reads the server port and the X Protocol port from a
+// mysqld or mariadbd command line, either given as "--port=3307" or
+// "--port 3307". Options spelled with underscores (--mysqlx_port) are the same
+// options. A port not on the command line is 0.
+func mysqlCmdlinePorts(cmdline string) (port int, xPort int) {
+	args := strings.Fields(cmdline)
+	for i, arg := range args {
+		name, value, hasValue := strings.Cut(arg, "=")
+		if !hasValue && i+1 < len(args) {
+			value = args[i+1]
+		}
+		n, err := strconv.Atoi(value)
+		if err != nil || n <= 0 {
+			continue
+		}
+		switch strings.ReplaceAll(name, "_", "-") {
+		case "--port":
+			port = n
+		case "--mysqlx-port":
+			xPort = n
+		}
+	}
+	return port, xPort
 }
 
 // installedRDBMSName names a database by what it was found as, so that several
@@ -369,6 +413,12 @@ func refineInstalledRDBMS(db model.InstalledRDBMSInfo, node rdbmsmodel.DBNodePro
 	if len(ports) == 0 {
 		ports = db.ContainerPorts
 	}
+	// The command line names the ports inside a container; they are the ports
+	// reported only when the container is not published on other host ports.
+	cmdline := db.Cmdline
+	if len(db.ContainerPorts) > 0 && !slices.Equal(ports, db.ContainerPorts) {
+		cmdline = ""
+	}
 
 	return rdbmsmodel.SourceRDBMSProperty{
 		DisplayName: installedRDBMSName(db),
@@ -376,7 +426,7 @@ func refineInstalledRDBMS(db model.InstalledRDBMSInfo, node rdbmsmodel.DBNodePro
 		DBEngine: rdbmsmodel.DBEngineProperty{
 			Engine:        db.Engine,
 			EngineVersion: db.Version,
-			Port:          rdbmsPort(db.Engine, ports),
+			Port:          rdbmsPort(db.Engine, ports, cmdline),
 		},
 	}
 }

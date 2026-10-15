@@ -43,14 +43,18 @@ type InstalledRDBMSInfo struct {
 	// ContainerPorts are the ports a container's database listens on inside
 	// the container. A container on the host's network has the same ports here
 	// as in Ports. Empty for a database that does not run in a container.
-	ContainerPorts []int               `json:"container_ports,omitempty"`
-	Package        string              `json:"package,omitempty"`
-	PID            int32               `json:"pid,omitempty"`
-	ExecutablePath string              `json:"executable_path,omitempty"`
-	VersionRaw     string              `json:"version_raw,omitempty"`
-	Syft           *software.SyftMatch `json:"syft,omitempty"`
-	Container      string              `json:"container,omitempty"`
-	Image          string              `json:"image,omitempty"`
+	ContainerPorts []int  `json:"container_ports,omitempty"`
+	Package        string `json:"package,omitempty"`
+	PID            int32  `json:"pid,omitempty"`
+	ExecutablePath string `json:"executable_path,omitempty"`
+	VersionRaw     string `json:"version_raw,omitempty"`
+	// Cmdline is the command line the database was started with: an
+	// unpackaged process's, or a container's command. Empty for a database
+	// run from a package, whose command line is not collected.
+	Cmdline   string              `json:"cmdline,omitempty"`
+	Syft      *software.SyftMatch `json:"syft,omitempty"`
+	Container string              `json:"container,omitempty"`
+	Image     string              `json:"image,omitempty"`
 }
 
 // RDBMSInfoList is the raw result for every connection in a source group that
