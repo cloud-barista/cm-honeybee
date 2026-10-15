@@ -4055,6 +4055,13 @@
                 "container": {
                     "type": "string"
                 },
+                "container_ports": {
+                    "description": "ContainerPorts are the ports a container's database listens on inside\nthe container. A container on the host's network has the same ports here\nas in Ports. Empty for a database that does not run in a container.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "engine": {
                     "type": "string"
                 },
@@ -4071,7 +4078,7 @@
                     "type": "integer"
                 },
                 "ports": {
-                    "description": "Ports are the ports the database listens on; empty when the ports could\nnot be read.",
+                    "description": "Ports are the ports on the VM that clients connect to the database\nthrough: those it listens on, or for a container, the host ports it is\npublished on. Empty when the ports could not be read or a container\npublishes none.",
                     "type": "array",
                     "items": {
                         "type": "integer"

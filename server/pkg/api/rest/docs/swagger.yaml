@@ -1029,6 +1029,14 @@ definitions:
     properties:
       container:
         type: string
+      container_ports:
+        description: |-
+          ContainerPorts are the ports a container's database listens on inside
+          the container. A container on the host's network has the same ports here
+          as in Ports. Empty for a database that does not run in a container.
+        items:
+          type: integer
+        type: array
       engine:
         type: string
       executable_path:
@@ -1041,8 +1049,10 @@ definitions:
         type: integer
       ports:
         description: |-
-          Ports are the ports the database listens on; empty when the ports could
-          not be read.
+          Ports are the ports on the VM that clients connect to the database
+          through: those it listens on, or for a container, the host ports it is
+          published on. Empty when the ports could not be read or a container
+          publishes none.
         items:
           type: integer
         type: array
