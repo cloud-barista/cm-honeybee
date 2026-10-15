@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	rdbmsmodel "github.com/cloud-barista/cm-beetle/imdl/rdbms-model"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
 	"github.com/cloud-barista/cm-honeybee/server/db"
@@ -241,7 +242,47 @@ func TestFindInstalledRDBMS(t *testing.T) {
 			t.Fatalf("got %d databases, want 1: %+v", len(got), got)
 		}
 		if got[0].Engine != rdbmsEngineMySQL || got[0].Version != "8.0.39" || got[0].Container != "billing-db" ||
-			got[0].Source != installedRDBMSSourceDocker || !reflect.DeepEqual(got[0].Ports, []int{3306, 33060}) {
+			got[0].Source != installedRDBMSSourceDocker || !reflect.DeepEqual(got[0].Ports, []int{13306}) ||
+			!reflect.DeepEqual(got[0].ContainerPorts, []int{3306, 33060}) {
+			t.Errorf("got %+v", got[0])
+		}
+	})
+
+	t.Run("unpublished container has container ports only", func(t *testing.T) {
+		sw := &software.Software{
+			Docker: []software.Container{{ContainerSummary: container.Summary{
+				Names: []string{"/cache-db"}, Image: "mariadb:11.4", State: container.StateRunning,
+				Ports: []container.PortSummary{{PrivatePort: 3306, Type: "tcp"}},
+			}}},
+		}
+
+		got := findInstalledRDBMS(sw)
+		if len(got) != 1 || len(got[0].Ports) != 0 || !reflect.DeepEqual(got[0].ContainerPorts, []int{3306}) {
+			t.Errorf("got %+v", got)
+		}
+		if p := refineInstalledRDBMS(got[0], rdbmsmodel.DBNodeProperty{}).DBEngine.Port; p != 3306 {
+			t.Errorf("refined port = %d, want the container port 3306", p)
+		}
+	})
+
+	t.Run("host-network container takes its listener's ports", func(t *testing.T) {
+		const id = "84a6f37067792b065439bd86a852ad3cb56dfe3c4a941045c8dbf68325ace310"
+		sw := &software.Software{
+			DEB: []software.DEB{{Package: "mysql-server", Status: "install ok installed", Version: "8.0.46"}},
+			Listeners: []software.Listener{
+				{PID: 7935, Name: "mysqld", ExecutablePath: "/usr/sbin/mysqld", Ports: []int{33070, 33306}, ContainerID: id},
+			},
+			Docker: []software.Container{{ContainerSummary: container.Summary{
+				ID: id, Names: []string{"/t-mysql-host"}, Image: "mysql:8.0", State: container.StateRunning,
+			}}},
+		}
+
+		got := findInstalledRDBMS(sw)
+		if len(got) != 1 {
+			t.Fatalf("got %d databases, want 1 (the container, not a host process): %+v", len(got), got)
+		}
+		if got[0].Source != installedRDBMSSourceDocker || got[0].Container != "t-mysql-host" ||
+			!reflect.DeepEqual(got[0].Ports, []int{33070, 33306}) || !reflect.DeepEqual(got[0].ContainerPorts, []int{33070, 33306}) {
 			t.Errorf("got %+v", got[0])
 		}
 	})

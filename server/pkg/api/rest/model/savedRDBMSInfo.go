@@ -35,9 +35,15 @@ type InstalledRDBMSInfo struct {
 	Engine  string `json:"engine"`
 	Version string `json:"version"`
 	Source  string `json:"source"`
-	// Ports are the ports the database listens on; empty when the ports could
-	// not be read.
-	Ports          []int               `json:"ports"`
+	// Ports are the ports on the VM that clients connect to the database
+	// through: those it listens on, or for a container, the host ports it is
+	// published on. Empty when the ports could not be read or a container
+	// publishes none.
+	Ports []int `json:"ports"`
+	// ContainerPorts are the ports a container's database listens on inside
+	// the container. A container on the host's network has the same ports here
+	// as in Ports. Empty for a database that does not run in a container.
+	ContainerPorts []int               `json:"container_ports,omitempty"`
 	Package        string              `json:"package,omitempty"`
 	PID            int32               `json:"pid,omitempty"`
 	ExecutablePath string              `json:"executable_path,omitempty"`

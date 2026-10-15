@@ -185,6 +185,10 @@ func findInstalledRDBMS(sw *software.Software) []model.InstalledRDBMSInfo {
 	matchedPIDs := make(map[int32]bool)
 
 	for _, l := range sw.Listeners {
+		if l.ContainerID != "" {
+			// Judged with its container, by the container's image.
+			continue
+		}
 		db := model.InstalledRDBMSInfo{
 			Ports:          append([]int{}, l.Ports...),
 			Package:        l.Package,
@@ -249,17 +253,24 @@ func findInstalledRDBMS(sw *software.Software) []model.InstalledRDBMSInfo {
 		})
 	}
 
-	found = append(found, containerRDBMS(sw.Docker, installedRDBMSSourceDocker)...)
-	found = append(found, containerRDBMS(sw.Podman, installedRDBMSSourcePodman)...)
+	containerListeners := make(map[string][]int)
+	for _, l := range sw.Listeners {
+		if l.ContainerID != "" {
+			containerListeners[l.ContainerID] = append(containerListeners[l.ContainerID], l.Ports...)
+		}
+	}
+	found = append(found, containerRDBMS(sw.Docker, installedRDBMSSourceDocker, containerListeners)...)
+	found = append(found, containerRDBMS(sw.Podman, installedRDBMSSourcePodman, containerListeners)...)
 
 	return found
 }
 
-// containerRDBMS judges running containers by their image. The port reported
-// is the one the database listens on inside the container, which is its
-// configured port; the host port it is published on is a property of the
-// container.
-func containerRDBMS(containers []software.Container, source string) []model.InstalledRDBMSInfo {
+// containerRDBMS judges running containers by their image. Its ports are the
+// host ports a container is published on, and its container ports those the
+// database listens on inside it. A container on the host's network has no
+// published ports: it listens on host ports directly, which only the agent's
+// listeners, keyed by container ID, record.
+func containerRDBMS(containers []software.Container, source string, listenerPorts map[string][]int) []model.InstalledRDBMSInfo {
 	var found []model.InstalledRDBMSInfo
 
 	for _, c := range containers {
@@ -271,29 +282,51 @@ func containerRDBMS(containers []software.Container, source string) []model.Inst
 			continue
 		}
 
-		seen := make(map[int]bool)
-		ports := []int{}
+		var published, inside []int
 		for _, p := range c.ContainerSummary.Ports {
-			port := int(p.PrivatePort)
-			if port <= 0 || seen[port] || (p.Type != "" && p.Type != "tcp") {
+			if p.Type != "" && p.Type != "tcp" {
 				continue
 			}
-			seen[port] = true
-			ports = append(ports, port)
+			// Docker lists a published port once per host address
+			// (0.0.0.0 and ::); uniquePorts drops the repeat.
+			published = append(published, int(p.PublicPort))
+			inside = append(inside, int(p.PrivatePort))
 		}
-		sort.Ints(ports)
+		ports, containerPorts := uniquePorts(published), uniquePorts(inside)
+		if len(c.ContainerSummary.Ports) == 0 {
+			if l := uniquePorts(listenerPorts[c.ContainerSummary.ID]); len(l) > 0 {
+				ports, containerPorts = l, l
+			}
+		}
 
 		found = append(found, model.InstalledRDBMSInfo{
-			Engine:    engine,
-			Version:   rdbmsVersion(getImageTag(&c.ContainerSummary.Image)),
-			Source:    source,
-			Ports:     ports,
-			Container: getContainerName(&c.ContainerSummary),
-			Image:     c.ContainerSummary.Image,
+			Engine:         engine,
+			Version:        rdbmsVersion(getImageTag(&c.ContainerSummary.Image)),
+			Source:         source,
+			Ports:          ports,
+			ContainerPorts: containerPorts,
+			Container:      getContainerName(&c.ContainerSummary),
+			Image:          c.ContainerSummary.Image,
 		})
 	}
 
 	return found
+}
+
+// uniquePorts returns the valid ports among ports, sorted and without
+// duplicates; an unpublished container port has a host port of 0.
+func uniquePorts(ports []int) []int {
+	seen := make(map[int]bool)
+	unique := []int{}
+	for _, p := range ports {
+		if p <= 0 || seen[p] {
+			continue
+		}
+		seen[p] = true
+		unique = append(unique, p)
+	}
+	sort.Ints(unique)
+	return unique
 }
 
 // rdbmsPort picks the one port the source model holds: the engine's default
@@ -330,13 +363,20 @@ func installedRDBMSName(db model.InstalledRDBMSInfo) string {
 }
 
 func refineInstalledRDBMS(db model.InstalledRDBMSInfo, node rdbmsmodel.DBNodeProperty) rdbmsmodel.SourceRDBMSProperty {
+	// A container that publishes no port is still reached on its own port
+	// by its neighbors on the container network.
+	ports := db.Ports
+	if len(ports) == 0 {
+		ports = db.ContainerPorts
+	}
+
 	return rdbmsmodel.SourceRDBMSProperty{
 		DisplayName: installedRDBMSName(db),
 		DBNode:      node,
 		DBEngine: rdbmsmodel.DBEngineProperty{
 			Engine:        db.Engine,
 			EngineVersion: db.Version,
-			Port:          rdbmsPort(db.Engine, db.Ports),
+			Port:          rdbmsPort(db.Engine, ports),
 		},
 	}
 }
