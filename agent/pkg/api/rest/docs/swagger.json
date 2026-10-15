@@ -3482,6 +3482,10 @@
                     "description": "Package is the OS package owning ExecutablePath; empty when no package owns it.",
                     "type": "string"
                 },
+                "package_version": {
+                    "description": "PackageVersion is the installed version of Package. The DEB and RPM lists\nleave out packages other packages depend on, which is where a server's\nbinary usually lives (e.g. mysql-server-core-8.0), so it is recorded here.",
+                    "type": "string"
+                },
                 "pid": {
                     "type": "integer"
                 },
