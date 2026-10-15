@@ -136,6 +136,35 @@ func TestFindInstalledRDBMS(t *testing.T) {
 		}
 	})
 
+	t.Run("server package left out of the list as a dependency", func(t *testing.T) {
+		sw := &software.Software{
+			DEB: []software.DEB{{Package: "postgresql", Status: "install ok installed", Version: "14+238"}},
+			Listeners: []software.Listener{{
+				PID: 100, Name: "postgres", ExecutablePath: "/usr/lib/postgresql/14/bin/postgres", Ports: []int{5432},
+				Package: "postgresql-14", PackageVersion: "14.24-0ubuntu0.22.04.1",
+			}},
+		}
+
+		got := findInstalledRDBMS(sw)
+		if len(got) != 1 || got[0].Engine != rdbmsEnginePostgreSQL || got[0].Version != "14.24" ||
+			got[0].Source != installedRDBMSSourceDEB || !reflect.DeepEqual(got[0].Ports, []int{5432}) {
+			t.Errorf("got %+v", got)
+		}
+	})
+
+	t.Run("listener package missing from the list and without a version is skipped", func(t *testing.T) {
+		sw := &software.Software{
+			Listeners: []software.Listener{{
+				PID: 100, Name: "postgres", ExecutablePath: "/usr/lib/postgresql/14/bin/postgres", Ports: []int{5432},
+				Package: "postgresql-14",
+			}},
+		}
+
+		if got := findInstalledRDBMS(sw); len(got) != 0 {
+			t.Errorf("got %+v, want none", got)
+		}
+	})
+
 	t.Run("stopped package reported once without ports", func(t *testing.T) {
 		sw := &software.Software{
 			RPM: []software.RPM{{Name: "mysql-server", Version: "8.0.36"}},

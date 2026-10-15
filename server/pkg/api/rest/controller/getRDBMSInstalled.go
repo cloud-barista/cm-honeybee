@@ -153,6 +153,16 @@ func installedPackages(sw *software.Software) map[string]installedPackage {
 	return packages
 }
 
+// listenerPackageSource tells which package manager a listener's package came
+// from when the package is missing from the lists. The agent asks dpkg first, so
+// a host with any DEB is a DEB host.
+func listenerPackageSource(sw *software.Software) string {
+	if len(sw.DEB) == 0 && len(sw.RPM) > 0 {
+		return installedRDBMSSourceRPM
+	}
+	return installedRDBMSSourceDEB
+}
+
 // findInstalledRDBMS judges which of a VM's collected software is a database
 // server. One running server process is one database, so a host running two
 // instances of the same package reports both; a database package with no
@@ -185,7 +195,13 @@ func findInstalledRDBMS(sw *software.Software) []model.InstalledRDBMSInfo {
 		if l.Package != "" {
 			pkg, ok := packages[l.Package]
 			if !ok {
-				continue
+				// The package lists leave out packages other packages
+				// depend on, such as mysql-server-core-8.0 under
+				// mysql-server; the listener carries its version instead.
+				if l.PackageVersion == "" {
+					continue
+				}
+				pkg = installedPackage{source: listenerPackageSource(sw), version: l.PackageVersion}
 			}
 			db.Source = pkg.source
 			db.Version = rdbmsVersion(pkg.version)
