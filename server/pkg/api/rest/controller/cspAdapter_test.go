@@ -86,3 +86,44 @@ func TestMatchBucket(t *testing.T) {
 		})
 	}
 }
+
+func TestMatchRDBMS(t *testing.T) {
+	cspOnly := spider.RDBMSInfo{IId: spider.IID{NameId: "", SystemId: "projects/p/instances/sql-1"}}
+	managed := spider.RDBMSInfo{IId: spider.IID{NameId: "billing-db", SystemId: "db-abc123"}}
+	listing := []spider.RDBMSInfo{cspOnly, managed}
+
+	tests := []struct {
+		name       string
+		resourceID string
+		wantSystem string
+	}{
+		{"CSP-only instance by system id", "projects/p/instances/sql-1", "projects/p/instances/sql-1"},
+		{"managed instance by system id", "db-abc123", "db-abc123"},
+		{"managed instance by name id", "billing-db", "db-abc123"},
+		{"unknown id", "nope", ""},
+		// An empty id must not match the empty NameId of a CSP-only instance.
+		{"empty id", "", ""},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := matchRDBMS(listing, tc.resourceID)
+
+			if tc.wantSystem == "" {
+				if got != nil {
+					t.Fatalf("matched %+v, want no match", got.IId)
+				}
+
+				return
+			}
+
+			if got == nil {
+				t.Fatalf("no match, want system id %q", tc.wantSystem)
+			}
+
+			if got.IId.SystemId != tc.wantSystem {
+				t.Errorf("system id = %q, want %q", got.IId.SystemId, tc.wantSystem)
+			}
+		})
+	}
+}

@@ -142,6 +142,51 @@ func SavedKubernetesInfoDelete(savedKubernetesInfo *model.SavedKubernetesInfo) e
 	return nil
 }
 
+func SavedRDBMSInfoGet(connectionID string) (*model.SavedRDBMSInfo, error) {
+	savedRDBMSInfo := &model.SavedRDBMSInfo{}
+
+	result := db.DB.Where("connection_id = ?", connectionID).First(savedRDBMSInfo)
+	err := result.Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("SavedRDBMSInfo not found with the provided connection_id")
+		}
+		return nil, err
+	}
+
+	return savedRDBMSInfo, nil
+}
+
+func SavedRDBMSInfoRegister(savedRDBMSInfo *model.SavedRDBMSInfo) (*model.SavedRDBMSInfo, error) {
+	result := db.DB.Create(savedRDBMSInfo)
+	err := result.Error
+	if err != nil {
+		return nil, err
+	}
+
+	return savedRDBMSInfo, nil
+}
+
+func SavedRDBMSInfoUpdate(savedRDBMSInfo *model.SavedRDBMSInfo) error {
+	result := db.DB.Model(&model.SavedRDBMSInfo{}).Where("connection_id = ?", savedRDBMSInfo.ConnectionID).Updates(savedRDBMSInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SavedRDBMSInfoDelete(savedRDBMSInfo *model.SavedRDBMSInfo) error {
+	result := db.DB.Delete(savedRDBMSInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func SavedHelmInfoGet(connectionID string) (*model.SavedHelmInfo, error) {
 	savedHelmInfo := &model.SavedHelmInfo{}
 

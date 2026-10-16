@@ -18,12 +18,12 @@ import (
 //
 //	@ID				discover-source-group-resources
 //	@Summary		Discover CSP resources for a SourceGroup
-//	@Description	Lists VMs / K8s clusters / object-storage buckets / network load balancers reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.
+//	@Description	Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.
 //	@Tags			[CSP] Discovery
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the SourceGroup (must be type=csp)"
-//	@Param			resource_type query string true "Resource type to discover (vm | k8s | object_storage | nlb)"
+//	@Param			resource_type query string true "Resource type to discover (vm | k8s | object_storage | nlb | rdbms)"
 //	@Success		200	{object}	model.DiscoverRes		"Discovered resources"
 //	@Failure		400	{object}	common.ErrorResponse	"Invalid request"
 //	@Failure		500	{object}	common.ErrorResponse	"Discovery failed"
@@ -44,7 +44,7 @@ func DiscoverSourceGroupResources(c echo.Context) error {
 
 	resourceType := strings.ToLower(strings.TrimSpace(c.QueryParam("resource_type")))
 	if resourceType == "" {
-		return common.ReturnErrorMsg(c, "resource_type query is required (vm | k8s | object_storage | nlb).")
+		return common.ReturnErrorMsg(c, "resource_type query is required (vm | k8s | object_storage | nlb | rdbms).")
 	}
 
 	// The credential goes to the driver in memory for this call only.
@@ -176,8 +176,39 @@ func discoverByType(conn spider.Conn, resourceType string) ([]model.DiscoveredRe
 			})
 		}
 		return out, nil
+	case serverCommon.ResourceTypeRDBMS:
+		// Not every driver implements RDBMSHandler; ask before creating one,
+		// as for NLB.
+		capability, err := spider.GetDriverCapability(conn.Provider)
+		if err != nil {
+			return nil, err
+		}
+		if !capability.RDBMSHandler {
+			return nil, errDriverUnsupported{
+				msg: "this source group's CSP has no RDBMS support in its cb-spider driver",
+			}
+		}
+		instances, err := spider.ListRDBMS(conn)
+		if err != nil {
+			return nil, err
+		}
+		out := make([]model.DiscoveredResource, 0, len(instances))
+		for _, db := range instances {
+			out = append(out, model.DiscoveredResource{
+				ResourceType: serverCommon.ResourceTypeRDBMS,
+				ResourceID:   pickIIDSystem(db.IId),
+				Name:         db.IId.NameId,
+				Extra: map[string]string{
+					"engine":  db.DBEngine,
+					"version": db.DBEngineVersion,
+					"spec":    db.DBSpec,
+					"status":  db.Status,
+				},
+			})
+		}
+		return out, nil
 	default:
-		return nil, errors.New("unsupported resource_type: " + resourceType + " (expected vm | k8s | object_storage | nlb)")
+		return nil, errors.New("unsupported resource_type: " + resourceType + " (expected vm | k8s | object_storage | nlb | rdbms)")
 	}
 }
 

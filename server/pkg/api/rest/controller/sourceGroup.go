@@ -51,6 +51,17 @@ func deleteSavedKubernetesInfo(connectionInfo *model.ConnectionInfo) {
 	}
 }
 
+func deleteSavedRDBMSInfo(connectionInfo *model.ConnectionInfo) {
+	savedRDBMSInfo, _ := dao.SavedRDBMSInfoGet(connectionInfo.ID)
+	if savedRDBMSInfo == nil {
+		return
+	}
+	err := dao.SavedRDBMSInfoDelete(savedRDBMSInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+}
+
 func doDeleteSourceGroup(sourceGroupID string) error {
 	sourceGroup, err := dao.SourceGroupGet(sourceGroupID)
 	if err != nil {
@@ -67,6 +78,7 @@ func doDeleteSourceGroup(sourceGroupID string) error {
 		deleteSavedInfraInfo(&connectionInfo)
 		deleteSavedSoftwareInfo(&connectionInfo)
 		deleteSavedKubernetesInfo(&connectionInfo)
+		deleteSavedRDBMSInfo(&connectionInfo)
 		deleteConnectionSecrets(connectionInfo.ID)
 		err = dao.ConnectionInfoDelete(&connectionInfo)
 		if err != nil {

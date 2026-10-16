@@ -25,7 +25,7 @@ type ConnectionInfo struct {
 	Kubeconfig string `gorm:"column:kubeconfig" json:"kubeconfig,omitempty"`
 
 	// CSP fields — required when parent SourceGroup.Type == "csp".
-	// ResourceType: "vm" | "k8s" | "object_storage".
+	// ResourceType: "vm" | "k8s" | "object_storage" | "nlb" | "rdbms".
 	ResourceType string `gorm:"column:resource_type" json:"resource_type,omitempty"`
 	ResourceID   string `gorm:"column:resource_id" json:"resource_id,omitempty"`
 	// Zone overrides the CSP zone for this connection's driver lookups.
