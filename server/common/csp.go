@@ -9,6 +9,23 @@ const SourceGroupTypeSSH = "ssh"
 // SourceGroupTypeCSP represents cb-spider-backed cloud sources.
 const SourceGroupTypeCSP = "csp"
 
+// SourceGroupTypeFS represents hosts whose file system is collected for data
+// migration, reached over SSH through the agent. It is a data source group, not
+// an infrastructure one: an onprem group collects the host itself (infra,
+// software, kubernetes, helm), an fs group collects the files under a path.
+const SourceGroupTypeFS = "fs"
+
+// SourceGroupTypeDB represents DBMS servers reached by host and port. It covers
+// self-managed servers and CSP managed database services (RDS, Cloud SQL, Azure
+// Database, ...) alike: unlike csp, nothing goes through the CSP drivers, and
+// each connection holds its own endpoint and credentials.
+const SourceGroupTypeDB = "db"
+
+// SourceGroupTypeMinIO represents S3-compatible object storage endpoints, of a
+// CSP or self-hosted. The provider and region on the group pick the endpoint;
+// the connection holds the keys.
+const SourceGroupTypeMinIO = "minio"
+
 // IsOnpremType reports whether the type is on-premise (onprem, legacy ssh, or empty).
 func IsOnpremType(t string) bool {
 	return t == "" || t == SourceGroupTypeOnprem || t == SourceGroupTypeSSH
@@ -19,9 +36,25 @@ func IsCSPType(t string) bool {
 	return t == SourceGroupTypeCSP
 }
 
+// IsFSType reports whether the type is a file system data source.
+func IsFSType(t string) bool {
+	return t == SourceGroupTypeFS
+}
+
+// IsDBType reports whether the type is a DBMS data source.
+func IsDBType(t string) bool {
+	return t == SourceGroupTypeDB
+}
+
+// IsMinIOType reports whether the type is an S3-compatible object storage data
+// source.
+func IsMinIOType(t string) bool {
+	return t == SourceGroupTypeMinIO
+}
+
 // IsValidSourceGroupType reports whether t is an accepted type.
 func IsValidSourceGroupType(t string) bool {
-	return IsOnpremType(t) || IsCSPType(t)
+	return IsOnpremType(t) || IsCSPType(t) || IsFSType(t) || IsDBType(t) || IsMinIOType(t)
 }
 
 // ResourceTypeVM represents a CSP virtual machine.
