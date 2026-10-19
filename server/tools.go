@@ -10,6 +10,4 @@ package tools
 
 import (
 	_ "github.com/cloud-barista/cm-centipede/dmdl/common-model"
-	_ "github.com/cloud-barista/cm-centipede/dmdl/source-model"
-	_ "github.com/cloud-barista/cm-centipede/transx-ex"
 )

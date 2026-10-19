@@ -58,6 +58,21 @@ func Open() error {
 		logger.Panicln(logger.ERROR, true, err)
 	}
 
+	err = DB.AutoMigrate(&model.SavedFSInfo{})
+	if err != nil {
+		logger.Panicln(logger.ERROR, true, err)
+	}
+
+	err = DB.AutoMigrate(&model.SavedObjectStorageInfo{})
+	if err != nil {
+		logger.Panicln(logger.ERROR, true, err)
+	}
+
+	err = DB.AutoMigrate(&model.SavedDBInfo{})
+	if err != nil {
+		logger.Panicln(logger.ERROR, true, err)
+	}
+
 	err = DB.AutoMigrate(&model.OpenBaoInit{})
 	if err != nil {
 		logger.Panicln(logger.ERROR, true, err)

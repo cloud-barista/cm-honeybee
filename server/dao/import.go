@@ -231,3 +231,138 @@ func SavedDataInfoDelete(savedDataInfo *model.SavedDataInfo) error {
 
 	return nil
 }
+
+func SavedFSInfoGet(connectionID string) (*model.SavedFSInfo, error) {
+	savedFSInfo := &model.SavedFSInfo{}
+
+	result := db.DB.Where("connection_id = ?", connectionID).First(savedFSInfo)
+	err := result.Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("SavedFSInfo not found with the provided connection_id")
+		}
+		return nil, err
+	}
+
+	return savedFSInfo, nil
+}
+
+func SavedFSInfoRegister(savedFSInfo *model.SavedFSInfo) (*model.SavedFSInfo, error) {
+	result := db.DB.Create(savedFSInfo)
+	err := result.Error
+	if err != nil {
+		return nil, err
+	}
+
+	return savedFSInfo, nil
+}
+
+func SavedFSInfoUpdate(savedFSInfo *model.SavedFSInfo) error {
+	result := db.DB.Model(&model.SavedFSInfo{}).Where("connection_id = ?", savedFSInfo.ConnectionID).Updates(savedFSInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SavedFSInfoDelete(savedFSInfo *model.SavedFSInfo) error {
+	result := db.DB.Delete(savedFSInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SavedObjectStorageInfoGet(connectionID string) (*model.SavedObjectStorageInfo, error) {
+	savedObjectStorageInfo := &model.SavedObjectStorageInfo{}
+
+	result := db.DB.Where("connection_id = ?", connectionID).First(savedObjectStorageInfo)
+	err := result.Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("SavedObjectStorageInfo not found with the provided connection_id")
+		}
+		return nil, err
+	}
+
+	return savedObjectStorageInfo, nil
+}
+
+func SavedObjectStorageInfoRegister(savedObjectStorageInfo *model.SavedObjectStorageInfo) (*model.SavedObjectStorageInfo, error) {
+	result := db.DB.Create(savedObjectStorageInfo)
+	err := result.Error
+	if err != nil {
+		return nil, err
+	}
+
+	return savedObjectStorageInfo, nil
+}
+
+func SavedObjectStorageInfoUpdate(savedObjectStorageInfo *model.SavedObjectStorageInfo) error {
+	result := db.DB.Model(&model.SavedObjectStorageInfo{}).Where("connection_id = ?", savedObjectStorageInfo.ConnectionID).Updates(savedObjectStorageInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SavedObjectStorageInfoDelete(savedObjectStorageInfo *model.SavedObjectStorageInfo) error {
+	result := db.DB.Delete(savedObjectStorageInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SavedDBInfoGet(connectionID string) (*model.SavedDBInfo, error) {
+	savedDBInfo := &model.SavedDBInfo{}
+
+	result := db.DB.Where("connection_id = ?", connectionID).First(savedDBInfo)
+	err := result.Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("SavedDBInfo not found with the provided connection_id")
+		}
+		return nil, err
+	}
+
+	return savedDBInfo, nil
+}
+
+func SavedDBInfoRegister(savedDBInfo *model.SavedDBInfo) (*model.SavedDBInfo, error) {
+	result := db.DB.Create(savedDBInfo)
+	err := result.Error
+	if err != nil {
+		return nil, err
+	}
+
+	return savedDBInfo, nil
+}
+
+func SavedDBInfoUpdate(savedDBInfo *model.SavedDBInfo) error {
+	result := db.DB.Model(&model.SavedDBInfo{}).Where("connection_id = ?", savedDBInfo.ConnectionID).Updates(savedDBInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func SavedDBInfoDelete(savedDBInfo *model.SavedDBInfo) error {
+	result := db.DB.Delete(savedDBInfo)
+	err := result.Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

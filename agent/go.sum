@@ -61,8 +61,8 @@ github.com/chai2010/gettext-go v1.0.3 h1:9liNh8t+u26xl5ddmWLmsOsdNLwkdRTg5AG+JnT
 github.com/chai2010/gettext-go v1.0.3/go.mod h1:y+wnP2cHYaVj19NZhYKAwEMH2CI1gNHeQQ+5AjwawxA=
 github.com/clipperhouse/uax29/v2 v2.7.0 h1:+gs4oBZ2gPfVrKPthwbMzWZDaAFPGYK72F0NJv2v7Vk=
 github.com/clipperhouse/uax29/v2 v2.7.0/go.mod h1:EFJ2TJMRUaplDxHKj1qAEhCtQPW2tJSwu5BF98AuoVM=
-github.com/cloud-barista/cm-centipede/transx-ex v0.1.0 h1:rET2tzjkA1nhOizGIxo4pftuujbqVBkXcdRO71wncVo=
-github.com/cloud-barista/cm-centipede/transx-ex v0.1.0/go.mod h1:DJd5pTnUUB08QHjGLInZA/RuF+gY0kijA1RkcMAfYow=
+github.com/cloud-barista/cm-centipede/transx-ex v0.1.1 h1:1wmcokN6NA1E2XSHOy+Fdem9J8gX6j+4YaE5oaidtM0=
+github.com/cloud-barista/cm-centipede/transx-ex v0.1.1/go.mod h1:DJd5pTnUUB08QHjGLInZA/RuF+gY0kijA1RkcMAfYow=
 github.com/cloudflare/circl v1.6.5 h1:O64F26HEqNhznd/hrC5KZXVKYuKM2rx4deZDTc4ihQA=
 github.com/cloudflare/circl v1.6.5/go.mod h1:h5LNyxAc5nTue9DS5jT+48en2PSDYt3zdGnz5OstK6c=
 github.com/containerd/errdefs v1.0.0 h1:tg5yIfIlQIrxYtu9ajqY42W3lpS19XqdxRQeEwYG8PI=

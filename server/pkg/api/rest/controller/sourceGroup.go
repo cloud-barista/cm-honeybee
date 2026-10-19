@@ -121,7 +121,7 @@ func CreateSourceGroup(c echo.Context) error {
 		sgType = serverCommon.SourceGroupTypeSSH
 	}
 	if !serverCommon.IsValidSourceGroupType(sgType) {
-		return common.ReturnErrorMsg(c, "type must be 'onprem' (legacy 'ssh') or 'csp'.")
+		return common.ReturnErrorMsg(c, "type must be 'onprem' (legacy 'ssh'), 'csp', 'fs', 'db', or 'minio'.")
 	}
 
 	sourceGroup := &model.SourceGroup{
@@ -147,6 +147,42 @@ func CreateSourceGroup(c echo.Context) error {
 			return common.ReturnErrorMsg(c, storeErr.Error())
 		}
 		sourceGroup.Credential = stored
+	}
+
+	// minio: the provider and region pick the S3 endpoint of every connection in
+	// the group (see resolveS3Endpoint). onprem has no endpoint to derive, each
+	// connection brings its own os_endpoint, so nothing more is checked for it.
+	if serverCommon.IsMinIOType(sgType) {
+		provider := strings.ToLower(strings.TrimSpace(createSourceGroupReq.ProviderName))
+		region := strings.ToLower(strings.TrimSpace(createSourceGroupReq.RegionName))
+		if provider == "" {
+			return common.ReturnErrorMsg(c, "provider_name is required for minio source group.")
+		}
+		if provider != providerOnPrem {
+			if !isSupportedProvider(provider) {
+				return common.ReturnErrorMsg(c, unsupportedProviderMsg(provider))
+			}
+			if regionRequired(provider) && region == "" {
+				return common.ReturnErrorMsg(c, "region_name is required for provider '"+provider+"'.")
+			}
+		}
+		sourceGroup.ProviderName = provider
+		sourceGroup.RegionName = region
+	}
+
+	// db: provider_name records where the databases are hosted. Nothing is
+	// derived from it (each connection holds its own host and port), so
+	// region_name is not taken, but a data source group still has to answer
+	// where it is: the operator's own servers say "onprem".
+	if serverCommon.IsDBType(sgType) {
+		provider := strings.ToLower(strings.TrimSpace(createSourceGroupReq.ProviderName))
+		if provider == "" {
+			return common.ReturnErrorMsg(c, "provider_name is required for db source group.")
+		}
+		if !isSupportedProvider(provider) {
+			return common.ReturnErrorMsg(c, unsupportedProviderMsg(provider))
+		}
+		sourceGroup.ProviderName = provider
 	}
 
 	var connectionInfoList []*model.ConnectionInfo
@@ -447,6 +483,13 @@ func UpdateSourceGroup(c echo.Context) error {
 			oldSourceGroup.ProviderName = provider
 			oldSourceGroup.RegionName = region
 		}
+	}
+
+	// minio: only the region can change (the provider cannot), and an empty
+	// value means "no change", so the region stays set for providers that
+	// require one.
+	if serverCommon.IsMinIOType(oldSourceGroup.Type) && strings.TrimSpace(updateSourceGroupReq.RegionName) != "" {
+		oldSourceGroup.RegionName = strings.ToLower(strings.TrimSpace(updateSourceGroupReq.RegionName))
 	}
 
 	err = dao.SourceGroupUpdate(oldSourceGroup)

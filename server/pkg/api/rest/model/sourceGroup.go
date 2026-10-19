@@ -53,18 +53,24 @@ type SourceGroup struct {
 	TargetInfo  TargetInfo `gorm:"column:target_info" json:"target_info"`
 
 	// Type discriminates how this group's connections are collected. Allowed:
-	// "onprem" or "csp" (cb-spider backed); see common.IsOnpremType. "ssh" and
+	// "onprem" or "csp" (cb-spider backed) for infrastructure, and "fs", "db" or
+	// "minio" for data migration sources; see common.IsOnpremType. "ssh" and
 	// the empty value are the earlier spelling of "onprem" and are still
 	// accepted. The stored default stays "ssh" rather than "onprem" because it
 	// is what clients already compare against; the request handler writes it
 	// explicitly when the caller omits the field.
 	Type string `gorm:"column:type;default:ssh" json:"type"`
 
-	// CSP fields, populated only when Type == "csp".
-	// Credential lives in OpenBao, never in this table: the column is cleared on
-	// write and rehydrated on demand. It is handed to the CSP driver per
-	// discovery/collection call and registered nowhere else; honeybee is the
-	// single source of truth, so no connection name is kept.
+	// ProviderName is where the sources are hosted. csp: the cb-spider provider.
+	// minio: picks the S3 endpoint form. db: recorded only, nothing is derived
+	// from it. Both minio and db take the providers in provider.go, "onprem" for
+	// the operator's own servers.
+	// RegionName: csp and minio only. minio requires it for providers whose
+	// endpoint or signing carries the region (see regionRequired).
+	// Credential is csp only. It lives in OpenBao, never in this table: the
+	// column is cleared on write and rehydrated on demand. It is handed to the
+	// CSP driver per discovery/collection call and registered nowhere else;
+	// honeybee is the single source of truth, so no connection name is kept.
 	ProviderName string       `gorm:"column:provider_name" json:"provider_name,omitempty"`
 	RegionName   string       `gorm:"column:region_name" json:"region_name,omitempty"`
 	Credential   KeyValueList `gorm:"column:credential" json:"credential,omitempty"`
@@ -75,7 +81,9 @@ type CreateSourceGroupReq struct {
 	Description    string                    `json:"description"`
 	ConnectionInfo []CreateConnectionInfoReq `json:"connection_info"`
 
-	// CSP fields — required when Type == "csp".
+	// Type: "onprem" (default; legacy "ssh") | "csp" | "fs" | "db" | "minio".
+	// provider_name is required for csp, minio and db; region_name for csp and
+	// for minio providers that need it; credential for csp only.
 	Type         string     `json:"type"`
 	ProviderName string     `json:"provider_name,omitempty"`
 	RegionName   string     `json:"region_name,omitempty"`
@@ -86,7 +94,7 @@ type UpdateSourceGroupReq struct {
 	Name        string `json:"name" validate:"required"`
 	Description string `json:"description"`
 
-	// CSP fields — only honored for CSP groups.
+	// RegionName is honored for csp and minio groups, Credential for csp only.
 	RegionName string     `json:"region_name,omitempty"`
 	Credential []KeyValue `json:"credential,omitempty"`
 }
