@@ -1048,7 +1048,7 @@ const docTemplate = `{
                     "description": "ImageManifestDescriptor is the descriptor of a platform-specific manifest of the image used to create the container.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/v1.Descriptor"
+                            "$ref": "#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Descriptor"
                         }
                     ]
                 },
@@ -1385,7 +1385,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ImageManifestDescriptor": {
-                    "$ref": "#/definitions/v1.Descriptor"
+                    "$ref": "#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Descriptor"
                 },
                 "command": {
                     "type": "string"
@@ -3350,6 +3350,10 @@ const docTemplate = `{
                 "version": {
                     "type": "string"
                 },
+                "version_raw": {
+                    "description": "VersionRaw is the raw output of the version command Version was parsed\nfrom. It is kept so consumers can tell apart products the version regex\ncannot (e.g. MariaDB reports a MySQL-compatible version).",
+                    "type": "string"
+                },
                 "wine_prefix": {
                     "type": "string"
                 },
@@ -3472,6 +3476,47 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Listener": {
+            "type": "object",
+            "properties": {
+                "container_id": {
+                    "description": "ContainerID is the ID of the Docker or Podman container the process runs\nin; empty for a host process. Only containers on the host's network are\ncollected: the runtime records no ports for them, so their process is the\nonly record of where they listen. ExecutablePath is then a path inside the\ncontainer, and Package and Syft are left empty.",
+                    "type": "string"
+                },
+                "executable_path": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "package": {
+                    "description": "Package is the OS package owning ExecutablePath; empty when no package owns it.",
+                    "type": "string"
+                },
+                "package_version": {
+                    "description": "PackageVersion is the installed version of Package. The DEB and RPM lists\nleave out packages other packages depend on, which is where a server's\nbinary usually lives (e.g. mysql-server-core-8.0), so it is recorded here.",
+                    "type": "string"
+                },
+                "pid": {
+                    "type": "integer"
+                },
+                "ports": {
+                    "description": "Ports are the local ports of the process's LISTEN sockets, sorted and unique.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "syft": {
+                    "description": "Syft is what syft's binary classifier recognized ExecutablePath as, if anything.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.SyftMatch"
+                        }
+                    ]
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.RPM": {
             "type": "object",
             "properties": {
@@ -3580,6 +3625,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Binary"
                     }
                 },
+                "listeners": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Listener"
+                    }
+                },
                 "podman": {
                     "type": "array",
                     "items": {
@@ -3600,6 +3651,26 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.SyftMatch": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_moby_moby_api_types_image.Metadata": {
+            "type": "object",
+            "properties": {
+                "lastTagTime": {
+                    "description": "LastTagTime is the date and time at which the image was last tagged.",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_moby_moby_api_types_storage.Storage": {
             "type": "object",
             "properties": {
@@ -3610,6 +3681,84 @@ const docTemplate = `{
                             "$ref": "#/definitions/storage.RootFSStorage"
                         }
                     ]
+                }
+            }
+        },
+        "github_com_opencontainers_image-spec_specs-go_v1.Descriptor": {
+            "type": "object",
+            "properties": {
+                "annotations": {
+                    "description": "Annotations contains arbitrary metadata relating to the targeted content.",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "artifactType": {
+                    "description": "ArtifactType is the IANA media type of this artifact.",
+                    "type": "string"
+                },
+                "data": {
+                    "description": "Data is an embedding of the targeted content. This is encoded as a base64\nstring when marshalled to JSON (automatically, by encoding/json). If\npresent, Data can be used directly to avoid fetching the targeted content.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "digest": {
+                    "description": "Digest is the digest of the targeted content.",
+                    "type": "string"
+                },
+                "mediaType": {
+                    "description": "MediaType is the media type of the object this schema refers to.",
+                    "type": "string"
+                },
+                "platform": {
+                    "description": "Platform describes the platform which the image in the manifest runs on.\n\nThis should only be used when referring to a manifest.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Platform"
+                        }
+                    ]
+                },
+                "size": {
+                    "description": "Size specifies the size in bytes of the blob.",
+                    "type": "integer"
+                },
+                "urls": {
+                    "description": "URLs specifies a list of URLs from which this object MAY be downloaded",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "github_com_opencontainers_image-spec_specs-go_v1.Platform": {
+            "type": "object",
+            "properties": {
+                "architecture": {
+                    "description": "Architecture field specifies the CPU architecture, for example\n` + "`" + `amd64` + "`" + ` or ` + "`" + `ppc64le` + "`" + `.",
+                    "type": "string"
+                },
+                "os": {
+                    "description": "OS specifies the operating system, for example ` + "`" + `linux` + "`" + ` or ` + "`" + `windows` + "`" + `.",
+                    "type": "string"
+                },
+                "os.features": {
+                    "description": "OSFeatures is an optional field specifying an array of strings,\neach listing a required OS feature (for example on Windows ` + "`" + `win32k` + "`" + `).",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "os.version": {
+                    "description": "OSVersion is an optional field specifying the operating system\nversion, for example on Windows ` + "`" + `10.0.14393.1066` + "`" + `.",
+                    "type": "string"
+                },
+                "variant": {
+                    "description": "Variant is an optional field specifying a variant of the CPU, for\nexample ` + "`" + `v7` + "`" + ` to specify ARMv7 when architecture is ` + "`" + `arm` + "`" + `.",
+                    "type": "string"
                 }
             }
         },
@@ -3683,7 +3832,7 @@ const docTemplate = `{
                     "description": "Platform is the OCI platform object describing the platform of the image.\n\nRequired: true",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/v1.Platform"
+                            "$ref": "#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Platform"
                         }
                     ]
                 },
@@ -3705,7 +3854,7 @@ const docTemplate = `{
                     "description": "Descriptor is the OCI descriptor of the image target.\nIt's only set if the daemon provides a multi-platform image store.\n\nWARNING: This is experimental and may change at any time without any backward\ncompatibility.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/v1.Descriptor"
+                            "$ref": "#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Descriptor"
                         }
                     ]
                 },
@@ -3759,7 +3908,7 @@ const docTemplate = `{
                     "description": "Metadata of the image in the local cache.\n\nThis information is local to the daemon, and not part of the image itself.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/image.Metadata"
+                            "$ref": "#/definitions/github_com_moby_moby_api_types_image.Metadata"
                         }
                     ]
                 },
@@ -3845,7 +3994,7 @@ const docTemplate = `{
                     "description": "Descriptor is the OCI descriptor of the image.\n\nRequired: true",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/v1.Descriptor"
+                            "$ref": "#/definitions/github_com_opencontainers_image-spec_specs-go_v1.Descriptor"
                         }
                     ]
                 },
@@ -3882,15 +4031,6 @@ const docTemplate = `{
                             "type": "integer"
                         }
                     }
-                }
-            }
-        },
-        "image.Metadata": {
-            "type": "object",
-            "properties": {
-                "lastTagTime": {
-                    "description": "LastTagTime is the date and time at which the image was last tagged.",
-                    "type": "string"
                 }
             }
         },
@@ -4410,19 +4550,9 @@ const docTemplate = `{
                 2401763328,
                 511,
                 2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
                 8388608,
                 4194304,
-                2097152,
                 1048576,
-                524288,
-                2401763328,
                 511,
                 2147483648,
                 1073741824,
@@ -4468,6 +4598,11 @@ const docTemplate = `{
                 1048576,
                 524288,
                 2401763328,
+                511,
+                2147483648,
+                8388608,
+                4194304,
+                1048576,
                 511
             ],
             "x-enum-comments": {
@@ -4533,19 +4668,9 @@ const docTemplate = `{
                 "",
                 "Unix permission bits, 0o777",
                 "d: is a directory",
-                "a: append-only",
-                "l: exclusive use",
-                "T: temporary file; Plan 9 only",
-                "L: symbolic link",
-                "D: device file",
-                "p: named pipe (FIFO)",
-                "S: Unix domain socket",
                 "u: setuid",
                 "g: setgid",
-                "c: Unix character device, when ModeDevice is set",
                 "t: sticky",
-                "?: non-regular file; nothing else is known about this file",
-                "",
                 "Unix permission bits, 0o777"
             ],
             "x-enum-varnames": [
@@ -4595,19 +4720,9 @@ const docTemplate = `{
                 "ModeType",
                 "ModePerm",
                 "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
                 "ModeSetuid",
                 "ModeSetgid",
-                "ModeCharDevice",
                 "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
                 "ModePerm"
             ]
         },
@@ -4669,18 +4784,77 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
                 1000000000,
                 60000000000,
-                3600000000000
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000,
+                3600000000000,
+                1,
+                1000,
+                1000000,
+                1000000000,
+                60000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
                 "minDuration",
                 "maxDuration",
                 "Nanosecond",
@@ -4693,63 +4867,8 @@ const docTemplate = `{
                 "Microsecond",
                 "Millisecond",
                 "Second",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour"
+                "Minute"
             ]
-        },
-        "v1.Descriptor": {
-            "type": "object",
-            "properties": {
-                "annotations": {
-                    "description": "Annotations contains arbitrary metadata relating to the targeted content.",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "artifactType": {
-                    "description": "ArtifactType is the IANA media type of this artifact.",
-                    "type": "string"
-                },
-                "data": {
-                    "description": "Data is an embedding of the targeted content. This is encoded as a base64\nstring when marshalled to JSON (automatically, by encoding/json). If\npresent, Data can be used directly to avoid fetching the targeted content.",
-                    "type": "array",
-                    "items": {
-                        "type": "integer"
-                    }
-                },
-                "digest": {
-                    "description": "Digest is the digest of the targeted content.",
-                    "type": "string"
-                },
-                "mediaType": {
-                    "description": "MediaType is the media type of the object this schema refers to.",
-                    "type": "string"
-                },
-                "platform": {
-                    "description": "Platform describes the platform which the image in the manifest runs on.\n\nThis should only be used when referring to a manifest.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/v1.Platform"
-                        }
-                    ]
-                },
-                "size": {
-                    "description": "Size specifies the size in bytes of the blob.",
-                    "type": "integer"
-                },
-                "urls": {
-                    "description": "URLs specifies a list of URLs from which this object MAY be downloaded",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
         },
         "v1.DockerOCIImageConfig": {
             "type": "object",
@@ -4881,34 +5000,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/time.Duration"
                         }
                     ]
-                }
-            }
-        },
-        "v1.Platform": {
-            "type": "object",
-            "properties": {
-                "architecture": {
-                    "description": "Architecture field specifies the CPU architecture, for example\n` + "`" + `amd64` + "`" + ` or ` + "`" + `ppc64le` + "`" + `.",
-                    "type": "string"
-                },
-                "os": {
-                    "description": "OS specifies the operating system, for example ` + "`" + `linux` + "`" + ` or ` + "`" + `windows` + "`" + `.",
-                    "type": "string"
-                },
-                "os.features": {
-                    "description": "OSFeatures is an optional field specifying an array of strings,\neach listing a required OS feature (for example on Windows ` + "`" + `win32k` + "`" + `).",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "os.version": {
-                    "description": "OSVersion is an optional field specifying the operating system\nversion, for example on Windows ` + "`" + `10.0.14393.1066` + "`" + `.",
-                    "type": "string"
-                },
-                "variant": {
-                    "description": "Variant is an optional field specifying a variant of the CPU, for\nexample ` + "`" + `v7` + "`" + ` to specify ARMv7 when architecture is ` + "`" + `arm` + "`" + `.",
-                    "type": "string"
                 }
             }
         }

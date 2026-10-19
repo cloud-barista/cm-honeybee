@@ -58,6 +58,11 @@ func Open() error {
 		logger.Panicln(logger.ERROR, true, err)
 	}
 
+	err = DB.AutoMigrate(&model.SavedRDBMSInfo{})
+	if err != nil {
+		logger.Panicln(logger.ERROR, true, err)
+	}
+
 	err = DB.AutoMigrate(&model.SavedFSInfo{})
 	if err != nil {
 		logger.Panicln(logger.ERROR, true, err)

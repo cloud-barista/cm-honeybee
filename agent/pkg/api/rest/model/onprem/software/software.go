@@ -1,13 +1,14 @@
 package software
 
 type Software struct {
-	DEB     []DEB       `json:"deb"`
-	RPM     []RPM       `json:"rpm"`
-	Snap    []Snap      `json:"snap"`
-	Flatpak []Flatpak   `json:"flatpak"`
-	Legacy  []Binary    `json:"legacy"`
-	Docker  []Container `json:"docker"`
-	Podman  []Container `json:"podman"`
+	DEB       []DEB       `json:"deb"`
+	RPM       []RPM       `json:"rpm"`
+	Snap      []Snap      `json:"snap"`
+	Flatpak   []Flatpak   `json:"flatpak"`
+	Legacy    []Binary    `json:"legacy"`
+	Docker    []Container `json:"docker"`
+	Podman    []Container `json:"podman"`
+	Listeners []Listener  `json:"listeners"`
 }
 
 // Snap is an installed snap package (from snapd).

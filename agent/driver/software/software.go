@@ -88,14 +88,22 @@ func GetSoftwareInfo(showDefaultPackages bool) (*software2.Software, error) {
 		logger.Println(logger.DEBUG, true, "PODMAN: "+err.Error())
 	}
 
+	start = time.Now()
+	listeners, err := GetListeners()
+	common.LogElapsed("software", "listeners", start, common.CountDetail(len(listeners)))
+	if err != nil {
+		logger.Println(logger.DEBUG, true, "Listeners: "+err.Error())
+	}
+
 	sw := software2.Software{
-		DEB:     deb,
-		RPM:     rpm,
-		Snap:    snaps,
-		Flatpak: flatpaks,
-		Legacy:  legacySW,
-		Docker:  dockerContainers,
-		Podman:  podmanContainers,
+		DEB:       deb,
+		RPM:       rpm,
+		Snap:      snaps,
+		Flatpak:   flatpaks,
+		Legacy:    legacySW,
+		Docker:    dockerContainers,
+		Podman:    podmanContainers,
+		Listeners: listeners,
 	}
 
 	return &sw, nil

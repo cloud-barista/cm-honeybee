@@ -245,13 +245,14 @@ func GetLegacySWs() ([]software.Binary, error) {
 		elapsedProvenance += time.Since(provenanceStart)
 
 		versionStart := time.Now()
-		version := detectBinaryVersion(exe, cmdSlice, envs)
+		version, versionRaw := detectBinaryVersion(exe, cmdSlice, envs)
 		elapsedVersion += time.Since(versionStart)
 
 		results = append(results, software.Binary{
 			PID:              p.Pid,
 			Name:             name,
 			Version:          version,
+			VersionRaw:       versionRaw,
 			ConnectionStatus: connectionStatus,
 			CmdlineSlice:     cmdSlice,
 			Cmdline:          cmdline,
@@ -304,22 +305,32 @@ func GetLegacySWs() ([]software.Binary, error) {
 // single entry. A service like Apache (prefork/worker MPM) runs one master plus
 // several worker processes that all share the same executable and inherit the
 // master's listening socket, so each worker is otherwise reported as a duplicate.
+// See dedupeByService for the grouping rule.
+func dedupeServiceWorkers(results []software.Binary, ppidByPID map[int32]int32) []software.Binary {
+	return dedupeByService(results, ppidByPID,
+		func(b software.Binary) int32 { return b.PID },
+		func(b software.Binary) string { return b.ExecutablePath })
+}
+
+// dedupeByService keeps one entry per service out of items describing processes.
 // Entries are grouped by executable path; within a group the "master" (a process
 // whose parent is not itself part of the group) is kept and the workers dropped.
-// Processes without a resolved executable path are never merged.
-func dedupeServiceWorkers(results []software.Binary, ppidByPID map[int32]int32) []software.Binary {
+// Processes without a resolved executable path are never merged. It is generic
+// so every collector that reports per-process entries collapses workers the
+// same way.
+func dedupeByService[T any](items []T, ppidByPID map[int32]int32, pidOf func(T) int32, exeOf func(T) string) []T {
 	type group struct {
-		members []software.Binary
+		members []T
 		pids    map[int32]bool
 	}
 
 	groups := map[string]*group{}
 	var order []string
 
-	for _, b := range results {
-		key := b.ExecutablePath
+	for _, item := range items {
+		key := exeOf(item)
 		if key == "" {
-			key = fmt.Sprintf("\x00pid:%d", b.PID) // keep exe-less processes distinct
+			key = fmt.Sprintf("\x00pid:%d", pidOf(item)) // keep exe-less processes distinct
 		}
 		g, ok := groups[key]
 		if !ok {
@@ -327,11 +338,11 @@ func dedupeServiceWorkers(results []software.Binary, ppidByPID map[int32]int32) 
 			groups[key] = g
 			order = append(order, key)
 		}
-		g.members = append(g.members, b)
-		g.pids[b.PID] = true
+		g.members = append(g.members, item)
+		g.pids[pidOf(item)] = true
 	}
 
-	var deduped []software.Binary
+	var deduped []T
 	for _, key := range order {
 		g := groups[key]
 		if len(g.members) == 1 {
@@ -339,22 +350,22 @@ func dedupeServiceWorkers(results []software.Binary, ppidByPID map[int32]int32) 
 			continue
 		}
 
-		var kept []software.Binary
-		for _, b := range g.members {
-			if !g.pids[ppidByPID[b.PID]] {
-				kept = append(kept, b)
+		var kept []T
+		for _, item := range g.members {
+			if !g.pids[ppidByPID[pidOf(item)]] {
+				kept = append(kept, item)
 			}
 		}
 
 		// No in-group parent found (unexpected): fall back to the lowest PID.
 		if len(kept) == 0 {
 			lowest := g.members[0]
-			for _, b := range g.members[1:] {
-				if b.PID < lowest.PID {
-					lowest = b
+			for _, item := range g.members[1:] {
+				if pidOf(item) < pidOf(lowest) {
+					lowest = item
 				}
 			}
-			kept = []software.Binary{lowest}
+			kept = []T{lowest}
 		}
 
 		deduped = append(deduped, kept...)
@@ -548,19 +559,31 @@ type legacyCandidate struct {
 // resolvedInstallPaths returns each candidate's install path along with its
 // symlink target, which is what an ownership lookup has to be asked about.
 func resolvedInstallPaths(candidates []legacyCandidate) []string {
-	seen := map[string]bool{}
-	var paths []string
-
+	installPaths := make([]string, 0, len(candidates))
 	for _, c := range candidates {
-		for _, path := range ownershipCandidates(c.installPath) {
+		installPaths = append(installPaths, c.installPath)
+	}
+
+	return ownershipLookupPaths(installPaths)
+}
+
+// ownershipLookupPaths returns every distinct path an ownership lookup has to be
+// asked about for paths: each path and, when it is a symlink, its target (see
+// ownershipCandidates). Empty paths are dropped.
+func ownershipLookupPaths(paths []string) []string {
+	seen := map[string]bool{}
+	var lookup []string
+
+	for _, p := range paths {
+		for _, path := range ownershipCandidates(p) {
 			if !seen[path] {
 				seen[path] = true
-				paths = append(paths, path)
+				lookup = append(lookup, path)
 			}
 		}
 	}
 
-	return paths
+	return lookup
 }
 
 // ownershipCandidates returns the paths to ask a package manager about for path:
@@ -581,13 +604,20 @@ func ownershipCandidates(path string) []string {
 // isPathOwned reports whether path is provided by an installed OS package,
 // answering from an ownership map built earlier by packagesOwningPaths.
 func isPathOwned(path string, owners map[string]string) bool {
+	return packageOwningPath(path, owners) != ""
+}
+
+// packageOwningPath returns the OS package providing path (or its symlink
+// target), answering from an ownership map built earlier by packagesOwningPaths
+// over ownershipCandidates. Returns "" when no package owns it.
+func packageOwningPath(path string, owners map[string]string) string {
 	for _, c := range ownershipCandidates(path) {
-		if owners[c] != "" {
-			return true
+		if name := owners[c]; name != "" {
+			return name
 		}
 	}
 
-	return false
+	return ""
 }
 
 // isPackageOwned reports whether path is provided by an installed OS package

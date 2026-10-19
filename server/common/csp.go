@@ -69,9 +69,14 @@ const ResourceTypeObjectStorage = "object_storage"
 // ResourceTypeNLB represents a CSP network load balancer.
 const ResourceTypeNLB = "nlb"
 
+// ResourceTypeRDBMS represents a CSP managed database instance (e.g. AWS RDS,
+// GCP Cloud SQL). It has no host to reach, so it is collected through the CSP
+// driver only, never through the agent.
+const ResourceTypeRDBMS = "rdbms"
+
 // CSPResourceTypesMsg is the single error string for a resource_type a csp-type
 // source group does not accept.
-const CSPResourceTypesMsg = "resource_type must be one of vm | k8s | object_storage | nlb"
+const CSPResourceTypesMsg = "resource_type must be one of vm | k8s | object_storage | nlb | rdbms"
 
 // IsValidCSPResourceType reports whether t may be registered on a csp-type
 // source group.
@@ -81,7 +86,7 @@ const CSPResourceTypesMsg = "resource_type must be one of vm | k8s | object_stor
 // registration succeed while editing the same record failed with 400.
 func IsValidCSPResourceType(t string) bool {
 	switch t {
-	case ResourceTypeVM, ResourceTypeK8s, ResourceTypeObjectStorage, ResourceTypeNLB:
+	case ResourceTypeVM, ResourceTypeK8s, ResourceTypeObjectStorage, ResourceTypeNLB, ResourceTypeRDBMS:
 		return true
 	}
 	return false

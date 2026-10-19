@@ -6,9 +6,13 @@ type ConfigFile struct {
 }
 
 type Binary struct {
-	PID              int32    `json:"pid"`
-	Name             string   `json:"name"`
-	Version          string   `json:"version"`
+	PID     int32  `json:"pid"`
+	Name    string `json:"name"`
+	Version string `json:"version"`
+	// VersionRaw is the raw output of the version command Version was parsed
+	// from. It is kept so consumers can tell apart products the version regex
+	// cannot (e.g. MariaDB reports a MySQL-compatible version).
+	VersionRaw       string   `json:"version_raw,omitempty"`
 	ConnectionStatus string   `json:"connection_status"`
 	Cmdline          string   `json:"cmdline"`
 	CmdlineSlice     []string `json:"cmdline_slice"`
