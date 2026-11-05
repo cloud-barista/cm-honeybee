@@ -471,7 +471,9 @@ func doGetDataInfo(connID string) (*data.MinIOData, error) {
 		logger.Println(logger.ERROR, false, errMsg)
 		return nil, errors.New(errMsg)
 	}
-	var dataInfo data.MinIOData
+	// The record holds data.DataInfo ({"minio": {...}}), as returned by the
+	// agent's /data and built by bucketToData for CSP buckets.
+	var dataInfo data.DataInfo
 	err = json.Unmarshal([]byte(savedDataInfo.DataData), &dataInfo)
 	if err != nil {
 		errMsg := "Error occurred while parsing data information." +
@@ -479,8 +481,11 @@ func doGetDataInfo(connID string) (*data.MinIOData, error) {
 		logger.Println(logger.ERROR, false, errMsg)
 		return nil, errors.New(errMsg)
 	}
+	if dataInfo.MinIO == nil {
+		return &data.MinIOData{}, nil
+	}
 
-	return &dataInfo, nil
+	return dataInfo.MinIO, nil
 }
 
 // GetDataInfo godoc
