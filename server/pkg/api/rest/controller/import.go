@@ -55,11 +55,31 @@ func logImportStep(kind string, connID string, step string, start time.Time, det
 	logger.Println(logger.INFO, false, msg+" (ConnectionID="+connID+")")
 }
 
+// importInfraOptions are the request options of an infra import.
+type importInfraOptions struct {
+	// CountObjects walks every object of an object-storage bucket to report its
+	// total size and object count. It can take long on a large bucket.
+	CountObjects bool
+}
+
+// importInfraOptionsFrom reads the query options of an infra import.
+func importInfraOptionsFrom(c echo.Context) (importInfraOptions, error) {
+	opts := importInfraOptions{CountObjects: true}
+	if v := c.QueryParam("count_objects"); v != "" {
+		b, err := strconv.ParseBool(v)
+		if err != nil {
+			return opts, errors.New("count_objects must be true or false")
+		}
+		opts.CountObjects = b
+	}
+	return opts, nil
+}
+
 // refreshCSP is refreshCSPConnection, kept in a variable so tests can stand in
 // for the CSP driver.
 var refreshCSP = refreshCSPConnection
 
-func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
+func doImportInfra(connID string, opts importInfraOptions) (*model.SavedInfraInfo, error) {
 	total := time.Now()
 	defer func() {
 		logImportStep("infra", connID, "total", total, "")
@@ -101,7 +121,7 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 	// import — mirroring the agent-side collection below. refreshCSPConnection
 	// updates csp_data in place, separate from infra_data.
 	if sourceGroup.Type == serverCommon.SourceGroupTypeCSP {
-		if err := refreshCSP(sourceGroup, connectionInfo); err != nil {
+		if err := refreshCSP(sourceGroup, connectionInfo, opts); err != nil {
 			oldSavedInfraInfo.Status = "failed"
 			_ = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
 			errMsg := "Error occurred while getting CSP infra information." +
@@ -422,6 +442,7 @@ func doImportData(connID string) (*model.SavedDataInfo, error) {
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
 //	@Param			connId path string true "ID of the connection info."
+//	@Param			count_objects query bool false "For an object-storage connection, count the bucket's objects and total size by listing every object. Default true."
 //	@Success		200	{object}	model.SavedInfraInfo	"Successfully saved the infra information"
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
@@ -442,7 +463,12 @@ func ImportInfra(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	savedInfraInfo, err := doImportInfra(connID)
+	opts, err := importInfraOptionsFrom(c)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	savedInfraInfo, err := doImportInfra(connID, opts)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -459,6 +485,7 @@ func ImportInfra(c echo.Context) error {
 //	@Accept		json
 //	@Produce		json
 //	@Param		sgId path string true "ID of the source group."
+//	@Param		count_objects query bool false "For object-storage connections, count each bucket's objects and total size by listing every object. Default true."
 //	@Success		200	{object}	[]model.SavedInfraInfo	"Successfully saved the infra information"
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to save the infra information"
@@ -474,6 +501,11 @@ func ImportInfraSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	opts, err := importInfraOptionsFrom(c)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
 	list, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: sgID}, 0, 0)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
@@ -482,7 +514,7 @@ func ImportInfraSourceGroup(c echo.Context) error {
 	var savedInfraInfoList []model.SavedInfraInfo
 
 	for _, conn := range *list {
-		savedInfraInfo, err := doImportInfra(conn.ID)
+		savedInfraInfo, err := doImportInfra(conn.ID, opts)
 		if err != nil {
 			// An on-prem k8s member carries no agent; skip it rather than
 			// failing the collection for every other source in the group.

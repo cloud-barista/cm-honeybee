@@ -14,4 +14,6 @@ func RegisterGetRefined(e *echo.Echo) {
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/software/refined", controller.GetSoftwareInfoSourceGroupRefined)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/rdbms/refined", controller.GetRDBMSInfoRefined)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/rdbms/refined", controller.GetRDBMSInfoSourceGroupRefined)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/connection_info/:connId/data/refined", controller.GetDataInfoRefined)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId/data/refined", controller.GetDataInfoSourceGroupRefined)
 }

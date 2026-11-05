@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	storagemodel "github.com/cloud-barista/cm-beetle/imdl/storage-model"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/data"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/kubernetes"
@@ -150,15 +151,47 @@ func clusterInfoToK8s(cl *spider.ClusterInfo) kubernetes.Kubernetes {
 	}
 }
 
-// bucketToData maps an S3 bucket into the agent's data.DataInfo shape, reusing
-// the MinIO sub-structure as the object-storage carrier.
-func bucketToData(b *spider.S3BucketInfo) data.DataInfo {
+// bucketToData maps a CSP bucket into the agent's data.DataInfo shape, reusing
+// the MinIO sub-structure as the object-storage carrier. Address carries the
+// region the bucket was looked up in.
+func bucketToData(region string, d *spider.S3BucketDetail) data.DataInfo {
 	return data.DataInfo{
 		MinIO: &data.MinIOData{
-			Address: b.Region,
-			Buckets: []data.MinioBucket{{Name: b.Name}},
+			Address: region,
+			Buckets: []data.MinioBucket{{
+				Name:      d.Name,
+				Objects:   d.ObjectCount,
+				Versioned: d.VersioningEnabled,
+			}},
+			Errors: d.Errors,
 		},
 	}
+}
+
+// bucketToSourceProperty maps a CSP bucket onto the source model cm-beetle
+// recommends a target bucket from.
+func bucketToSourceProperty(d *spider.S3BucketDetail) storagemodel.SourceObjectStorageProperty {
+	p := storagemodel.SourceObjectStorageProperty{BucketName: d.Name}
+	p.VersioningEnabled = d.VersioningEnabled
+	p.CORSEnabled = len(d.CORSRules) > 0
+	for _, r := range d.CORSRules {
+		p.CORSRule = append(p.CORSRule, storagemodel.CORSRule{
+			AllowedOrigin: r.AllowedOrigin,
+			AllowedMethod: r.AllowedMethod,
+			AllowedHeader: r.AllowedHeader,
+			ExposeHeader:  r.ExposeHeader,
+			MaxAgeSeconds: r.MaxAgeSeconds,
+		})
+	}
+	p.EncryptionEnabled = d.EncryptionEnabled
+	p.IsPublic = d.IsPublic
+	if d.ObjectsCounted {
+		p.TotalSizeBytes = d.TotalSizeBytes
+		p.ObjectCount = d.ObjectCount
+	}
+	p.Tags = d.Tags
+	p.CreationDate = d.CreationDate
+	return p
 }
 
 // upsertSavedCSPData writes the CSP-side VM info into SavedInfraInfo.csp_data,
@@ -224,15 +257,23 @@ func upsertSavedRDBMS(connID string, payload model.RDBMSInfo) error {
 	return err
 }
 
-// upsertSavedData writes (or replaces) SavedDataInfo for a connection.
-func upsertSavedData(connID string, payload any) error {
+// upsertSavedData writes (or replaces) SavedDataInfo for a connection. cspData,
+// when not nil, is stored as the CSP-reported bucket.
+func upsertSavedData(connID string, payload any, cspData any) error {
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
+	var cspRaw []byte
+	if cspData != nil {
+		if cspRaw, err = json.Marshal(cspData); err != nil {
+			return err
+		}
+	}
 	rec := &model.SavedDataInfo{
 		ConnectionID: connID,
 		DataData:     string(raw),
+		CSPData:      string(cspRaw),
 		Status:       model.ConnectionInfoStatusSuccess,
 		SavedTime:    time.Now(),
 	}
@@ -434,7 +475,7 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 // refreshCSPConnection asks the CSP driver for the resource described by ci and
 // stores the adapted result in the relevant Saved*Info table. Used by import
 // (collection + persistence), not by the status-only refresh path.
-func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
+func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo, opts importInfraOptions) error {
 	if ci.ResourceID == "" {
 		return errors.New("resource_id is empty")
 	}
@@ -459,7 +500,17 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error
 			if err != nil {
 				return err
 			}
-			return upsertSavedData(ci.ID, bucketToData(b))
+			d, err := spider.GetS3BucketDetail(conn, b.Name, opts.CountObjects)
+			if err != nil {
+				return err
+			}
+			if d.CreationDate == "" {
+				d.CreationDate = b.CreationDate
+			}
+			for _, e := range d.Errors {
+				logger.Println(logger.WARN, false, "bucket '"+b.Name+"': "+e+" (ConnectionID="+ci.ID+")")
+			}
+			return upsertSavedData(ci.ID, bucketToData(conn.Region, d), bucketToSourceProperty(d))
 		case serverCommon.ResourceTypeRDBMS:
 			payload, err := collectRDBMS(conn, ci.ResourceID)
 			if err != nil {

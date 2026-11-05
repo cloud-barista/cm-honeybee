@@ -29,8 +29,8 @@ func TestDoGetDataInfo_ReadsStoredWrapper(t *testing.T) {
 		&model.SourceGroup{ID: "sg1", Name: "sg1", Type: common.SourceGroupTypeCSP},
 		&model.ConnectionInfo{ID: "c1", Name: "c1", SourceGroupID: "sg1"})
 
-	b := &spider.S3BucketInfo{Name: "bucket-a", Region: "ap-northeast-2"}
-	if err := upsertSavedData("c1", bucketToData(b)); err != nil {
+	d := &spider.S3BucketDetail{Name: "bucket-a"}
+	if err := upsertSavedData("c1", bucketToData("ap-northeast-2", d), nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -77,15 +77,53 @@ func TestDoImportInfra_CSPWithoutAgentFinishes(t *testing.T) {
 
 	orig := refreshCSP
 	t.Cleanup(func() { refreshCSP = orig })
-	refreshCSP = func(_ *model.SourceGroup, ci *model.ConnectionInfo) error {
-		return upsertSavedData(ci.ID, bucketToData(&spider.S3BucketInfo{Name: "bucket-a"}))
+	refreshCSP = func(_ *model.SourceGroup, ci *model.ConnectionInfo, _ importInfraOptions) error {
+		return upsertSavedData(ci.ID, bucketToData("", &spider.S3BucketDetail{Name: "bucket-a"}), nil)
 	}
 
-	got, err := doImportInfra("c1")
+	got, err := doImportInfra("c1", importInfraOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if got.Status != model.ConnectionInfoStatusSuccess {
 		t.Errorf("status = %q, want %q", got.Status, model.ConnectionInfoStatusSuccess)
+	}
+}
+
+// The bucket stored by an object-storage import reads back through the refined
+// path as the cm-beetle source property, and the totals are left out when the
+// objects were not counted.
+func TestDoGetRefinedBucket(t *testing.T) {
+	openTestDB(t)
+	createConnection(t,
+		&model.SourceGroup{ID: "sg1", Name: "sg1", Type: common.SourceGroupTypeCSP},
+		&model.ConnectionInfo{ID: "c1", Name: "c1", SourceGroupID: "sg1"})
+
+	d := &spider.S3BucketDetail{
+		Name:              "bucket-a",
+		VersioningEnabled: true,
+		CORSRules:         []spider.S3CORSRule{{AllowedOrigin: []string{"*"}, AllowedMethod: []string{"GET"}}},
+		EncryptionEnabled: true,
+		TotalSizeBytes:    10,
+		ObjectCount:       2,
+		ObjectsCounted:    false,
+	}
+	if err := upsertSavedData("c1", bucketToData("us-east-1", d), bucketToSourceProperty(d)); err != nil {
+		t.Fatal(err)
+	}
+
+	p, err := doGetRefinedBucket("c1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p.BucketName != "bucket-a" || !p.VersioningEnabled || !p.CORSEnabled || len(p.CORSRule) != 1 || !p.EncryptionEnabled || p.IsPublic {
+		t.Errorf("unexpected property %#v", p)
+	}
+	if p.ObjectCount != 0 || p.TotalSizeBytes != 0 {
+		t.Errorf("uncounted totals must stay zero, got %d objects %d bytes", p.ObjectCount, p.TotalSizeBytes)
+	}
+
+	if _, err := doGetRefinedBucket("no-such"); err != errBucketNotCollected {
+		t.Errorf("missing record: got %v, want errBucketNotCollected", err)
 	}
 }
