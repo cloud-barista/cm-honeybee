@@ -1051,6 +1051,58 @@
                 }
             }
         },
+        "/source_group/{sgId}/connection_info/{connId}/data/refined": {
+            "get": {
+                "description": "Get the bucket of a CSP object-storage connection in the source model cm-beetle recommends a target bucket from. The values are those collected by import/infra.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Object Storage Information",
+                "operationId": "get-data-info-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the bucket.",
+                        "schema": {
+                            "$ref": "#/definitions/storagemodel.SourceObjectStorageModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the bucket.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/connection_info/{connId}/db": {
             "get": {
                 "description": "Get the database information of the connection information.",
@@ -1563,6 +1615,12 @@
                         "name": "connId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "For an object-storage connection, count the bucket's objects and total size by listing every object. Default true.",
+                        "name": "count_objects",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2322,6 +2380,51 @@
                 }
             }
         },
+        "/source_group/{sgId}/data/refined": {
+            "get": {
+                "description": "Get every collected bucket of the source group's CSP object-storage connections in the source model cm-beetle recommends target buckets from. Connections without a collected bucket are left out.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Object Storage Information Source Group",
+                "operationId": "get-data-info-source-group-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the buckets.",
+                        "schema": {
+                            "$ref": "#/definitions/storagemodel.SourceObjectStorageModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the buckets.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/db": {
             "get": {
                 "description": "Get the database information for all connections in the source group.",
@@ -2828,6 +2931,12 @@
                         "name": "sgId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "For object-storage connections, count each bucket's objects and total size by listing every object. Default true.",
+                        "name": "count_objects",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -5883,6 +5992,10 @@
             ],
             "properties": {
                 "connection_id": {
+                    "type": "string"
+                },
+                "csp_data": {
+                    "description": "CSPData is the bucket as the CSP reported it (CSP source groups only), a\nstoragemodel.SourceObjectStorageProperty in JSON.",
                     "type": "string"
                 },
                 "data_data": {
@@ -9630,21 +9743,6 @@
                 1048576,
                 524288,
                 2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
                 511
             ],
             "x-enum-comments": {
@@ -9655,7 +9753,7 @@
                 "ModeExclusive": "l: exclusive use",
                 "ModeIrregular": "?: non-regular file; nothing else is known about this file",
                 "ModeNamedPipe": "p: named pipe (FIFO)",
-                "ModePerm": "Unix permission bits, 0o777",
+                "ModePerm": "Unix permission bits",
                 "ModeSetgid": "g: setgid",
                 "ModeSetuid": "u: setuid",
                 "ModeSocket": "S: Unix domain socket",
@@ -9678,9 +9776,39 @@
                 "t: sticky",
                 "?: non-regular file; nothing else is known about this file",
                 "",
-                "Unix permission bits, 0o777"
+                "Unix permission bits",
+                "d: is a directory",
+                "a: append-only",
+                "l: exclusive use",
+                "T: temporary file; Plan 9 only",
+                "L: symbolic link",
+                "D: device file",
+                "p: named pipe (FIFO)",
+                "S: Unix domain socket",
+                "u: setuid",
+                "g: setgid",
+                "c: Unix character device, when ModeDevice is set",
+                "t: sticky",
+                "?: non-regular file; nothing else is known about this file",
+                "",
+                "Unix permission bits"
             ],
             "x-enum-varnames": [
+                "ModeDir",
+                "ModeAppend",
+                "ModeExclusive",
+                "ModeTemporary",
+                "ModeSymlink",
+                "ModeDevice",
+                "ModeNamedPipe",
+                "ModeSocket",
+                "ModeSetuid",
+                "ModeSetgid",
+                "ModeCharDevice",
+                "ModeSticky",
+                "ModeIrregular",
+                "ModeType",
+                "ModePerm",
                 "ModeDir",
                 "ModeAppend",
                 "ModeExclusive",
@@ -11549,6 +11677,158 @@
                 }
             }
         },
+        "storagemodel.CORSRule": {
+            "type": "object",
+            "required": [
+                "allowedMethod",
+                "allowedOrigin"
+            ],
+            "properties": {
+                "allowedHeader": {
+                    "description": "Allowed headers (e.g., [\"*\"], [\"Content-Type\"])",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "allowedMethod": {
+                    "description": "Allowed HTTP methods (e.g., [\"GET\", \"PUT\", \"POST\"])",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "allowedOrigin": {
+                    "description": "Allowed origins (e.g., [\"*\"], [\"https://example.com\"])",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "exposeHeader": {
+                    "description": "Headers exposed to the browser (e.g., [\"ETag\"])",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "maxAgeSeconds": {
+                    "description": "Preflight response cache duration in seconds",
+                    "type": "integer"
+                }
+            }
+        },
+        "storagemodel.CloudProperty": {
+            "type": "object",
+            "properties": {
+                "csp": {
+                    "description": "Cloud service provider (e.g., aws, azure, gcp, ncp, alibaba)",
+                    "type": "string",
+                    "example": "aws"
+                },
+                "region": {
+                    "description": "Region identifier",
+                    "type": "string",
+                    "example": "ap-northeast-2"
+                }
+            }
+        },
+        "storagemodel.SourceObjectStorage": {
+            "type": "object",
+            "required": [
+                "sourceObjectStorages"
+            ],
+            "properties": {
+                "description": {
+                    "description": "Human-readable description",
+                    "type": "string"
+                },
+                "sourceCloud": {
+                    "description": "Source cloud provider and region (optional)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/storagemodel.CloudProperty"
+                        }
+                    ]
+                },
+                "sourceObjectStorages": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/storagemodel.SourceObjectStorageProperty"
+                    }
+                }
+            }
+        },
+        "storagemodel.SourceObjectStorageModel": {
+            "type": "object",
+            "required": [
+                "sourceObjectStorageModel"
+            ],
+            "properties": {
+                "sourceObjectStorageModel": {
+                    "$ref": "#/definitions/storagemodel.SourceObjectStorage"
+                }
+            }
+        },
+        "storagemodel.SourceObjectStorageProperty": {
+            "type": "object",
+            "required": [
+                "bucketName"
+            ],
+            "properties": {
+                "accessFrequency": {
+                    "description": "Access pattern: \"frequent\" | \"infrequent\" | \"archive\"",
+                    "type": "string"
+                },
+                "bucketName": {
+                    "description": "Source bucket name",
+                    "type": "string"
+                },
+                "corsEnabled": {
+                    "description": "Whether CORS is configured",
+                    "type": "boolean"
+                },
+                "corsRule": {
+                    "description": "Active CORS rules",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storagemodel.CORSRule"
+                    }
+                },
+                "creationDate": {
+                    "description": "Bucket creation date (RFC 3339)",
+                    "type": "string"
+                },
+                "encryptionEnabled": {
+                    "description": "Whether server-side encryption is enabled",
+                    "type": "boolean"
+                },
+                "isPublic": {
+                    "description": "Whether the bucket allows public access",
+                    "type": "boolean"
+                },
+                "objectCount": {
+                    "description": "Total number of objects",
+                    "type": "integer"
+                },
+                "tags": {
+                    "description": "Key-value tags",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "totalSizeBytes": {
+                    "description": "Total stored data in bytes",
+                    "type": "integer"
+                },
+                "versioningEnabled": {
+                    "description": "Whether versioning is enabled",
+                    "type": "boolean"
+                }
+            }
+        },
         "time.Duration": {
             "type": "integer",
             "format": "int64",
@@ -11569,6 +11849,8 @@
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -11593,6 +11875,8 @@
                 "Second",
                 "Minute",
                 "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

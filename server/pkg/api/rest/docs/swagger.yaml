@@ -1745,6 +1745,11 @@ definitions:
     properties:
       connection_id:
         type: string
+      csp_data:
+        description: |-
+          CSPData is the bucket as the CSP reported it (CSP source groups only), a
+          storagemodel.SourceObjectStorageProperty in JSON.
+        type: string
       data_data:
         type: string
       saved_time:
@@ -4537,21 +4542,6 @@ definitions:
     - 524288
     - 2401763328
     - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
     format: int32
     type: integer
     x-enum-comments:
@@ -4562,7 +4552,7 @@ definitions:
       ModeExclusive: 'l: exclusive use'
       ModeIrregular: '?: non-regular file; nothing else is known about this file'
       ModeNamedPipe: 'p: named pipe (FIFO)'
-      ModePerm: Unix permission bits, 0o777
+      ModePerm: Unix permission bits
       ModeSetgid: 'g: setgid'
       ModeSetuid: 'u: setuid'
       ModeSocket: 'S: Unix domain socket'
@@ -4584,8 +4574,38 @@ definitions:
     - 't: sticky'
     - '?: non-regular file; nothing else is known about this file'
     - ""
-    - Unix permission bits, 0o777
+    - Unix permission bits
+    - 'd: is a directory'
+    - 'a: append-only'
+    - 'l: exclusive use'
+    - 'T: temporary file; Plan 9 only'
+    - 'L: symbolic link'
+    - 'D: device file'
+    - 'p: named pipe (FIFO)'
+    - 'S: Unix domain socket'
+    - 'u: setuid'
+    - 'g: setgid'
+    - 'c: Unix character device, when ModeDevice is set'
+    - 't: sticky'
+    - '?: non-regular file; nothing else is known about this file'
+    - ""
+    - Unix permission bits
     x-enum-varnames:
+    - ModeDir
+    - ModeAppend
+    - ModeExclusive
+    - ModeTemporary
+    - ModeSymlink
+    - ModeDevice
+    - ModeNamedPipe
+    - ModeSocket
+    - ModeSetuid
+    - ModeSetgid
+    - ModeCharDevice
+    - ModeSticky
+    - ModeIrregular
+    - ModeType
+    - ModePerm
     - ModeDir
     - ModeAppend
     - ModeExclusive
@@ -5943,6 +5963,112 @@ definitions:
         - $ref: '#/definitions/storage.RootFSStorage'
         description: Information about the storage used for the container's root filesystem.
     type: object
+  storagemodel.CORSRule:
+    properties:
+      allowedHeader:
+        description: Allowed headers (e.g., ["*"], ["Content-Type"])
+        items:
+          type: string
+        type: array
+      allowedMethod:
+        description: Allowed HTTP methods (e.g., ["GET", "PUT", "POST"])
+        items:
+          type: string
+        type: array
+      allowedOrigin:
+        description: Allowed origins (e.g., ["*"], ["https://example.com"])
+        items:
+          type: string
+        type: array
+      exposeHeader:
+        description: Headers exposed to the browser (e.g., ["ETag"])
+        items:
+          type: string
+        type: array
+      maxAgeSeconds:
+        description: Preflight response cache duration in seconds
+        type: integer
+    required:
+    - allowedMethod
+    - allowedOrigin
+    type: object
+  storagemodel.CloudProperty:
+    properties:
+      csp:
+        description: Cloud service provider (e.g., aws, azure, gcp, ncp, alibaba)
+        example: aws
+        type: string
+      region:
+        description: Region identifier
+        example: ap-northeast-2
+        type: string
+    type: object
+  storagemodel.SourceObjectStorage:
+    properties:
+      description:
+        description: Human-readable description
+        type: string
+      sourceCloud:
+        allOf:
+        - $ref: '#/definitions/storagemodel.CloudProperty'
+        description: Source cloud provider and region (optional)
+      sourceObjectStorages:
+        items:
+          $ref: '#/definitions/storagemodel.SourceObjectStorageProperty'
+        minItems: 1
+        type: array
+    required:
+    - sourceObjectStorages
+    type: object
+  storagemodel.SourceObjectStorageModel:
+    properties:
+      sourceObjectStorageModel:
+        $ref: '#/definitions/storagemodel.SourceObjectStorage'
+    required:
+    - sourceObjectStorageModel
+    type: object
+  storagemodel.SourceObjectStorageProperty:
+    properties:
+      accessFrequency:
+        description: 'Access pattern: "frequent" | "infrequent" | "archive"'
+        type: string
+      bucketName:
+        description: Source bucket name
+        type: string
+      corsEnabled:
+        description: Whether CORS is configured
+        type: boolean
+      corsRule:
+        description: Active CORS rules
+        items:
+          $ref: '#/definitions/storagemodel.CORSRule'
+        type: array
+      creationDate:
+        description: Bucket creation date (RFC 3339)
+        type: string
+      encryptionEnabled:
+        description: Whether server-side encryption is enabled
+        type: boolean
+      isPublic:
+        description: Whether the bucket allows public access
+        type: boolean
+      objectCount:
+        description: Total number of objects
+        type: integer
+      tags:
+        additionalProperties:
+          type: string
+        description: Key-value tags
+        type: object
+      totalSizeBytes:
+        description: Total stored data in bytes
+        type: integer
+      versioningEnabled:
+        description: Whether versioning is enabled
+        type: boolean
+    required:
+    - bucketName
+    type: object
   time.Duration:
     enum:
     - -9223372036854775808
@@ -5961,6 +6087,8 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -5986,6 +6114,8 @@ definitions:
     - Second
     - Minute
     - Hour
+    - minDuration
+    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -6888,6 +7018,43 @@ paths:
       summary: Get Data Information
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/data/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the bucket of a CSP object-storage connection in the source
+        model cm-beetle recommends a target bucket from. The values are those collected
+        by import/infra.
+      operationId: get-data-info-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the bucket.
+          schema:
+            $ref: '#/definitions/storagemodel.SourceObjectStorageModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the bucket.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Object Storage Information
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/connection_info/{connId}/db:
     get:
       consumes:
@@ -7232,6 +7399,11 @@ paths:
         name: connId
         required: true
         type: string
+      - description: For an object-storage connection, count the bucket's objects
+          and total size by listing every object. Default true.
+        in: query
+        name: count_objects
+        type: boolean
       produces:
       - application/json
       responses:
@@ -7750,6 +7922,38 @@ paths:
       summary: Get Data Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/data/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get every collected bucket of the source group's CSP object-storage
+        connections in the source model cm-beetle recommends target buckets from.
+        Connections without a collected bucket are left out.
+      operationId: get-data-info-source-group-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the buckets.
+          schema:
+            $ref: '#/definitions/storagemodel.SourceObjectStorageModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the buckets.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Object Storage Information Source Group
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/db:
     get:
       consumes:
@@ -8094,6 +8298,11 @@ paths:
         name: sgId
         required: true
         type: string
+      - description: For object-storage connections, count each bucket's objects and
+          total size by listing every object. Default true.
+        in: query
+        name: count_objects
+        type: boolean
       produces:
       - application/json
       responses:
