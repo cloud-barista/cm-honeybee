@@ -55,6 +55,10 @@ func logImportStep(kind string, connID string, step string, start time.Time, det
 	logger.Println(logger.INFO, false, msg+" (ConnectionID="+connID+")")
 }
 
+// refreshCSP is refreshCSPConnection, kept in a variable so tests can stand in
+// for the CSP driver.
+var refreshCSP = refreshCSPConnection
+
 func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 	total := time.Now()
 	defer func() {
@@ -97,7 +101,7 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 	// import — mirroring the agent-side collection below. refreshCSPConnection
 	// updates csp_data in place, separate from infra_data.
 	if sourceGroup.Type == serverCommon.SourceGroupTypeCSP {
-		if err := refreshCSPConnection(sourceGroup, connectionInfo); err != nil {
+		if err := refreshCSP(sourceGroup, connectionInfo); err != nil {
 			oldSavedInfraInfo.Status = "failed"
 			_ = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
 			errMsg := "Error occurred while getting CSP infra information." +
@@ -112,6 +116,16 @@ func doImportInfra(connID string) (*model.SavedInfraInfo, error) {
 		// Without SSH access there is no in-guest agent to query; the CSP data is
 		// the whole result, so finish here instead of failing on the agent call.
 		if connectionInfo.IPAddress == "" {
+			// Only a VM writes csp_data (and its status) into this record; for
+			// other resources the collected result lives in its own table, so
+			// mark the import finished here.
+			if oldSavedInfraInfo.Status != model.ConnectionInfoStatusSuccess {
+				oldSavedInfraInfo.Status = model.ConnectionInfoStatusSuccess
+				oldSavedInfraInfo.SavedTime = time.Now()
+				if err := dao.SavedInfraInfoUpdate(oldSavedInfraInfo); err != nil {
+					return nil, err
+				}
+			}
 			return oldSavedInfraInfo, nil
 		}
 	}

@@ -64,3 +64,28 @@ func TestDoGetDataInfo_NoMinIOSection(t *testing.T) {
 		t.Errorf("got %#v, want empty data", got)
 	}
 }
+
+// A CSP resource without an in-guest agent (an object-storage bucket has no IP)
+// ends the infra import after the CSP collection, and the record it returns
+// must say the import finished.
+func TestDoImportInfra_CSPWithoutAgentFinishes(t *testing.T) {
+	openTestDB(t)
+	createConnection(t,
+		&model.SourceGroup{ID: "sg1", Name: "sg1", Type: common.SourceGroupTypeCSP},
+		&model.ConnectionInfo{ID: "c1", Name: "c1", SourceGroupID: "sg1",
+			ResourceType: common.ResourceTypeObjectStorage, ResourceID: "bucket-a"})
+
+	orig := refreshCSP
+	t.Cleanup(func() { refreshCSP = orig })
+	refreshCSP = func(_ *model.SourceGroup, ci *model.ConnectionInfo) error {
+		return upsertSavedData(ci.ID, bucketToData(&spider.S3BucketInfo{Name: "bucket-a"}))
+	}
+
+	got, err := doImportInfra("c1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != model.ConnectionInfoStatusSuccess {
+		t.Errorf("status = %q, want %q", got.Status, model.ConnectionInfoStatusSuccess)
+	}
+}
