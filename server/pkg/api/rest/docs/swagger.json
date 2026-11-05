@@ -1051,6 +1051,214 @@
                 }
             }
         },
+        "/source_group/{sgId}/connection_info/{connId}/db": {
+            "get": {
+                "description": "Get the database information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Database Information",
+                "operationId": "get-db-info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the database.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBInspectResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the database.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/db/refined": {
+            "get": {
+                "description": "Get the refined database information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Database Information",
+                "operationId": "get-db-info-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the database.",
+                        "schema": {
+                            "$ref": "#/definitions/sourcemodel.SourceDataMigrationModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the database.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/fs": {
+            "get": {
+                "description": "Get the filesystem information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Filesystem Information",
+                "operationId": "get-fs-info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the filesystem.",
+                        "schema": {
+                            "$ref": "#/definitions/sourcemodel.FSInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the filesystem.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/fs/refined": {
+            "get": {
+                "description": "Get the refined filesystem information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Filesystem Information",
+                "operationId": "get-fs-info-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the filesystem.",
+                        "schema": {
+                            "$ref": "#/definitions/sourcemodel.SourceDataMigrationModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the filesystem.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/connection_info/{connId}/helm": {
             "get": {
                 "description": "Get the helm information of the connection information.",
@@ -1148,6 +1356,126 @@
                     },
                     "500": {
                         "description": "Failed to save the data information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/import/db": {
+            "post": {
+                "description": "Import the database information of the connection information. With no db_name on the connection, every user database on the server is inspected.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import database",
+                "operationId": "import-db",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Metric selection.",
+                        "name": "ImportDBReq",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportDBReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the database information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDBInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the database information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/import/fs": {
+            "post": {
+                "description": "Import the filesystem information of the connection information. The path inspected is the connection's fs_scan_path.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import filesystem",
+                "operationId": "import-fs",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Scan depth and metric selection.",
+                        "name": "ImportFSReq",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportFSReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the filesystem information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedFSInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the filesystem information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1304,6 +1632,66 @@
                     },
                     "500": {
                         "description": "Failed to save the kubernetes information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/import/objectstorage": {
+            "post": {
+                "description": "Import the object storage information of the connection information. The bucket and prefix inspected are the connection's os_scan_bucket and os_scan_prefix.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import object storage",
+                "operationId": "import-object-storage",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Metric selection.",
+                        "name": "ImportObjectStorageReq",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportObjectStorageReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the object storage information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedObjectStorageInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the object storage information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1518,6 +1906,110 @@
                     },
                     "500": {
                         "description": "Failed to get information of the kubernetes.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/objectstorage": {
+            "get": {
+                "description": "Get the object storage information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Object Storage Information",
+                "operationId": "get-object-storage-info",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the object storage.",
+                        "schema": {
+                            "$ref": "#/definitions/sourcemodel.ObjectStorageInfo"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the object storage.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/connection_info/{connId}/objectstorage/refined": {
+            "get": {
+                "description": "Get the refined object storage information of the connection information.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Object Storage Information",
+                "operationId": "get-object-storage-info-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the connection info.",
+                        "name": "connId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the object storage.",
+                        "schema": {
+                            "$ref": "#/definitions/sourcemodel.SourceDataMigrationModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the object storage.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1830,6 +2322,96 @@
                 }
             }
         },
+        "/source_group/{sgId}/db": {
+            "get": {
+                "description": "Get the database information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Database Information Source Group",
+                "operationId": "get-db-info-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the database.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBInfoList"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the database.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/db/refined": {
+            "get": {
+                "description": "Get the refined database information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Database Information Source Group",
+                "operationId": "get-db-info-source-group-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the database.",
+                        "schema": {
+                            "$ref": "#/definitions/sourcemodel.SourceDataMigrationModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the database.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/source_group/{sgId}/discover": {
             "get": {
                 "description": "Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.",
@@ -1875,6 +2457,96 @@
                     },
                     "500": {
                         "description": "Discovery failed",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/fs": {
+            "get": {
+                "description": "Get the filesystem information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Filesystem Information Source Group",
+                "operationId": "get-fs-info-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the filesystem.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.FSInfoList"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the filesystem.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/fs/refined": {
+            "get": {
+                "description": "Get the refined filesystem information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Filesystem Information Source Group",
+                "operationId": "get-fs-info-source-group-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the filesystem.",
+                        "schema": {
+                            "$ref": "#/definitions/sourcemodel.SourceDataMigrationModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the filesystem.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -1968,6 +2640,118 @@
                     },
                     "500": {
                         "description": "Failed to save the data information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/import/db": {
+            "post": {
+                "description": "Import database information for all connections in the source group. Each connection is inspected at its own db_name and db_pg_schema.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import database Source Group",
+                "operationId": "import-db-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Metric selection applied to every connection.",
+                        "name": "ImportDBReq",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportDBReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the database information",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDBInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the database information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/import/fs": {
+            "post": {
+                "description": "Import filesystem information for all connections in the source group. Each connection is inspected at its own fs_scan_path.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import filesystem Source Group",
+                "operationId": "import-fs-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Scan depth and metric selection applied to every connection.",
+                        "name": "ImportFSReq",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportFSReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the filesystem information",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedFSInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the filesystem information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -2112,6 +2896,62 @@
                     },
                     "500": {
                         "description": "Failed to save the kubernetes information",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/import/objectstorage": {
+            "post": {
+                "description": "Import object storage information for all connections in the source group. Each connection is inspected at its own os_scan_bucket and os_scan_prefix.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Import] Import source info"
+                ],
+                "summary": "Import object storage Source Group",
+                "operationId": "import-object-storage-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Metric selection applied to every connection.",
+                        "name": "ImportObjectStorageReq",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportObjectStorageReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully saved the object storage information",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedObjectStorageInfo"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to save the object storage information",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -2301,6 +3141,96 @@
                     },
                     "500": {
                         "description": "Failed to get information of the kubernetes.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/objectstorage": {
+            "get": {
+                "description": "Get the object storage information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get source info"
+                ],
+                "summary": "Get Object Storage Information Source Group",
+                "operationId": "get-object-storage-info-source-group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get information of the object storage.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ObjectStorageInfoList"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get information of the object storage.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/source_group/{sgId}/objectstorage/refined": {
+            "get": {
+                "description": "Get the refined object storage information for all connections in the source group.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Get] Get refined source info"
+                ],
+                "summary": "Get Refined Object Storage Information Source Group",
+                "operationId": "get-object-storage-info-source-group-refined",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of the source group.",
+                        "name": "sgId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get refined information of the object storage.",
+                        "schema": {
+                            "$ref": "#/definitions/sourcemodel.SourceDataMigrationModel"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get refined information of the object storage.",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -2655,6 +3585,327 @@
                 "weight": {
                     "type": "integer",
                     "format": "int32"
+                }
+            }
+        },
+        "commonmodel.BeetleDBRef": {
+            "type": "object",
+            "required": [
+                "nsId",
+                "password",
+                "rdbmsId",
+                "username"
+            ],
+            "properties": {
+                "nsId": {
+                    "type": "string"
+                },
+                "password": {
+                    "description": "AES-encrypted on store",
+                    "type": "string"
+                },
+                "rdbmsId": {
+                    "type": "string"
+                },
+                "tlsCAPem": {
+                    "description": "TLSCAPEM is the PEM root that an explicit verify-ca or verify-full checks\nagainst. Empty means the system trust store, which carries only publicly\ntrusted CAs — and managed RDBMS services commonly sign with their own, so\nthose two modes usually need the CSP's root supplied here. \"auto\" ignores\nit and verifies against the CA cb-spider collected from the instance.",
+                    "type": "string"
+                },
+                "tlsMode": {
+                    "description": "TLSMode selects transport security; the empty value is \"auto\". \"auto\"\ntakes the mode cm-beetle recommends for the instance: verify-full,\nverify-ca or disable, falling back to require when no CA was collected and\nto prefer when cm-beetle could not say. Any other value means the same\nthing here as on DBConnConfig — see the table in transx-ex's\ndbmsx/driver/base/tls.go — and is used as given; plaintext therefore needs\n\"disable\" spelled out.",
+                    "type": "string",
+                    "enum": [
+                        "auto",
+                        "disable",
+                        "prefer",
+                        "require",
+                        "verify-ca",
+                        "verify-full"
+                    ]
+                },
+                "username": {
+                    "description": "the instance admin; cm-beetle does not report it",
+                    "type": "string"
+                }
+            }
+        },
+        "commonmodel.BeetleOSRef": {
+            "type": "object",
+            "required": [
+                "nsId",
+                "osId"
+            ],
+            "properties": {
+                "nsId": {
+                    "type": "string"
+                },
+                "osId": {
+                    "type": "string"
+                }
+            }
+        },
+        "commonmodel.BeetleSSHRef": {
+            "type": "object",
+            "required": [
+                "infraId",
+                "nodeId",
+                "nsId"
+            ],
+            "properties": {
+                "infraId": {
+                    "type": "string"
+                },
+                "nodeId": {
+                    "type": "string"
+                },
+                "nsId": {
+                    "type": "string"
+                }
+            }
+        },
+        "commonmodel.ConnectionRef": {
+            "type": "object",
+            "required": [
+                "source"
+            ],
+            "properties": {
+                "beetleDb": {
+                    "$ref": "#/definitions/commonmodel.BeetleDBRef"
+                },
+                "beetleObjectStorage": {
+                    "$ref": "#/definitions/commonmodel.BeetleOSRef"
+                },
+                "beetleSsh": {
+                    "$ref": "#/definitions/commonmodel.BeetleSSHRef"
+                },
+                "db": {
+                    "$ref": "#/definitions/commonmodel.DBConnConfig"
+                },
+                "honeybee": {
+                    "description": "Reference types",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/commonmodel.HoneybeeRef"
+                        }
+                    ]
+                },
+                "minio": {
+                    "$ref": "#/definitions/commonmodel.MinioConnConfig"
+                },
+                "source": {
+                    "enum": [
+                        "honeybee",
+                        "beetleSsh",
+                        "beetleObjectStorage",
+                        "beetleDb",
+                        "ssh",
+                        "minio",
+                        "db"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/commonmodel.ConnectionSource"
+                        }
+                    ]
+                },
+                "ssh": {
+                    "description": "Inline types",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/commonmodel.SSHConnConfig"
+                        }
+                    ]
+                }
+            }
+        },
+        "commonmodel.ConnectionSource": {
+            "type": "string",
+            "enum": [
+                "honeybee",
+                "beetleSsh",
+                "beetleObjectStorage",
+                "beetleDb",
+                "ssh",
+                "minio",
+                "db"
+            ],
+            "x-enum-varnames": [
+                "ConnectionSourceHoneybee",
+                "ConnectionSourceBeetleSSH",
+                "ConnectionSourceBeetleObjectStorage",
+                "ConnectionSourceBeetleDB",
+                "ConnectionSourceSSH",
+                "ConnectionSourceMinio",
+                "ConnectionSourceDB"
+            ]
+        },
+        "commonmodel.DBConnConfig": {
+            "type": "object",
+            "required": [
+                "accessType",
+                "dbmsType",
+                "providerName"
+            ],
+            "properties": {
+                "accessType": {
+                    "type": "string",
+                    "enum": [
+                        "direct",
+                        "sshTunnel"
+                    ]
+                },
+                "authSource": {
+                    "description": "AuthSource selects the authentication database. MongoDB only; ignored by\nother drivers. When empty and credentials are given, MongoDB defaults to\n\"admin\" (where users are usually created) rather than the target database.",
+                    "type": "string"
+                },
+                "connectTimeout": {
+                    "type": "integer"
+                },
+                "dbmsType": {
+                    "type": "string",
+                    "enum": [
+                        "mysql",
+                        "mariadb",
+                        "postgresql",
+                        "mongodb"
+                    ]
+                },
+                "host": {
+                    "description": "DB endpoint (the direct connection target, or the target reached through\nthe SSH tunnel)",
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "providerName": {
+                    "description": "ProviderName records where the database is hosted. transx-ex carries it\nthrough to DBMSLocation.ProviderName but never reads it: no routing,\nvalidation or connection decision depends on it. It is required all the\nsame, so that \"where does this data live\" has an answer for every\nconnection that holds data. A database the operator runs themselves is\nProviderOnPrem, spelled out rather than left blank.",
+                    "type": "string",
+                    "enum": [
+                        "aws",
+                        "alibaba",
+                        "tencent",
+                        "ncp",
+                        "nhn",
+                        "ibm",
+                        "gcp",
+                        "kt",
+                        "azure",
+                        "openstack",
+                        "onprem"
+                    ]
+                },
+                "sshTunnel": {
+                    "description": "Jump host used when accessType=sshTunnel (inline SSH).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/commonmodel.SSHConnConfig"
+                        }
+                    ]
+                },
+                "tlsCAPem": {
+                    "description": "TLSCAPem is the PEM root that verify-ca and verify-full check against.\nEmpty means the system trust store, which carries only publicly trusted\nCAs, so a server using a private CA needs its root supplied here.\n\ntransx-ex also accepts a path to a CA file, but that path would name a\nfile on the centipede server rather than on the caller's machine, so it\nis deliberately not part of this API.",
+                    "type": "string"
+                },
+                "tlsMode": {
+                    "description": "TLSMode selects transport security; the empty value is \"disable\". The\nmodes mean the same thing on every engine — see transx-ex's\ndbmsx/driver/base/tls.go for the table that defines them.",
+                    "type": "string",
+                    "enum": [
+                        "disable",
+                        "prefer",
+                        "require",
+                        "verify-ca",
+                        "verify-full"
+                    ]
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "commonmodel.HoneybeeRef": {
+            "type": "object",
+            "required": [
+                "connectionId"
+            ],
+            "properties": {
+                "connectionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "commonmodel.MinioConnConfig": {
+            "type": "object",
+            "required": [
+                "accessKeyId",
+                "providerName",
+                "secretAccessKey"
+            ],
+            "properties": {
+                "accessKeyId": {
+                    "description": "AccessKeyId doubles as the storage account name on azure, where it is also\nthe endpoint source.",
+                    "type": "string"
+                },
+                "bucketLookup": {
+                    "description": "\"\" | \"dns\" | \"path\"",
+                    "type": "string"
+                },
+                "endpoint": {
+                    "description": "Endpoint is required for the openstack and onprem providers, where the\nuser supplies the host. For the others it is an optional override of the\nderived host — except azure, whose host is derived from AccessKeyId.",
+                    "type": "string"
+                },
+                "providerName": {
+                    "description": "ProviderName decides the endpoint, region, TLS and bucket addressing style\n(see ResolveS3Endpoint in core/migration). transxex.S3MinioConfig has no\nprovider field: it receives the resolved values.",
+                    "type": "string",
+                    "enum": [
+                        "aws",
+                        "alibaba",
+                        "tencent",
+                        "ncp",
+                        "nhn",
+                        "ibm",
+                        "gcp",
+                        "kt",
+                        "azure",
+                        "openstack",
+                        "onprem"
+                    ]
+                },
+                "region": {
+                    "description": "Region is the region this store lives in. Required for the providers whose\nhostname contains it (aws, alibaba, tencent, ncp, nhn, ibm) and for gcp,\nwhich has a region-less host but still signs with a region.\n\nIt is NOT unconditionally the signing region: NCP serves\n\"kr.object.ncloudstorage.com\" and signs \"kr-standard\", so ResolveS3Endpoint\nsigns with this value only where the two are spelled the same and otherwise\nleaves the signing region to be discovered.",
+                    "type": "string"
+                },
+                "secretAccessKey": {
+                    "type": "string"
+                },
+                "useSSL": {
+                    "description": "UseSSL is honored only for user-supplied endpoints (openstack, onprem).\nThe other providers use the fixed value from the provider table. A scheme\non Endpoint (\"http://\" or \"https://\") overrides both.",
+                    "type": "boolean"
+                }
+            }
+        },
+        "commonmodel.SSHConnConfig": {
+            "type": "object",
+            "required": [
+                "host",
+                "privateKey",
+                "username"
+            ],
+            "properties": {
+                "host": {
+                    "type": "string"
+                },
+                "port": {
+                    "description": "defaults to 22",
+                    "type": "integer"
+                },
+                "privateKey": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
@@ -3815,7 +5066,59 @@
                 "connection_status": {
                     "type": "string"
                 },
+                "db_access_type": {
+                    "description": "DBAccessType: \"direct\" | \"ssh-tunnel\". ssh-tunnel goes through the SSH fields.",
+                    "type": "string"
+                },
+                "db_auth_source": {
+                    "description": "DBAuthSource is the MongoDB authentication database. Not a secret, plain\ntext. Empty → \"admin\".",
+                    "type": "string"
+                },
+                "db_connect_timeout": {
+                    "description": "DBConnectTimeout is in seconds. 0 → the driver default.",
+                    "type": "integer"
+                },
+                "db_host": {
+                    "type": "string"
+                },
+                "db_name": {
+                    "description": "DBName selects one database. Empty → every user database on the server.",
+                    "type": "string"
+                },
+                "db_password": {
+                    "description": "DBPassword is stored in OpenBao; the column stays empty.",
+                    "type": "string"
+                },
+                "db_pg_schema": {
+                    "description": "DBPgSchema selects PostgreSQL schemas within DBName. Empty → every user schema.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "db_port": {
+                    "type": "string"
+                },
+                "db_tls_ca_pem": {
+                    "description": "DBTLSCAPEM is the CA certificate (PEM) verify-ca and verify-full check the\nserver against. A certificate is public, so it is stored as plain text.",
+                    "type": "string"
+                },
+                "db_tls_mode": {
+                    "description": "DBTLSMode: \"disable\" | \"prefer\" | \"require\" | \"verify-ca\" | \"verify-full\".\nEmpty → disable.",
+                    "type": "string"
+                },
+                "db_type": {
+                    "description": "DB fields — required when parent SourceGroup.Type == \"db\".\nDBType: \"mysql\" | \"mariadb\" | \"postgresql\" | \"mongodb\".",
+                    "type": "string"
+                },
+                "db_username": {
+                    "type": "string"
+                },
                 "description": {
+                    "type": "string"
+                },
+                "fs_scan_path": {
+                    "description": "FS fields — used when parent SourceGroup.Type == \"fs\". The host is reached\nthrough the SSH fields above.\nFSScanPath is the absolute path collected on the host. Empty → \"/home\".",
                     "type": "string"
                 },
                 "id": {
@@ -3831,6 +5134,33 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "os_access_key_id": {
+                    "description": "OSAccessKeyId and OSSecretAccessKey are stored in OpenBao; the columns stay\nempty.",
+                    "type": "string"
+                },
+                "os_access_type": {
+                    "description": "MinIO fields — required when parent SourceGroup.Type == \"minio\". The\nendpoint is derived from the source group's provider_name and region_name.\nOSAccessType: \"direct\" | \"ssh-tunnel\". ssh-tunnel goes through the SSH fields.",
+                    "type": "string"
+                },
+                "os_endpoint": {
+                    "description": "OSEndpoint is the S3 endpoint (host[:port] or http(s) URL). Required for\nonprem and openstack, overrides the derived endpoint otherwise, ignored for\nazure (derived from the account name in OSAccessKeyId).",
+                    "type": "string"
+                },
+                "os_scan_bucket": {
+                    "description": "OSScanBucket is the bucket collected. On tencent it must carry the AppId\nsuffix (\"\u003cname\u003e-\u003cAppId\u003e\").",
+                    "type": "string"
+                },
+                "os_scan_prefix": {
+                    "description": "OSScanPrefix narrows the collection to keys under this prefix. Empty → the\nwhole bucket.",
+                    "type": "string"
+                },
+                "os_secret_access_key": {
+                    "type": "string"
+                },
+                "os_use_ssl": {
+                    "description": "OSUseSSL selects HTTPS for onprem and openstack endpoints. A scheme on\nOSEndpoint takes precedence.",
+                    "type": "boolean"
                 },
                 "password": {
                     "type": "string"
@@ -3889,7 +5219,51 @@
                 "name"
             ],
             "properties": {
+                "db_access_type": {
+                    "type": "string"
+                },
+                "db_auth_source": {
+                    "type": "string"
+                },
+                "db_connect_timeout": {
+                    "type": "integer"
+                },
+                "db_host": {
+                    "type": "string"
+                },
+                "db_name": {
+                    "type": "string"
+                },
+                "db_password": {
+                    "type": "string"
+                },
+                "db_pg_schema": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "db_port": {
+                    "type": "string"
+                },
+                "db_tls_ca_pem": {
+                    "type": "string"
+                },
+                "db_tls_mode": {
+                    "type": "string"
+                },
+                "db_type": {
+                    "description": "DB fields — required when parent SourceGroup.Type == \"db\".",
+                    "type": "string"
+                },
+                "db_username": {
+                    "type": "string"
+                },
                 "description": {
+                    "type": "string"
+                },
+                "fs_scan_path": {
+                    "description": "FS fields — used when parent SourceGroup.Type == \"fs\".\nFSScanPath (optional) is the absolute path to collect. Empty → \"/home\";\n\"/\" collects the whole host.",
                     "type": "string"
                 },
                 "ip_address": {
@@ -3902,6 +5276,28 @@
                 },
                 "name": {
                     "type": "string"
+                },
+                "os_access_key_id": {
+                    "type": "string"
+                },
+                "os_access_type": {
+                    "description": "MinIO fields — required when parent SourceGroup.Type == \"minio\".",
+                    "type": "string"
+                },
+                "os_endpoint": {
+                    "type": "string"
+                },
+                "os_scan_bucket": {
+                    "type": "string"
+                },
+                "os_scan_prefix": {
+                    "type": "string"
+                },
+                "os_secret_access_key": {
+                    "type": "string"
+                },
+                "os_use_ssl": {
+                    "type": "boolean"
                 },
                 "password": {
                     "type": "string"
@@ -3959,7 +5355,108 @@
                     "type": "string"
                 },
                 "type": {
-                    "description": "CSP fields — required when Type == \"csp\".",
+                    "description": "Type: \"onprem\" (default; legacy \"ssh\") | \"csp\" | \"fs\" | \"db\" | \"minio\".\nprovider_name is required for csp, minio and db; region_name for csp and\nfor minio providers that need it; credential for csp only.",
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBInfoList": {
+            "type": "object",
+            "required": [
+                "servers"
+            ],
+            "properties": {
+                "servers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBInspectResult"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBInspectResult": {
+            "type": "object",
+            "properties": {
+                "databases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.DBMSInfo"
+                    }
+                },
+                "skipped": {
+                    "description": "Skipped lists the databases that could not be collected when the whole\nserver was enumerated.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBSkippedEntry"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBMetricReq": {
+            "type": "object",
+            "properties": {
+                "columns": {
+                    "type": "boolean"
+                },
+                "events": {
+                    "description": "MySQL and MariaDB.",
+                    "type": "boolean"
+                },
+                "extensions": {
+                    "type": "boolean"
+                },
+                "foreign_keys": {
+                    "description": "MySQL, MariaDB and PostgreSQL.",
+                    "type": "boolean"
+                },
+                "functions": {
+                    "type": "boolean"
+                },
+                "indexes": {
+                    "type": "boolean"
+                },
+                "materialized_views": {
+                    "description": "PostgreSQL.",
+                    "type": "boolean"
+                },
+                "procedures": {
+                    "type": "boolean"
+                },
+                "row_count_exact": {
+                    "description": "All engines.",
+                    "type": "boolean"
+                },
+                "rules": {
+                    "type": "boolean"
+                },
+                "sample_size": {
+                    "type": "integer"
+                },
+                "sequences": {
+                    "type": "boolean"
+                },
+                "triggers": {
+                    "type": "boolean"
+                },
+                "types": {
+                    "type": "boolean"
+                },
+                "validators": {
+                    "description": "MongoDB.",
+                    "type": "boolean"
+                },
+                "views": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBSkippedEntry": {
+            "type": "object",
+            "properties": {
+                "database": {
+                    "type": "string"
+                },
+                "error": {
                     "type": "string"
                 }
             }
@@ -4021,6 +5518,46 @@
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.FSInfoList": {
+            "type": "object",
+            "required": [
+                "file_systems"
+            ],
+            "properties": {
+                "file_systems": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.FSInfo"
+                    }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.FSMetricReq": {
+            "type": "object",
+            "properties": {
+                "extension_count": {
+                    "type": "boolean"
+                },
+                "file_count": {
+                    "type": "boolean"
+                },
+                "folder_file_count": {
+                    "type": "boolean"
+                },
+                "folder_file_size": {
+                    "type": "boolean"
+                },
+                "folder_mod_time": {
+                    "type": "boolean"
+                },
+                "folder_perms": {
+                    "type": "boolean"
+                },
+                "total_size": {
+                    "type": "boolean"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.HelmInfoList": {
             "type": "object",
             "required": [
@@ -4032,6 +5569,34 @@
                     "items": {
                         "$ref": "#/definitions/kubernetes.Helm"
                     }
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportDBReq": {
+            "type": "object",
+            "properties": {
+                "metric": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBMetricReq"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportFSReq": {
+            "type": "object",
+            "properties": {
+                "max_depth": {
+                    "description": "MaxDepth limits how deep folders are walked. 0 → no limit.",
+                    "type": "integer"
+                },
+                "metric": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.FSMetricReq"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportObjectStorageReq": {
+            "type": "object",
+            "properties": {
+                "metric": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.OSMetricReq"
                 }
             }
         },
@@ -4180,6 +5745,43 @@
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.OSMetricReq": {
+            "type": "object",
+            "properties": {
+                "extension_count": {
+                    "type": "boolean"
+                },
+                "object_count": {
+                    "type": "boolean"
+                },
+                "prefix_mod_time": {
+                    "type": "boolean"
+                },
+                "prefix_object_count": {
+                    "type": "boolean"
+                },
+                "prefix_object_size": {
+                    "type": "boolean"
+                },
+                "total_size": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ObjectStorageInfoList": {
+            "type": "object",
+            "required": [
+                "object_storages"
+            ],
+            "properties": {
+                "object_storages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.ObjectStorageInfo"
+                    }
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfo": {
             "type": "object",
             "properties": {
@@ -4252,6 +5854,27 @@
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDBInfo": {
+            "type": "object",
+            "required": [
+                "connection_id",
+                "db_data"
+            ],
+            "properties": {
+                "connection_id": {
+                    "type": "string"
+                },
+                "db_data": {
+                    "type": "string"
+                },
+                "saved_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDataInfo": {
             "type": "object",
             "required": [
@@ -4263,6 +5886,27 @@
                     "type": "string"
                 },
                 "data_data": {
+                    "type": "string"
+                },
+                "saved_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedFSInfo": {
+            "type": "object",
+            "required": [
+                "connection_id",
+                "fs_data"
+            ],
+            "properties": {
+                "connection_id": {
+                    "type": "string"
+                },
+                "fs_data": {
                     "type": "string"
                 },
                 "saved_time": {
@@ -4339,6 +5983,31 @@
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedObjectStorageInfo": {
+            "type": "object",
+            "required": [
+                "connection_id",
+                "os_data"
+            ],
+            "properties": {
+                "bucket": {
+                    "description": "Bucket is the bucket OSData was collected from. It repeats the\nconnection's os_scan_bucket so that a stale row still says which bucket\nits result belongs to.",
+                    "type": "string"
+                },
+                "connection_id": {
+                    "type": "string"
+                },
+                "os_data": {
+                    "type": "string"
+                },
+                "saved_time": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo": {
             "type": "object",
             "required": [
@@ -4405,7 +6074,7 @@
                     "type": "string"
                 },
                 "provider_name": {
-                    "description": "CSP fields, populated only when Type == \"csp\".\nCredential lives in OpenBao, never in this table: the column is cleared on\nwrite and rehydrated on demand. It is handed to the CSP driver per\ndiscovery/collection call and registered nowhere else; honeybee is the\nsingle source of truth, so no connection name is kept.",
+                    "description": "ProviderName is where the sources are hosted. csp: the cb-spider provider.\nminio: picks the S3 endpoint form. db: recorded only, nothing is derived\nfrom it. Both minio and db take the providers in provider.go, \"onprem\" for\nthe operator's own servers.\nRegionName: csp and minio only. minio requires it for providers whose\nendpoint or signing carries the region (see regionRequired).\nCredential is csp only. It lives in OpenBao, never in this table: the\ncolumn is cleared on write and rehydrated on demand. It is handed to the\nCSP driver per discovery/collection call and registered nowhere else;\nhoneybee is the single source of truth, so no connection name is kept.",
                     "type": "string"
                 },
                 "region_name": {
@@ -4415,7 +6084,7 @@
                     "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo"
                 },
                 "type": {
-                    "description": "Type discriminates how this group's connections are collected. Allowed:\n\"onprem\" or \"csp\" (cb-spider backed); see common.IsOnpremType. \"ssh\" and\nthe empty value are the earlier spelling of \"onprem\" and are still\naccepted. The stored default stays \"ssh\" rather than \"onprem\" because it\nis what clients already compare against; the request handler writes it\nexplicitly when the caller omits the field.",
+                    "description": "Type discriminates how this group's connections are collected. Allowed:\n\"onprem\" or \"csp\" (cb-spider backed) for infrastructure, and \"fs\", \"db\" or\n\"minio\" for data migration sources; see common.IsOnpremType. \"ssh\" and\nthe empty value are the earlier spelling of \"onprem\" and are still\naccepted. The stored default stays \"ssh\" rather than \"onprem\" because it\nis what clients already compare against; the request handler writes it\nexplicitly when the caller omits the field.",
                     "type": "string"
                 }
             }
@@ -4480,7 +6149,7 @@
                     "type": "string"
                 },
                 "region_name": {
-                    "description": "CSP fields — only honored for CSP groups.",
+                    "description": "RegionName is honored for csp and minio groups, Credential for csp only.",
                     "type": "string"
                 }
             }
@@ -7976,51 +9645,6 @@
                 1048576,
                 524288,
                 2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
                 511
             ],
             "x-enum-comments": {
@@ -8054,69 +9678,9 @@
                 "t: sticky",
                 "?: non-regular file; nothing else is known about this file",
                 "",
-                "Unix permission bits, 0o777",
-                "d: is a directory",
-                "a: append-only",
-                "l: exclusive use",
-                "T: temporary file; Plan 9 only",
-                "L: symbolic link",
-                "D: device file",
-                "p: named pipe (FIFO)",
-                "S: Unix domain socket",
-                "u: setuid",
-                "g: setgid",
-                "c: Unix character device, when ModeDevice is set",
-                "t: sticky",
-                "?: non-regular file; nothing else is known about this file",
-                "",
-                "Unix permission bits, 0o777",
-                "d: is a directory",
-                "a: append-only",
-                "l: exclusive use",
-                "T: temporary file; Plan 9 only",
-                "L: symbolic link",
-                "D: device file",
-                "p: named pipe (FIFO)",
-                "S: Unix domain socket",
-                "u: setuid",
-                "g: setgid",
-                "c: Unix character device, when ModeDevice is set",
-                "t: sticky",
-                "?: non-regular file; nothing else is known about this file",
-                "",
                 "Unix permission bits, 0o777"
             ],
             "x-enum-varnames": [
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm",
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm",
                 "ModeDir",
                 "ModeAppend",
                 "ModeExclusive",
@@ -8671,6 +10235,10 @@
         "software.Listener": {
             "type": "object",
             "properties": {
+                "container_id": {
+                    "description": "ContainerID is the ID of the Docker or Podman container the process runs\nin; empty for a host process. Only containers on the host's network are\ncollected: the runtime records no ports for them, so their process is the\nonly record of where they listen. ExecutablePath is then a path inside the\ncontainer, and Package and Syft are left empty.",
+                    "type": "string"
+                },
                 "executable_path": {
                     "type": "string"
                 },
@@ -8679,6 +10247,10 @@
                 },
                 "package": {
                     "description": "Package is the OS package owning ExecutablePath; empty when no package owns it.",
+                    "type": "string"
+                },
+                "package_version": {
+                    "description": "PackageVersion is the installed version of Package. The DEB and RPM lists\nleave out packages other packages depend on, which is where a server's\nbinary usually lives (e.g. mysql-server-core-8.0), so it is recorded here.",
                     "type": "string"
                 },
                 "pid": {
@@ -9462,6 +11034,470 @@
                 }
             }
         },
+        "sourcemodel.DBColumnInfo": {
+            "type": "object",
+            "properties": {
+                "characterSet": {
+                    "description": "CharacterSet and Collation are the column's own text handling, and appear\nonly where the engine records them per column. MySQL and MariaDB fill both\nfor string columns and neither for the rest. PostgreSQL fills Collation\nalone, and only when the column declares one explicitly — a column that\ninherits the database default reports nothing, which DBMSInfo.Collation\nalready says. MongoDB fills neither: its fields are inferred by sampling.",
+                    "type": "string"
+                },
+                "collation": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "dataType": {
+                    "type": "string"
+                },
+                "default": {
+                    "type": "string"
+                },
+                "isNullable": {
+                    "type": "boolean"
+                },
+                "isPrimary": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "sourcemodel.DBIndexInfo": {
+            "type": "object",
+            "properties": {
+                "columns": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "isUnique": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "sourcemodel.DBMSInfo": {
+            "type": "object",
+            "properties": {
+                "characterSet": {
+                    "description": "CharacterSet is the database's default character set, which on PostgreSQL\nis its encoding — the two name the same thing there. MongoDB stores UTF-8\nonly and leaves it empty.",
+                    "type": "string"
+                },
+                "collation": {
+                    "description": "Collation is the database's default collation: DEFAULT_COLLATION_NAME on\nMySQL and MariaDB, datcollate on PostgreSQL. MongoDB has no database-level\ncollation and leaves it empty.",
+                    "type": "string"
+                },
+                "ctype": {
+                    "description": "Ctype is the locale governing character classification — PostgreSQL's\ndatctype, which the engine keeps separate from the collation order. The\nother engines have no equivalent and leave it empty.",
+                    "type": "string"
+                },
+                "dataSize": {
+                    "type": "integer"
+                },
+                "database": {
+                    "type": "string"
+                },
+                "events": {
+                    "description": "MySQL / MariaDB",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "extensions": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "foreignKeys": {
+                    "description": "Schema object inventory (name list) — populated only on metric opt-in.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "functions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "indexSize": {
+                    "type": "integer"
+                },
+                "materializedViews": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pgSchema": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.DBPgSchemaInfo"
+                    }
+                },
+                "procedures": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rules": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sequences": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "serverVersion": {
+                    "type": "string"
+                },
+                "tableCount": {
+                    "type": "integer"
+                },
+                "tables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.DBTableInfo"
+                    }
+                },
+                "totalSize": {
+                    "description": "TotalSize..TableCount are the sum over the schemas the inspection covered,\nnot the size of the database as PostgreSQL reports it. PgSchema breaks them\ndown per schema and always sums back to them; a schema holding no tables is\nlisted at zero rather than omitted. PostgreSQL only.",
+                    "type": "integer"
+                },
+                "triggers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "types": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "validators": {
+                    "description": "MongoDB",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "views": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "sourcemodel.DBPgSchemaInfo": {
+            "type": "object",
+            "properties": {
+                "dataSize": {
+                    "type": "integer"
+                },
+                "indexSize": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tableCount": {
+                    "type": "integer"
+                },
+                "totalSize": {
+                    "type": "integer"
+                }
+            }
+        },
+        "sourcemodel.DBTableInfo": {
+            "type": "object",
+            "properties": {
+                "characterSet": {
+                    "description": "CharacterSet and Collation are the table's own text defaults, which its\ncolumns inherit unless they declare their own. PostgreSQL has no\ntable-level collation and leaves both empty; MongoDB reports the\ncollection's default collation locale in Collation and leaves CharacterSet\nempty.",
+                    "type": "string"
+                },
+                "collation": {
+                    "type": "string"
+                },
+                "columns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.DBColumnInfo"
+                    }
+                },
+                "dataSize": {
+                    "type": "integer"
+                },
+                "engine": {
+                    "type": "string"
+                },
+                "indexSize": {
+                    "type": "integer"
+                },
+                "indexes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.DBIndexInfo"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pgSchema": {
+                    "type": "string"
+                },
+                "rowCount": {
+                    "type": "integer"
+                },
+                "totalSize": {
+                    "type": "integer"
+                }
+            }
+        },
+        "sourcemodel.FSEntry": {
+            "type": "object",
+            "properties": {
+                "fileCount": {
+                    "description": "only when FilesystemMetric.FolderFileCount",
+                    "type": "integer"
+                },
+                "fileSize": {
+                    "description": "only when FilesystemMetric.FolderFileSize",
+                    "type": "integer"
+                },
+                "isMount": {
+                    "type": "boolean"
+                },
+                "modTime": {
+                    "description": "only when FilesystemMetric.FolderModTime",
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "description": "only when FilesystemMetric.FolderPerms",
+                    "type": "string"
+                }
+            }
+        },
+        "sourcemodel.FSInfo": {
+            "type": "object",
+            "properties": {
+                "extensionCounts": {
+                    "description": "only when FilesystemMetric.ExtensionCount",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "fileCount": {
+                    "description": "only when FilesystemMetric.FileCount",
+                    "type": "integer"
+                },
+                "folders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.FSEntry"
+                    }
+                },
+                "isMount": {
+                    "type": "boolean"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "totalSize": {
+                    "description": "only when FilesystemMetric.TotalSize",
+                    "type": "integer"
+                }
+            }
+        },
+        "sourcemodel.ObjectEntry": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "description": "folder prefix \"bucket/prefix/\"",
+                    "type": "string"
+                },
+                "lastModified": {
+                    "description": "only when ObjectStorageMetric.PrefixModTime",
+                    "type": "string"
+                },
+                "objectCount": {
+                    "description": "only when ObjectStorageMetric.PrefixObjectCount",
+                    "type": "integer"
+                },
+                "size": {
+                    "description": "only when ObjectStorageMetric.PrefixObjectSize",
+                    "type": "integer"
+                }
+            }
+        },
+        "sourcemodel.ObjectStorageInfo": {
+            "type": "object",
+            "properties": {
+                "extensionCounts": {
+                    "description": "only when ObjectStorageMetric.ExtensionCount",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "folders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.ObjectEntry"
+                    }
+                },
+                "objectCount": {
+                    "description": "only when ObjectStorageMetric.ObjectCount",
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "totalSize": {
+                    "description": "only when ObjectStorageMetric.TotalSize",
+                    "type": "integer"
+                }
+            }
+        },
+        "sourcemodel.SourceDBModel": {
+            "type": "object",
+            "properties": {
+                "connection": {
+                    "$ref": "#/definitions/commonmodel.ConnectionRef"
+                },
+                "databases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.DBMSInfo"
+                    }
+                }
+            }
+        },
+        "sourcemodel.SourceDataMigrationModel": {
+            "type": "object",
+            "properties": {
+                "sourceDataMigrationModel": {
+                    "$ref": "#/definitions/sourcemodel.SourceDataMigrationProperty"
+                }
+            }
+        },
+        "sourcemodel.SourceDataMigrationProperty": {
+            "type": "object",
+            "properties": {
+                "databases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.SourceDBModel"
+                    }
+                },
+                "fileSystems": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.SourceFileSystemModel"
+                    }
+                },
+                "objectStorages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.SourceObjectStorageModel"
+                    }
+                }
+            }
+        },
+        "sourcemodel.SourceFileSystemModel": {
+            "type": "object",
+            "properties": {
+                "connection": {
+                    "$ref": "#/definitions/commonmodel.ConnectionRef"
+                },
+                "extensionCounts": {
+                    "description": "only when FilesystemMetric.ExtensionCount",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "fileCount": {
+                    "description": "only when FilesystemMetric.FileCount",
+                    "type": "integer"
+                },
+                "folders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.FSEntry"
+                    }
+                },
+                "isMount": {
+                    "type": "boolean"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "totalSize": {
+                    "description": "only when FilesystemMetric.TotalSize",
+                    "type": "integer"
+                }
+            }
+        },
+        "sourcemodel.SourceObjectStorageModel": {
+            "type": "object",
+            "properties": {
+                "connection": {
+                    "$ref": "#/definitions/commonmodel.ConnectionRef"
+                },
+                "extensionCounts": {
+                    "description": "only when ObjectStorageMetric.ExtensionCount",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "folders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/sourcemodel.ObjectEntry"
+                    }
+                },
+                "objectCount": {
+                    "description": "only when ObjectStorageMetric.ObjectCount",
+                    "type": "integer"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "totalSize": {
+                    "description": "only when ObjectStorageMetric.TotalSize",
+                    "type": "integer"
+                }
+            }
+        },
         "storage.DriverData": {
             "type": "object",
             "properties": {
@@ -9525,10 +11561,8 @@
                 1000000000,
                 60000000000,
                 3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -9551,10 +11585,8 @@
                 "Second",
                 "Minute",
                 "Hour",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",

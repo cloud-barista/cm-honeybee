@@ -1,5 +1,199 @@
 basePath: /honeybee-agent
 definitions:
+  base.ColumnInfo:
+    properties:
+      characterSet:
+        description: |-
+          CharacterSet and Collation describe the column's own text handling, and
+          are set only where the engine records them per column. MySQL and MariaDB
+          fill both for string columns and neither for the rest. PostgreSQL fills
+          Collation alone, and only when the column declares one explicitly — a
+          column inheriting the database default reports nothing, which is what
+          DBMSInfo.Collation already says. MongoDB fills neither: its fields are
+          inferred by sampling and carry no collation.
+        type: string
+      collation:
+        type: string
+      comment:
+        type: string
+      dataType:
+        type: string
+      default:
+        type: string
+      isNullable:
+        type: boolean
+      isPrimary:
+        type: boolean
+      name:
+        type: string
+    type: object
+  base.IndexInfo:
+    properties:
+      columns:
+        items:
+          type: string
+        type: array
+      isUnique:
+        type: boolean
+      name:
+        type: string
+      type:
+        type: string
+    type: object
+  base.MariaDBMetric:
+    properties:
+      columns:
+        type: boolean
+      events:
+        type: boolean
+      foreignKeys:
+        type: boolean
+      functions:
+        type: boolean
+      indexes:
+        type: boolean
+      procedures:
+        type: boolean
+      rowCountExact:
+        type: boolean
+      triggers:
+        type: boolean
+      views:
+        type: boolean
+    type: object
+  base.MongoDBMetric:
+    properties:
+      columns:
+        description: per-collection field inference (sampling)
+        type: boolean
+      indexes:
+        description: per-collection index metadata
+        type: boolean
+      rowCountExact:
+        description: exact countDocuments per collection (else collStats estimate)
+        type: boolean
+      sampleSize:
+        description: documents sampled for field inference (default 100)
+        type: integer
+      validators:
+        description: collections carrying a schema validator
+        type: boolean
+      views:
+        description: view names (viewOn/pipeline collections)
+        type: boolean
+    type: object
+  base.MySQLMetric:
+    properties:
+      columns:
+        description: per-table column metadata
+        type: boolean
+      events:
+        description: event names
+        type: boolean
+      foreignKeys:
+        description: foreign-key constraint names
+        type: boolean
+      functions:
+        description: function names
+        type: boolean
+      indexes:
+        description: per-table index metadata
+        type: boolean
+      procedures:
+        description: procedure names
+        type: boolean
+      rowCountExact:
+        description: exact SELECT COUNT(*) per table (else statistics estimate); DescribeTable honours it too
+        type: boolean
+      triggers:
+        description: trigger names
+        type: boolean
+      views:
+        description: view names
+        type: boolean
+    type: object
+  base.PgSchemaInfo:
+    properties:
+      dataSize:
+        type: integer
+      indexSize:
+        type: integer
+      name:
+        type: string
+      tableCount:
+        type: integer
+      totalSize:
+        type: integer
+    type: object
+  base.PostgreSQLMetric:
+    properties:
+      columns:
+        type: boolean
+      extensions:
+        type: boolean
+      foreignKeys:
+        type: boolean
+      functions:
+        type: boolean
+      indexes:
+        type: boolean
+      materializedViews:
+        type: boolean
+      procedures:
+        type: boolean
+      rowCountExact:
+        type: boolean
+      rules:
+        type: boolean
+      sequences:
+        type: boolean
+      triggers:
+        type: boolean
+      types:
+        type: boolean
+      views:
+        type: boolean
+    type: object
+  base.TableInfo:
+    properties:
+      characterSet:
+        description: |-
+          CharacterSet and Collation are the table's own text defaults, which its
+          columns inherit unless they declare their own. MySQL and MariaDB record
+          only the collation on the table itself, so the character set is joined in
+          from information_schema.COLLATIONS rather than split off the collation
+          name: the prefix that carries it is a naming convention, not something the
+          engine guarantees.
+
+          PostgreSQL has no table-level collation and leaves both empty. MongoDB
+          stores UTF-8 only, so it fills Collation with the collection's default
+          collation locale and leaves CharacterSet empty.
+        type: string
+      collation:
+        type: string
+      columns:
+        items:
+          $ref: '#/definitions/base.ColumnInfo'
+        type: array
+      dataSize:
+        type: integer
+      engine:
+        type: string
+      indexSize:
+        type: integer
+      indexes:
+        items:
+          $ref: '#/definitions/base.IndexInfo'
+        type: array
+      name:
+        type: string
+      pgSchema:
+        type: string
+      rowCount:
+        type: integer
+      totalSize:
+        type: integer
+    type: object
   blkiodev.ThrottleDevice:
     properties:
       path:
@@ -3203,9 +3397,34 @@ definitions:
     - 2401763328
     - 511
     - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
     - 8388608
     - 4194304
+    - 2097152
     - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
     - 511
     - 2147483648
     - 1073741824
@@ -3306,21 +3525,6 @@ definitions:
     - ""
     - Unix permission bits, 0o777
     - 'd: is a directory'
-    - 'a: append-only'
-    - 'l: exclusive use'
-    - 'T: temporary file; Plan 9 only'
-    - 'L: symbolic link'
-    - 'D: device file'
-    - 'p: named pipe (FIFO)'
-    - 'S: Unix domain socket'
-    - 'u: setuid'
-    - 'g: setgid'
-    - 'c: Unix character device, when ModeDevice is set'
-    - 't: sticky'
-    - '?: non-regular file; nothing else is known about this file'
-    - ""
-    - Unix permission bits, 0o777
-    - 'd: is a directory'
     - 'u: setuid'
     - 'g: setgid'
     - 't: sticky'
@@ -3357,25 +3561,132 @@ definitions:
     - ModeType
     - ModePerm
     - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
-    - ModeSetuid
-    - ModeSetgid
-    - ModeCharDevice
-    - ModeSticky
-    - ModeIrregular
-    - ModeType
-    - ModePerm
-    - ModeDir
     - ModeSetuid
     - ModeSetgid
     - ModeSticky
     - ModePerm
+  pkg_api_rest_controller.DBInspectReq:
+    properties:
+      auth_source:
+        description: |-
+          AuthSource is the authentication database. MongoDB only; empty means the
+          driver default.
+        type: string
+      connect_timeout:
+        description: ConnectTimeout in seconds. 0 means the driver default.
+        type: integer
+      db_name:
+        description: |-
+          DBName is the database to inspect. Empty means every user database on the
+          server.
+        type: string
+      db_type:
+        description: 'DBType is the engine: mysql, mariadb, postgresql or mongodb.
+          Required.'
+        type: string
+      host:
+        description: Host of the database server. Required.
+        type: string
+      metric:
+        allOf:
+        - $ref: '#/definitions/transxex.DBMSMetricOption'
+        description: |-
+          Metric is the metric selection, already routed to this engine by the
+          server.
+      password:
+        description: Password of the database user.
+        type: string
+      pg_schema:
+        description: |-
+          PgSchema is the schema selection. PostgreSQL only; omit to inspect every
+          user schema.
+        items:
+          type: string
+        type: array
+      port:
+        description: Port of the database server. 0 means the engine's default.
+        type: integer
+      provider_name:
+        description: |-
+          ProviderName is where the database is hosted, as the source group records
+          it. Carried through to the result; nothing reads it.
+        type: string
+      tls_ca_pem:
+        description: |-
+          TLSCAPEM is the root CA in PEM form for verify-ca and verify-full. Empty
+          means the system trust store.
+        type: string
+      tls_mode:
+        description: |-
+          TLSMode is the transport security: disable, prefer, require, verify-ca or
+          verify-full. Empty means disable.
+        type: string
+      username:
+        description: Username of the database user.
+        type: string
+    type: object
+  pkg_api_rest_controller.DBInspectResult:
+    properties:
+      databases:
+        items:
+          $ref: '#/definitions/transxex.DBMSInfo'
+        type: array
+      skipped:
+        items:
+          $ref: '#/definitions/transxex.DBMSInspectError'
+        type: array
+    type: object
+  pkg_api_rest_controller.FSInspectReq:
+    properties:
+      max_depth:
+        description: MaxDepth is the maximum scan depth. 0 means unlimited.
+        type: integer
+      metric:
+        allOf:
+        - $ref: '#/definitions/transxex.FilesystemMetric'
+        description: |-
+          Metric selects the aggregates to compute. Omit to keep the library
+          defaults, which are not all false (folder mtime and permissions are on).
+      path:
+        description: Path to inspect. Empty means "/".
+        type: string
+    type: object
+  pkg_api_rest_controller.ObjectStorageInspectReq:
+    properties:
+      access_key:
+        description: AccessKey is the access key id.
+        type: string
+      bucket:
+        description: Bucket to inspect. Required.
+        type: string
+      bucket_lookup:
+        description: 'BucketLookup is the bucket addressing style: empty (auto), dns
+          or path.'
+        type: string
+      endpoint:
+        description: Endpoint is the S3-compatible endpoint host. Required.
+        type: string
+      metric:
+        allOf:
+        - $ref: '#/definitions/transxex.ObjectStorageMetric'
+        description: |-
+          Metric selects the aggregates to compute. Omit to keep the library
+          defaults, which are all off for object storage.
+      prefix:
+        description: Prefix is the key prefix to scan under the bucket.
+        type: string
+      region:
+        description: |-
+          Region is the signing region. Empty is a choice, not an omission: minio-go
+          then asks the bucket for its location and signs with the answer.
+        type: string
+      secret_key:
+        description: SecretKey is the secret access key.
+        type: string
+      use_ssl:
+        description: UseSSL tells whether to reach the endpoint over TLS.
+        type: boolean
+    type: object
   pkg_api_rest_controller.SimpleMsg:
     properties:
       message:
@@ -3416,6 +3727,43 @@ definitions:
         description: Name of the snapshotter.
         type: string
     type: object
+  storagex.FSEntry:
+    properties:
+      fileCount:
+        description: Direct (non-recursive) file count (only when FilesystemMetric.FolderFileCount)
+        type: integer
+      fileSize:
+        description: Direct (non-recursive) file size sum in bytes (only when FilesystemMetric.FolderFileSize)
+        type: integer
+      isMount:
+        description: Whether Path is a mount point of a separate filesystem (always
+          populated)
+        type: boolean
+      modTime:
+        description: RFC3339 timestamp (only when FilesystemMetric.FolderModTime)
+        type: string
+      path:
+        description: Absolute path (always populated)
+        type: string
+      permissions:
+        description: Permission string (only when FilesystemMetric.FolderPerms)
+        type: string
+    type: object
+  storagex.OSEntry:
+    properties:
+      key:
+        description: Folder prefix "bucket/prefix/" (always populated)
+        type: string
+      lastModified:
+        description: Latest LastModified of direct objects (only when ObjectStorageMetric.PrefixModTime)
+        type: string
+      objectCount:
+        description: Direct (non-recursive) object count (only when ObjectStorageMetric.PrefixObjectCount)
+        type: integer
+      size:
+        description: Direct (non-recursive) object size sum in bytes (only when ObjectStorageMetric.PrefixObjectSize)
+        type: integer
+    type: object
   time.Duration:
     enum:
     - -9223372036854775808
@@ -3434,24 +3782,10 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
     - 1
     - 1000
     - 1000000
     - 1000000000
-    - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -3463,6 +3797,7 @@ definitions:
     - 1000000
     - 1000000000
     - 60000000000
+    - 3600000000000
     format: int64
     type: integer
     x-enum-varnames:
@@ -3482,24 +3817,10 @@ definitions:
     - Second
     - Minute
     - Hour
-    - minDuration
-    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
     - Second
-    - Minute
-    - Hour
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - minDuration
-    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -3511,6 +3832,227 @@ definitions:
     - Millisecond
     - Second
     - Minute
+    - Hour
+  transxex.DBMSInfo:
+    properties:
+      characterSet:
+        description: |-
+          CharacterSet is the database's default character set, which on PostgreSQL
+          is its encoding — the two name the same thing there. MongoDB stores UTF-8
+          only and leaves it empty.
+        type: string
+      collation:
+        description: |-
+          Collation is the database's default collation: DEFAULT_COLLATION_NAME on
+          MySQL and MariaDB, datcollate on PostgreSQL. MongoDB has no database-level
+          collation and leaves it empty.
+        type: string
+      ctype:
+        description: |-
+          Ctype is the locale governing character classification — PostgreSQL's
+          datctype, which the engine keeps separate from the collation order. The
+          other engines have no equivalent and leave it empty.
+        type: string
+      dataSize:
+        type: integer
+      database:
+        type: string
+      events:
+        description: MySQL / MariaDB
+        items:
+          type: string
+        type: array
+      extensions:
+        description: PostgreSQL
+        items:
+          type: string
+        type: array
+      foreignKeys:
+        description: Schema-object inventories (name lists), opt-in via Metric.
+        items:
+          type: string
+        type: array
+      functions:
+        items:
+          type: string
+        type: array
+      indexSize:
+        type: integer
+      materializedViews:
+        description: PostgreSQL
+        items:
+          type: string
+        type: array
+      pgSchema:
+        description: |-
+          PgSchema breaks those four figures down per schema, in name order. It
+          covers every schema the location selected — a schema holding no tables is
+          listed with zeroes rather than omitted — so the totals above always equal
+          the sum of this list. PostgreSQL only.
+        items:
+          $ref: '#/definitions/base.PgSchemaInfo'
+        type: array
+      procedures:
+        items:
+          type: string
+        type: array
+      rules:
+        description: PostgreSQL
+        items:
+          type: string
+        type: array
+      sequences:
+        description: PostgreSQL
+        items:
+          type: string
+        type: array
+      serverVersion:
+        type: string
+      tableCount:
+        type: integer
+      tables:
+        items:
+          $ref: '#/definitions/base.TableInfo'
+        type: array
+      totalSize:
+        description: |-
+          TotalSize..TableCount are the sum over the schemas this location covers
+          (see DBMSLocation.PgSchema), not the size of the database as PostgreSQL
+          reports it: pg_database_size() also counts catalogs, TOAST and schemas
+          that were not selected. For the other engines a schema is a database, so
+          the distinction does not arise.
+        type: integer
+      triggers:
+        items:
+          type: string
+        type: array
+      types:
+        description: PostgreSQL
+        items:
+          type: string
+        type: array
+      validators:
+        description: MongoDB
+        items:
+          type: string
+        type: array
+      views:
+        items:
+          type: string
+        type: array
+    type: object
+  transxex.DBMSInspectError:
+    properties:
+      database:
+        type: string
+      error:
+        type: string
+    type: object
+  transxex.DBMSMetricOption:
+    properties:
+      mariadb:
+        $ref: '#/definitions/base.MariaDBMetric'
+      mongodb:
+        $ref: '#/definitions/base.MongoDBMetric'
+      mysql:
+        $ref: '#/definitions/base.MySQLMetric'
+      postgresql:
+        $ref: '#/definitions/base.PostgreSQLMetric'
+    type: object
+  transxex.FSInspectResult:
+    properties:
+      extensionCounts:
+        additionalProperties:
+          type: integer
+        description: Per-extension file counts (FilesystemMetric.ExtensionCount)
+        type: object
+      fileCount:
+        description: Total recursive file count (FilesystemMetric.FileCount)
+        type: integer
+      folders:
+        description: Directory listing
+        items:
+          $ref: '#/definitions/storagex.FSEntry'
+        type: array
+      isMount:
+        description: Whether the scan root is a mount point (always populated)
+        type: boolean
+      path:
+        description: Scan root (always populated)
+        type: string
+      totalSize:
+        description: Total recursive size in bytes (FilesystemMetric.TotalSize)
+        type: integer
+    type: object
+  transxex.FilesystemMetric:
+    properties:
+      extensionCount:
+        description: Per-extension file counts under path (default false)
+        type: boolean
+      fileCount:
+        description: Total recursive file count under path (default false)
+        type: boolean
+      folderFileCount:
+        description: Include each folder's direct file count (default false)
+        type: boolean
+      folderFileSize:
+        description: Include each folder's direct file size sum in bytes (default
+          false)
+        type: boolean
+      folderModTime:
+        description: Include each folder's modification time (default true)
+        type: boolean
+      folderPerms:
+        description: Include each folder's permission string (default true)
+        type: boolean
+      totalSize:
+        description: Total recursive size (bytes) of path (default false)
+        type: boolean
+    type: object
+  transxex.OSInspectResult:
+    properties:
+      extensionCounts:
+        additionalProperties:
+          type: integer
+        description: Per-extension object counts (ObjectStorageMetric.ExtensionCount)
+        type: object
+      folders:
+        description: Folder prefix listing
+        items:
+          $ref: '#/definitions/storagex.OSEntry'
+        type: array
+      objectCount:
+        description: Total object count (ObjectStorageMetric.ObjectCount)
+        type: integer
+      path:
+        description: Scan root "bucket/prefix/" (always populated)
+        type: string
+      totalSize:
+        description: Total object size in bytes (ObjectStorageMetric.TotalSize)
+        type: integer
+    type: object
+  transxex.ObjectStorageMetric:
+    properties:
+      extensionCount:
+        description: Per-extension object counts by key (default false)
+        type: boolean
+      objectCount:
+        description: Total object count (default false)
+        type: boolean
+      prefixModTime:
+        description: Latest LastModified among each prefix's direct objects (default
+          false)
+        type: boolean
+      prefixObjectCount:
+        description: Direct object count per prefix (default false)
+        type: boolean
+      prefixObjectSize:
+        description: Direct object size sum (bytes) per prefix (default false)
+        type: boolean
+      totalSize:
+        description: Total size (bytes) of all objects (default false)
+        type: boolean
+    type: object
   v1.DockerOCIImageConfig:
     properties:
       ArgsEscaped:
@@ -3656,6 +4198,70 @@ paths:
       summary: Get data migration information
       tags:
       - '[Data] Get data migration info'
+  /db:
+    post:
+      consumes:
+      - application/json
+      description: Inspect a database server reachable from this host. With no db_name,
+        every user database is inspected.
+      operationId: post-db-info
+      parameters:
+      - description: Database inspect request.
+        in: body
+        name: DBInspectReq
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_api_rest_controller.DBInspectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get database information.
+          schema:
+            $ref: '#/definitions/pkg_api_rest_controller.DBInspectResult'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get database information.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
+      summary: Get database information
+      tags:
+      - '[Data] Get data migration info'
+  /fs:
+    post:
+      consumes:
+      - application/json
+      description: Inspect a local filesystem path and return its folder listing together
+        with the requested aggregates.
+      operationId: post-fs-info
+      parameters:
+      - description: Filesystem inspect request.
+        in: body
+        name: FSInspectReq
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_api_rest_controller.FSInspectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get filesystem information.
+          schema:
+            $ref: '#/definitions/transxex.FSInspectResult'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get filesystem information.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
+      summary: Get filesystem information
+      tags:
+      - '[Data] Get data migration info'
   /helm:
     get:
       consumes:
@@ -3728,6 +4334,38 @@ paths:
       summary: Get a list of integrated kubernetes information
       tags:
       - '[Kubernetes] Get kubernetes info'
+  /objectstorage:
+    post:
+      consumes:
+      - application/json
+      description: Inspect an S3-compatible bucket and return its prefix listing together
+        with the requested aggregates.
+      operationId: post-object-storage-info
+      parameters:
+      - description: Object storage inspect request.
+        in: body
+        name: ObjectStorageInspectReq
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_api_rest_controller.ObjectStorageInspectReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get object storage information.
+          schema:
+            $ref: '#/definitions/transxex.OSInspectResult'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get object storage information.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse'
+      summary: Get object storage information
+      tags:
+      - '[Data] Get data migration info'
   /readyz:
     get:
       consumes:

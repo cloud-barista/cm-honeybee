@@ -55,6 +55,100 @@ const docTemplate = `{
                 }
             }
         },
+        "/db": {
+            "post": {
+                "description": "Inspect a database server reachable from this host. With no db_name, every user database is inspected.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Data] Get data migration info"
+                ],
+                "summary": "Get database information",
+                "operationId": "post-db-info",
+                "parameters": [
+                    {
+                        "description": "Database inspect request.",
+                        "name": "DBInspectReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pkg_api_rest_controller.DBInspectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get database information.",
+                        "schema": {
+                            "$ref": "#/definitions/pkg_api_rest_controller.DBInspectResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get database information.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/fs": {
+            "post": {
+                "description": "Inspect a local filesystem path and return its folder listing together with the requested aggregates.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Data] Get data migration info"
+                ],
+                "summary": "Get filesystem information",
+                "operationId": "post-fs-info",
+                "parameters": [
+                    {
+                        "description": "Filesystem inspect request.",
+                        "name": "FSInspectReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pkg_api_rest_controller.FSInspectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get filesystem information.",
+                        "schema": {
+                            "$ref": "#/definitions/transxex.FSInspectResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get filesystem information.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/helm": {
             "get": {
                 "description": "Get helm information.",
@@ -163,6 +257,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/objectstorage": {
+            "post": {
+                "description": "Inspect an S3-compatible bucket and return its prefix listing together with the requested aggregates.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "[Data] Get data migration info"
+                ],
+                "summary": "Get object storage information",
+                "operationId": "post-object-storage-info",
+                "parameters": [
+                    {
+                        "description": "Object storage inspect request.",
+                        "name": "ObjectStorageInspectReq",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/pkg_api_rest_controller.ObjectStorageInspectReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully get object storage information.",
+                        "schema": {
+                            "$ref": "#/definitions/transxex.OSInspectResult"
+                        }
+                    },
+                    "400": {
+                        "description": "Sent bad request.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get object storage information.",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_common.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/readyz": {
             "get": {
                 "description": "Check Honeybee Agent is ready",
@@ -239,6 +380,267 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "base.ColumnInfo": {
+            "type": "object",
+            "properties": {
+                "characterSet": {
+                    "description": "CharacterSet and Collation describe the column's own text handling, and\nare set only where the engine records them per column. MySQL and MariaDB\nfill both for string columns and neither for the rest. PostgreSQL fills\nCollation alone, and only when the column declares one explicitly — a\ncolumn inheriting the database default reports nothing, which is what\nDBMSInfo.Collation already says. MongoDB fills neither: its fields are\ninferred by sampling and carry no collation.",
+                    "type": "string"
+                },
+                "collation": {
+                    "type": "string"
+                },
+                "comment": {
+                    "type": "string"
+                },
+                "dataType": {
+                    "type": "string"
+                },
+                "default": {
+                    "type": "string"
+                },
+                "isNullable": {
+                    "type": "boolean"
+                },
+                "isPrimary": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "base.IndexInfo": {
+            "type": "object",
+            "properties": {
+                "columns": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "isUnique": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "base.MariaDBMetric": {
+            "type": "object",
+            "properties": {
+                "columns": {
+                    "type": "boolean"
+                },
+                "events": {
+                    "type": "boolean"
+                },
+                "foreignKeys": {
+                    "type": "boolean"
+                },
+                "functions": {
+                    "type": "boolean"
+                },
+                "indexes": {
+                    "type": "boolean"
+                },
+                "procedures": {
+                    "type": "boolean"
+                },
+                "rowCountExact": {
+                    "type": "boolean"
+                },
+                "triggers": {
+                    "type": "boolean"
+                },
+                "views": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "base.MongoDBMetric": {
+            "type": "object",
+            "properties": {
+                "columns": {
+                    "description": "per-collection field inference (sampling)",
+                    "type": "boolean"
+                },
+                "indexes": {
+                    "description": "per-collection index metadata",
+                    "type": "boolean"
+                },
+                "rowCountExact": {
+                    "description": "exact countDocuments per collection (else collStats estimate)",
+                    "type": "boolean"
+                },
+                "sampleSize": {
+                    "description": "documents sampled for field inference (default 100)",
+                    "type": "integer"
+                },
+                "validators": {
+                    "description": "collections carrying a schema validator",
+                    "type": "boolean"
+                },
+                "views": {
+                    "description": "view names (viewOn/pipeline collections)",
+                    "type": "boolean"
+                }
+            }
+        },
+        "base.MySQLMetric": {
+            "type": "object",
+            "properties": {
+                "columns": {
+                    "description": "per-table column metadata",
+                    "type": "boolean"
+                },
+                "events": {
+                    "description": "event names",
+                    "type": "boolean"
+                },
+                "foreignKeys": {
+                    "description": "foreign-key constraint names",
+                    "type": "boolean"
+                },
+                "functions": {
+                    "description": "function names",
+                    "type": "boolean"
+                },
+                "indexes": {
+                    "description": "per-table index metadata",
+                    "type": "boolean"
+                },
+                "procedures": {
+                    "description": "procedure names",
+                    "type": "boolean"
+                },
+                "rowCountExact": {
+                    "description": "exact SELECT COUNT(*) per table (else statistics estimate); DescribeTable honours it too",
+                    "type": "boolean"
+                },
+                "triggers": {
+                    "description": "trigger names",
+                    "type": "boolean"
+                },
+                "views": {
+                    "description": "view names",
+                    "type": "boolean"
+                }
+            }
+        },
+        "base.PgSchemaInfo": {
+            "type": "object",
+            "properties": {
+                "dataSize": {
+                    "type": "integer"
+                },
+                "indexSize": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "tableCount": {
+                    "type": "integer"
+                },
+                "totalSize": {
+                    "type": "integer"
+                }
+            }
+        },
+        "base.PostgreSQLMetric": {
+            "type": "object",
+            "properties": {
+                "columns": {
+                    "type": "boolean"
+                },
+                "extensions": {
+                    "type": "boolean"
+                },
+                "foreignKeys": {
+                    "type": "boolean"
+                },
+                "functions": {
+                    "type": "boolean"
+                },
+                "indexes": {
+                    "type": "boolean"
+                },
+                "materializedViews": {
+                    "type": "boolean"
+                },
+                "procedures": {
+                    "type": "boolean"
+                },
+                "rowCountExact": {
+                    "type": "boolean"
+                },
+                "rules": {
+                    "type": "boolean"
+                },
+                "sequences": {
+                    "type": "boolean"
+                },
+                "triggers": {
+                    "type": "boolean"
+                },
+                "types": {
+                    "type": "boolean"
+                },
+                "views": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "base.TableInfo": {
+            "type": "object",
+            "properties": {
+                "characterSet": {
+                    "description": "CharacterSet and Collation are the table's own text defaults, which its\ncolumns inherit unless they declare their own. MySQL and MariaDB record\nonly the collation on the table itself, so the character set is joined in\nfrom information_schema.COLLATIONS rather than split off the collation\nname: the prefix that carries it is a naming convention, not something the\nengine guarantees.\n\nPostgreSQL has no table-level collation and leaves both empty. MongoDB\nstores UTF-8 only, so it fills Collation with the collection's default\ncollation locale and leaves CharacterSet empty.",
+                    "type": "string"
+                },
+                "collation": {
+                    "type": "string"
+                },
+                "columns": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/base.ColumnInfo"
+                    }
+                },
+                "dataSize": {
+                    "type": "integer"
+                },
+                "engine": {
+                    "type": "string"
+                },
+                "indexSize": {
+                    "type": "integer"
+                },
+                "indexes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/base.IndexInfo"
+                    }
+                },
+                "name": {
+                    "type": "string"
+                },
+                "pgSchema": {
+                    "type": "string"
+                },
+                "rowCount": {
+                    "type": "integer"
+                },
+                "totalSize": {
+                    "type": "integer"
+                }
+            }
+        },
         "blkiodev.ThrottleDevice": {
             "type": "object",
             "properties": {
@@ -4550,9 +4952,34 @@ const docTemplate = `{
                 2401763328,
                 511,
                 2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
                 8388608,
                 4194304,
+                2097152,
                 1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
                 511,
                 2147483648,
                 1073741824,
@@ -4653,21 +5080,6 @@ const docTemplate = `{
                 "",
                 "Unix permission bits, 0o777",
                 "d: is a directory",
-                "a: append-only",
-                "l: exclusive use",
-                "T: temporary file; Plan 9 only",
-                "L: symbolic link",
-                "D: device file",
-                "p: named pipe (FIFO)",
-                "S: Unix domain socket",
-                "u: setuid",
-                "g: setgid",
-                "c: Unix character device, when ModeDevice is set",
-                "t: sticky",
-                "?: non-regular file; nothing else is known about this file",
-                "",
-                "Unix permission bits, 0o777",
-                "d: is a directory",
                 "u: setuid",
                 "g: setgid",
                 "t: sticky",
@@ -4705,26 +5117,158 @@ const docTemplate = `{
                 "ModeType",
                 "ModePerm",
                 "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm",
-                "ModeDir",
                 "ModeSetuid",
                 "ModeSetgid",
                 "ModeSticky",
                 "ModePerm"
             ]
+        },
+        "pkg_api_rest_controller.DBInspectReq": {
+            "type": "object",
+            "properties": {
+                "auth_source": {
+                    "description": "AuthSource is the authentication database. MongoDB only; empty means the\ndriver default.",
+                    "type": "string"
+                },
+                "connect_timeout": {
+                    "description": "ConnectTimeout in seconds. 0 means the driver default.",
+                    "type": "integer"
+                },
+                "db_name": {
+                    "description": "DBName is the database to inspect. Empty means every user database on the\nserver.",
+                    "type": "string"
+                },
+                "db_type": {
+                    "description": "DBType is the engine: mysql, mariadb, postgresql or mongodb. Required.",
+                    "type": "string"
+                },
+                "host": {
+                    "description": "Host of the database server. Required.",
+                    "type": "string"
+                },
+                "metric": {
+                    "description": "Metric is the metric selection, already routed to this engine by the\nserver.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/transxex.DBMSMetricOption"
+                        }
+                    ]
+                },
+                "password": {
+                    "description": "Password of the database user.",
+                    "type": "string"
+                },
+                "pg_schema": {
+                    "description": "PgSchema is the schema selection. PostgreSQL only; omit to inspect every\nuser schema.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "port": {
+                    "description": "Port of the database server. 0 means the engine's default.",
+                    "type": "integer"
+                },
+                "provider_name": {
+                    "description": "ProviderName is where the database is hosted, as the source group records\nit. Carried through to the result; nothing reads it.",
+                    "type": "string"
+                },
+                "tls_ca_pem": {
+                    "description": "TLSCAPEM is the root CA in PEM form for verify-ca and verify-full. Empty\nmeans the system trust store.",
+                    "type": "string"
+                },
+                "tls_mode": {
+                    "description": "TLSMode is the transport security: disable, prefer, require, verify-ca or\nverify-full. Empty means disable.",
+                    "type": "string"
+                },
+                "username": {
+                    "description": "Username of the database user.",
+                    "type": "string"
+                }
+            }
+        },
+        "pkg_api_rest_controller.DBInspectResult": {
+            "type": "object",
+            "properties": {
+                "databases": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/transxex.DBMSInfo"
+                    }
+                },
+                "skipped": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/transxex.DBMSInspectError"
+                    }
+                }
+            }
+        },
+        "pkg_api_rest_controller.FSInspectReq": {
+            "type": "object",
+            "properties": {
+                "max_depth": {
+                    "description": "MaxDepth is the maximum scan depth. 0 means unlimited.",
+                    "type": "integer"
+                },
+                "metric": {
+                    "description": "Metric selects the aggregates to compute. Omit to keep the library\ndefaults, which are not all false (folder mtime and permissions are on).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/transxex.FilesystemMetric"
+                        }
+                    ]
+                },
+                "path": {
+                    "description": "Path to inspect. Empty means \"/\".",
+                    "type": "string"
+                }
+            }
+        },
+        "pkg_api_rest_controller.ObjectStorageInspectReq": {
+            "type": "object",
+            "properties": {
+                "access_key": {
+                    "description": "AccessKey is the access key id.",
+                    "type": "string"
+                },
+                "bucket": {
+                    "description": "Bucket to inspect. Required.",
+                    "type": "string"
+                },
+                "bucket_lookup": {
+                    "description": "BucketLookup is the bucket addressing style: empty (auto), dns or path.",
+                    "type": "string"
+                },
+                "endpoint": {
+                    "description": "Endpoint is the S3-compatible endpoint host. Required.",
+                    "type": "string"
+                },
+                "metric": {
+                    "description": "Metric selects the aggregates to compute. Omit to keep the library\ndefaults, which are all off for object storage.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/transxex.ObjectStorageMetric"
+                        }
+                    ]
+                },
+                "prefix": {
+                    "description": "Prefix is the key prefix to scan under the bucket.",
+                    "type": "string"
+                },
+                "region": {
+                    "description": "Region is the signing region. Empty is a choice, not an omission: minio-go\nthen asks the bucket for its location and signs with the answer.",
+                    "type": "string"
+                },
+                "secret_key": {
+                    "description": "SecretKey is the secret access key.",
+                    "type": "string"
+                },
+                "use_ssl": {
+                    "description": "UseSSL tells whether to reach the endpoint over TLS.",
+                    "type": "boolean"
+                }
+            }
         },
         "pkg_api_rest_controller.SimpleMsg": {
             "type": "object",
@@ -4772,6 +5316,56 @@ const docTemplate = `{
                 }
             }
         },
+        "storagex.FSEntry": {
+            "type": "object",
+            "properties": {
+                "fileCount": {
+                    "description": "Direct (non-recursive) file count (only when FilesystemMetric.FolderFileCount)",
+                    "type": "integer"
+                },
+                "fileSize": {
+                    "description": "Direct (non-recursive) file size sum in bytes (only when FilesystemMetric.FolderFileSize)",
+                    "type": "integer"
+                },
+                "isMount": {
+                    "description": "Whether Path is a mount point of a separate filesystem (always populated)",
+                    "type": "boolean"
+                },
+                "modTime": {
+                    "description": "RFC3339 timestamp (only when FilesystemMetric.FolderModTime)",
+                    "type": "string"
+                },
+                "path": {
+                    "description": "Absolute path (always populated)",
+                    "type": "string"
+                },
+                "permissions": {
+                    "description": "Permission string (only when FilesystemMetric.FolderPerms)",
+                    "type": "string"
+                }
+            }
+        },
+        "storagex.OSEntry": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "description": "Folder prefix \"bucket/prefix/\" (always populated)",
+                    "type": "string"
+                },
+                "lastModified": {
+                    "description": "Latest LastModified of direct objects (only when ObjectStorageMetric.PrefixModTime)",
+                    "type": "string"
+                },
+                "objectCount": {
+                    "description": "Direct (non-recursive) object count (only when ObjectStorageMetric.PrefixObjectCount)",
+                    "type": "integer"
+                },
+                "size": {
+                    "description": "Direct (non-recursive) object size sum in bytes (only when ObjectStorageMetric.PrefixObjectSize)",
+                    "type": "integer"
+                }
+            }
+        },
         "time.Duration": {
             "type": "integer",
             "format": "int64",
@@ -4792,24 +5386,10 @@ const docTemplate = `{
                 1000000000,
                 60000000000,
                 3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
                 1,
                 1000,
                 1000000,
                 1000000000,
-                60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -4820,7 +5400,8 @@ const docTemplate = `{
                 1000,
                 1000000,
                 1000000000,
-                60000000000
+                60000000000,
+                3600000000000
             ],
             "x-enum-varnames": [
                 "minDuration",
@@ -4839,24 +5420,10 @@ const docTemplate = `{
                 "Second",
                 "Minute",
                 "Hour",
-                "minDuration",
-                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
                 "Second",
-                "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
@@ -4867,8 +5434,294 @@ const docTemplate = `{
                 "Microsecond",
                 "Millisecond",
                 "Second",
-                "Minute"
+                "Minute",
+                "Hour"
             ]
+        },
+        "transxex.DBMSInfo": {
+            "type": "object",
+            "properties": {
+                "characterSet": {
+                    "description": "CharacterSet is the database's default character set, which on PostgreSQL\nis its encoding — the two name the same thing there. MongoDB stores UTF-8\nonly and leaves it empty.",
+                    "type": "string"
+                },
+                "collation": {
+                    "description": "Collation is the database's default collation: DEFAULT_COLLATION_NAME on\nMySQL and MariaDB, datcollate on PostgreSQL. MongoDB has no database-level\ncollation and leaves it empty.",
+                    "type": "string"
+                },
+                "ctype": {
+                    "description": "Ctype is the locale governing character classification — PostgreSQL's\ndatctype, which the engine keeps separate from the collation order. The\nother engines have no equivalent and leave it empty.",
+                    "type": "string"
+                },
+                "dataSize": {
+                    "type": "integer"
+                },
+                "database": {
+                    "type": "string"
+                },
+                "events": {
+                    "description": "MySQL / MariaDB",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "extensions": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "foreignKeys": {
+                    "description": "Schema-object inventories (name lists), opt-in via Metric.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "functions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "indexSize": {
+                    "type": "integer"
+                },
+                "materializedViews": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pgSchema": {
+                    "description": "PgSchema breaks those four figures down per schema, in name order. It\ncovers every schema the location selected — a schema holding no tables is\nlisted with zeroes rather than omitted — so the totals above always equal\nthe sum of this list. PostgreSQL only.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/base.PgSchemaInfo"
+                    }
+                },
+                "procedures": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rules": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sequences": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "serverVersion": {
+                    "type": "string"
+                },
+                "tableCount": {
+                    "type": "integer"
+                },
+                "tables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/base.TableInfo"
+                    }
+                },
+                "totalSize": {
+                    "description": "TotalSize..TableCount are the sum over the schemas this location covers\n(see DBMSLocation.PgSchema), not the size of the database as PostgreSQL\nreports it: pg_database_size() also counts catalogs, TOAST and schemas\nthat were not selected. For the other engines a schema is a database, so\nthe distinction does not arise.",
+                    "type": "integer"
+                },
+                "triggers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "types": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "validators": {
+                    "description": "MongoDB",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "views": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "transxex.DBMSInspectError": {
+            "type": "object",
+            "properties": {
+                "database": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "transxex.DBMSMetricOption": {
+            "type": "object",
+            "properties": {
+                "mariadb": {
+                    "$ref": "#/definitions/base.MariaDBMetric"
+                },
+                "mongodb": {
+                    "$ref": "#/definitions/base.MongoDBMetric"
+                },
+                "mysql": {
+                    "$ref": "#/definitions/base.MySQLMetric"
+                },
+                "postgresql": {
+                    "$ref": "#/definitions/base.PostgreSQLMetric"
+                }
+            }
+        },
+        "transxex.FSInspectResult": {
+            "type": "object",
+            "properties": {
+                "extensionCounts": {
+                    "description": "Per-extension file counts (FilesystemMetric.ExtensionCount)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "fileCount": {
+                    "description": "Total recursive file count (FilesystemMetric.FileCount)",
+                    "type": "integer"
+                },
+                "folders": {
+                    "description": "Directory listing",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storagex.FSEntry"
+                    }
+                },
+                "isMount": {
+                    "description": "Whether the scan root is a mount point (always populated)",
+                    "type": "boolean"
+                },
+                "path": {
+                    "description": "Scan root (always populated)",
+                    "type": "string"
+                },
+                "totalSize": {
+                    "description": "Total recursive size in bytes (FilesystemMetric.TotalSize)",
+                    "type": "integer"
+                }
+            }
+        },
+        "transxex.FilesystemMetric": {
+            "type": "object",
+            "properties": {
+                "extensionCount": {
+                    "description": "Per-extension file counts under path (default false)",
+                    "type": "boolean"
+                },
+                "fileCount": {
+                    "description": "Total recursive file count under path (default false)",
+                    "type": "boolean"
+                },
+                "folderFileCount": {
+                    "description": "Include each folder's direct file count (default false)",
+                    "type": "boolean"
+                },
+                "folderFileSize": {
+                    "description": "Include each folder's direct file size sum in bytes (default false)",
+                    "type": "boolean"
+                },
+                "folderModTime": {
+                    "description": "Include each folder's modification time (default true)",
+                    "type": "boolean"
+                },
+                "folderPerms": {
+                    "description": "Include each folder's permission string (default true)",
+                    "type": "boolean"
+                },
+                "totalSize": {
+                    "description": "Total recursive size (bytes) of path (default false)",
+                    "type": "boolean"
+                }
+            }
+        },
+        "transxex.OSInspectResult": {
+            "type": "object",
+            "properties": {
+                "extensionCounts": {
+                    "description": "Per-extension object counts (ObjectStorageMetric.ExtensionCount)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "folders": {
+                    "description": "Folder prefix listing",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storagex.OSEntry"
+                    }
+                },
+                "objectCount": {
+                    "description": "Total object count (ObjectStorageMetric.ObjectCount)",
+                    "type": "integer"
+                },
+                "path": {
+                    "description": "Scan root \"bucket/prefix/\" (always populated)",
+                    "type": "string"
+                },
+                "totalSize": {
+                    "description": "Total object size in bytes (ObjectStorageMetric.TotalSize)",
+                    "type": "integer"
+                }
+            }
+        },
+        "transxex.ObjectStorageMetric": {
+            "type": "object",
+            "properties": {
+                "extensionCount": {
+                    "description": "Per-extension object counts by key (default false)",
+                    "type": "boolean"
+                },
+                "objectCount": {
+                    "description": "Total object count (default false)",
+                    "type": "boolean"
+                },
+                "prefixModTime": {
+                    "description": "Latest LastModified among each prefix's direct objects (default false)",
+                    "type": "boolean"
+                },
+                "prefixObjectCount": {
+                    "description": "Direct object count per prefix (default false)",
+                    "type": "boolean"
+                },
+                "prefixObjectSize": {
+                    "description": "Direct object size sum (bytes) per prefix (default false)",
+                    "type": "boolean"
+                },
+                "totalSize": {
+                    "description": "Total size (bytes) of all objects (default false)",
+                    "type": "boolean"
+                }
+            }
         },
         "v1.DockerOCIImageConfig": {
             "type": "object",

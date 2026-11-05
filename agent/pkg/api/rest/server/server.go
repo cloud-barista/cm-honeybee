@@ -49,6 +49,9 @@ func Init() {
 
 	route.RegisterInfra(e)
 	route.RegisterData(e)
+	route.RegisterFS(e)
+	route.RegisterObjectStorage(e)
+	route.RegisterDB(e)
 	route.RegisterSoftware(e)
 	route.RegisterKubernetes(e)
 	route.RegisterHelm(e)

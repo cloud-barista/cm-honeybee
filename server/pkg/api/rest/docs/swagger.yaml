@@ -16,6 +16,290 @@ definitions:
         format: int32
         type: integer
     type: object
+  commonmodel.BeetleDBRef:
+    properties:
+      nsId:
+        type: string
+      password:
+        description: AES-encrypted on store
+        type: string
+      rdbmsId:
+        type: string
+      tlsCAPem:
+        description: |-
+          TLSCAPEM is the PEM root that an explicit verify-ca or verify-full checks
+          against. Empty means the system trust store, which carries only publicly
+          trusted CAs — and managed RDBMS services commonly sign with their own, so
+          those two modes usually need the CSP's root supplied here. "auto" ignores
+          it and verifies against the CA cb-spider collected from the instance.
+        type: string
+      tlsMode:
+        description: |-
+          TLSMode selects transport security; the empty value is "auto". "auto"
+          takes the mode cm-beetle recommends for the instance: verify-full,
+          verify-ca or disable, falling back to require when no CA was collected and
+          to prefer when cm-beetle could not say. Any other value means the same
+          thing here as on DBConnConfig — see the table in transx-ex's
+          dbmsx/driver/base/tls.go — and is used as given; plaintext therefore needs
+          "disable" spelled out.
+        enum:
+        - auto
+        - disable
+        - prefer
+        - require
+        - verify-ca
+        - verify-full
+        type: string
+      username:
+        description: the instance admin; cm-beetle does not report it
+        type: string
+    required:
+    - nsId
+    - password
+    - rdbmsId
+    - username
+    type: object
+  commonmodel.BeetleOSRef:
+    properties:
+      nsId:
+        type: string
+      osId:
+        type: string
+    required:
+    - nsId
+    - osId
+    type: object
+  commonmodel.BeetleSSHRef:
+    properties:
+      infraId:
+        type: string
+      nodeId:
+        type: string
+      nsId:
+        type: string
+    required:
+    - infraId
+    - nodeId
+    - nsId
+    type: object
+  commonmodel.ConnectionRef:
+    properties:
+      beetleDb:
+        $ref: '#/definitions/commonmodel.BeetleDBRef'
+      beetleObjectStorage:
+        $ref: '#/definitions/commonmodel.BeetleOSRef'
+      beetleSsh:
+        $ref: '#/definitions/commonmodel.BeetleSSHRef'
+      db:
+        $ref: '#/definitions/commonmodel.DBConnConfig'
+      honeybee:
+        allOf:
+        - $ref: '#/definitions/commonmodel.HoneybeeRef'
+        description: Reference types
+      minio:
+        $ref: '#/definitions/commonmodel.MinioConnConfig'
+      source:
+        allOf:
+        - $ref: '#/definitions/commonmodel.ConnectionSource'
+        enum:
+        - honeybee
+        - beetleSsh
+        - beetleObjectStorage
+        - beetleDb
+        - ssh
+        - minio
+        - db
+      ssh:
+        allOf:
+        - $ref: '#/definitions/commonmodel.SSHConnConfig'
+        description: Inline types
+    required:
+    - source
+    type: object
+  commonmodel.ConnectionSource:
+    enum:
+    - honeybee
+    - beetleSsh
+    - beetleObjectStorage
+    - beetleDb
+    - ssh
+    - minio
+    - db
+    type: string
+    x-enum-varnames:
+    - ConnectionSourceHoneybee
+    - ConnectionSourceBeetleSSH
+    - ConnectionSourceBeetleObjectStorage
+    - ConnectionSourceBeetleDB
+    - ConnectionSourceSSH
+    - ConnectionSourceMinio
+    - ConnectionSourceDB
+  commonmodel.DBConnConfig:
+    properties:
+      accessType:
+        enum:
+        - direct
+        - sshTunnel
+        type: string
+      authSource:
+        description: |-
+          AuthSource selects the authentication database. MongoDB only; ignored by
+          other drivers. When empty and credentials are given, MongoDB defaults to
+          "admin" (where users are usually created) rather than the target database.
+        type: string
+      connectTimeout:
+        type: integer
+      dbmsType:
+        enum:
+        - mysql
+        - mariadb
+        - postgresql
+        - mongodb
+        type: string
+      host:
+        description: |-
+          DB endpoint (the direct connection target, or the target reached through
+          the SSH tunnel)
+        type: string
+      password:
+        type: string
+      port:
+        type: integer
+      providerName:
+        description: |-
+          ProviderName records where the database is hosted. transx-ex carries it
+          through to DBMSLocation.ProviderName but never reads it: no routing,
+          validation or connection decision depends on it. It is required all the
+          same, so that "where does this data live" has an answer for every
+          connection that holds data. A database the operator runs themselves is
+          ProviderOnPrem, spelled out rather than left blank.
+        enum:
+        - aws
+        - alibaba
+        - tencent
+        - ncp
+        - nhn
+        - ibm
+        - gcp
+        - kt
+        - azure
+        - openstack
+        - onprem
+        type: string
+      sshTunnel:
+        allOf:
+        - $ref: '#/definitions/commonmodel.SSHConnConfig'
+        description: Jump host used when accessType=sshTunnel (inline SSH).
+      tlsCAPem:
+        description: |-
+          TLSCAPem is the PEM root that verify-ca and verify-full check against.
+          Empty means the system trust store, which carries only publicly trusted
+          CAs, so a server using a private CA needs its root supplied here.
+
+          transx-ex also accepts a path to a CA file, but that path would name a
+          file on the centipede server rather than on the caller's machine, so it
+          is deliberately not part of this API.
+        type: string
+      tlsMode:
+        description: |-
+          TLSMode selects transport security; the empty value is "disable". The
+          modes mean the same thing on every engine — see transx-ex's
+          dbmsx/driver/base/tls.go for the table that defines them.
+        enum:
+        - disable
+        - prefer
+        - require
+        - verify-ca
+        - verify-full
+        type: string
+      username:
+        type: string
+    required:
+    - accessType
+    - dbmsType
+    - providerName
+    type: object
+  commonmodel.HoneybeeRef:
+    properties:
+      connectionId:
+        type: string
+    required:
+    - connectionId
+    type: object
+  commonmodel.MinioConnConfig:
+    properties:
+      accessKeyId:
+        description: |-
+          AccessKeyId doubles as the storage account name on azure, where it is also
+          the endpoint source.
+        type: string
+      bucketLookup:
+        description: '"" | "dns" | "path"'
+        type: string
+      endpoint:
+        description: |-
+          Endpoint is required for the openstack and onprem providers, where the
+          user supplies the host. For the others it is an optional override of the
+          derived host — except azure, whose host is derived from AccessKeyId.
+        type: string
+      providerName:
+        description: |-
+          ProviderName decides the endpoint, region, TLS and bucket addressing style
+          (see ResolveS3Endpoint in core/migration). transxex.S3MinioConfig has no
+          provider field: it receives the resolved values.
+        enum:
+        - aws
+        - alibaba
+        - tencent
+        - ncp
+        - nhn
+        - ibm
+        - gcp
+        - kt
+        - azure
+        - openstack
+        - onprem
+        type: string
+      region:
+        description: |-
+          Region is the region this store lives in. Required for the providers whose
+          hostname contains it (aws, alibaba, tencent, ncp, nhn, ibm) and for gcp,
+          which has a region-less host but still signs with a region.
+
+          It is NOT unconditionally the signing region: NCP serves
+          "kr.object.ncloudstorage.com" and signs "kr-standard", so ResolveS3Endpoint
+          signs with this value only where the two are spelled the same and otherwise
+          leaves the signing region to be discovered.
+        type: string
+      secretAccessKey:
+        type: string
+      useSSL:
+        description: |-
+          UseSSL is honored only for user-supplied endpoints (openstack, onprem).
+          The other providers use the fixed value from the provider table. A scheme
+          on Endpoint ("http://" or "https://") overrides both.
+        type: boolean
+    required:
+    - accessKeyId
+    - providerName
+    - secretAccessKey
+    type: object
+  commonmodel.SSHConnConfig:
+    properties:
+      host:
+        type: string
+      port:
+        description: defaults to 22
+        type: integer
+      privateKey:
+        type: string
+      username:
+        type: string
+    required:
+    - host
+    - privateKey
+    - username
+    type: object
   container.CgroupnsMode:
     enum:
     - ""
@@ -853,7 +1137,59 @@ definitions:
         type: string
       connection_status:
         type: string
+      db_access_type:
+        description: 'DBAccessType: "direct" | "ssh-tunnel". ssh-tunnel goes through
+          the SSH fields.'
+        type: string
+      db_auth_source:
+        description: |-
+          DBAuthSource is the MongoDB authentication database. Not a secret, plain
+          text. Empty → "admin".
+        type: string
+      db_connect_timeout:
+        description: DBConnectTimeout is in seconds. 0 → the driver default.
+        type: integer
+      db_host:
+        type: string
+      db_name:
+        description: DBName selects one database. Empty → every user database on the
+          server.
+        type: string
+      db_password:
+        description: DBPassword is stored in OpenBao; the column stays empty.
+        type: string
+      db_pg_schema:
+        description: DBPgSchema selects PostgreSQL schemas within DBName. Empty →
+          every user schema.
+        items:
+          type: string
+        type: array
+      db_port:
+        type: string
+      db_tls_ca_pem:
+        description: |-
+          DBTLSCAPEM is the CA certificate (PEM) verify-ca and verify-full check the
+          server against. A certificate is public, so it is stored as plain text.
+        type: string
+      db_tls_mode:
+        description: |-
+          DBTLSMode: "disable" | "prefer" | "require" | "verify-ca" | "verify-full".
+          Empty → disable.
+        type: string
+      db_type:
+        description: |-
+          DB fields — required when parent SourceGroup.Type == "db".
+          DBType: "mysql" | "mariadb" | "postgresql" | "mongodb".
+        type: string
+      db_username:
+        type: string
       description:
+        type: string
+      fs_scan_path:
+        description: |-
+          FS fields — used when parent SourceGroup.Type == "fs". The host is reached
+          through the SSH fields above.
+          FSScanPath is the absolute path collected on the host. Empty → "/home".
         type: string
       id:
         type: string
@@ -866,6 +1202,40 @@ definitions:
         type: string
       name:
         type: string
+      os_access_key_id:
+        description: |-
+          OSAccessKeyId and OSSecretAccessKey are stored in OpenBao; the columns stay
+          empty.
+        type: string
+      os_access_type:
+        description: |-
+          MinIO fields — required when parent SourceGroup.Type == "minio". The
+          endpoint is derived from the source group's provider_name and region_name.
+          OSAccessType: "direct" | "ssh-tunnel". ssh-tunnel goes through the SSH fields.
+        type: string
+      os_endpoint:
+        description: |-
+          OSEndpoint is the S3 endpoint (host[:port] or http(s) URL). Required for
+          onprem and openstack, overrides the derived endpoint otherwise, ignored for
+          azure (derived from the account name in OSAccessKeyId).
+        type: string
+      os_scan_bucket:
+        description: |-
+          OSScanBucket is the bucket collected. On tencent it must carry the AppId
+          suffix ("<name>-<AppId>").
+        type: string
+      os_scan_prefix:
+        description: |-
+          OSScanPrefix narrows the collection to keys under this prefix. Empty → the
+          whole bucket.
+        type: string
+      os_secret_access_key:
+        type: string
+      os_use_ssl:
+        description: |-
+          OSUseSSL selects HTTPS for onprem and openstack endpoints. A scheme on
+          OSEndpoint takes precedence.
+        type: boolean
       password:
         type: string
       private_key:
@@ -911,7 +1281,40 @@ definitions:
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq:
     properties:
+      db_access_type:
+        type: string
+      db_auth_source:
+        type: string
+      db_connect_timeout:
+        type: integer
+      db_host:
+        type: string
+      db_name:
+        type: string
+      db_password:
+        type: string
+      db_pg_schema:
+        items:
+          type: string
+        type: array
+      db_port:
+        type: string
+      db_tls_ca_pem:
+        type: string
+      db_tls_mode:
+        type: string
+      db_type:
+        description: DB fields — required when parent SourceGroup.Type == "db".
+        type: string
+      db_username:
+        type: string
       description:
+        type: string
+      fs_scan_path:
+        description: |-
+          FS fields — used when parent SourceGroup.Type == "fs".
+          FSScanPath (optional) is the absolute path to collect. Empty → "/home";
+          "/" collects the whole host.
         type: string
       ip_address:
         description: SSH fields — required when parent SourceGroup.Type == "ssh".
@@ -921,6 +1324,21 @@ definitions:
         type: string
       name:
         type: string
+      os_access_key_id:
+        type: string
+      os_access_type:
+        description: MinIO fields — required when parent SourceGroup.Type == "minio".
+        type: string
+      os_endpoint:
+        type: string
+      os_scan_bucket:
+        type: string
+      os_scan_prefix:
+        type: string
+      os_secret_access_key:
+        type: string
+      os_use_ssl:
+        type: boolean
       password:
         type: string
       private_key:
@@ -960,10 +1378,83 @@ definitions:
       region_name:
         type: string
       type:
-        description: CSP fields — required when Type == "csp".
+        description: |-
+          Type: "onprem" (default; legacy "ssh") | "csp" | "fs" | "db" | "minio".
+          provider_name is required for csp, minio and db; region_name for csp and
+          for minio providers that need it; credential for csp only.
         type: string
     required:
     - name
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBInfoList:
+    properties:
+      servers:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBInspectResult'
+        type: array
+    required:
+    - servers
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBInspectResult:
+    properties:
+      databases:
+        items:
+          $ref: '#/definitions/sourcemodel.DBMSInfo'
+        type: array
+      skipped:
+        description: |-
+          Skipped lists the databases that could not be collected when the whole
+          server was enumerated.
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBSkippedEntry'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBMetricReq:
+    properties:
+      columns:
+        type: boolean
+      events:
+        description: MySQL and MariaDB.
+        type: boolean
+      extensions:
+        type: boolean
+      foreign_keys:
+        description: MySQL, MariaDB and PostgreSQL.
+        type: boolean
+      functions:
+        type: boolean
+      indexes:
+        type: boolean
+      materialized_views:
+        description: PostgreSQL.
+        type: boolean
+      procedures:
+        type: boolean
+      row_count_exact:
+        description: All engines.
+        type: boolean
+      rules:
+        type: boolean
+      sample_size:
+        type: integer
+      sequences:
+        type: boolean
+      triggers:
+        type: boolean
+      types:
+        type: boolean
+      validators:
+        description: MongoDB.
+        type: boolean
+      views:
+        type: boolean
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBSkippedEntry:
+    properties:
+      database:
+        type: string
+      error:
+        type: string
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DataInfoList:
     properties:
@@ -1007,6 +1498,32 @@ definitions:
         example: vm
         type: string
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.FSInfoList:
+    properties:
+      file_systems:
+        items:
+          $ref: '#/definitions/sourcemodel.FSInfo'
+        type: array
+    required:
+    - file_systems
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.FSMetricReq:
+    properties:
+      extension_count:
+        type: boolean
+      file_count:
+        type: boolean
+      folder_file_count:
+        type: boolean
+      folder_file_size:
+        type: boolean
+      folder_mod_time:
+        type: boolean
+      folder_perms:
+        type: boolean
+      total_size:
+        type: boolean
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.HelmInfoList:
     properties:
       servers:
@@ -1015,6 +1532,24 @@ definitions:
         type: array
     required:
     - servers
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportDBReq:
+    properties:
+      metric:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBMetricReq'
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportFSReq:
+    properties:
+      max_depth:
+        description: MaxDepth limits how deep folders are walked. 0 → no limit.
+        type: integer
+      metric:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.FSMetricReq'
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportObjectStorageReq:
+    properties:
+      metric:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.OSMetricReq'
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.InfraInfoList:
     properties:
@@ -1121,6 +1656,30 @@ definitions:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes'
         type: array
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.OSMetricReq:
+    properties:
+      extension_count:
+        type: boolean
+      object_count:
+        type: boolean
+      prefix_mod_time:
+        type: boolean
+      prefix_object_count:
+        type: boolean
+      prefix_object_size:
+        type: boolean
+      total_size:
+        type: boolean
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ObjectStorageInfoList:
+    properties:
+      object_storages:
+        items:
+          $ref: '#/definitions/sourcemodel.ObjectStorageInfo'
+        type: array
+    required:
+    - object_storages
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RDBMSInfo:
     properties:
       db_spec:
@@ -1168,6 +1727,20 @@ definitions:
       status:
         type: string
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDBInfo:
+    properties:
+      connection_id:
+        type: string
+      db_data:
+        type: string
+      saved_time:
+        type: string
+      status:
+        type: string
+    required:
+    - connection_id
+    - db_data
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDataInfo:
     properties:
       connection_id:
@@ -1181,6 +1754,20 @@ definitions:
     required:
     - connection_id
     - data_data
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedFSInfo:
+    properties:
+      connection_id:
+        type: string
+      fs_data:
+        type: string
+      saved_time:
+        type: string
+      status:
+        type: string
+    required:
+    - connection_id
+    - fs_data
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedHelmInfo:
     properties:
@@ -1229,6 +1816,26 @@ definitions:
     - connection_id
     - kubernetes_data
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedObjectStorageInfo:
+    properties:
+      bucket:
+        description: |-
+          Bucket is the bucket OSData was collected from. It repeats the
+          connection's os_scan_bucket so that a stale row still says which bucket
+          its result belongs to.
+        type: string
+      connection_id:
+        type: string
+      os_data:
+        type: string
+      saved_time:
+        type: string
+      status:
+        type: string
+    required:
+    - connection_id
+    - os_data
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedSoftwareInfo:
     properties:
       connection_id:
@@ -1271,11 +1878,16 @@ definitions:
         type: string
       provider_name:
         description: |-
-          CSP fields, populated only when Type == "csp".
-          Credential lives in OpenBao, never in this table: the column is cleared on
-          write and rehydrated on demand. It is handed to the CSP driver per
-          discovery/collection call and registered nowhere else; honeybee is the
-          single source of truth, so no connection name is kept.
+          ProviderName is where the sources are hosted. csp: the cb-spider provider.
+          minio: picks the S3 endpoint form. db: recorded only, nothing is derived
+          from it. Both minio and db take the providers in provider.go, "onprem" for
+          the operator's own servers.
+          RegionName: csp and minio only. minio requires it for providers whose
+          endpoint or signing carries the region (see regionRequired).
+          Credential is csp only. It lives in OpenBao, never in this table: the
+          column is cleared on write and rehydrated on demand. It is handed to the
+          CSP driver per discovery/collection call and registered nowhere else;
+          honeybee is the single source of truth, so no connection name is kept.
         type: string
       region_name:
         type: string
@@ -1284,7 +1896,8 @@ definitions:
       type:
         description: |-
           Type discriminates how this group's connections are collected. Allowed:
-          "onprem" or "csp" (cb-spider backed); see common.IsOnpremType. "ssh" and
+          "onprem" or "csp" (cb-spider backed) for infrastructure, and "fs", "db" or
+          "minio" for data migration sources; see common.IsOnpremType. "ssh" and
           the empty value are the earlier spelling of "onprem" and are still
           accepted. The stored default stays "ssh" rather than "onprem" because it
           is what clients already compare against; the request handler writes it
@@ -1332,7 +1945,8 @@ definitions:
       name:
         type: string
       region_name:
-        description: CSP fields — only honored for CSP groups.
+        description: RegionName is honored for csp and minio groups, Credential for
+          csp only.
         type: string
     required:
     - name
@@ -3938,51 +4552,6 @@ definitions:
     - 524288
     - 2401763328
     - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
     format: int32
     type: integer
     x-enum-comments:
@@ -4016,67 +4585,7 @@ definitions:
     - '?: non-regular file; nothing else is known about this file'
     - ""
     - Unix permission bits, 0o777
-    - 'd: is a directory'
-    - 'a: append-only'
-    - 'l: exclusive use'
-    - 'T: temporary file; Plan 9 only'
-    - 'L: symbolic link'
-    - 'D: device file'
-    - 'p: named pipe (FIFO)'
-    - 'S: Unix domain socket'
-    - 'u: setuid'
-    - 'g: setgid'
-    - 'c: Unix character device, when ModeDevice is set'
-    - 't: sticky'
-    - '?: non-regular file; nothing else is known about this file'
-    - ""
-    - Unix permission bits, 0o777
-    - 'd: is a directory'
-    - 'a: append-only'
-    - 'l: exclusive use'
-    - 'T: temporary file; Plan 9 only'
-    - 'L: symbolic link'
-    - 'D: device file'
-    - 'p: named pipe (FIFO)'
-    - 'S: Unix domain socket'
-    - 'u: setuid'
-    - 'g: setgid'
-    - 'c: Unix character device, when ModeDevice is set'
-    - 't: sticky'
-    - '?: non-regular file; nothing else is known about this file'
-    - ""
-    - Unix permission bits, 0o777
     x-enum-varnames:
-    - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
-    - ModeSetuid
-    - ModeSetgid
-    - ModeCharDevice
-    - ModeSticky
-    - ModeIrregular
-    - ModeType
-    - ModePerm
-    - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
-    - ModeSetuid
-    - ModeSetgid
-    - ModeCharDevice
-    - ModeSticky
-    - ModeIrregular
-    - ModeType
-    - ModePerm
     - ModeDir
     - ModeAppend
     - ModeExclusive
@@ -4479,6 +4988,14 @@ definitions:
     type: object
   software.Listener:
     properties:
+      container_id:
+        description: |-
+          ContainerID is the ID of the Docker or Podman container the process runs
+          in; empty for a host process. Only containers on the host's network are
+          collected: the runtime records no ports for them, so their process is the
+          only record of where they listen. ExecutablePath is then a path inside the
+          container, and Package and Syft are left empty.
+        type: string
       executable_path:
         type: string
       name:
@@ -4486,6 +5003,12 @@ definitions:
       package:
         description: Package is the OS package owning ExecutablePath; empty when no
           package owns it.
+        type: string
+      package_version:
+        description: |-
+          PackageVersion is the installed version of Package. The DEB and RPM lists
+          leave out packages other packages depend on, which is where a server's
+          binary usually lives (e.g. mysql-server-core-8.0), so it is recorded here.
         type: string
       pid:
         type: integer
@@ -5037,6 +5560,347 @@ definitions:
     required:
     - source_group_id
     type: object
+  sourcemodel.DBColumnInfo:
+    properties:
+      characterSet:
+        description: |-
+          CharacterSet and Collation are the column's own text handling, and appear
+          only where the engine records them per column. MySQL and MariaDB fill both
+          for string columns and neither for the rest. PostgreSQL fills Collation
+          alone, and only when the column declares one explicitly — a column that
+          inherits the database default reports nothing, which DBMSInfo.Collation
+          already says. MongoDB fills neither: its fields are inferred by sampling.
+        type: string
+      collation:
+        type: string
+      comment:
+        type: string
+      dataType:
+        type: string
+      default:
+        type: string
+      isNullable:
+        type: boolean
+      isPrimary:
+        type: boolean
+      name:
+        type: string
+    type: object
+  sourcemodel.DBIndexInfo:
+    properties:
+      columns:
+        items:
+          type: string
+        type: array
+      isUnique:
+        type: boolean
+      name:
+        type: string
+      type:
+        type: string
+    type: object
+  sourcemodel.DBMSInfo:
+    properties:
+      characterSet:
+        description: |-
+          CharacterSet is the database's default character set, which on PostgreSQL
+          is its encoding — the two name the same thing there. MongoDB stores UTF-8
+          only and leaves it empty.
+        type: string
+      collation:
+        description: |-
+          Collation is the database's default collation: DEFAULT_COLLATION_NAME on
+          MySQL and MariaDB, datcollate on PostgreSQL. MongoDB has no database-level
+          collation and leaves it empty.
+        type: string
+      ctype:
+        description: |-
+          Ctype is the locale governing character classification — PostgreSQL's
+          datctype, which the engine keeps separate from the collation order. The
+          other engines have no equivalent and leave it empty.
+        type: string
+      dataSize:
+        type: integer
+      database:
+        type: string
+      events:
+        description: MySQL / MariaDB
+        items:
+          type: string
+        type: array
+      extensions:
+        description: PostgreSQL
+        items:
+          type: string
+        type: array
+      foreignKeys:
+        description: Schema object inventory (name list) — populated only on metric
+          opt-in.
+        items:
+          type: string
+        type: array
+      functions:
+        items:
+          type: string
+        type: array
+      indexSize:
+        type: integer
+      materializedViews:
+        description: PostgreSQL
+        items:
+          type: string
+        type: array
+      pgSchema:
+        items:
+          $ref: '#/definitions/sourcemodel.DBPgSchemaInfo'
+        type: array
+      procedures:
+        items:
+          type: string
+        type: array
+      rules:
+        description: PostgreSQL
+        items:
+          type: string
+        type: array
+      sequences:
+        description: PostgreSQL
+        items:
+          type: string
+        type: array
+      serverVersion:
+        type: string
+      tableCount:
+        type: integer
+      tables:
+        items:
+          $ref: '#/definitions/sourcemodel.DBTableInfo'
+        type: array
+      totalSize:
+        description: |-
+          TotalSize..TableCount are the sum over the schemas the inspection covered,
+          not the size of the database as PostgreSQL reports it. PgSchema breaks them
+          down per schema and always sums back to them; a schema holding no tables is
+          listed at zero rather than omitted. PostgreSQL only.
+        type: integer
+      triggers:
+        items:
+          type: string
+        type: array
+      types:
+        description: PostgreSQL
+        items:
+          type: string
+        type: array
+      validators:
+        description: MongoDB
+        items:
+          type: string
+        type: array
+      views:
+        items:
+          type: string
+        type: array
+    type: object
+  sourcemodel.DBPgSchemaInfo:
+    properties:
+      dataSize:
+        type: integer
+      indexSize:
+        type: integer
+      name:
+        type: string
+      tableCount:
+        type: integer
+      totalSize:
+        type: integer
+    type: object
+  sourcemodel.DBTableInfo:
+    properties:
+      characterSet:
+        description: |-
+          CharacterSet and Collation are the table's own text defaults, which its
+          columns inherit unless they declare their own. PostgreSQL has no
+          table-level collation and leaves both empty; MongoDB reports the
+          collection's default collation locale in Collation and leaves CharacterSet
+          empty.
+        type: string
+      collation:
+        type: string
+      columns:
+        items:
+          $ref: '#/definitions/sourcemodel.DBColumnInfo'
+        type: array
+      dataSize:
+        type: integer
+      engine:
+        type: string
+      indexSize:
+        type: integer
+      indexes:
+        items:
+          $ref: '#/definitions/sourcemodel.DBIndexInfo'
+        type: array
+      name:
+        type: string
+      pgSchema:
+        type: string
+      rowCount:
+        type: integer
+      totalSize:
+        type: integer
+    type: object
+  sourcemodel.FSEntry:
+    properties:
+      fileCount:
+        description: only when FilesystemMetric.FolderFileCount
+        type: integer
+      fileSize:
+        description: only when FilesystemMetric.FolderFileSize
+        type: integer
+      isMount:
+        type: boolean
+      modTime:
+        description: only when FilesystemMetric.FolderModTime
+        type: string
+      path:
+        type: string
+      permissions:
+        description: only when FilesystemMetric.FolderPerms
+        type: string
+    type: object
+  sourcemodel.FSInfo:
+    properties:
+      extensionCounts:
+        additionalProperties:
+          type: integer
+        description: only when FilesystemMetric.ExtensionCount
+        type: object
+      fileCount:
+        description: only when FilesystemMetric.FileCount
+        type: integer
+      folders:
+        items:
+          $ref: '#/definitions/sourcemodel.FSEntry'
+        type: array
+      isMount:
+        type: boolean
+      path:
+        type: string
+      totalSize:
+        description: only when FilesystemMetric.TotalSize
+        type: integer
+    type: object
+  sourcemodel.ObjectEntry:
+    properties:
+      key:
+        description: folder prefix "bucket/prefix/"
+        type: string
+      lastModified:
+        description: only when ObjectStorageMetric.PrefixModTime
+        type: string
+      objectCount:
+        description: only when ObjectStorageMetric.PrefixObjectCount
+        type: integer
+      size:
+        description: only when ObjectStorageMetric.PrefixObjectSize
+        type: integer
+    type: object
+  sourcemodel.ObjectStorageInfo:
+    properties:
+      extensionCounts:
+        additionalProperties:
+          type: integer
+        description: only when ObjectStorageMetric.ExtensionCount
+        type: object
+      folders:
+        items:
+          $ref: '#/definitions/sourcemodel.ObjectEntry'
+        type: array
+      objectCount:
+        description: only when ObjectStorageMetric.ObjectCount
+        type: integer
+      path:
+        type: string
+      totalSize:
+        description: only when ObjectStorageMetric.TotalSize
+        type: integer
+    type: object
+  sourcemodel.SourceDBModel:
+    properties:
+      connection:
+        $ref: '#/definitions/commonmodel.ConnectionRef'
+      databases:
+        items:
+          $ref: '#/definitions/sourcemodel.DBMSInfo'
+        type: array
+    type: object
+  sourcemodel.SourceDataMigrationModel:
+    properties:
+      sourceDataMigrationModel:
+        $ref: '#/definitions/sourcemodel.SourceDataMigrationProperty'
+    type: object
+  sourcemodel.SourceDataMigrationProperty:
+    properties:
+      databases:
+        items:
+          $ref: '#/definitions/sourcemodel.SourceDBModel'
+        type: array
+      fileSystems:
+        items:
+          $ref: '#/definitions/sourcemodel.SourceFileSystemModel'
+        type: array
+      objectStorages:
+        items:
+          $ref: '#/definitions/sourcemodel.SourceObjectStorageModel'
+        type: array
+    type: object
+  sourcemodel.SourceFileSystemModel:
+    properties:
+      connection:
+        $ref: '#/definitions/commonmodel.ConnectionRef'
+      extensionCounts:
+        additionalProperties:
+          type: integer
+        description: only when FilesystemMetric.ExtensionCount
+        type: object
+      fileCount:
+        description: only when FilesystemMetric.FileCount
+        type: integer
+      folders:
+        items:
+          $ref: '#/definitions/sourcemodel.FSEntry'
+        type: array
+      isMount:
+        type: boolean
+      path:
+        type: string
+      totalSize:
+        description: only when FilesystemMetric.TotalSize
+        type: integer
+    type: object
+  sourcemodel.SourceObjectStorageModel:
+    properties:
+      connection:
+        $ref: '#/definitions/commonmodel.ConnectionRef'
+      extensionCounts:
+        additionalProperties:
+          type: integer
+        description: only when ObjectStorageMetric.ExtensionCount
+        type: object
+      folders:
+        items:
+          $ref: '#/definitions/sourcemodel.ObjectEntry'
+        type: array
+      objectCount:
+        description: only when ObjectStorageMetric.ObjectCount
+        type: integer
+      path:
+        type: string
+      totalSize:
+        description: only when ObjectStorageMetric.TotalSize
+        type: integer
+    type: object
   storage.DriverData:
     properties:
       Data:
@@ -5089,10 +5953,8 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
+    - -9223372036854775808
+    - 9223372036854775807
     - 1
     - 1000
     - 1000000
@@ -5116,10 +5978,8 @@ definitions:
     - Second
     - Minute
     - Hour
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
+    - minDuration
+    - maxDuration
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -6028,6 +6888,146 @@ paths:
       summary: Get Data Information
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/db:
+    get:
+      consumes:
+      - application/json
+      description: Get the database information of the connection information.
+      operationId: get-db-info
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the database.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBInspectResult'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the database.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Database Information
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/db/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined database information of the connection information.
+      operationId: get-db-info-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the database.
+          schema:
+            $ref: '#/definitions/sourcemodel.SourceDataMigrationModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the database.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Database Information
+      tags:
+      - '[Get] Get refined source info'
+  /source_group/{sgId}/connection_info/{connId}/fs:
+    get:
+      consumes:
+      - application/json
+      description: Get the filesystem information of the connection information.
+      operationId: get-fs-info
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the filesystem.
+          schema:
+            $ref: '#/definitions/sourcemodel.FSInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the filesystem.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Filesystem Information
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/fs/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined filesystem information of the connection information.
+      operationId: get-fs-info-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the filesystem.
+          schema:
+            $ref: '#/definitions/sourcemodel.SourceDataMigrationModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the filesystem.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Filesystem Information
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/connection_info/{connId}/helm:
     get:
       consumes:
@@ -6096,6 +7096,88 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Import data
+      tags:
+      - '[Import] Import source info'
+  /source_group/{sgId}/connection_info/{connId}/import/db:
+    post:
+      consumes:
+      - application/json
+      description: Import the database information of the connection information.
+        With no db_name on the connection, every user database on the server is inspected.
+      operationId: import-db
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      - description: Metric selection.
+        in: body
+        name: ImportDBReq
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportDBReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the database information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDBInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the database information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import database
+      tags:
+      - '[Import] Import source info'
+  /source_group/{sgId}/connection_info/{connId}/import/fs:
+    post:
+      consumes:
+      - application/json
+      description: Import the filesystem information of the connection information.
+        The path inspected is the connection's fs_scan_path.
+      operationId: import-fs
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      - description: Scan depth and metric selection.
+        in: body
+        name: ImportFSReq
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportFSReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the filesystem information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedFSInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the filesystem information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import filesystem
       tags:
       - '[Import] Import source info'
   /source_group/{sgId}/connection_info/{connId}/import/helm:
@@ -6201,6 +7283,47 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Import kubernetes
+      tags:
+      - '[Import] Import source info'
+  /source_group/{sgId}/connection_info/{connId}/import/objectstorage:
+    post:
+      consumes:
+      - application/json
+      description: Import the object storage information of the connection information.
+        The bucket and prefix inspected are the connection's os_scan_bucket and os_scan_prefix.
+      operationId: import-object-storage
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      - description: Metric selection.
+        in: body
+        name: ImportObjectStorageReq
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportObjectStorageReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the object storage information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedObjectStorageInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the object storage information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import object storage
       tags:
       - '[Import] Import source info'
   /source_group/{sgId}/connection_info/{connId}/import/software:
@@ -6348,6 +7471,76 @@ paths:
       summary: Get Kubernetes Information
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/objectstorage:
+    get:
+      consumes:
+      - application/json
+      description: Get the object storage information of the connection information.
+      operationId: get-object-storage-info
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the object storage.
+          schema:
+            $ref: '#/definitions/sourcemodel.ObjectStorageInfo'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the object storage.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Object Storage Information
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/objectstorage/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined object storage information of the connection information.
+      operationId: get-object-storage-info-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the object storage.
+          schema:
+            $ref: '#/definitions/sourcemodel.SourceDataMigrationModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the object storage.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Object Storage Information
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/connection_info/{connId}/rdbms:
     get:
       consumes:
@@ -6557,6 +7750,68 @@ paths:
       summary: Get Data Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/db:
+    get:
+      consumes:
+      - application/json
+      description: Get the database information for all connections in the source
+        group.
+      operationId: get-db-info-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the database.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.DBInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the database.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Database Information Source Group
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/db/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined database information for all connections in the
+        source group.
+      operationId: get-db-info-source-group-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the database.
+          schema:
+            $ref: '#/definitions/sourcemodel.SourceDataMigrationModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the database.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Database Information Source Group
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/discover:
     get:
       consumes:
@@ -6595,6 +7850,68 @@ paths:
       summary: Discover CSP resources for a SourceGroup
       tags:
       - '[CSP] Discovery'
+  /source_group/{sgId}/fs:
+    get:
+      consumes:
+      - application/json
+      description: Get the filesystem information for all connections in the source
+        group.
+      operationId: get-fs-info-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the filesystem.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.FSInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the filesystem.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Filesystem Information Source Group
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/fs/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined filesystem information for all connections in the
+        source group.
+      operationId: get-fs-info-source-group-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the filesystem.
+          schema:
+            $ref: '#/definitions/sourcemodel.SourceDataMigrationModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the filesystem.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Filesystem Information Source Group
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/helm:
     get:
       consumes:
@@ -6655,6 +7972,82 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Import Data Source Group
+      tags:
+      - '[Import] Import source info'
+  /source_group/{sgId}/import/db:
+    post:
+      consumes:
+      - application/json
+      description: Import database information for all connections in the source group.
+        Each connection is inspected at its own db_name and db_pg_schema.
+      operationId: import-db-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: Metric selection applied to every connection.
+        in: body
+        name: ImportDBReq
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportDBReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the database information
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedDBInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the database information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import database Source Group
+      tags:
+      - '[Import] Import source info'
+  /source_group/{sgId}/import/fs:
+    post:
+      consumes:
+      - application/json
+      description: Import filesystem information for all connections in the source
+        group. Each connection is inspected at its own fs_scan_path.
+      operationId: import-fs-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: Scan depth and metric selection applied to every connection.
+        in: body
+        name: ImportFSReq
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportFSReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the filesystem information
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedFSInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the filesystem information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import filesystem Source Group
       tags:
       - '[Import] Import source info'
   /source_group/{sgId}/import/helm:
@@ -6752,6 +8145,44 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Import Kubernetes Source Group
+      tags:
+      - '[Import] Import source info'
+  /source_group/{sgId}/import/objectstorage:
+    post:
+      consumes:
+      - application/json
+      description: Import object storage information for all connections in the source
+        group. Each connection is inspected at its own os_scan_bucket and os_scan_prefix.
+      operationId: import-object-storage-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: Metric selection applied to every connection.
+        in: body
+        name: ImportObjectStorageReq
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportObjectStorageReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully saved the object storage information
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedObjectStorageInfo'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to save the object storage information
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import object storage Source Group
       tags:
       - '[Import] Import source info'
   /source_group/{sgId}/import/software:
@@ -6883,6 +8314,68 @@ paths:
       summary: Get Kubernetes Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/objectstorage:
+    get:
+      consumes:
+      - application/json
+      description: Get the object storage information for all connections in the source
+        group.
+      operationId: get-object-storage-info-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the object storage.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ObjectStorageInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the object storage.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Object Storage Information Source Group
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/objectstorage/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the refined object storage information for all connections
+        in the source group.
+      operationId: get-object-storage-info-source-group-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the object storage.
+          schema:
+            $ref: '#/definitions/sourcemodel.SourceDataMigrationModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the object storage.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Object Storage Information Source Group
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/rdbms:
     get:
       consumes:
