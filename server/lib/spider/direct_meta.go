@@ -39,6 +39,29 @@ func GetCloudOSMetaInfo(cloudOSName string) (*CloudOSMetaInfo, error) {
 	return &out, nil
 }
 
+// PreloadCloudOSMetaInfo reads cloudos_meta.yaml into cb-spider's cache once,
+// before any request can ask for it.
+//
+// cb-spider's GetCloudOSMetaInfo (cloud-info-manager/CloudOSMetainfo.go)
+// returns its cached map as soon as the map is non-nil, but its loader
+// readMetaYaml allocates that map empty and fills it only after reading and
+// parsing the file, outside the lock. A call that arrives in between gets an
+// empty CloudOSMetaInfo: CredentialCSP is empty, so mapCredentialKeys leaves
+// the CSP-side credential keys unmapped and the driver sees "Not set" (aws
+// answered AuthFailure). Several imports right after a restart hit this.
+// Loading once here, while nothing else calls cb-spider, closes the window.
+func PreloadCloudOSMetaInfo() error {
+	// Any name loads the whole file; AWS is only used to check the result.
+	meta, err := loadMetaInfo("AWS")
+	if err != nil {
+		return err
+	}
+	if len(meta.Credential) == 0 {
+		return errors.New("cloudos_meta.yaml was read but has no AWS credential keys")
+	}
+	return nil
+}
+
 // GetDriverCapability reports which handlers the provider's driver
 // implements. No connection is needed.
 func GetDriverCapability(provider string) (*DriverCapability, error) {

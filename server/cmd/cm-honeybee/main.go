@@ -7,6 +7,7 @@ import (
 	"github.com/cloud-barista/cm-honeybee/server/lib/config"
 	"github.com/cloud-barista/cm-honeybee/server/lib/openbao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/rsautil"
+	"github.com/cloud-barista/cm-honeybee/server/lib/spider"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/controller"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/server"
 	"github.com/jollaman999/utils/fileutil"
@@ -53,6 +54,14 @@ func init() {
 
 	// Wire the optional OpenBao secrets backend (no-op when not configured).
 	openbao.Init()
+
+	// Load cb-spider's Cloud OS metadata before the API server starts: requests
+	// that load it concurrently can read it while it is still empty (see
+	// spider.PreloadCloudOSMetaInfo). Without the file, CSP calls fail later
+	// as they did before, so honeybee still starts.
+	if err := spider.PreloadCloudOSMetaInfo(); err != nil {
+		logger.Println(logger.WARN, true, "cb-spider Cloud OS metadata is not loaded: "+err.Error())
+	}
 
 	controller.OkMessage.Message = "API server is not ready"
 
