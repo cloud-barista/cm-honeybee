@@ -89,6 +89,67 @@ func listVPC(c Conn) ([]VPCInfo, error) {
 	return convertList[VPCInfo](list)
 }
 
+// GetVPC fetches one VPC with full detail by the IID a driver reported for
+// it (e.g. a VM's VpcIID). The IID is passed through as is: aws, alibaba, ncp,
+// gcp and nhn read its SystemId, while azure, ibm and openstack also accept a
+// NameId.
+func GetVPC(c Conn, iid IID) (*VPCInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*VPCInfo, error) { return getVPC(c, iid) })
+}
+
+func getVPC(c Conn, iid IID) (*VPCInfo, error) {
+	if iid.NameId == "" && iid.SystemId == "" {
+		return nil, mustNonEmpty("VpcIID", "")
+	}
+	conn, err := connect(c)
+	if err != nil {
+		return nil, err
+	}
+	handler, err := conn.CreateVPCHandler()
+	if err != nil {
+		return nil, err
+	}
+	info, err := handler.GetVPC(cres.IID{NameId: iid.NameId, SystemId: iid.SystemId})
+	if err != nil {
+		return nil, err
+	}
+	out, err := convertJSON[VPCInfo](info)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetSecurityGroup fetches one security group with its rules by the IID a
+// driver reported for it (e.g. one of a VM's SecurityGroupIIds), passed
+// through as GetVPC does.
+func GetSecurityGroup(c Conn, iid IID) (*SecurityGroupInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*SecurityGroupInfo, error) { return getSecurityGroup(c, iid) })
+}
+
+func getSecurityGroup(c Conn, iid IID) (*SecurityGroupInfo, error) {
+	if iid.NameId == "" && iid.SystemId == "" {
+		return nil, mustNonEmpty("SecurityGroupIID", "")
+	}
+	conn, err := connect(c)
+	if err != nil {
+		return nil, err
+	}
+	handler, err := conn.CreateSecurityHandler()
+	if err != nil {
+		return nil, err
+	}
+	info, err := handler.GetSecurity(cres.IID{NameId: iid.NameId, SystemId: iid.SystemId})
+	if err != nil {
+		return nil, err
+	}
+	out, err := convertJSON[SecurityGroupInfo](info)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // ListSecurityGroup returns every security group the CSP has, as
 // cb-spider's GET /allsecuritygroupinfo does.
 func ListSecurityGroup(c Conn) ([]SecurityGroupInfo, error) {

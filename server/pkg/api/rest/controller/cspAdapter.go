@@ -29,10 +29,113 @@ func keyValueListToMap(in []spider.KeyValue) map[string]string {
 
 // buildCSPInfo maps cb-spider's VMInfo into the CSP-side infra.CSPInfo: the
 // provider-observable VM facts (spec, image, region/zone, public/private IP,
-// disks, tags) plus the attached VPC/subnet/security groups. VPC and SG detail
-// (CIDR, subnets, rules) are resolved by listing all resources with full info
-// and matching the VM's VpcIID/SecurityGroupIIds by name.
+// disks, tags) plus the attached VPC/subnet/security groups.
+//
+// Drivers fill a VM's IIDs unevenly: aws, alibaba and ncp report the VPC,
+// subnet, data disks and (alibaba) image and security groups with a SystemId
+// and an empty NameId, because a resource cb-spider did not create has no
+// cb-spider name. Every IID is therefore matched and named by NameId or
+// SystemId, never by NameId alone.
 func buildCSPInfo(conn spider.Conn, sg *model.SourceGroup, vm *spider.VMInfo) infra.CSPInfo {
+	return buildCSPInfoWith(driverNetworkLookup(conn), sg, vm)
+}
+
+// cspNetworkLookup is how buildCSPInfoWith reaches the driver for VPC and
+// security group detail; tests replace it.
+type cspNetworkLookup struct {
+	GetVPC            func(spider.IID) (*spider.VPCInfo, error)
+	ListVPC           func() ([]spider.VPCInfo, error)
+	GetSecurityGroup  func(spider.IID) (*spider.SecurityGroupInfo, error)
+	ListSecurityGroup func() ([]spider.SecurityGroupInfo, error)
+}
+
+func driverNetworkLookup(conn spider.Conn) cspNetworkLookup {
+	return cspNetworkLookup{
+		GetVPC:            func(iid spider.IID) (*spider.VPCInfo, error) { return spider.GetVPC(conn, iid) },
+		ListVPC:           func() ([]spider.VPCInfo, error) { return spider.ListVPC(conn) },
+		GetSecurityGroup:  func(iid spider.IID) (*spider.SecurityGroupInfo, error) { return spider.GetSecurityGroup(conn, iid) },
+		ListSecurityGroup: func() ([]spider.SecurityGroupInfo, error) { return spider.ListSecurityGroup(conn) },
+	}
+}
+
+// iidLabel names a resource by its NameId, or by its SystemId when the driver
+// left the NameId empty.
+func iidLabel(iid spider.IID) string {
+	if iid.NameId != "" {
+		return iid.NameId
+	}
+	return iid.SystemId
+}
+
+// iidMatches reports whether two IIDs name the same resource. Empty fields
+// never match, so IIDs that both lack a NameId are compared by SystemId only.
+func iidMatches(a, b spider.IID) bool {
+	return (a.SystemId != "" && a.SystemId == b.SystemId) || (a.NameId != "" && a.NameId == b.NameId)
+}
+
+func iidString(iid spider.IID) string {
+	return "{NameId: '" + iid.NameId + "', SystemId: '" + iid.SystemId + "'}"
+}
+
+// findVPC asks the driver for the VPC by the VM's own VpcIID first, which
+// avoids listing every VPC (gcp's listing ran past the 60s driver timeout).
+// When Get fails, the listing is matched by NameId or SystemId instead.
+func findVPC(lookup cspNetworkLookup, iid spider.IID) (*spider.VPCInfo, error) {
+	v, getErr := lookup.GetVPC(iid)
+	if getErr == nil && v != nil {
+		return v, nil
+	}
+
+	vpcs, err := lookup.ListVPC()
+	if err != nil {
+		return nil, errors.New("get: " + errString(getErr) + ", list: " + err.Error())
+	}
+	for i := range vpcs {
+		if iidMatches(vpcs[i].IId, iid) {
+			return &vpcs[i], nil
+		}
+	}
+	return nil, errors.New("get: " + errString(getErr) + ", list: no VPC matches")
+}
+
+// securityGroupFinder looks security groups up as findVPC does, listing at most
+// once for all of a VM's groups that Get could not resolve.
+type securityGroupFinder struct {
+	lookup  cspNetworkLookup
+	listed  bool
+	all     []spider.SecurityGroupInfo
+	listErr error
+}
+
+func (f *securityGroupFinder) find(iid spider.IID) (*spider.SecurityGroupInfo, error) {
+	g, getErr := f.lookup.GetSecurityGroup(iid)
+	if getErr == nil && g != nil {
+		return g, nil
+	}
+
+	if !f.listed {
+		f.all, f.listErr = f.lookup.ListSecurityGroup()
+		f.listed = true
+	}
+	if f.listErr != nil {
+		return nil, errors.New("get: " + errString(getErr) + ", list: " + f.listErr.Error())
+	}
+	for i := range f.all {
+		if iidMatches(f.all[i].IId, iid) {
+			return &f.all[i], nil
+		}
+	}
+	return nil, errors.New("get: " + errString(getErr) + ", list: no security group matches")
+}
+
+func errString(err error) string {
+	if err == nil {
+		return "empty result"
+	}
+	return err.Error()
+}
+
+func buildCSPInfoWith(lookup cspNetworkLookup, sg *model.SourceGroup, vm *spider.VMInfo) infra.CSPInfo {
 	kvMap := keyValueListToMap(vm.KeyValueList)
 	platform := vm.Platform
 	if platform == "" {
@@ -46,13 +149,17 @@ func buildCSPInfo(conn spider.Conn, sg *model.SourceGroup, vm *spider.VMInfo) in
 
 	dataDisks := make([]string, 0, len(vm.DataDiskIIDs))
 	for _, d := range vm.DataDiskIIDs {
-		dataDisks = append(dataDisks, d.NameId)
+		if label := iidLabel(d); label != "" {
+			dataDisks = append(dataDisks, label)
+		}
 	}
 
 	tags := map[string]string{}
 	for _, t := range vm.TagList {
 		tags[t.Key] = t.Value
 	}
+
+	vmLabel := "VM " + iidString(vm.IId)
 
 	csp := infra.CSPInfo{
 		Provider:  strings.ToLower(sg.ProviderName),
@@ -61,7 +168,7 @@ func buildCSPInfo(conn spider.Conn, sg *model.SourceGroup, vm *spider.VMInfo) in
 		Name:      vm.IId.NameId,
 		ID:        vm.IId.SystemId,
 		VMSpec:    vm.VMSpecName,
-		Image:     vm.ImageIId.NameId,
+		Image:     iidLabel(vm.ImageIId),
 		Platform:  platform,
 		PublicIP:  vm.PublicIP,
 		PrivateIP: vm.PrivateIP,
@@ -74,63 +181,68 @@ func buildCSPInfo(conn spider.Conn, sg *model.SourceGroup, vm *spider.VMInfo) in
 		Tags:      tags,
 		StartTime: vm.StartTime,
 		Network: infra.CSPNetwork{
-			Subnet: vm.SubnetIID.NameId,
+			Subnet: iidLabel(vm.SubnetIID),
 		},
 	}
 
-	// VPC detail: list all VPCs (with full info, incl. unmanaged) and match the
-	// VM's VPC by name. Best-effort — a lookup failure leaves detail empty.
-	csp.Network.VPC.Name = vm.VpcIID.NameId
-	if vm.VpcIID.NameId != "" {
-		if vpcs, err := spider.ListVPC(conn); err == nil {
-			for _, v := range vpcs {
-				if v.IId.NameId != vm.VpcIID.NameId {
-					continue
+	// VPC detail (CIDR, subnets). Best-effort: a lookup failure keeps the
+	// VM's own identifiers and leaves the detail empty.
+	csp.Network.VPC.Name = iidLabel(vm.VpcIID)
+	if csp.Network.VPC.Name == "" {
+		logger.Println(logger.WARN, true, "CSP: "+vmLabel+" reports no VPC")
+	} else if v, err := findVPC(lookup, vm.VpcIID); err != nil {
+		logger.Println(logger.WARN, true, "CSP: "+vmLabel+": VPC "+iidString(vm.VpcIID)+" not resolved, CIDR and subnets left empty: "+err.Error())
+	} else {
+		if vm.VpcIID.NameId == "" && v.IId.NameId != "" {
+			csp.Network.VPC.Name = v.IId.NameId
+		}
+		csp.Network.VPC.CIDR = v.IPv4_CIDR
+		subnetFound := false
+		for _, sn := range v.SubnetInfoList {
+			csp.Network.VPC.Subnets = append(csp.Network.VPC.Subnets, infra.CSPSubnet{
+				Name: iidLabel(sn.IId),
+				CIDR: sn.IPv4_CIDR,
+				Zone: sn.Zone,
+			})
+			if iidMatches(sn.IId, vm.SubnetIID) {
+				subnetFound = true
+				if vm.SubnetIID.NameId == "" && sn.IId.NameId != "" {
+					csp.Network.Subnet = sn.IId.NameId
 				}
-				csp.Network.VPC.CIDR = v.IPv4_CIDR
-				for _, sn := range v.SubnetInfoList {
-					csp.Network.VPC.Subnets = append(csp.Network.VPC.Subnets, infra.CSPSubnet{
-						Name: sn.IId.NameId,
-						CIDR: sn.IPv4_CIDR,
-						Zone: sn.Zone,
-					})
-				}
-				break
 			}
-		} else {
-			logger.Println(logger.WARN, true, "CSP: failed to list VPC info: "+err.Error())
+		}
+		if csp.Network.Subnet != "" && !subnetFound {
+			logger.Println(logger.WARN, true, "CSP: "+vmLabel+": subnet "+iidString(vm.SubnetIID)+" not found in VPC "+iidString(v.IId))
 		}
 	}
 
-	// Security group detail: list all SGs (with full info) and match the VM's SGs
-	// by name, carrying over their rules.
-	if len(vm.SecurityGroupIIds) > 0 {
-		sgAll, err := spider.ListSecurityGroup(conn)
-		if err != nil {
-			logger.Println(logger.WARN, true, "CSP: failed to list security group info: "+err.Error())
+	// Security groups with their rules. A group that cannot be resolved is
+	// still reported by its identifier.
+	finder := &securityGroupFinder{lookup: lookup}
+	for _, sgIID := range vm.SecurityGroupIIds {
+		name := iidLabel(sgIID)
+		if name == "" {
+			logger.Println(logger.WARN, true, "CSP: "+vmLabel+" reports a security group with no identifier")
+			continue
 		}
-		byName := make(map[string]spider.SecurityGroupInfo, len(sgAll))
-		for _, g := range sgAll {
-			byName[g.IId.NameId] = g
-		}
-		for _, sgIID := range vm.SecurityGroupIIds {
-			if sgIID.NameId == "" {
-				continue
+		out := infra.CSPSecurityGroup{Name: name}
+		if g, err := finder.find(sgIID); err != nil {
+			logger.Println(logger.WARN, true, "CSP: "+vmLabel+": security group "+iidString(sgIID)+" not resolved, rules left empty: "+err.Error())
+		} else {
+			if sgIID.NameId == "" && g.IId.NameId != "" {
+				out.Name = g.IId.NameId
 			}
-			out := infra.CSPSecurityGroup{Name: sgIID.NameId}
-			if g, ok := byName[sgIID.NameId]; ok {
-				for _, r := range g.SecurityRules {
-					out.Rules = append(out.Rules, infra.CSPSecurityRule{
-						Direction: r.Direction,
-						Protocol:  r.IPProtocol,
-						FromPort:  r.FromPort,
-						ToPort:    r.ToPort,
-						CIDR:      r.CIDR,
-					})
-				}
+			for _, r := range g.SecurityRules {
+				out.Rules = append(out.Rules, infra.CSPSecurityRule{
+					Direction: r.Direction,
+					Protocol:  r.IPProtocol,
+					FromPort:  r.FromPort,
+					ToPort:    r.ToPort,
+					CIDR:      r.CIDR,
+				})
 			}
-			csp.Network.SecurityGroups = append(csp.Network.SecurityGroups, out)
 		}
+		csp.Network.SecurityGroups = append(csp.Network.SecurityGroups, out)
 	}
 
 	return csp
