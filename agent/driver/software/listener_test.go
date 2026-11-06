@@ -2,6 +2,7 @@ package software
 
 import (
 	"reflect"
+	"syscall"
 	"testing"
 
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
@@ -144,5 +145,48 @@ func TestParsePackageVersions(t *testing.T) {
 				t.Errorf("parsePackageVersions() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestListenSockets(t *testing.T) {
+	sock := func(typ uint32, family uint32, status, ip string, port uint32, rport uint32) net.ConnectionStat {
+		return net.ConnectionStat{
+			Type: typ, Family: family, Status: status,
+			Laddr: net.Addr{IP: ip, Port: port}, Raddr: net.Addr{Port: rport},
+		}
+	}
+	const (
+		tcp = uint32(syscall.SOCK_STREAM)
+		udp = uint32(syscall.SOCK_DGRAM)
+		v4  = uint32(syscall.AF_INET)
+		v6  = uint32(syscall.AF_INET6)
+	)
+
+	conns := []net.ConnectionStat{
+		sock(tcp, v4, "LISTEN", "0.0.0.0", 22, 0),
+		sock(tcp, v6, "LISTEN", "::", 22, 0),
+		sock(tcp, v4, "ESTABLISHED", "192.0.2.5", 22, 51000), // a session, not a listener
+		sock(tcp, v4, "LISTEN", "127.0.0.1", 5432, 0),
+		sock(tcp, v4, "LISTEN", "127.0.0.1", 5432, 0), // duplicate
+		sock(udp, v4, "NONE", "0.0.0.0", 53, 0),
+		sock(udp, v4, "NONE", "192.0.2.5", 40000, 53), // connected client socket
+		sock(udp, v6, "NONE", "::1", 323, 0),
+		sock(tcp, 1, "LISTEN", "/run/app.sock", 0, 0), // unix socket
+		sock(udp, v4, "NONE", "0.0.0.0", 0, 0),        // unbound
+	}
+
+	want := []software.ListenSocket{
+		{Protocol: "tcp", BindAddress: "0.0.0.0", Port: 22},
+		{Protocol: "tcp", BindAddress: "::", Port: 22},
+		{Protocol: "tcp", BindAddress: "127.0.0.1", Port: 5432},
+		{Protocol: "udp", BindAddress: "0.0.0.0", Port: 53},
+		{Protocol: "udp", BindAddress: "::1", Port: 323},
+	}
+
+	if got := listenSockets(conns); !reflect.DeepEqual(got, want) {
+		t.Errorf("listenSockets() = %+v, want %+v", got, want)
+	}
+	if got := listenSockets(nil); got != nil {
+		t.Errorf("listenSockets(nil) = %+v, want nil", got)
 	}
 }

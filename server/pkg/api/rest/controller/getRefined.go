@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -294,6 +295,100 @@ func cspPortRange(from, to string) string {
 	}
 
 	return from + "-" + to
+}
+
+// tryGetListeningPorts returns the listening ports recorded in the saved
+// software information of a connection. A connection whose software has not
+// been imported, such as a CSP source without the agent, has none.
+func tryGetListeningPorts(connID string) []model.ListeningPortProperty {
+	saved, err := dao.SavedSoftwareInfoGet(connID)
+	if err != nil || strings.TrimSpace(saved.SoftwareData) == "" {
+		return nil
+	}
+
+	var sw software.Software
+	if err := json.Unmarshal([]byte(saved.SoftwareData), &sw); err != nil {
+		logger.Println(logger.WARN, false, "Listening ports: failed to parse software information."+
+			" (ConnectionID = "+connID+")")
+		return nil
+	}
+
+	return listeningPortsFromListeners(sw.Listeners)
+}
+
+// listeningPortsFromListeners flattens the agent's per-process listeners into
+// the node's listening ports, one entry per socket with the owning process's
+// name. A listener from an agent that predates per-socket collection only has
+// its TCP LISTEN ports, which are passed on as TCP without a bind address.
+// The result is sorted by protocol, port, bind address and process name,
+// without duplicates.
+func listeningPortsFromListeners(listeners []software.Listener) []model.ListeningPortProperty {
+	var ports []model.ListeningPortProperty
+	seen := map[model.ListeningPortProperty]bool{}
+	add := func(p model.ListeningPortProperty) {
+		if p.Port <= 0 || seen[p] {
+			return
+		}
+		seen[p] = true
+		ports = append(ports, p)
+	}
+
+	for _, l := range listeners {
+		if len(l.ListenSockets) > 0 {
+			for _, s := range l.ListenSockets {
+				add(model.ListeningPortProperty{
+					Protocol:    s.Protocol,
+					BindAddress: s.BindAddress,
+					Port:        s.Port,
+					ProcessName: l.Name,
+				})
+			}
+			continue
+		}
+		for _, port := range l.Ports {
+			add(model.ListeningPortProperty{Protocol: "tcp", Port: port, ProcessName: l.Name})
+		}
+	}
+
+	sort.Slice(ports, func(i, j int) bool {
+		a, b := ports[i], ports[j]
+		if a.Protocol != b.Protocol {
+			return a.Protocol < b.Protocol
+		}
+		if a.Port != b.Port {
+			return a.Port < b.Port
+		}
+		if a.BindAddress != b.BindAddress {
+			return a.BindAddress < b.BindAddress
+		}
+		return a.ProcessName < b.ProcessName
+	})
+
+	return ports
+}
+
+// buildRefinedInfraModel wraps the refined infra into the response, attaching
+// to each node collected from a connection that connection's listening ports.
+// listeningPorts is indexed like the connection nodes, which mergeK8sNodes
+// keeps in place; nodes it appends from the Kubernetes API have none.
+func buildRefinedInfraModel(onprem inframodel.OnpremInfra, listeningPorts [][]model.ListeningPortProperty) model.RefinedOnpremiseInfraModel {
+	nodes := make([]model.RefinedNodeProperty, 0, len(onprem.Nodes))
+	for i, n := range onprem.Nodes {
+		node := model.RefinedNodeProperty{NodeProperty: n}
+		if i < len(listeningPorts) {
+			node.ListeningPorts = listeningPorts[i]
+		}
+		nodes = append(nodes, node)
+	}
+
+	return model.RefinedOnpremiseInfraModel{
+		OnpremiseInfraModel: model.RefinedOnpremInfra{
+			Network:    onprem.Network,
+			Nodes:      nodes,
+			K8sCluster: onprem.K8sCluster,
+			NLBs:       onprem.NLBs,
+		},
+	}
 }
 
 // mibToGB converts a mebibyte reading into the gigabytes the refined model
@@ -1125,7 +1220,7 @@ func doGetRefinedSoftwareInfo(softwareInfo *software.Software, connID string) (*
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
 //	@Param			connId path string true "ID of the connection info."
-//	@Success		200	{object}	inframodel.OnpremiseInfraModel	"Successfully get refined information of the infra."
+//	@Success		200	{object}	model.RefinedOnpremiseInfraModel	"Successfully get refined information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
 //	@Router			/source_group/{sgId}/connection_info/{connId}/infra/refined [get]
@@ -1155,10 +1250,10 @@ func GetInfraInfoRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	var onpremiseInfraModel inframodel.OnpremiseInfraModel
 	var onpremiseInfra inframodel.OnpremInfra
 
 	onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
+	listeningPorts := [][]model.ListeningPortProperty{tryGetListeningPorts(connID)}
 	doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
 
 	// Reflect the collected Kubernetes cluster: its metadata, the node roles,
@@ -1168,9 +1263,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 		onpremiseInfra.Nodes = mergeK8sNodes(onpremiseInfra.Nodes, k8sInfo)
 	}
 
-	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
-
-	return c.JSONPretty(http.StatusOK, onpremiseInfraModel, " ")
+	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
 }
 
 // GetInfraInfoSourceGroupRefined godoc
@@ -1182,7 +1275,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
-//	@Success		200	{object}	inframodel.OnpremiseInfraModel		"Successfully get refined information of the infra."
+//	@Success		200	{object}	model.RefinedOnpremiseInfraModel	"Successfully get refined information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
 //	@Router		/source_group/{sgId}/infra/refined [get]
@@ -1202,8 +1295,8 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	var onpremiseInfraModel inframodel.OnpremiseInfraModel
 	var onpremiseInfra inframodel.OnpremInfra
+	var listeningPorts [][]model.ListeningPortProperty
 	var k8sInfo *kubernetes.Kubernetes
 
 	for _, conn := range *list {
@@ -1216,6 +1309,7 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 		onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
+		listeningPorts = append(listeningPorts, tryGetListeningPorts(conn.ID))
 		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
 
 		// The Kubernetes cluster is collected once per source group, from the
@@ -1235,9 +1329,7 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		onpremiseInfra.Nodes = mergeK8sNodes(onpremiseInfra.Nodes, k8sInfo)
 	}
 
-	onpremiseInfraModel.OnpremiseInfraModel = onpremiseInfra
-
-	return c.JSONPretty(http.StatusOK, onpremiseInfraModel, " ")
+	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
 }
 
 // GetSoftwareInfoRefined godoc

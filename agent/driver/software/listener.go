@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/cloud-barista/cm-honeybee/agent/common"
@@ -15,8 +16,8 @@ import (
 	"github.com/shirou/gopsutil/v3/process"
 )
 
-// GetListeners reports every host process that owns a LISTEN socket, together
-// with its listening ports and the OS package owning its executable. Unlike
+// GetListeners reports every host process that owns a LISTEN TCP socket or a
+// bound UDP socket, together with its listening sockets and the OS package owning its executable. Unlike
 // GetLegacySWs it keeps package-owned processes: its purpose is to say which
 // installed software is serving on which port, whatever installed it.
 // Containerized processes are left to the container collectors, except those of
@@ -81,7 +82,8 @@ func GetListeners() ([]software.Listener, error) {
 		}
 
 		ports := listenPorts(conns)
-		if len(ports) == 0 {
+		sockets := listenSockets(conns)
+		if len(ports) == 0 && len(sockets) == 0 {
 			continue
 		}
 
@@ -100,6 +102,7 @@ func GetListeners() ([]software.Listener, error) {
 			Name:           name,
 			ExecutablePath: exe,
 			Ports:          ports,
+			ListenSockets:  sockets,
 			ContainerID:    containerID,
 		})
 	}
@@ -166,6 +169,59 @@ func listenPorts(conns []net.ConnectionStat) []int {
 
 	sort.Ints(ports)
 	return ports
+}
+
+// listenSockets returns the listening sockets among conns with their protocol
+// and bind address: TCP sockets in LISTEN state and UDP sockets bound to a port
+// with no remote peer. UDP has no LISTEN state, so a UDP socket is taken as
+// listening when it is not connected; a connected one is a client's. The result
+// is sorted by protocol, port and address, without duplicates.
+func listenSockets(conns []net.ConnectionStat) []software.ListenSocket {
+	seen := map[software.ListenSocket]bool{}
+	var sockets []software.ListenSocket
+
+	for _, c := range conns {
+		if c.Family != syscall.AF_INET && c.Family != syscall.AF_INET6 {
+			continue
+		}
+		if c.Laddr.Port == 0 {
+			continue
+		}
+
+		var protocol string
+		switch c.Type {
+		case syscall.SOCK_STREAM:
+			if c.Status != "LISTEN" {
+				continue
+			}
+			protocol = "tcp"
+		case syscall.SOCK_DGRAM:
+			if c.Raddr.Port != 0 {
+				continue
+			}
+			protocol = "udp"
+		default:
+			continue
+		}
+
+		s := software.ListenSocket{Protocol: protocol, BindAddress: c.Laddr.IP, Port: int(c.Laddr.Port)}
+		if !seen[s] {
+			seen[s] = true
+			sockets = append(sockets, s)
+		}
+	}
+
+	sort.Slice(sockets, func(i, j int) bool {
+		a, b := sockets[i], sockets[j]
+		if a.Protocol != b.Protocol {
+			return a.Protocol < b.Protocol
+		}
+		if a.Port != b.Port {
+			return a.Port < b.Port
+		}
+		return a.BindAddress < b.BindAddress
+	})
+	return sockets
 }
 
 // packageVersions asks the package manager for the installed version of each

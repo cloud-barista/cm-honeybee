@@ -8,6 +8,8 @@ import (
 	inframodel "github.com/cloud-barista/cm-beetle/imdl/on-premise-model"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
+	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 )
 
 func TestMibToGiB(t *testing.T) {
@@ -120,5 +122,74 @@ func TestFirewallRulesFromCSP(t *testing.T) {
 	if len(refined.FirewallTable) != 1+len(want) || refined.FirewallTable[0].DstPorts != "80" ||
 		!reflect.DeepEqual(refined.FirewallTable[1:], want) {
 		t.Errorf("FirewallTable = %+v", refined.FirewallTable)
+	}
+}
+
+func TestListeningPortsFromListeners(t *testing.T) {
+	listeners := []software.Listener{
+		{Name: "nginx", Ports: []int{80}, ListenSockets: []software.ListenSocket{
+			{Protocol: "tcp", BindAddress: "0.0.0.0", Port: 80},
+			{Protocol: "tcp", BindAddress: "::", Port: 80},
+		}},
+		{Name: "named", ListenSockets: []software.ListenSocket{ // UDP only: no Ports
+			{Protocol: "udp", BindAddress: "0.0.0.0", Port: 53},
+			{Protocol: "tcp", BindAddress: "127.0.0.1", Port: 953},
+		}},
+		{Name: "sshd", Ports: []int{22}}, // collected by an agent without listen_sockets
+	}
+
+	want := []model.ListeningPortProperty{
+		{Protocol: "tcp", Port: 22, ProcessName: "sshd"},
+		{Protocol: "tcp", BindAddress: "0.0.0.0", Port: 80, ProcessName: "nginx"},
+		{Protocol: "tcp", BindAddress: "::", Port: 80, ProcessName: "nginx"},
+		{Protocol: "tcp", BindAddress: "127.0.0.1", Port: 953, ProcessName: "named"},
+		{Protocol: "udp", BindAddress: "0.0.0.0", Port: 53, ProcessName: "named"},
+	}
+
+	if got := listeningPortsFromListeners(listeners); !reflect.DeepEqual(got, want) {
+		t.Errorf("listeningPortsFromListeners() =\n%+v\nwant\n%+v", got, want)
+	}
+	if got := listeningPortsFromListeners(nil); got != nil {
+		t.Errorf("listeningPortsFromListeners(nil) = %+v, want nil", got)
+	}
+}
+
+// TestBuildRefinedInfraModelJSON pins the JSON path cm-beetle reads the
+// listening ports from: onpremiseInfraModel.nodes[].listeningPorts[], next to
+// the node's other fields rather than nested under the embedded NodeProperty.
+func TestBuildRefinedInfraModelJSON(t *testing.T) {
+	onprem := inframodel.OnpremInfra{Nodes: []inframodel.NodeProperty{
+		{Hostname: "web-1"},
+		{Hostname: "k8s-worker"}, // appended from the Kubernetes API
+	}}
+	ports := [][]model.ListeningPortProperty{
+		{{Protocol: "tcp", BindAddress: "0.0.0.0", Port: 8080, ProcessName: "nginx"}},
+	}
+
+	b, err := json.Marshal(buildRefinedInfraModel(onprem, ports))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var got struct {
+		OnpremiseInfraModel struct {
+			Nodes []map[string]json.RawMessage `json:"nodes"`
+		} `json:"onpremiseInfraModel"`
+	}
+	if err := json.Unmarshal(b, &got); err != nil {
+		t.Fatal(err)
+	}
+	nodes := got.OnpremiseInfraModel.Nodes
+	if len(nodes) != 2 {
+		t.Fatalf("nodes = %s", b)
+	}
+	if string(nodes[0]["hostname"]) != `"web-1"` {
+		t.Errorf("hostname not at the node's top level: %s", b)
+	}
+	if want := `[{"protocol":"tcp","bindAddress":"0.0.0.0","port":8080,"processName":"nginx"}]`; string(nodes[0]["listeningPorts"]) != want {
+		t.Errorf("listeningPorts = %s, want %s", nodes[0]["listeningPorts"], want)
+	}
+	if _, ok := nodes[1]["listeningPorts"]; ok {
+		t.Errorf("node without ports carries listeningPorts: %s", b)
 	}
 }

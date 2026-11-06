@@ -9,6 +9,11 @@ type Listener struct {
 	ExecutablePath string `json:"executable_path"`
 	// Ports are the local ports of the process's LISTEN sockets, sorted and unique.
 	Ports []int `json:"ports"`
+	// ListenSockets are the process's listening sockets one by one: its LISTEN
+	// TCP sockets and its bound, unconnected UDP sockets, each with the address
+	// it is bound to. A process listening only on UDP has these and no Ports.
+	// Sorted by protocol, port and address, without duplicates.
+	ListenSockets []ListenSocket `json:"listen_sockets,omitempty"`
 	// Package is the OS package owning ExecutablePath; empty when no package owns it.
 	Package string `json:"package,omitempty"`
 	// PackageVersion is the installed version of Package. The DEB and RPM lists
@@ -23,6 +28,15 @@ type Listener struct {
 	// only record of where they listen. ExecutablePath is then a path inside the
 	// container, and Package and Syft are left empty.
 	ContainerID string `json:"container_id,omitempty"`
+}
+
+// ListenSocket is one listening socket of a process.
+type ListenSocket struct {
+	Protocol string `json:"protocol"` // tcp, udp
+	// BindAddress is the local address the socket is bound to, e.g. "0.0.0.0",
+	// "::", "127.0.0.1". A wildcard address accepts traffic on every interface.
+	BindAddress string `json:"bind_address"`
+	Port        int    `json:"port"`
 }
 
 // SyftMatch is a syft binary-classifier match for an executable. It is evidence
