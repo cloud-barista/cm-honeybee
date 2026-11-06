@@ -302,3 +302,143 @@ func getDBSpec(c Conn, dbEngine, name string) (*DBSpecInfo, error) {
 	}
 	return &out, nil
 }
+
+// GetVMStatus asks the driver for a VM's current state (Running, Suspended,
+// ...). The IID is passed through as GetVPC does, so the VM's IID as GetVM
+// reported it serves drivers that read either field.
+func GetVMStatus(c Conn, iid IID) (string, error) {
+	return withTimeout(driverCallTimeout, func() (string, error) { return getVMStatus(c, iid) })
+}
+
+func getVMStatus(c Conn, iid IID) (string, error) {
+	if iid.NameId == "" && iid.SystemId == "" {
+		return "", mustNonEmpty("VMIID", "")
+	}
+	conn, err := connect(c)
+	if err != nil {
+		return "", err
+	}
+	handler, err := conn.CreateVMHandler()
+	if err != nil {
+		return "", err
+	}
+	status, err := handler.GetVMStatus(cres.IID{NameId: iid.NameId, SystemId: iid.SystemId})
+	if err != nil {
+		return "", err
+	}
+	return string(status), nil
+}
+
+// GetKeyPair fetches a key pair by the IID a VM reported for it. Only the
+// identifier and fingerprint are kept; see KeyPairInfo.
+func GetKeyPair(c Conn, iid IID) (*KeyPairInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*KeyPairInfo, error) { return getKeyPair(c, iid) })
+}
+
+func getKeyPair(c Conn, iid IID) (*KeyPairInfo, error) {
+	if iid.NameId == "" && iid.SystemId == "" {
+		return nil, mustNonEmpty("KeyPairIID", "")
+	}
+	conn, err := connect(c)
+	if err != nil {
+		return nil, err
+	}
+	handler, err := conn.CreateKeyPairHandler()
+	if err != nil {
+		return nil, err
+	}
+	info, err := handler.GetKey(cres.IID{NameId: iid.NameId, SystemId: iid.SystemId})
+	if err != nil {
+		return nil, err
+	}
+	return &KeyPairInfo{
+		IId:         IID{NameId: info.IId.NameId, SystemId: info.IId.SystemId},
+		Fingerprint: info.Fingerprint,
+	}, nil
+}
+
+// GetDisk fetches a disk by the IID a VM reported for it (one of DataDiskIIDs).
+func GetDisk(c Conn, iid IID) (*DiskInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*DiskInfo, error) { return getDisk(c, iid) })
+}
+
+func getDisk(c Conn, iid IID) (*DiskInfo, error) {
+	if iid.NameId == "" && iid.SystemId == "" {
+		return nil, mustNonEmpty("DiskIID", "")
+	}
+	conn, err := connect(c)
+	if err != nil {
+		return nil, err
+	}
+	handler, err := conn.CreateDiskHandler()
+	if err != nil {
+		return nil, err
+	}
+	info, err := handler.GetDisk(cres.IID{NameId: iid.NameId, SystemId: iid.SystemId})
+	if err != nil {
+		return nil, err
+	}
+	out, err := convertJSON[DiskInfo](info)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetVMSpec fetches the size behind a VM spec name (VMInfo.VMSpecName) in the
+// connection's region.
+func GetVMSpec(c Conn, name string) (*VMSpecInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*VMSpecInfo, error) { return getVMSpec(c, name) })
+}
+
+func getVMSpec(c Conn, name string) (*VMSpecInfo, error) {
+	if err := mustNonEmpty("Name", name); err != nil {
+		return nil, err
+	}
+	conn, err := connect(c)
+	if err != nil {
+		return nil, err
+	}
+	handler, err := conn.CreateVMSpecHandler()
+	if err != nil {
+		return nil, err
+	}
+	info, err := handler.GetVMSpec(name)
+	if err != nil {
+		return nil, err
+	}
+	out, err := convertJSON[VMSpecInfo](info)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetImage fetches a public image by the IID a VM reported for it
+// (VMInfo.ImageIId).
+func GetImage(c Conn, iid IID) (*ImageInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*ImageInfo, error) { return getImage(c, iid) })
+}
+
+func getImage(c Conn, iid IID) (*ImageInfo, error) {
+	if iid.NameId == "" && iid.SystemId == "" {
+		return nil, mustNonEmpty("ImageIID", "")
+	}
+	conn, err := connect(c)
+	if err != nil {
+		return nil, err
+	}
+	handler, err := conn.CreateImageHandler()
+	if err != nil {
+		return nil, err
+	}
+	info, err := handler.GetImage(cres.IID{NameId: iid.NameId, SystemId: iid.SystemId})
+	if err != nil {
+		return nil, err
+	}
+	out, err := convertJSON[ImageInfo](info)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
+}

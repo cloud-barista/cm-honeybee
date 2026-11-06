@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -37,7 +38,226 @@ func keyValueListToMap(in []spider.KeyValue) map[string]string {
 // cb-spider name. Every IID is therefore matched and named by NameId or
 // SystemId, never by NameId alone.
 func buildCSPInfo(conn spider.Conn, sg *model.SourceGroup, vm *spider.VMInfo) infra.CSPInfo {
-	return buildCSPInfoWith(driverNetworkLookup(conn), sg, vm)
+	csp := buildCSPInfoWith(driverNetworkLookup(conn), sg, vm)
+	addCSPDetail(driverDetailLookup(conn), vm, &csp)
+	return csp
+}
+
+// cspDetailLookup is how addCSPDetail reaches the driver for the VM's state,
+// key pair, data disks, spec and image; tests replace it. A nil func means the
+// driver has no handler for it and the field is skipped.
+type cspDetailLookup struct {
+	GetVMStatus func(spider.IID) (string, error)
+	GetKeyPair  func(spider.IID) (*spider.KeyPairInfo, error)
+	GetDisk     func(spider.IID) (*spider.DiskInfo, error)
+	GetVMSpec   func(string) (*spider.VMSpecInfo, error)
+	GetImage    func(spider.IID) (*spider.ImageInfo, error)
+}
+
+func driverDetailLookup(conn spider.Conn) cspDetailLookup {
+	lookup := cspDetailLookup{
+		GetVMStatus: func(iid spider.IID) (string, error) { return spider.GetVMStatus(conn, iid) },
+		GetKeyPair:  func(iid spider.IID) (*spider.KeyPairInfo, error) { return spider.GetKeyPair(conn, iid) },
+		GetDisk:     func(iid spider.IID) (*spider.DiskInfo, error) { return spider.GetDisk(conn, iid) },
+		GetVMSpec:   func(name string) (*spider.VMSpecInfo, error) { return spider.GetVMSpec(conn, name) },
+		GetImage:    func(iid spider.IID) (*spider.ImageInfo, error) { return spider.GetImage(conn, iid) },
+	}
+
+	capability, err := spider.GetDriverCapability(conn.Provider)
+	if err != nil {
+		logger.Println(logger.WARN, true, "CSP: driver capability unknown "+connLabel(conn)+", asking every handler: "+err.Error())
+		return lookup
+	}
+	if !capability.VMHandler {
+		lookup.GetVMStatus = nil
+	}
+	if !capability.KeyPairHandler {
+		lookup.GetKeyPair = nil
+	}
+	if !capability.DiskHandler {
+		lookup.GetDisk = nil
+	}
+	if !capability.VMSpecHandler {
+		lookup.GetVMSpec = nil
+	}
+	if !capability.ImageHandler {
+		lookup.GetImage = nil
+	}
+	return lookup
+}
+
+// atoiOrZero reads a driver's numeric string. "-1" (not exposed), "default",
+// "NA" and other non-numbers become 0.
+func atoiOrZero(s string) uint {
+	v, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
+	if err != nil || v < 0 {
+		return 0
+	}
+	return uint(v)
+}
+
+// naToEmpty drops the "NA" cb-spider drivers report for an unknown name.
+func naToEmpty(s string) string {
+	if strings.EqualFold(strings.TrimSpace(s), "NA") {
+		return ""
+	}
+	return s
+}
+
+// specArchKeys are the KeyValueList keys under which drivers copy the CSP's
+// own spec record (cb-spider's VMSpecInfo has no architecture field): aws
+// ProcessorInfo ({SupportedArchitectures:[x86_64],...}), gcp Architecture,
+// alibaba CpuArchitecture and ibm VcpuArchitecture ({...,value:amd64}).
+var specArchKeys = []string{"ProcessorInfo", "Architecture", "CpuArchitecture", "VcpuArchitecture"}
+
+var archToken = regexp.MustCompile(`(?i)\b(x86_64|amd64|arm64|aarch64|i386|x86|arm|s390x|ppc64le)\b`)
+
+// specArchitecture picks the architecture out of a spec's KeyValueList, or
+// returns "" when the driver does not report one (azure, ncp, nhn and
+// openstack do not).
+func specArchitecture(kvs []spider.KeyValue) string {
+	for _, key := range specArchKeys {
+		for _, kv := range kvs {
+			if kv.Key != key {
+				continue
+			}
+			// aws lists i386 next to x86_64 for some types; the 64-bit
+			// one is what the VM runs.
+			found := archToken.FindAllString(kv.Value, -1)
+			for _, m := range found {
+				switch strings.ToLower(m) {
+				case "i386", "x86", "arm":
+				default:
+					return strings.ToLower(m)
+				}
+			}
+			if len(found) > 0 {
+				return strings.ToLower(found[0])
+			}
+		}
+	}
+	return ""
+}
+
+func toCSPVMSpec(s *spider.VMSpecInfo) *infra.CSPVMSpec {
+	out := &infra.CSPVMSpec{
+		Name:         s.Name,
+		VCPUs:        atoiOrZero(s.VCpu.Count),
+		MemoryMiB:    atoiOrZero(s.MemSizeMiB),
+		DiskGB:       atoiOrZero(s.DiskSizeGB),
+		Architecture: specArchitecture(s.KeyValueList),
+	}
+	for _, g := range s.Gpu {
+		out.GPUs = append(out.GPUs, infra.CSPGPU{
+			Count:    atoiOrZero(g.Count),
+			Vendor:   naToEmpty(g.Mfr),
+			Model:    naToEmpty(g.Model),
+			MemoryGB: atoiOrZero(g.MemSizeGB),
+		})
+	}
+	if len(out.GPUs) == 0 {
+		for _, a := range s.Accelerator {
+			if !strings.EqualFold(a.Type, "GPU") {
+				continue
+			}
+			out.GPUs = append(out.GPUs, infra.CSPGPU{
+				Count:    atoiOrZero(a.Count),
+				Vendor:   naToEmpty(a.Mfr),
+				Model:    naToEmpty(a.Model),
+				MemoryGB: atoiOrZero(a.MemSizeGB),
+			})
+		}
+	}
+	return out
+}
+
+// addCSPDetail fills the CSPInfo fields that need a driver call beyond GetVM.
+// Every call is best-effort: a failure is logged and leaves only its own field
+// empty, so the import still stores what GetVM reported.
+func addCSPDetail(lookup cspDetailLookup, vm *spider.VMInfo, csp *infra.CSPInfo) {
+	vmLabel := "VM " + iidString(vm.IId)
+
+	if lookup.GetVMStatus != nil {
+		if status, err := lookup.GetVMStatus(vm.IId); err != nil {
+			logger.Println(logger.WARN, true, "CSP: "+vmLabel+": status not resolved: "+err.Error())
+		} else {
+			csp.Status = status
+		}
+	}
+
+	// The key pair's name comes from the VM itself and is kept even when the
+	// key pair lookup fails.
+	if name := iidLabel(vm.KeyPairIId); name != "" {
+		kp := &infra.CSPKeyPair{Name: name, ID: vm.KeyPairIId.SystemId}
+		if lookup.GetKeyPair != nil {
+			if k, err := lookup.GetKeyPair(vm.KeyPairIId); err != nil {
+				logger.Println(logger.WARN, true, "CSP: "+vmLabel+": key pair "+iidString(vm.KeyPairIId)+" not resolved, fingerprint left empty: "+err.Error())
+			} else {
+				if kp.ID == "" {
+					kp.ID = k.IId.SystemId
+				}
+				kp.Fingerprint = k.Fingerprint
+			}
+		}
+		csp.KeyPair = kp
+	}
+
+	if lookup.GetDisk != nil {
+		for _, iid := range vm.DataDiskIIDs {
+			if iidLabel(iid) == "" {
+				continue
+			}
+			d, err := lookup.GetDisk(iid)
+			if err != nil {
+				logger.Println(logger.WARN, true, "CSP: "+vmLabel+": data disk "+iidString(iid)+" not resolved: "+err.Error())
+				continue
+			}
+			name := iidLabel(iid)
+			if iid.NameId == "" && d.IId.NameId != "" {
+				name = d.IId.NameId
+			}
+			id := iid.SystemId
+			if id == "" {
+				id = d.IId.SystemId
+			}
+			csp.DataDiskDetails = append(csp.DataDiskDetails, infra.CSPDataDisk{
+				Name:   name,
+				ID:     id,
+				Size:   atoiOrZero(d.DiskSize),
+				Type:   d.DiskType,
+				Status: d.Status,
+			})
+		}
+	}
+
+	if lookup.GetVMSpec != nil && vm.VMSpecName != "" {
+		if s, err := lookup.GetVMSpec(vm.VMSpecName); err != nil {
+			logger.Println(logger.WARN, true, "CSP: "+vmLabel+": VM spec '"+vm.VMSpecName+"' not resolved: "+err.Error())
+		} else {
+			csp.VMSpecDetail = toCSPVMSpec(s)
+		}
+	}
+
+	if lookup.GetImage != nil && iidLabel(vm.ImageIId) != "" {
+		if img, err := lookup.GetImage(vm.ImageIId); err != nil {
+			logger.Println(logger.WARN, true, "CSP: "+vmLabel+": image "+iidString(vm.ImageIId)+" not resolved: "+err.Error())
+		} else {
+			name := img.Name
+			if name == "" {
+				name = iidLabel(vm.ImageIId)
+			}
+			csp.ImageDetail = &infra.CSPImage{
+				Name:           name,
+				ID:             img.IId.SystemId,
+				OSDistribution: naToEmpty(img.OSDistribution),
+				OSArchitecture: naToEmpty(img.OSArchitecture),
+				OSPlatform:     naToEmpty(img.OSPlatform),
+				OSDiskType:     naToEmpty(img.OSDiskType),
+				OSDiskSizeGB:   atoiOrZero(img.OSDiskSizeGB),
+				Status:         naToEmpty(img.ImageStatus),
+			}
+		}
+	}
 }
 
 // cspNetworkLookup is how buildCSPInfoWith reaches the driver for VPC and

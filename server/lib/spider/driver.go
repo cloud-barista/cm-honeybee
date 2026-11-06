@@ -8,4 +8,8 @@ type DriverCapability struct {
 	VMHandler      bool `json:"VMHandler"`
 	RDBMSHandler   bool `json:"RDBMSHandler"`
 	DBSpecHandler  bool `json:"DBSpecHandler"`
+	ImageHandler   bool `json:"ImageHandler"`
+	VMSpecHandler  bool `json:"VMSpecHandler"`
+	KeyPairHandler bool `json:"KeyPairHandler"`
+	DiskHandler    bool `json:"DiskHandler"`
 }

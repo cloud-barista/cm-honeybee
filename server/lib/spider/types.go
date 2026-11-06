@@ -51,6 +51,7 @@ type VMInfo struct {
 	PrivateIP         string     `json:"PrivateIP"`
 	PrivateDNS        string     `json:"PrivateDNS"`
 	SecurityGroupIIds []IID      `json:"SecurityGroupIIds"`
+	KeyPairIId        IID        `json:"KeyPairIId"`
 	RootDiskType      string     `json:"RootDiskType"`
 	RootDiskSize      string     `json:"RootDiskSize"`
 	RootDeviceName    string     `json:"RootDeviceName"`
@@ -206,4 +207,70 @@ type DBSpecInfo struct {
 	Name       string   `json:"Name"`
 	VCpu       VCpuInfo `json:"VCpu"`
 	MemSizeMiB string   `json:"MemSizeMiB"` // "-1" when the CSP's unit cannot be confirmed
+}
+
+// KeyPairInfo is a subset of cb-spider's KeyPairInfo
+// (cloud-driver/interfaces/resources/KeyPairHandler.go). PublicKey and
+// PrivateKey are deliberately absent so that key material a driver returns is
+// never decoded, stored or served.
+type KeyPairInfo struct {
+	IId         IID    `json:"IId"`
+	Fingerprint string `json:"Fingerprint,omitempty"`
+}
+
+// DiskInfo is a subset of cb-spider's DiskInfo
+// (cloud-driver/interfaces/resources/DiskHandler.go).
+type DiskInfo struct {
+	IId      IID    `json:"IId"`
+	Zone     string `json:"Zone"`
+	DiskType string `json:"DiskType"`
+	DiskSize string `json:"DiskSize"` // GB, or "default"
+	Status   string `json:"Status"`
+}
+
+// GpuInfo mirrors cb-spider's GpuInfo. Numbers are "-1" and names "NA" when
+// the CSP does not expose them.
+type GpuInfo struct {
+	Count          string `json:"Count"`
+	Mfr            string `json:"Mfr,omitempty"`
+	Model          string `json:"Model,omitempty"`
+	MemSizeGB      string `json:"MemSizeGB,omitempty"`
+	TotalMemSizeGB string `json:"TotalMemSizeGB,omitempty"`
+}
+
+// AcceleratorInfo is a subset of cb-spider's AcceleratorInfo.
+type AcceleratorInfo struct {
+	Type           string `json:"Type"` // GPU, TPU or NPU
+	Mfr            string `json:"Mfr,omitempty"`
+	Model          string `json:"Model,omitempty"`
+	Count          string `json:"Count"`
+	MemSizeGB      string `json:"MemSizeGB,omitempty"`
+	TotalMemSizeGB string `json:"TotalMemSizeGB,omitempty"`
+}
+
+// VMSpecInfo mirrors cb-spider's VMSpecInfo
+// (cloud-driver/interfaces/resources/VMSpecHandler.go).
+type VMSpecInfo struct {
+	Region       string            `json:"Region"`
+	Name         string            `json:"Name"`
+	VCpu         VCpuInfo          `json:"VCpu"`
+	MemSizeMiB   string            `json:"MemSizeMiB"`
+	DiskSizeGB   string            `json:"DiskSizeGB"` // "-1" when not applicable
+	Gpu          []GpuInfo         `json:"Gpu,omitempty"`
+	Accelerator  []AcceleratorInfo `json:"Accelerator,omitempty"`
+	KeyValueList []KeyValue        `json:"KeyValueList,omitempty"`
+}
+
+// ImageInfo is a subset of cb-spider's ImageInfo
+// (cloud-driver/interfaces/resources/ImageHandler.go).
+type ImageInfo struct {
+	IId            IID        `json:"IId"`
+	Name           string     `json:"Name"`
+	OSArchitecture string     `json:"OSArchitecture"`
+	OSPlatform     string     `json:"OSPlatform"`
+	OSDistribution string     `json:"OSDistribution"`
+	OSDiskType     string     `json:"OSDiskType"`
+	OSDiskSizeGB   string     `json:"OSDiskSizeGB"`
+	ImageStatus    string     `json:"ImageStatus"`
+	KeyValueList   []KeyValue `json:"KeyValueList,omitempty"`
 }
