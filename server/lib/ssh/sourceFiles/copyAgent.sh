@@ -51,7 +51,38 @@ root_check() {
     fi
 }
 
+# Uploaded by the server when its image bundles an agent built from the same
+# commit as the server. Installing from it keeps the agent in step with the
+# server even for changes that are not in any release yet.
+BUNDLE_DIR="/tmp/cm-honeybee-agent-bundle"
+
+CopyBundled() {
+    if [ -f "/usr/bin/cm-honeybee-agent" ] && $BUSYBOX_PATH cmp -s "${BUNDLE_DIR}/cm-honeybee-agent" /usr/bin/cm-honeybee-agent; then
+        echo "Bundled agent already installed."
+    else
+        systemctl stop cm-honeybee-agent > /dev/null 2>&1
+        rm -rf /usr/bin/cm-honeybee-agent
+        cp "${BUNDLE_DIR}/cm-honeybee-agent" /usr/bin/cm-honeybee-agent
+        chmod a+x /usr/bin/cm-honeybee-agent
+        echo "Installed bundled agent $(/usr/bin/cm-honeybee-agent version 2>&1)."
+    fi
+
+    if [ ! -f "/etc/cloud-migrator/cm-honeybee-agent/conf/cm-honeybee-agent.yaml" ]; then
+        mkdir -p /etc/cloud-migrator/cm-honeybee-agent/conf
+        cp "${BUNDLE_DIR}/cm-honeybee-agent.yaml" /etc/cloud-migrator/cm-honeybee-agent/conf/
+    fi
+
+    if [ ! -f "/lib/systemd/system/cm-honeybee-agent.service" ]; then
+        cp "${BUNDLE_DIR}/cm-honeybee-agent.service" /lib/systemd/system/
+    fi
+}
+
 Copy() {
+    if [ -f "${BUNDLE_DIR}/cm-honeybee-agent" ]; then
+        CopyBundled
+        return
+    fi
+
     LATEST_RELEASE=$(get_latest_release "cloud-barista/cm-honeybee")
     if [ -z "$LATEST_RELEASE" ]; then
         echo "Failed to resolve the latest release."
@@ -92,7 +123,7 @@ Start() {
 }
 
 # Main Script
-((
+( (
     root_check
     Copy
     Start

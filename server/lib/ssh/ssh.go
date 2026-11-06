@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -216,6 +217,7 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) error {
 	// copyAgent.sh always invokes it as /tmp/busybox, so copy it to that
 	// fixed path regardless of the embedded source file name.
 	busyboxFile := "sourceFiles/busybox"
+	agentAsset := "cm-honeybee-agent"
 	archOut, err := o.RunCmd("uname -m")
 	if err != nil {
 		logger.Println(logger.ERROR, true, "SSH: Failed to detect remote architecture: "+err.Error())
@@ -224,9 +226,14 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) error {
 	switch strings.TrimSpace(archOut) {
 	case "aarch64", "arm64":
 		busyboxFile = "sourceFiles/busybox-arm64"
+		agentAsset = "cm-honeybee-agent-arm64"
 	}
 
 	if err = o.copyFileToSFTPAs(client, busyboxFile, "/tmp/busybox"); err != nil {
+		return err
+	}
+
+	if err = o.copyAgentBundle(client, agentAsset); err != nil {
 		return err
 	}
 
@@ -241,7 +248,7 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) error {
 		return err
 	}
 
-	commands = "rm -f /tmp/busybox && rm -f /tmp/copyAgent.sh"
+	commands = "rm -f /tmp/busybox && rm -f /tmp/copyAgent.sh && rm -rf " + remoteAgentBundleDir
 	logger.Printf(logger.DEBUG, true, "SSH: Removing temporary files...\n")
 	if _, err = o.RunCmd(commands); err != nil {
 		logger.Println(logger.ERROR, true, "Failed to remove temporary files : ", err)
@@ -280,6 +287,83 @@ func (o *SSH) UninstallAgent(connectionInfo model.ConnectionInfo) error {
 
 	if _, err = o.RunCmd("rm -f /tmp/uninstallAgent.sh"); err != nil {
 		logger.Println(logger.ERROR, true, "Failed to remove temporary files : ", err)
+	}
+
+	return nil
+}
+
+// defaultAgentBundleDir is where the server image keeps the agent built from
+// the same commit as the server (see server/Dockerfile). Override it with
+// CMHONEYBEE_AGENT_BUNDLE_DIR when running the server outside the image.
+const defaultAgentBundleDir = "/cm-honeybee-agent"
+
+// remoteAgentBundleDir is where the bundle is uploaded on the source node.
+// copyAgent.sh installs from it when present and otherwise downloads the
+// latest release.
+const remoteAgentBundleDir = "/tmp/cm-honeybee-agent-bundle"
+
+func agentBundleDir() string {
+	if dir := strings.TrimSpace(os.Getenv("CMHONEYBEE_AGENT_BUNDLE_DIR")); dir != "" {
+		return dir
+	}
+	return defaultAgentBundleDir
+}
+
+// copyAgentBundle uploads the bundled agent binary for the node's architecture
+// together with its config and systemd unit, so the node runs an agent that
+// matches this server rather than whatever the latest release is. It does
+// nothing when the server has no bundle (e.g. an image built without the agent
+// context), leaving copyAgent.sh to download the latest release.
+func (o *SSH) copyAgentBundle(client *sftp.Client, agentAsset string) error {
+	bundleDir := agentBundleDir()
+	binary := filepath.Join(bundleDir, agentAsset)
+	if _, err := os.Stat(binary); err != nil {
+		logger.Println(logger.INFO, false, "SSH: No bundled agent at "+binary+", the node will download the latest release")
+		return nil
+	}
+
+	if err := client.MkdirAll(remoteAgentBundleDir); err != nil {
+		logger.Println(logger.ERROR, true, "SSH: Failed to create "+remoteAgentBundleDir+": "+err.Error())
+		return err
+	}
+
+	files := map[string]string{
+		binary: "cm-honeybee-agent",
+		filepath.Join(bundleDir, "cm-honeybee-agent.yaml"):    "cm-honeybee-agent.yaml",
+		filepath.Join(bundleDir, "cm-honeybee-agent.service"): "cm-honeybee-agent.service",
+	}
+	for src, name := range files {
+		if err := copyLocalFileToSFTP(client, src, remoteAgentBundleDir+"/"+name); err != nil {
+			return err
+		}
+	}
+	logger.Println(logger.INFO, false, "SSH: Uploaded bundled agent "+binary)
+
+	return nil
+}
+
+func copyLocalFileToSFTP(client *sftp.Client, src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		logger.Println(logger.ERROR, true, "SSH: Failed to open "+src+": "+err.Error())
+		return err
+	}
+	defer func() {
+		_ = srcFile.Close()
+	}()
+
+	dstFile, err := client.Create(dst)
+	if err != nil {
+		logger.Println(logger.ERROR, true, "SSH: Failed to create "+dst+": "+err.Error())
+		return err
+	}
+	defer func() {
+		_ = dstFile.Close()
+	}()
+
+	if _, err = io.Copy(dstFile, srcFile); err != nil {
+		logger.Println(logger.ERROR, true, "SSH: Failed to copy "+src+" to "+dst+": "+err.Error())
+		return err
 	}
 
 	return nil

@@ -124,6 +124,13 @@ jobs:
           context: ./server
           file: ./server/Dockerfile
           target: prod
+          # Bundle an agent built from this same commit (see the "agent" stage
+          # in server/Dockerfile) instead of the latest release, which lacks
+          # unreleased agent changes.
+          build-contexts: |
+            agent=./agent
+          build-args: |
+            AGENT_VERSION=${{ steps.meta.outputs.version }}-${{ github.sha }}
           platforms: linux/amd64,linux/arm64 # linux/arm/v7,linux/386,linux/ppc64le,linux/s390x,linux/arm/v6
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}

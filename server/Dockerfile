@@ -1,3 +1,10 @@
+# Agent source for the bundled agent. The CD workflow overrides this empty
+# stage with the repo's agent/ directory (build-contexts: agent=./agent), so the
+# image ships an agent built from the same commit as the server. A plain
+# `docker build server/` keeps it empty and the server falls back to
+# downloading the latest released agent.
+FROM scratch AS agent
+
 # Run the toolchain on the native build platform and cross-compile to the
 # target platform so multi-arch builds (e.g. linux/arm64) don't emulate the
 # whole Go compile under QEMU.
@@ -33,6 +40,22 @@ RUN git commit --allow-empty -m "a commit for the build"
 
 RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} make build-only
 
+# Build the agent for every architecture the server can install it on, since
+# the source node's architecture is independent of the server image's.
+# AGENT_VERSION, when set, replaces the agent's `version` output so the
+# installed agent can be traced back to the commit it was built from.
+ARG AGENT_VERSION=""
+COPY --from=agent / /agent-src
+RUN mkdir -p /agent-bundle && \
+    if [ -f /agent-src/go.mod ]; then \
+      cd /agent-src && \
+      LDFLAGS="" && \
+      if [ -n "$AGENT_VERSION" ]; then LDFLAGS="-X main.version=$AGENT_VERSION"; fi && \
+      CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "$LDFLAGS" -o /agent-bundle/cm-honeybee-agent ./cmd/cm-honeybee-agent && \
+      CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -ldflags "$LDFLAGS" -o /agent-bundle/cm-honeybee-agent-arm64 ./cmd/cm-honeybee-agent && \
+      cp conf/cm-honeybee-agent.yaml service_file/systemd/cm-honeybee-agent.service /agent-bundle/; \
+    fi
+
 FROM alpine:3.24.2 as prod
 
 RUN apk --no-cache add tzdata
@@ -41,6 +64,10 @@ RUN cp -f /usr/share/zoneinfo/Asia/Seoul /etc/localtime
 
 COPY --from=builder /go/src/github.com/cloud-barista/cm-honeybee/server/conf /conf
 COPY --from=builder /go/src/github.com/cloud-barista/cm-honeybee/server/cmd/cm-honeybee/cm-honeybee /cm-honeybee
+
+# Agent bundle installed onto source nodes (empty when built without the agent
+# context). Its location can be changed with CMHONEYBEE_AGENT_BUNDLE_DIR.
+COPY --from=builder /agent-bundle /cm-honeybee-agent
 
 # Kept outside /root/.cm-honeybee, which deployments bind-mount from the host.
 COPY --from=builder /cb-spider /cb-spider
