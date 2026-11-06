@@ -175,6 +175,8 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.NodeProperty, er
 		})
 	}
 
+	firewallTable = append(firewallTable, firewallRulesFromCSP(infraInfo.CSP)...)
+
 	refinedInfraInfo := inframodel.NodeProperty{
 		Hostname:  infraInfo.Compute.OS.Node.Hostname,
 		MachineId: infraInfo.Compute.OS.Node.Machineid,
@@ -217,6 +219,81 @@ func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.NodeProperty, er
 	}
 
 	return &refinedInfraInfo, nil
+}
+
+// firewallRulesFromCSP turns the rules of the cloud security groups attached to
+// a CSP-sourced VM into firewall table entries, in the form the agent gives
+// host firewall rules (lowercase protocol, "*" for any protocol or port, the
+// unconstrained side set to the whole address family). The security groups are
+// what governs which traffic reaches such a VM, and the target security group
+// is recommended from the firewall table, so leaving them out recommends a
+// target that only opens what the guest firewall lists.
+//
+// A rule without a CIDR, such as one that admits another security group, is
+// passed through with the CIDR empty rather than widened to any address; the
+// same rule attached through several groups is listed once.
+func firewallRulesFromCSP(csp *infra.CSPInfo) []inframodel.FirewallRuleProperty {
+	if csp == nil {
+		return nil
+	}
+
+	var rules []inframodel.FirewallRuleProperty
+	seen := map[inframodel.FirewallRuleProperty]bool{}
+
+	for _, sg := range csp.Network.SecurityGroups {
+		for _, r := range sg.Rules {
+			protocol := strings.ToLower(strings.TrimSpace(r.Protocol))
+			if protocol == "all" || protocol == "-1" || protocol == "" {
+				protocol = "*"
+			}
+
+			ports := "*"
+			if protocol == "tcp" || protocol == "udp" {
+				ports = cspPortRange(r.FromPort, r.ToPort)
+			}
+
+			cidr := strings.TrimSpace(r.CIDR)
+			anyAddr := "0.0.0.0/0"
+			if strings.Contains(cidr, ":") {
+				anyAddr = "::/0"
+			}
+
+			rule := inframodel.FirewallRuleProperty{
+				SrcPorts:  "*",
+				DstPorts:  ports,
+				Protocol:  protocol,
+				Direction: strings.ToLower(strings.TrimSpace(r.Direction)),
+				Action:    "allow",
+			}
+			if rule.Direction == "outbound" {
+				rule.SrcCIDR, rule.DstCIDR = anyAddr, cidr
+			} else {
+				rule.SrcCIDR, rule.DstCIDR = cidr, anyAddr
+			}
+
+			if !seen[rule] {
+				seen[rule] = true
+				rules = append(rules, rule)
+			}
+		}
+	}
+
+	return rules
+}
+
+// cspPortRange writes a security group rule's port span the way the firewall
+// table does: "22" for one port, "8000-8080" for a range and "*" when the rule
+// covers every port (cb-spider reports that as -1, or leaves it empty).
+func cspPortRange(from, to string) string {
+	from, to = strings.TrimSpace(from), strings.TrimSpace(to)
+	if from == "" || from == "-1" {
+		return "*"
+	}
+	if to == "" || to == "-1" || to == from {
+		return from
+	}
+
+	return from + "-" + to
 }
 
 // mibToGB converts a mebibyte reading into the gigabytes the refined model
