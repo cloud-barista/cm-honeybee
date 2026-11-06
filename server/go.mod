@@ -9,7 +9,7 @@ require (
 	github.com/cloud-barista/cm-centipede/dmdl v0.1.1
 	github.com/cloud-barista/cm-centipede/transx-ex v0.1.2
 	github.com/cloud-barista/cm-grasshopper/smdl v0.1.4
-	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20261019111008-e7cd081474a0
+	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20261106081911-f1bea7333e93
 	github.com/glebarez/sqlite v1.11.0
 	github.com/google/uuid v1.6.0
 	github.com/jollaman999/utils v1.0.10 // Original codes from https://github.com/hcloud-classic/hcc-harp
