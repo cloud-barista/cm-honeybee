@@ -34,6 +34,9 @@ func TestParseAMDSMIStatic(t *testing.T) {
 	if first.DeviceAttribute.DriverVersion != "6.10.5" {
 		t.Errorf("driver_version = %q", first.DeviceAttribute.DriverVersion)
 	}
+	if first.DeviceAttribute.VendorID != "0x1002" {
+		t.Errorf("vendor_id = %q, want the id rather than the vendor name", first.DeviceAttribute.VendorID)
+	}
 	if first.DeviceAttribute.DeviceID != "0x74a1" {
 		t.Errorf("device_id = %q", first.DeviceAttribute.DeviceID)
 	}

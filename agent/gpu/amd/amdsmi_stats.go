@@ -25,7 +25,7 @@ type amdSMIGPU struct {
 	GPU  int `json:"gpu"`
 	ASIC struct {
 		MarketName string `json:"market_name"`
-		VendorName string `json:"vendor_name"`
+		VendorID   string `json:"vendor_id"`
 		DeviceID   string `json:"device_id"`
 		ASICSerial string `json:"asic_serial"`
 	} `json:"asic"`
@@ -130,12 +130,8 @@ func parseAMDSMI(data []byte) ([]infra.AMD, error) {
 				SerialNumber:  amdSMIValue(gpu.ASIC.ASICSerial),
 				PCIBusID:      amdSMIValue(gpu.Bus.BDF),
 				DriverVersion: amdSMIValue(gpu.Driver.Version),
-				// The rocm-smi reader puts the vendor's name in this field
-				// rather than its identifier, and one field holding two kinds
-				// of value depending on which tool answered would be worse
-				// than the naming already is.
-				VendorID: amdSMIValue(gpu.ASIC.VendorName),
-				DeviceID: amdSMIValue(gpu.ASIC.DeviceID),
+				VendorID:      amdSMIValue(gpu.ASIC.VendorID),
+				DeviceID:      amdSMIValue(gpu.ASIC.DeviceID),
 			},
 		}
 		if total, ok := amdSMIMiB(gpu.VRAM.Size); ok {

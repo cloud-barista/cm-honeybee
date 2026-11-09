@@ -22,7 +22,6 @@ var (
 	keyProductName  = []string{"Device Name", "Card Series", "Card series", "Card Model", "Card model", "Card SKU"}
 	keyDeviceID     = []string{"Device ID", "GPU ID"}
 	keyUniqueID     = []string{"Unique ID"}
-	keyVendor       = []string{"Card Vendor", "Card vendor"}
 	keyVBIOS        = []string{"VBIOS version"}
 	keySerial       = []string{"Serial Number"}
 	keyPCIBus       = []string{"PCI Bus"}
@@ -56,6 +55,8 @@ var (
 func QueryGPU() ([]infra.AMD, error) {
 	gpus, err := queryROCmSMI()
 	if err == nil {
+		fillIdentity(gpus)
+
 		return gpus, nil
 	}
 
@@ -64,6 +65,8 @@ func QueryGPU() ([]infra.AMD, error) {
 	// the same nothing, and amd-smi may still answer in both cases.
 	amdSMIGPUs, amdSMIErr := queryAMDSMI()
 	if amdSMIErr == nil {
+		fillIdentity(amdSMIGPUs)
+
 		return amdSMIGPUs, nil
 	}
 
@@ -137,15 +140,16 @@ func parse(data []byte) ([]infra.AMD, error) {
 
 		gpus = append(gpus, infra.AMD{
 			DeviceAttribute: infra.AMDDeviceAttribute{
-				Card:             name,
-				GPUID:            lookup(card, keyDeviceID),
-				UniqueID:         lookup(card, keyUniqueID),
-				ProductName:      lookup(card, keyProductName),
-				SerialNumber:     lookup(card, keySerial),
-				PCIBusID:         lookup(card, keyPCIBus),
-				VBIOSVersion:     lookup(card, keyVBIOS),
-				DriverVersion:    driverVersion,
-				VendorID:         lookup(card, keyVendor),
+				Card:          name,
+				GPUID:         lookup(card, keyDeviceID),
+				UniqueID:      lookup(card, keyUniqueID),
+				ProductName:   lookup(card, keyProductName),
+				SerialNumber:  lookup(card, keySerial),
+				PCIBusID:      lookup(card, keyPCIBus),
+				VBIOSVersion:  lookup(card, keyVBIOS),
+				DriverVersion: driverVersion,
+				// rocm-smi prints the vendor only as a name ("Card Vendor"),
+				// so the id is read from sysfs in fillIdentity instead.
 				DeviceID:         lookup(card, keyDeviceID),
 				ComputePartition: lookup(card, keyComputePart),
 				MemoryPartition:  lookup(card, keyMemoryPart),
