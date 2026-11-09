@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cloud-barista/cm-honeybee/agent/gpu/pci"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 )
 
@@ -128,7 +129,7 @@ func parseAMDSMI(data []byte) ([]infra.AMD, error) {
 				GPUID:         amdSMIValue(gpu.ASIC.DeviceID),
 				ProductName:   amdSMIValue(gpu.ASIC.MarketName),
 				SerialNumber:  amdSMIValue(gpu.ASIC.ASICSerial),
-				PCIBusID:      amdSMIValue(gpu.Bus.BDF),
+				PCIBusID:      pci.NormalizeBusID(amdSMIValue(gpu.Bus.BDF)),
 				DriverVersion: amdSMIValue(gpu.Driver.Version),
 				VendorID:      amdSMIValue(gpu.ASIC.VendorID),
 				DeviceID:      amdSMIValue(gpu.ASIC.DeviceID),

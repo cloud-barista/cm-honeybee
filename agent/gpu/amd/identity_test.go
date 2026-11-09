@@ -8,24 +8,6 @@ import (
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 )
 
-func TestNormalizeBDF(t *testing.T) {
-	cases := map[string]string{
-		"0002:00:00.0":     "0002:00:00.0",
-		"00000002:00:00.0": "0002:00:00.0",
-		"0000:C1:00.0":     "0000:c1:00.0",
-		"10000:01:00.0":    "10000:01:00.0",
-		"":                 "",
-		"N/A":              "",
-		"01:00.0":          "",
-	}
-
-	for in, want := range cases {
-		if got := normalizeBDF(in); got != want {
-			t.Errorf("normalizeBDF(%q) = %q, want %q", in, got, want)
-		}
-	}
-}
-
 // Captured from "amd-smi list --json" on a Radeon Pro V710 MxGPU, ROCm 10.0.
 func TestParseAMDSMIList(t *testing.T) {
 	uuids, err := parseAMDSMIList([]byte(`[

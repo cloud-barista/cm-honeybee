@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/cloud-barista/cm-honeybee/agent/gpu/pci"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/jollaman999/utils/logger"
 )
@@ -52,7 +53,7 @@ func fillIdentity(gpus []infra.AMD) {
 func applyIdentity(gpus []infra.AMD, uuids map[string]string) {
 	for i := range gpus {
 		attribute := &gpus[i].DeviceAttribute
-		address := normalizeBDF(attribute.PCIBusID)
+		address := pci.NormalizeBusID(attribute.PCIBusID)
 		if address == "" {
 			continue
 		}
@@ -89,7 +90,7 @@ func parseAMDSMIList(data []byte) (map[string]string, error) {
 	}
 
 	for _, entry := range entries {
-		address := normalizeBDF(amdSMIValue(entry.BDF))
+		address := pci.NormalizeBusID(amdSMIValue(entry.BDF))
 		uuid := amdSMIValue(entry.UUID)
 		if address == "" || uuid == "" {
 			continue
@@ -109,22 +110,4 @@ func pciVendorID(address string) string {
 	}
 
 	return strings.ToLower(strings.TrimSpace(string(data)))
-}
-
-// normalizeBDF writes a PCI address the way sysfs names it, a four-digit
-// lower-case domain, so that the address rocm-smi, amd-smi and sysfs each
-// print for one card compare equal. It returns an empty string for anything
-// that is not domain:bus:device.function.
-func normalizeBDF(address string) string {
-	parts := strings.Split(strings.ToLower(strings.TrimSpace(address)), ":")
-	if len(parts) != 3 || parts[0] == "" {
-		return ""
-	}
-
-	domain := strings.TrimLeft(parts[0], "0")
-	for len(domain) < 4 {
-		domain = "0" + domain
-	}
-
-	return domain + ":" + parts[1] + ":" + parts[2]
 }

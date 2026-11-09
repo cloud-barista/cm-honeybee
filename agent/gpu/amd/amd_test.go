@@ -42,7 +42,7 @@ func TestParseOlderROCm(t *testing.T) {
 		t.Errorf("driver_version = %q, want 6.2.4", first.DeviceAttribute.DriverVersion)
 	}
 
-	if first.DeviceAttribute.PCIBusID != "0000:1E:00.0" {
+	if first.DeviceAttribute.PCIBusID != "0000:1e:00.0" {
 		t.Errorf("pci_bus_id = %q", first.DeviceAttribute.PCIBusID)
 	}
 

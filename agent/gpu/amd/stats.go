@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/cloud-barista/cm-honeybee/agent/gpu/pci"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/jollaman999/utils/logger"
 )
@@ -145,7 +146,7 @@ func parse(data []byte) ([]infra.AMD, error) {
 				UniqueID:      lookup(card, keyUniqueID),
 				ProductName:   lookup(card, keyProductName),
 				SerialNumber:  lookup(card, keySerial),
-				PCIBusID:      lookup(card, keyPCIBus),
+				PCIBusID:      pci.NormalizeBusID(lookup(card, keyPCIBus)),
 				VBIOSVersion:  lookup(card, keyVBIOS),
 				DriverVersion: driverVersion,
 				// rocm-smi prints the vendor only as a name ("Card Vendor"),

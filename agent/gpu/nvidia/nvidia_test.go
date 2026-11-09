@@ -123,7 +123,7 @@ func TestParseV13(t *testing.T) {
 		"driver_version": "610.57.04",
 		"cuda_version":   "13.3",
 		"product_name":   "NVIDIA L40S",
-		"pci_bus_id":     "00000000:01:00.0",
+		"pci_bus_id":     "0000:01:00.0",
 		"minor_number":   "0",
 		"serial":         "1234567890123",
 		"vbios_version":  "95.02.6C.00.01",

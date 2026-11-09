@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 
 	"github.com/cloud-barista/cm-honeybee/agent/gpu/nvidia/common"
+	"github.com/cloud-barista/cm-honeybee/agent/gpu/pci"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 )
 
@@ -37,7 +38,7 @@ func Parse(data []byte) ([]infra.NVIDIA, error) {
 				Index:               i,
 				MinorNumber:         common.Str(g.MinorNumber),
 				Serial:              common.Str(g.Serial),
-				PCIBusID:            common.FirstStr(g.Pci.PciBusID, g.ID),
+				PCIBusID:            pci.NormalizeBusID(common.FirstStr(g.Pci.PciBusID, g.ID)),
 				VBIOSVersion:        common.Str(g.VbiosVersion),
 				ComputeMode:         common.Str(g.ComputeMode),
 				PersistenceMode:     common.Str(g.PersistenceMode),

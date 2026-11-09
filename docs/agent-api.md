@@ -209,7 +209,7 @@ curl http://127.0.0.1:$PORT/honeybee-agent/infra
         "nvml_version": "610.57",
         "index": 0,
         "minor_number": "0",
-        "pci_bus_id": "00000000:01:00.0",
+        "pci_bus_id": "0000:01:00.0",
         "vbios_version": "90.16.25.00.C3",
         "compute_mode": "Default",
         "persistence_mode": "Disabled",
@@ -257,7 +257,7 @@ curl http://127.0.0.1:$PORT/honeybee-agent/infra
   "drm": [
     {
       "card": "card1",
-      "pci_bus_id": "00000000:01:00.0",
+      "pci_bus_id": "0000:01:00.0",
       "driver_name": "nvidia-drm",
       "driver_version": "0.0.0",
       "driver_date": "0",
@@ -278,7 +278,9 @@ curl http://127.0.0.1:$PORT/honeybee-agent/infra
   `serial`·`host_vgpu_mode`·`vgpu_license_status`·`temperature_memory`도 같은 이유로 없습니다.
 - `amd`가 빈 배열이고 `errors`에 한 줄이 있지만 `nvidia` 수집은 정상입니다.
 - `drm[0].pci_bus_id`가 `nvidia[0].device_attribute.pci_bus_id`와 같은 값이라 두 배열을
-  짝지을 수 있습니다.
+  짝지을 수 있습니다. `pci_bus_id`는 `nvidia`·`amd`·`drm` 모두 sysfs·lspci 와 같은 형식
+  (도메인 4자리, 소문자, `0000:01:00.0`)으로 맞춰 냅니다. nvidia-smi 원문의 `00000000:01:00.0`이
+  아닙니다.
 - `clocks_event_reasons`는 클럭 이벤트(스로틀) 사유 비트마스크입니다. `0`은 "보고됐고 활성 사유
   없음", 키 부재는 "사유를 아예 보고하지 않음"입니다.
 
@@ -313,7 +315,7 @@ AMD는 `rocm-smi --json` 출력을 파싱해 채웁니다. rocm-smi 가 없거�
       "gpu_id": "0x738c",
       "product_name": "Instinct MI100",
       "serial_number": "0",
-      "pci_bus_id": "0000:1E:00.0",
+      "pci_bus_id": "0000:1e:00.0",
       "vbios_version": "113-D3430400-037",
       "driver_version": "6.2.4",
       "vendor_id": "0x1002",

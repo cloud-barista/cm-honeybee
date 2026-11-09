@@ -28,7 +28,7 @@ func TestParseAMDSMIStatic(t *testing.T) {
 	if first.DeviceAttribute.ProductName != "Instinct MI300X" {
 		t.Errorf("product_name = %q", first.DeviceAttribute.ProductName)
 	}
-	if first.DeviceAttribute.PCIBusID != "0000:0C:00.0" {
+	if first.DeviceAttribute.PCIBusID != "0000:0c:00.0" {
 		t.Errorf("pci_bus_id = %q", first.DeviceAttribute.PCIBusID)
 	}
 	if first.DeviceAttribute.DriverVersion != "6.10.5" {
