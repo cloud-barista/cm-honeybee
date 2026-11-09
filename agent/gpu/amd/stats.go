@@ -21,7 +21,7 @@ const bytesPerMiB = 1024 * 1024
 var (
 	keyProductName  = []string{"Device Name", "Card Series", "Card series", "Card Model", "Card model", "Card SKU"}
 	keyDeviceID     = []string{"Device ID", "GPU ID"}
-	keyUniqueID     = []string{"Unique ID", "GUID"}
+	keyUniqueID     = []string{"Unique ID"}
 	keyVendor       = []string{"Card Vendor", "Card vendor"}
 	keyVBIOS        = []string{"VBIOS version"}
 	keySerial       = []string{"Serial Number"}
