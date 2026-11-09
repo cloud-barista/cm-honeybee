@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	transxex "github.com/cloud-barista/cm-centipede/transx-ex"
+	datamig "github.com/cloud-barista/cm-centipede/data-mig"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/common"
 	"github.com/labstack/echo/v4"
 )
@@ -40,7 +40,7 @@ type ObjectStorageInspectReq struct {
 	BucketLookup string `json:"bucket_lookup,omitempty"`
 	// Metric selects the aggregates to compute. Omit to keep the library
 	// defaults, which are all off for object storage.
-	Metric *transxex.ObjectStorageMetric `json:"metric,omitempty"`
+	Metric *datamig.ObjectStorageMetric `json:"metric,omitempty"`
 }
 
 // PostObjectStorageInfo godoc
@@ -52,7 +52,7 @@ type ObjectStorageInspectReq struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			ObjectStorageInspectReq body ObjectStorageInspectReq true "Object storage inspect request."
-//	@Success		200	{object}	transxex.OSInspectResult	"Successfully get object storage information."
+//	@Success		200	{object}	datamig.OSInspectResult	"Successfully get object storage information."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get object storage information."
 //	@Router			/objectstorage [post]
@@ -74,19 +74,19 @@ func PostObjectStorageInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the endpoint.")
 	}
 
-	var metric *transxex.StorageMetricOption
+	var metric *datamig.StorageMetricOption
 	if req.Metric != nil {
-		metric = &transxex.StorageMetricOption{ObjectStorage: req.Metric}
+		metric = &datamig.StorageMetricOption{ObjectStorage: req.Metric}
 	}
 
-	loc := transxex.StorageLocation{
-		StorageType: transxex.StorageTypeObjectStorage,
+	loc := datamig.StorageLocation{
+		StorageType: datamig.StorageTypeObjectStorage,
 		// Object keys never start with a slash, so a leading one would make the
 		// prefix match nothing; the server trims it at registration already.
 		Path: req.Bucket + "/" + strings.TrimLeft(req.Prefix, "/"),
-		ObjectStorage: &transxex.ObjectStorageAccess{
-			AccessType: transxex.AccessTypeMinio,
-			Minio: &transxex.S3MinioConfig{
+		ObjectStorage: &datamig.ObjectStorageAccess{
+			AccessType: datamig.AccessTypeMinio,
+			Minio: &datamig.S3MinioConfig{
 				Endpoint:        req.Endpoint,
 				AccessKeyId:     req.AccessKey,
 				SecretAccessKey: req.SecretKey,
@@ -98,7 +98,7 @@ func PostObjectStorageInfo(c echo.Context) error {
 		Metric: metric,
 	}
 
-	result, err := transxex.InspectObjectStorage(loc)
+	result, err := datamig.InspectObjectStorage(loc)
 	if err != nil {
 		return common.ReturnInternalError(c, err, "Failed to get object storage information.")
 	}

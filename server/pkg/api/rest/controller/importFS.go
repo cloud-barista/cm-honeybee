@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	datamig "github.com/cloud-barista/cm-centipede/data-mig"
 	commonmodel "github.com/cloud-barista/cm-centipede/dmdl/common-model"
 	sourcemodel "github.com/cloud-barista/cm-centipede/dmdl/source-model"
-	transxex "github.com/cloud-barista/cm-centipede/transx-ex"
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/ssh"
@@ -124,9 +124,9 @@ func agentResponseExcerpt(body string) string {
 // server and the agent are separate modules, so a mistyped tag shows up as a
 // field silently lost at runtime rather than as a build failure.
 type agentFSInspectReq struct {
-	Path     string                     `json:"path,omitempty"`
-	MaxDepth int                        `json:"max_depth,omitempty"`
-	Metric   *transxex.FilesystemMetric `json:"metric,omitempty"`
+	Path     string                    `json:"path,omitempty"`
+	MaxDepth int                       `json:"max_depth,omitempty"`
+	Metric   *datamig.FilesystemMetric `json:"metric,omitempty"`
 }
 
 func doImportFS(connID string, req model.ImportFSReq) (*model.SavedFSInfo, error) {

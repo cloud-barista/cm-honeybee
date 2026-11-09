@@ -3,7 +3,7 @@ package controller
 import (
 	"net/http"
 
-	transxex "github.com/cloud-barista/cm-centipede/transx-ex"
+	datamig "github.com/cloud-barista/cm-centipede/data-mig"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/common"
 	"github.com/labstack/echo/v4"
 )
@@ -21,7 +21,7 @@ type FSInspectReq struct {
 	MaxDepth int `json:"max_depth,omitempty"`
 	// Metric selects the aggregates to compute. Omit to keep the library
 	// defaults, which are not all false (folder mtime and permissions are on).
-	Metric *transxex.FilesystemMetric `json:"metric,omitempty"`
+	Metric *datamig.FilesystemMetric `json:"metric,omitempty"`
 }
 
 // PostFSInfo godoc
@@ -33,7 +33,7 @@ type FSInspectReq struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			FSInspectReq body FSInspectReq true "Filesystem inspect request."
-//	@Success		200	{object}	transxex.FSInspectResult	"Successfully get filesystem information."
+//	@Success		200	{object}	datamig.FSInspectResult	"Successfully get filesystem information."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get filesystem information."
 //	@Router			/fs [post]
@@ -52,22 +52,22 @@ func PostFSInfo(c echo.Context) error {
 
 	// A nil metric stays nil so the library keeps its own defaults; wrapping a
 	// zeroed struct instead would turn folder mtime and permissions off.
-	var metric *transxex.StorageMetricOption
+	var metric *datamig.StorageMetricOption
 	if req.Metric != nil {
-		metric = &transxex.StorageMetricOption{Filesystem: req.Metric}
+		metric = &datamig.StorageMetricOption{Filesystem: req.Metric}
 	}
 
 	// Only MaxDepth is carried over. The scan depth is part of this API, the
 	// include/exclude pipeline is not.
-	loc := transxex.StorageLocation{
-		StorageType: transxex.StorageTypeFilesystem,
+	loc := datamig.StorageLocation{
+		StorageType: datamig.StorageTypeFilesystem,
 		Path:        path,
-		Filesystem:  &transxex.FilesystemAccess{AccessType: transxex.AccessTypeLocal},
-		Filter:      &transxex.PathFilterOption{MaxDepth: req.MaxDepth},
+		Filesystem:  &datamig.FilesystemAccess{AccessType: datamig.AccessTypeLocal},
+		Filter:      &datamig.PathFilterOption{MaxDepth: req.MaxDepth},
 		Metric:      metric,
 	}
 
-	result, err := transxex.InspectFilesystem(loc)
+	result, err := datamig.InspectFilesystem(loc)
 	if err != nil {
 		return common.ReturnInternalError(c, err, "Failed to get filesystem information.")
 	}
