@@ -209,7 +209,7 @@ curl http://127.0.0.1:$PORT/honeybee-agent/infra
         "nvml_version": "610.57",
         "index": 0,
         "minor_number": "0",
-        "pci_bus_id": "00000000:01:00.0",
+        "pci_bus_id": "0000:01:00.0",
         "vbios_version": "90.16.25.00.C3",
         "compute_mode": "Default",
         "persistence_mode": "Disabled",
@@ -257,7 +257,7 @@ curl http://127.0.0.1:$PORT/honeybee-agent/infra
   "drm": [
     {
       "card": "card1",
-      "pci_bus_id": "00000000:01:00.0",
+      "pci_bus_id": "0000:01:00.0",
       "driver_name": "nvidia-drm",
       "driver_version": "0.0.0",
       "driver_date": "0",
@@ -278,7 +278,9 @@ curl http://127.0.0.1:$PORT/honeybee-agent/infra
   `serial`·`host_vgpu_mode`·`vgpu_license_status`·`temperature_memory`도 같은 이유로 없습니다.
 - `amd`가 빈 배열이고 `errors`에 한 줄이 있지만 `nvidia` 수집은 정상입니다.
 - `drm[0].pci_bus_id`가 `nvidia[0].device_attribute.pci_bus_id`와 같은 값이라 두 배열을
-  짝지을 수 있습니다.
+  짝지을 수 있습니다. `pci_bus_id`는 `nvidia`·`amd`·`drm` 모두 sysfs·lspci 와 같은 형식
+  (도메인 4자리, 소문자, `0000:01:00.0`)으로 맞춰 냅니다. nvidia-smi 원문의 `00000000:01:00.0`이
+  아닙니다.
 - `clocks_event_reasons`는 클럭 이벤트(스로틀) 사유 비트마스크입니다. `0`은 "보고됐고 활성 사유
   없음", 키 부재는 "사유를 아예 보고하지 않음"입니다.
 
@@ -301,20 +303,22 @@ curl http://127.0.0.1:$PORT/honeybee-agent/infra
 
 #### `amd` 배열의 모양
 
-AMD는 `rocm-smi --json` 출력을 파싱해 채웁니다. 카드 하나가 배열 항목 하나입니다.
+AMD는 `rocm-smi --json` 출력을 파싱해 채웁니다. rocm-smi 가 없거나 실패하면 `amd-smi static --json`
+으로 대신 채우며, 이때 `performance` 는 `vram_memory_total` 만 나옵니다. 카드 하나가 배열 항목 하나입니다.
 
 ```json
 "amd": [
   {
     "device_attribute": {
       "card": "card0",
+      "gpu_uuid": "8eff738c-0000-1000-80b3-41d0e5c1a3f7",
       "gpu_id": "0x738c",
       "product_name": "Instinct MI100",
       "serial_number": "0",
-      "pci_bus_id": "0000:1E:00.0",
+      "pci_bus_id": "0000:1e:00.0",
       "vbios_version": "113-D3430400-037",
       "driver_version": "6.2.4",
-      "vendor_id": "Advanced Micro Devices, Inc. [AMD/ATI]",
+      "vendor_id": "0x1002",
       "device_id": "0x738c"
     },
     "performance": {
@@ -346,6 +350,15 @@ rocm-smi 출력을 그대로 옮기지 않고 변환하는 것이 있습니다.
 | `Average Graphics Package Power (W)` | `power_draw` | |
 | `Max Graphics Package Power (W)` | `power_cap` | |
 | 최상위 `system` 항목의 `Driver version` | 각 카드의 `driver_version` | 카드마다 채워 넣습니다 |
+| `"Unique ID": "0xea1a76e15b35f12d"` | `unique_id` | 그대로. 같이 나오는 `GUID` 는 KFD 노드 번호라 쓰지 않습니다 |
+
+rocm-smi 가 주지 않아 다른 곳에서 읽는 것도 있습니다. 둘 다 카드의 PCI 주소로 짝을 맞추고,
+못 찾으면 키째 빠집니다.
+
+| 응답 필드 | 출처 |
+|-----------|------|
+| `vendor_id` | `/sys/bus/pci/devices/<PCI 주소>/vendor` (`0x1002`). rocm-smi 의 `Card Vendor` 는 이름이라 쓰지 않습니다 |
+| `gpu_uuid` | `amd-smi list --json` 의 `uuid`. amd-smi 가 없는 호스트에서는 빠집니다 |
 
 주의할 점:
 

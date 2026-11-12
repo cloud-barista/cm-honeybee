@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/NeowayLabs/drm"
+	"github.com/cloud-barista/cm-honeybee/agent/gpu/pci"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/jollaman999/utils/logger"
 )
@@ -119,28 +120,15 @@ func listCards() ([]int, error) {
 	return cards, nil
 }
 
-// cardPCIBusID resolves the PCI address a DRM card sits on, formatted the way
-// nvidia-smi prints it (eight-digit domain, upper case) so the two can be
-// compared directly. It returns an empty string for a card that is not on a
-// PCI bus or whose sysfs entry is unreadable.
+// cardPCIBusID resolves the PCI address a DRM card sits on, in the form every
+// GPU reader reports it (see pci.NormalizeBusID) so a card here can be matched
+// to the same card in the vendor readers. It returns an empty string for a
+// card that is not on a PCI bus or whose sysfs entry is unreadable.
 func cardPCIBusID(name string) string {
 	target, err := filepath.EvalSymlinks(filepath.Join(sysDRMDir, name, "device"))
 	if err != nil {
 		return ""
 	}
 
-	address := filepath.Base(target)
-
-	// A PCI address is domain:bus:device.function, for example 0000:01:00.0.
-	parts := strings.Split(address, ":")
-	if len(parts) != 3 {
-		return ""
-	}
-
-	domain := parts[0]
-	for len(domain) < 8 {
-		domain = "0" + domain
-	}
-
-	return strings.ToUpper(domain + ":" + parts[1] + ":" + parts[2])
+	return pci.NormalizeBusID(filepath.Base(target))
 }

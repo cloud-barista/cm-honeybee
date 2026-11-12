@@ -42,7 +42,7 @@ func TestParseOlderROCm(t *testing.T) {
 		t.Errorf("driver_version = %q, want 6.2.4", first.DeviceAttribute.DriverVersion)
 	}
 
-	if first.DeviceAttribute.PCIBusID != "0000:1E:00.0" {
+	if first.DeviceAttribute.PCIBusID != "0000:1e:00.0" {
 		t.Errorf("pci_bus_id = %q", first.DeviceAttribute.PCIBusID)
 	}
 
@@ -158,6 +158,24 @@ func TestParseIgnoresSystemEntry(t *testing.T) {
 
 	if len(gpus) != 0 {
 		t.Fatalf("got %d GPUs, want 0", len(gpus))
+	}
+}
+
+// rocm-smi prints "GUID" next to "Unique ID" as a separate value, the KFD node
+// id, so a card whose unique id is not available must leave unique_id empty.
+// Taken from a Radeon Pro V710 MxGPU on ROCm 10.0, where the two read
+// "0xea1a76e15b35f12d" and "39285".
+func TestParseDoesNotTakeGUIDAsUniqueID(t *testing.T) {
+	gpus, err := parse([]byte(`{"card0":{"Unique ID":"N/A","GUID":"39285"}}`))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+
+	if len(gpus) != 1 {
+		t.Fatalf("got %d GPUs, want 1", len(gpus))
+	}
+	if got := gpus[0].DeviceAttribute.UniqueID; got != "" {
+		t.Errorf("unique_id = %q, want empty", got)
 	}
 }
 
