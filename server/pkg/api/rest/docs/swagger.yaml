@@ -39,7 +39,7 @@ definitions:
           takes the mode cm-beetle recommends for the instance: verify-full,
           verify-ca or disable, falling back to require when no CA was collected and
           to prefer when cm-beetle could not say. Any other value means the same
-          thing here as on DBConnConfig — see the table in transx-ex's
+          thing here as on DBConnConfig — see the table in data-mig's
           dbmsx/driver/base/tls.go — and is used as given; plaintext therefore needs
           "disable" spelled out.
         enum:
@@ -167,7 +167,7 @@ definitions:
         type: integer
       providerName:
         description: |-
-          ProviderName records where the database is hosted. transx-ex carries it
+          ProviderName records where the database is hosted. data-mig carries it
           through to DBMSLocation.ProviderName but never reads it: no routing,
           validation or connection decision depends on it. It is required all the
           same, so that "where does this data live" has an answer for every
@@ -196,14 +196,14 @@ definitions:
           Empty means the system trust store, which carries only publicly trusted
           CAs, so a server using a private CA needs its root supplied here.
 
-          transx-ex also accepts a path to a CA file, but that path would name a
+          data-mig also accepts a path to a CA file, but that path would name a
           file on the centipede server rather than on the caller's machine, so it
           is deliberately not part of this API.
         type: string
       tlsMode:
         description: |-
           TLSMode selects transport security; the empty value is "disable". The
-          modes mean the same thing on every engine — see transx-ex's
+          modes mean the same thing on every engine — see data-mig's
           dbmsx/driver/base/tls.go for the table that defines them.
         enum:
         - disable
@@ -245,7 +245,7 @@ definitions:
       providerName:
         description: |-
           ProviderName decides the endpoint, region, TLS and bucket addressing style
-          (see ResolveS3Endpoint in core/migration). transxex.S3MinioConfig has no
+          (see ResolveS3Endpoint in core/migration). datamig.S3MinioConfig has no
           provider field: it receives the resolved values.
         enum:
         - aws
@@ -4542,6 +4542,36 @@ definitions:
     - 524288
     - 2401763328
     - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
+    - 2147483648
+    - 1073741824
+    - 536870912
+    - 268435456
+    - 134217728
+    - 67108864
+    - 33554432
+    - 16777216
+    - 8388608
+    - 4194304
+    - 2097152
+    - 1048576
+    - 524288
+    - 2401763328
+    - 511
     format: int32
     type: integer
     x-enum-comments:
@@ -4552,7 +4582,7 @@ definitions:
       ModeExclusive: 'l: exclusive use'
       ModeIrregular: '?: non-regular file; nothing else is known about this file'
       ModeNamedPipe: 'p: named pipe (FIFO)'
-      ModePerm: Unix permission bits
+      ModePerm: Unix permission bits, 0o777
       ModeSetgid: 'g: setgid'
       ModeSetuid: 'u: setuid'
       ModeSocket: 'S: Unix domain socket'
@@ -4574,7 +4604,7 @@ definitions:
     - 't: sticky'
     - '?: non-regular file; nothing else is known about this file'
     - ""
-    - Unix permission bits
+    - Unix permission bits, 0o777
     - 'd: is a directory'
     - 'a: append-only'
     - 'l: exclusive use'
@@ -4589,7 +4619,7 @@ definitions:
     - 't: sticky'
     - '?: non-regular file; nothing else is known about this file'
     - ""
-    - Unix permission bits
+    - Unix permission bits, 0o777
     x-enum-varnames:
     - ModeDir
     - ModeAppend

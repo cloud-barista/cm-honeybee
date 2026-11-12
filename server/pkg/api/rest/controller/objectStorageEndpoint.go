@@ -78,7 +78,7 @@ func normalizeS3Endpoint(raw string) (host string, useSSL bool, sslFromScheme bo
 // cost is one extra request per client, and a location probe the key may not
 // call (AccessDenied) quietly falls back to us-east-1.
 //
-// bucketLookup is "" (auto), "dns" or "path", as transx-ex S3MinioConfig takes it.
+// bucketLookup is "" (auto), "dns" or "path", as data-mig S3MinioConfig takes it.
 //
 // os_endpoint, when set, overrides the derived host, except for azure whose
 // host is derived from the storage account name in os_access_key_id. It is
@@ -124,7 +124,7 @@ func resolveS3Endpoint(sg *model.SourceGroup, ci *model.ConnectionInfo) (endpoin
 	case "kt":
 		endpoint = "obj-e-1.ktcloud.com"
 	case "azure":
-		// transx-ex switches to azblob on a *.blob.core.windows.net endpoint.
+		// data-mig switches to azblob on a *.blob.core.windows.net endpoint.
 		if ci.OSAccessKeyId == "" {
 			return "", "", false, "", errors.New("os_access_key_id (storage account name) is required for provider 'azure'")
 		}

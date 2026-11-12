@@ -124,7 +124,7 @@
                     "200": {
                         "description": "Successfully get filesystem information.",
                         "schema": {
-                            "$ref": "#/definitions/transxex.FSInspectResult"
+                            "$ref": "#/definitions/datamig.FSInspectResult"
                         }
                     },
                     "400": {
@@ -279,7 +279,7 @@
                     "200": {
                         "description": "Successfully get object storage information.",
                         "schema": {
-                            "$ref": "#/definitions/transxex.OSInspectResult"
+                            "$ref": "#/definitions/datamig.OSInspectResult"
                         }
                     },
                     "400": {
@@ -1866,6 +1866,291 @@
                 "soft": {
                     "type": "integer",
                     "format": "int64"
+                }
+            }
+        },
+        "datamig.DBMSInfo": {
+            "type": "object",
+            "properties": {
+                "characterSet": {
+                    "description": "CharacterSet is the database's default character set, which on PostgreSQL\nis its encoding — the two name the same thing there. MongoDB stores UTF-8\nonly and leaves it empty.",
+                    "type": "string"
+                },
+                "collation": {
+                    "description": "Collation is the database's default collation: DEFAULT_COLLATION_NAME on\nMySQL and MariaDB, datcollate on PostgreSQL. MongoDB has no database-level\ncollation and leaves it empty.",
+                    "type": "string"
+                },
+                "ctype": {
+                    "description": "Ctype is the locale governing character classification — PostgreSQL's\ndatctype, which the engine keeps separate from the collation order. The\nother engines have no equivalent and leave it empty.",
+                    "type": "string"
+                },
+                "dataSize": {
+                    "type": "integer"
+                },
+                "database": {
+                    "type": "string"
+                },
+                "events": {
+                    "description": "MySQL / MariaDB",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "extensions": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "foreignKeys": {
+                    "description": "Schema-object inventories (name lists), opt-in via Metric.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "functions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "indexSize": {
+                    "type": "integer"
+                },
+                "materializedViews": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pgSchema": {
+                    "description": "PgSchema breaks those four figures down per schema, in name order. It\ncovers every schema the location selected — a schema holding no tables is\nlisted with zeroes rather than omitted — so the totals above always equal\nthe sum of this list. PostgreSQL only.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/base.PgSchemaInfo"
+                    }
+                },
+                "procedures": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "rules": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "sequences": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "serverVersion": {
+                    "type": "string"
+                },
+                "tableCount": {
+                    "type": "integer"
+                },
+                "tables": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/base.TableInfo"
+                    }
+                },
+                "totalSize": {
+                    "description": "TotalSize..TableCount are the sum over the schemas this location covers\n(see DBMSLocation.PgSchema), not the size of the database as PostgreSQL\nreports it: pg_database_size() also counts catalogs, TOAST and schemas\nthat were not selected. For the other engines a schema is a database, so\nthe distinction does not arise.",
+                    "type": "integer"
+                },
+                "triggers": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "types": {
+                    "description": "PostgreSQL",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "validators": {
+                    "description": "MongoDB",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "views": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "datamig.DBMSInspectError": {
+            "type": "object",
+            "properties": {
+                "database": {
+                    "type": "string"
+                },
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "datamig.DBMSMetricOption": {
+            "type": "object",
+            "properties": {
+                "mariadb": {
+                    "$ref": "#/definitions/base.MariaDBMetric"
+                },
+                "mongodb": {
+                    "$ref": "#/definitions/base.MongoDBMetric"
+                },
+                "mysql": {
+                    "$ref": "#/definitions/base.MySQLMetric"
+                },
+                "postgresql": {
+                    "$ref": "#/definitions/base.PostgreSQLMetric"
+                }
+            }
+        },
+        "datamig.FSInspectResult": {
+            "type": "object",
+            "properties": {
+                "extensionCounts": {
+                    "description": "Per-extension file counts (FilesystemMetric.ExtensionCount)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "fileCount": {
+                    "description": "Total recursive file count (FilesystemMetric.FileCount)",
+                    "type": "integer"
+                },
+                "folders": {
+                    "description": "Directory listing",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storagex.FSEntry"
+                    }
+                },
+                "isMount": {
+                    "description": "Whether the scan root is a mount point (always populated)",
+                    "type": "boolean"
+                },
+                "path": {
+                    "description": "Scan root (always populated)",
+                    "type": "string"
+                },
+                "totalSize": {
+                    "description": "Total recursive size in bytes (FilesystemMetric.TotalSize)",
+                    "type": "integer"
+                }
+            }
+        },
+        "datamig.FilesystemMetric": {
+            "type": "object",
+            "properties": {
+                "extensionCount": {
+                    "description": "Per-extension file counts under path (default false)",
+                    "type": "boolean"
+                },
+                "fileCount": {
+                    "description": "Total recursive file count under path (default false)",
+                    "type": "boolean"
+                },
+                "folderFileCount": {
+                    "description": "Include each folder's direct file count (default false)",
+                    "type": "boolean"
+                },
+                "folderFileSize": {
+                    "description": "Include each folder's direct file size sum in bytes (default false)",
+                    "type": "boolean"
+                },
+                "folderModTime": {
+                    "description": "Include each folder's modification time (default true)",
+                    "type": "boolean"
+                },
+                "folderPerms": {
+                    "description": "Include each folder's permission string (default true)",
+                    "type": "boolean"
+                },
+                "totalSize": {
+                    "description": "Total recursive size (bytes) of path (default false)",
+                    "type": "boolean"
+                }
+            }
+        },
+        "datamig.OSInspectResult": {
+            "type": "object",
+            "properties": {
+                "extensionCounts": {
+                    "description": "Per-extension object counts (ObjectStorageMetric.ExtensionCount)",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                },
+                "folders": {
+                    "description": "Folder prefix listing",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/storagex.OSEntry"
+                    }
+                },
+                "objectCount": {
+                    "description": "Total object count (ObjectStorageMetric.ObjectCount)",
+                    "type": "integer"
+                },
+                "path": {
+                    "description": "Scan root \"bucket/prefix/\" (always populated)",
+                    "type": "string"
+                },
+                "totalSize": {
+                    "description": "Total object size in bytes (ObjectStorageMetric.TotalSize)",
+                    "type": "integer"
+                }
+            }
+        },
+        "datamig.ObjectStorageMetric": {
+            "type": "object",
+            "properties": {
+                "extensionCount": {
+                    "description": "Per-extension object counts by key (default false)",
+                    "type": "boolean"
+                },
+                "objectCount": {
+                    "description": "Total object count (default false)",
+                    "type": "boolean"
+                },
+                "prefixModTime": {
+                    "description": "Latest LastModified among each prefix's direct objects (default false)",
+                    "type": "boolean"
+                },
+                "prefixObjectCount": {
+                    "description": "Direct object count per prefix (default false)",
+                    "type": "boolean"
+                },
+                "prefixObjectSize": {
+                    "description": "Direct object size sum (bytes) per prefix (default false)",
+                    "type": "boolean"
+                },
+                "totalSize": {
+                    "description": "Total size (bytes) of all objects (default false)",
+                    "type": "boolean"
                 }
             }
         },
@@ -5143,7 +5428,7 @@
                     "description": "Metric is the metric selection, already routed to this engine by the\nserver.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/transxex.DBMSMetricOption"
+                            "$ref": "#/definitions/datamig.DBMSMetricOption"
                         }
                     ]
                 },
@@ -5186,13 +5471,13 @@
                 "databases": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/transxex.DBMSInfo"
+                        "$ref": "#/definitions/datamig.DBMSInfo"
                     }
                 },
                 "skipped": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/transxex.DBMSInspectError"
+                        "$ref": "#/definitions/datamig.DBMSInspectError"
                     }
                 }
             }
@@ -5208,7 +5493,7 @@
                     "description": "Metric selects the aggregates to compute. Omit to keep the library\ndefaults, which are not all false (folder mtime and permissions are on).",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/transxex.FilesystemMetric"
+                            "$ref": "#/definitions/datamig.FilesystemMetric"
                         }
                     ]
                 },
@@ -5241,7 +5526,7 @@
                     "description": "Metric selects the aggregates to compute. Omit to keep the library\ndefaults, which are all off for object storage.",
                     "allOf": [
                         {
-                            "$ref": "#/definitions/transxex.ObjectStorageMetric"
+                            "$ref": "#/definitions/datamig.ObjectStorageMetric"
                         }
                     ]
                 },
@@ -5379,10 +5664,14 @@
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
                 1000000000,
+                60000000000,
+                3600000000000,
                 1,
                 1000,
                 1000000,
@@ -5413,10 +5702,14 @@
                 "Second",
                 "Minute",
                 "Hour",
+                "minDuration",
+                "maxDuration",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
                 "Second",
+                "Minute",
+                "Hour",
                 "Nanosecond",
                 "Microsecond",
                 "Millisecond",
@@ -5430,291 +5723,6 @@
                 "Minute",
                 "Hour"
             ]
-        },
-        "transxex.DBMSInfo": {
-            "type": "object",
-            "properties": {
-                "characterSet": {
-                    "description": "CharacterSet is the database's default character set, which on PostgreSQL\nis its encoding — the two name the same thing there. MongoDB stores UTF-8\nonly and leaves it empty.",
-                    "type": "string"
-                },
-                "collation": {
-                    "description": "Collation is the database's default collation: DEFAULT_COLLATION_NAME on\nMySQL and MariaDB, datcollate on PostgreSQL. MongoDB has no database-level\ncollation and leaves it empty.",
-                    "type": "string"
-                },
-                "ctype": {
-                    "description": "Ctype is the locale governing character classification — PostgreSQL's\ndatctype, which the engine keeps separate from the collation order. The\nother engines have no equivalent and leave it empty.",
-                    "type": "string"
-                },
-                "dataSize": {
-                    "type": "integer"
-                },
-                "database": {
-                    "type": "string"
-                },
-                "events": {
-                    "description": "MySQL / MariaDB",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "extensions": {
-                    "description": "PostgreSQL",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "foreignKeys": {
-                    "description": "Schema-object inventories (name lists), opt-in via Metric.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "functions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "indexSize": {
-                    "type": "integer"
-                },
-                "materializedViews": {
-                    "description": "PostgreSQL",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "pgSchema": {
-                    "description": "PgSchema breaks those four figures down per schema, in name order. It\ncovers every schema the location selected — a schema holding no tables is\nlisted with zeroes rather than omitted — so the totals above always equal\nthe sum of this list. PostgreSQL only.",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/base.PgSchemaInfo"
-                    }
-                },
-                "procedures": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "rules": {
-                    "description": "PostgreSQL",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "sequences": {
-                    "description": "PostgreSQL",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "serverVersion": {
-                    "type": "string"
-                },
-                "tableCount": {
-                    "type": "integer"
-                },
-                "tables": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/base.TableInfo"
-                    }
-                },
-                "totalSize": {
-                    "description": "TotalSize..TableCount are the sum over the schemas this location covers\n(see DBMSLocation.PgSchema), not the size of the database as PostgreSQL\nreports it: pg_database_size() also counts catalogs, TOAST and schemas\nthat were not selected. For the other engines a schema is a database, so\nthe distinction does not arise.",
-                    "type": "integer"
-                },
-                "triggers": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "types": {
-                    "description": "PostgreSQL",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "validators": {
-                    "description": "MongoDB",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "views": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        "transxex.DBMSInspectError": {
-            "type": "object",
-            "properties": {
-                "database": {
-                    "type": "string"
-                },
-                "error": {
-                    "type": "string"
-                }
-            }
-        },
-        "transxex.DBMSMetricOption": {
-            "type": "object",
-            "properties": {
-                "mariadb": {
-                    "$ref": "#/definitions/base.MariaDBMetric"
-                },
-                "mongodb": {
-                    "$ref": "#/definitions/base.MongoDBMetric"
-                },
-                "mysql": {
-                    "$ref": "#/definitions/base.MySQLMetric"
-                },
-                "postgresql": {
-                    "$ref": "#/definitions/base.PostgreSQLMetric"
-                }
-            }
-        },
-        "transxex.FSInspectResult": {
-            "type": "object",
-            "properties": {
-                "extensionCounts": {
-                    "description": "Per-extension file counts (FilesystemMetric.ExtensionCount)",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "integer"
-                    }
-                },
-                "fileCount": {
-                    "description": "Total recursive file count (FilesystemMetric.FileCount)",
-                    "type": "integer"
-                },
-                "folders": {
-                    "description": "Directory listing",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/storagex.FSEntry"
-                    }
-                },
-                "isMount": {
-                    "description": "Whether the scan root is a mount point (always populated)",
-                    "type": "boolean"
-                },
-                "path": {
-                    "description": "Scan root (always populated)",
-                    "type": "string"
-                },
-                "totalSize": {
-                    "description": "Total recursive size in bytes (FilesystemMetric.TotalSize)",
-                    "type": "integer"
-                }
-            }
-        },
-        "transxex.FilesystemMetric": {
-            "type": "object",
-            "properties": {
-                "extensionCount": {
-                    "description": "Per-extension file counts under path (default false)",
-                    "type": "boolean"
-                },
-                "fileCount": {
-                    "description": "Total recursive file count under path (default false)",
-                    "type": "boolean"
-                },
-                "folderFileCount": {
-                    "description": "Include each folder's direct file count (default false)",
-                    "type": "boolean"
-                },
-                "folderFileSize": {
-                    "description": "Include each folder's direct file size sum in bytes (default false)",
-                    "type": "boolean"
-                },
-                "folderModTime": {
-                    "description": "Include each folder's modification time (default true)",
-                    "type": "boolean"
-                },
-                "folderPerms": {
-                    "description": "Include each folder's permission string (default true)",
-                    "type": "boolean"
-                },
-                "totalSize": {
-                    "description": "Total recursive size (bytes) of path (default false)",
-                    "type": "boolean"
-                }
-            }
-        },
-        "transxex.OSInspectResult": {
-            "type": "object",
-            "properties": {
-                "extensionCounts": {
-                    "description": "Per-extension object counts (ObjectStorageMetric.ExtensionCount)",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "integer"
-                    }
-                },
-                "folders": {
-                    "description": "Folder prefix listing",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/storagex.OSEntry"
-                    }
-                },
-                "objectCount": {
-                    "description": "Total object count (ObjectStorageMetric.ObjectCount)",
-                    "type": "integer"
-                },
-                "path": {
-                    "description": "Scan root \"bucket/prefix/\" (always populated)",
-                    "type": "string"
-                },
-                "totalSize": {
-                    "description": "Total object size in bytes (ObjectStorageMetric.TotalSize)",
-                    "type": "integer"
-                }
-            }
-        },
-        "transxex.ObjectStorageMetric": {
-            "type": "object",
-            "properties": {
-                "extensionCount": {
-                    "description": "Per-extension object counts by key (default false)",
-                    "type": "boolean"
-                },
-                "objectCount": {
-                    "description": "Total object count (default false)",
-                    "type": "boolean"
-                },
-                "prefixModTime": {
-                    "description": "Latest LastModified among each prefix's direct objects (default false)",
-                    "type": "boolean"
-                },
-                "prefixObjectCount": {
-                    "description": "Direct object count per prefix (default false)",
-                    "type": "boolean"
-                },
-                "prefixObjectSize": {
-                    "description": "Direct object size sum (bytes) per prefix (default false)",
-                    "type": "boolean"
-                },
-                "totalSize": {
-                    "description": "Total size (bytes) of all objects (default false)",
-                    "type": "boolean"
-                }
-            }
         },
         "v1.DockerOCIImageConfig": {
             "type": "object",

@@ -197,6 +197,8 @@ github.com/cloud-barista/cb-spider v0.13.23 h1:/Mkyynb/DVaPNazaVpLbwtZONzf2MW9dm
 github.com/cloud-barista/cb-spider v0.13.23/go.mod h1:h2D8paagFhYUoeqbzEuDlj0yyOMYK+HD9jnBQUkGPuM=
 github.com/cloud-barista/cm-beetle/imdl v0.1.20 h1:LFJW+R2m+azFQxt9F5eXynpTC71EJrtkHd0ttIOQij8=
 github.com/cloud-barista/cm-beetle/imdl v0.1.20/go.mod h1:RfpzPB67XRW5TDGs5f4Cv/W/zJ3c+eU8eV291oj+ns0=
+github.com/cloud-barista/cm-centipede/data-mig v0.1.3 h1:yjXi5gP0Z7G2c+QsRUD7928nWLw/jK0VMJNOP0uDwms=
+github.com/cloud-barista/cm-centipede/data-mig v0.1.3/go.mod h1:CQxhsCB9fOHpcqLgI57pCKz7p+utLNbbfm27LkccnWc=
 github.com/cloud-barista/cm-centipede/dmdl v0.1.2 h1:rlPhz/ZSultuqf56yq2I+KiG9EPEXm3UMdsrSeQgifM=
 github.com/cloud-barista/cm-centipede/dmdl v0.1.2/go.mod h1:q4XYst1te41FvTHX5qLsgjbAyvwgG7q7/IpM13bb/OM=
 github.com/cloud-barista/cm-centipede/transx-ex v0.1.2 h1:oKlRPGFjuzuV+8bdJm1C72oiS9oxVNEFSSK/k4ZODpM=

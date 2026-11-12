@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	datamig "github.com/cloud-barista/cm-centipede/data-mig"
 	commonmodel "github.com/cloud-barista/cm-centipede/dmdl/common-model"
 	sourcemodel "github.com/cloud-barista/cm-centipede/dmdl/source-model"
-	transxex "github.com/cloud-barista/cm-centipede/transx-ex"
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
@@ -24,15 +24,15 @@ import (
 // mistyped tag shows up as a field silently lost at runtime rather than as a
 // build failure.
 type agentOSInspectReq struct {
-	Bucket       string                        `json:"bucket"`
-	Prefix       string                        `json:"prefix,omitempty"`
-	Endpoint     string                        `json:"endpoint"`
-	AccessKey    string                        `json:"access_key,omitempty"`
-	SecretKey    string                        `json:"secret_key,omitempty"`
-	Region       string                        `json:"region,omitempty"`
-	UseSSL       bool                          `json:"use_ssl,omitempty"`
-	BucketLookup string                        `json:"bucket_lookup,omitempty"`
-	Metric       *transxex.ObjectStorageMetric `json:"metric,omitempty"`
+	Bucket       string                       `json:"bucket"`
+	Prefix       string                       `json:"prefix,omitempty"`
+	Endpoint     string                       `json:"endpoint"`
+	AccessKey    string                       `json:"access_key,omitempty"`
+	SecretKey    string                       `json:"secret_key,omitempty"`
+	Region       string                       `json:"region,omitempty"`
+	UseSSL       bool                         `json:"use_ssl,omitempty"`
+	BucketLookup string                       `json:"bucket_lookup,omitempty"`
+	Metric       *datamig.ObjectStorageMetric `json:"metric,omitempty"`
 }
 
 func doImportObjectStorage(connID string, req model.ImportObjectStorageReq) (*model.SavedObjectStorageInfo, error) {
@@ -147,12 +147,12 @@ func doImportObjectStorage(connID string, req model.ImportObjectStorageReq) (*mo
 	} else {
 		// Direct access: the server reaches the endpoint itself, so no agent is
 		// involved and none needs to be deployed.
-		loc := transxex.StorageLocation{
-			StorageType: transxex.StorageTypeObjectStorage,
+		loc := datamig.StorageLocation{
+			StorageType: datamig.StorageTypeObjectStorage,
 			Path:        connectionInfo.OSScanBucket + "/" + connectionInfo.OSScanPrefix,
-			ObjectStorage: &transxex.ObjectStorageAccess{
-				AccessType: transxex.AccessTypeMinio,
-				Minio: &transxex.S3MinioConfig{
+			ObjectStorage: &datamig.ObjectStorageAccess{
+				AccessType: datamig.AccessTypeMinio,
+				Minio: &datamig.S3MinioConfig{
 					Endpoint:        endpoint,
 					AccessKeyId:     connectionInfo.OSAccessKeyId,
 					SecretAccessKey: connectionInfo.OSSecretAccessKey,
@@ -165,11 +165,11 @@ func doImportObjectStorage(connID string, req model.ImportObjectStorageReq) (*mo
 		// Left nil when nothing was selected, so the library keeps its own
 		// defaults rather than reading a zeroed struct as "everything off".
 		if metric := osMetric(req.Metric); metric != nil {
-			loc.Metric = &transxex.StorageMetricOption{ObjectStorage: metric}
+			loc.Metric = &datamig.StorageMetricOption{ObjectStorage: metric}
 		}
 
 		inspectStart := time.Now()
-		result, err := transxex.InspectObjectStorage(loc)
+		result, err := datamig.InspectObjectStorage(loc)
 		logImportStep("objectstorage", connectionInfo.ID, "direct inspect", inspectStart, "")
 		if err != nil {
 			oldSavedObjectStorageInfo.Status = failedUnlessStale(oldSavedObjectStorageInfo.Status,

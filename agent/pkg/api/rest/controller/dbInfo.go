@@ -3,7 +3,7 @@ package controller
 import (
 	"net/http"
 
-	transxex "github.com/cloud-barista/cm-centipede/transx-ex"
+	datamig "github.com/cloud-barista/cm-centipede/data-mig"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/common"
 	"github.com/labstack/echo/v4"
 )
@@ -17,8 +17,8 @@ import (
 // with the server's model.DBInspectResult: the two are separate declarations in
 // separate modules and only their JSON has to agree.
 type DBInspectResult struct {
-	Databases []transxex.DBMSInfo         `json:"databases"`
-	Skipped   []transxex.DBMSInspectError `json:"skipped,omitempty"`
+	Databases []datamig.DBMSInfo         `json:"databases"`
+	Skipped   []datamig.DBMSInspectError `json:"skipped,omitempty"`
 }
 
 // DBInspectReq is the body of POST /db.
@@ -65,7 +65,7 @@ type DBInspectReq struct {
 	ProviderName string `json:"provider_name,omitempty"`
 	// Metric is the metric selection, already routed to this engine by the
 	// server.
-	Metric *transxex.DBMSMetricOption `json:"metric,omitempty"`
+	Metric *datamig.DBMSMetricOption `json:"metric,omitempty"`
 }
 
 // PostDBInfo godoc
@@ -97,16 +97,16 @@ func PostDBInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the host.")
 	}
 
-	loc := transxex.DBMSLocation{
+	loc := datamig.DBMSLocation{
 		DBMSType: req.DBType,
 		Database: req.DBName,
 		PgSchema: req.PgSchema,
 		// Where the database is hosted, taken from the source group the server
-		// resolved it from. transx-ex never reads it — it records what the caller
+		// resolved it from. data-mig never reads it — it records what the caller
 		// knows so that "where does this data live" has an answer.
 		ProviderName: req.ProviderName,
-		AccessType:   transxex.AccessTypeDirect,
-		Direct: &transxex.DirectConfig{
+		AccessType:   datamig.AccessTypeDirect,
+		Direct: &datamig.DirectConfig{
 			Host:           req.Host,
 			Port:           req.Port,
 			Username:       req.Username,
@@ -128,18 +128,18 @@ func PostDBInfo(c echo.Context) error {
 	// database that fails on its own lands in Skipped instead of failing the call;
 	// the error means nothing at all could be inspected.
 	if loc.Database == "" {
-		databases, skipped, err := transxex.InspectDBMSAll(loc)
+		databases, skipped, err := datamig.InspectDBMSAll(loc)
 		if err != nil {
 			return common.ReturnInternalError(c, err, "Failed to get database information.")
 		}
 		return c.JSONPretty(http.StatusOK, DBInspectResult{Databases: databases, Skipped: skipped}, " ")
 	}
 
-	info, err := transxex.InspectDBMS(loc)
+	info, err := datamig.InspectDBMS(loc)
 	if err != nil {
 		return common.ReturnInternalError(c, err, "Failed to get database information.")
 	}
 
 	// Wrapped in a slice so a single target looks like an enumeration of one.
-	return c.JSONPretty(http.StatusOK, DBInspectResult{Databases: []transxex.DBMSInfo{*info}}, " ")
+	return c.JSONPretty(http.StatusOK, DBInspectResult{Databases: []datamig.DBMSInfo{*info}}, " ")
 }

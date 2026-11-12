@@ -75,7 +75,7 @@ type DBInspectResult struct {
 }
 
 // DBSkippedEntry is one database left out of a collection, with why. The tags
-// match transx-ex's DBMSInspectError.
+// match data-mig's DBMSInspectError.
 type DBSkippedEntry struct {
 	Database string `json:"database"`
 	Error    string `json:"error"`

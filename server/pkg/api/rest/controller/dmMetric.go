@@ -1,22 +1,22 @@
 package controller
 
 import (
-	transxex "github.com/cloud-barista/cm-centipede/transx-ex"
+	datamig "github.com/cloud-barista/cm-centipede/data-mig"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 )
 
-// The mappers below turn a request's metric selection into transx-ex's. They
+// The mappers below turn a request's metric selection into data-mig's. They
 // copy pointers, never values: a field the caller left out stays nil so that
-// transx-ex applies its own default. Writing false there instead would quietly
+// data-mig applies its own default. Writing false there instead would quietly
 // turn off figures that default to on (folder_mod_time, folder_perms).
 
 // fsMetric maps a file system metric request. nil → nil (library defaults).
-func fsMetric(req *model.FSMetricReq) *transxex.FilesystemMetric {
+func fsMetric(req *model.FSMetricReq) *datamig.FilesystemMetric {
 	if req == nil {
 		return nil
 	}
 
-	return &transxex.FilesystemMetric{
+	return &datamig.FilesystemMetric{
 		TotalSize:       req.TotalSize,
 		FileCount:       req.FileCount,
 		ExtensionCount:  req.ExtensionCount,
@@ -28,12 +28,12 @@ func fsMetric(req *model.FSMetricReq) *transxex.FilesystemMetric {
 }
 
 // osMetric maps an object storage metric request. nil → nil (library defaults).
-func osMetric(req *model.OSMetricReq) *transxex.ObjectStorageMetric {
+func osMetric(req *model.OSMetricReq) *datamig.ObjectStorageMetric {
 	if req == nil {
 		return nil
 	}
 
-	return &transxex.ObjectStorageMetric{
+	return &datamig.ObjectStorageMetric{
 		TotalSize:         req.TotalSize,
 		ObjectCount:       req.ObjectCount,
 		ExtensionCount:    req.ExtensionCount,
@@ -44,17 +44,17 @@ func osMetric(req *model.OSMetricReq) *transxex.ObjectStorageMetric {
 }
 
 // dbMetric maps a DBMS metric request onto the one engine dbType names, dropping
-// the fields that engine does not have. nil, or a dbType transx-ex does not
+// the fields that engine does not have. nil, or a dbType data-mig does not
 // know, → nil (library defaults); the connection handler rejects unknown types
 // at registration, so the latter is only a fallback.
-func dbMetric(dbType string, req *model.DBMetricReq) *transxex.DBMSMetricOption {
+func dbMetric(dbType string, req *model.DBMetricReq) *datamig.DBMSMetricOption {
 	if req == nil {
 		return nil
 	}
 
 	switch dbType {
-	case transxex.DBMSTypeMySQL:
-		return &transxex.DBMSMetricOption{MySQL: &transxex.MySQLMetric{
+	case datamig.DBMSTypeMySQL:
+		return &datamig.DBMSMetricOption{MySQL: &datamig.MySQLMetric{
 			RowCountExact: req.RowCountExact,
 			Columns:       req.Columns,
 			Indexes:       req.Indexes,
@@ -65,9 +65,9 @@ func dbMetric(dbType string, req *model.DBMetricReq) *transxex.DBMSMetricOption 
 			Triggers:      req.Triggers,
 			Events:        req.Events,
 		}}
-	case transxex.DBMSTypeMariaDB:
-		// Same fields as MySQL, but transx-ex keeps a type of its own.
-		return &transxex.DBMSMetricOption{MariaDB: &transxex.MariaDBMetric{
+	case datamig.DBMSTypeMariaDB:
+		// Same fields as MySQL, but data-mig keeps a type of its own.
+		return &datamig.DBMSMetricOption{MariaDB: &datamig.MariaDBMetric{
 			RowCountExact: req.RowCountExact,
 			Columns:       req.Columns,
 			Indexes:       req.Indexes,
@@ -78,8 +78,8 @@ func dbMetric(dbType string, req *model.DBMetricReq) *transxex.DBMSMetricOption 
 			Triggers:      req.Triggers,
 			Events:        req.Events,
 		}}
-	case transxex.DBMSTypePostgreSQL:
-		return &transxex.DBMSMetricOption{PostgreSQL: &transxex.PostgreSQLMetric{
+	case datamig.DBMSTypePostgreSQL:
+		return &datamig.DBMSMetricOption{PostgreSQL: &datamig.PostgreSQLMetric{
 			RowCountExact:     req.RowCountExact,
 			Columns:           req.Columns,
 			Indexes:           req.Indexes,
@@ -94,8 +94,8 @@ func dbMetric(dbType string, req *model.DBMetricReq) *transxex.DBMSMetricOption 
 			Extensions:        req.Extensions,
 			Rules:             req.Rules,
 		}}
-	case transxex.DBMSTypeMongoDB:
-		return &transxex.DBMSMetricOption{MongoDB: &transxex.MongoDBMetric{
+	case datamig.DBMSTypeMongoDB:
+		return &datamig.DBMSMetricOption{MongoDB: &datamig.MongoDBMetric{
 			RowCountExact: req.RowCountExact,
 			Columns:       req.Columns,
 			Indexes:       req.Indexes,

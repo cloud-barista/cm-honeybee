@@ -11,10 +11,10 @@ const providerOnPrem = "onprem"
 
 // providers are the provider_name values a minio or db source group accepts.
 //
-// The spelling must match the provider constants of transx-ex
+// The spelling must match the provider constants of data-mig
 // (dbmsx/driver/base) letter for letter: a name resolved here is handed through
 // unchanged, so a difference in case or wording would split one provider into
-// two. transx-ex checks its side in TestProviderConstants_MatchHoneybeeSpelling.
+// two. data-mig checks its side in TestProviderConstants_MatchHoneybeeSpelling.
 //
 // minio needs every name here to be handled by resolveS3Endpoint as well.
 var providers = []string{

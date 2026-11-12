@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	datamig "github.com/cloud-barista/cm-centipede/data-mig"
 	commonmodel "github.com/cloud-barista/cm-centipede/dmdl/common-model"
 	sourcemodel "github.com/cloud-barista/cm-centipede/dmdl/source-model"
-	transxex "github.com/cloud-barista/cm-centipede/transx-ex"
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
@@ -24,19 +24,19 @@ import (
 // the server and the agent are separate modules, so a mistyped tag shows up as
 // a field silently lost at runtime rather than as a build failure.
 type agentDBInspectReq struct {
-	DBType         string                     `json:"db_type"`
-	DBName         string                     `json:"db_name,omitempty"`
-	Host           string                     `json:"host"`
-	Port           int                        `json:"port,omitempty"`
-	Username       string                     `json:"username,omitempty"`
-	Password       string                     `json:"password,omitempty"`
-	ConnectTimeout int                        `json:"connect_timeout,omitempty"`
-	TLSMode        string                     `json:"tls_mode,omitempty"`
-	TLSCAPEM       string                     `json:"tls_ca_pem,omitempty"`
-	AuthSource     string                     `json:"auth_source,omitempty"`
-	PgSchema       []string                   `json:"pg_schema,omitempty"`
-	ProviderName   string                     `json:"provider_name,omitempty"`
-	Metric         *transxex.DBMSMetricOption `json:"metric,omitempty"`
+	DBType         string                    `json:"db_type"`
+	DBName         string                    `json:"db_name,omitempty"`
+	Host           string                    `json:"host"`
+	Port           int                       `json:"port,omitempty"`
+	Username       string                    `json:"username,omitempty"`
+	Password       string                    `json:"password,omitempty"`
+	ConnectTimeout int                       `json:"connect_timeout,omitempty"`
+	TLSMode        string                    `json:"tls_mode,omitempty"`
+	TLSCAPEM       string                    `json:"tls_ca_pem,omitempty"`
+	AuthSource     string                    `json:"auth_source,omitempty"`
+	PgSchema       []string                  `json:"pg_schema,omitempty"`
+	ProviderName   string                    `json:"provider_name,omitempty"`
+	Metric         *datamig.DBMSMetricOption `json:"metric,omitempty"`
 }
 
 // dbImportStatus maps how much of a database import succeeded onto its three
@@ -206,7 +206,7 @@ func doImportDB(connID string, req model.ImportDBReq) (*model.SavedDBInfo, error
 		}
 	} else {
 		// Direct access: the server connects to the DBMS itself.
-		loc := transxex.DBMSLocation{
+		loc := datamig.DBMSLocation{
 			DBMSType: connectionInfo.DBType,
 			Database: connectionInfo.DBName,
 			// Empty unless the connection named schemas, and the connection can
@@ -215,14 +215,14 @@ func doImportDB(connID string, req model.ImportDBReq) (*model.SavedDBInfo, error
 			// meant for.
 			PgSchema: connectionInfo.DBPgSchema,
 			// Where the database is hosted. A db source group always carries a
-			// provider name, and transx-ex records it without reading it: no
+			// provider name, and data-mig records it without reading it: no
 			// routing, validation or connection decision depends on it. It is
 			// filled because dmdl's DBConnConfig requires it and cm-centipede needs
 			// the source's hosting location when choosing a target. An empty value
 			// would mean "unspecified", which is not the same as on-premises.
 			ProviderName: sourceGroup.ProviderName,
-			AccessType:   transxex.AccessTypeDirect,
-			Direct: &transxex.DirectConfig{
+			AccessType:   datamig.AccessTypeDirect,
+			Direct: &datamig.DirectConfig{
 				Host:           connectionInfo.DBHost,
 				Port:           port,
 				Username:       connectionInfo.DBUsername,
@@ -235,15 +235,15 @@ func doImportDB(connID string, req model.ImportDBReq) (*model.SavedDBInfo, error
 			Metric: metric,
 		}
 
-		var databases []transxex.DBMSInfo
-		var inspectErrors []transxex.DBMSInspectError
+		var databases []datamig.DBMSInfo
+		var inspectErrors []datamig.DBMSInspectError
 
 		inspectStart := time.Now()
 		if connectionInfo.DBName == "" {
 			// An empty db_name means every user database. The third return value is
 			// non-nil only when nothing at all could be read — a single database
 			// failing lands in the second one instead.
-			databases, inspectErrors, err = transxex.InspectDBMSAll(loc)
+			databases, inspectErrors, err = datamig.InspectDBMSAll(loc)
 			if err != nil {
 				oldSavedDBInfo.Status = failedUnlessStale(oldSavedDBInfo.Status,
 					model.SavedDBInfoStatusStale, model.SavedDBInfoStatusFailed)
@@ -255,7 +255,7 @@ func doImportDB(connID string, req model.ImportDBReq) (*model.SavedDBInfo, error
 				return nil, errors.New(errMsg)
 			}
 		} else {
-			info, err := transxex.InspectDBMS(loc)
+			info, err := datamig.InspectDBMS(loc)
 			if err != nil {
 				oldSavedDBInfo.Status = failedUnlessStale(oldSavedDBInfo.Status,
 					model.SavedDBInfoStatusStale, model.SavedDBInfoStatusFailed)
@@ -266,7 +266,7 @@ func doImportDB(connID string, req model.ImportDBReq) (*model.SavedDBInfo, error
 				return nil, errors.New(errMsg)
 			}
 			// Wrapped in a slice so a single target looks like an enumeration of one.
-			databases = []transxex.DBMSInfo{*info}
+			databases = []datamig.DBMSInfo{*info}
 		}
 		logImportStep("db", connectionInfo.ID, "direct inspect", inspectStart,
 			strconv.Itoa(len(databases))+" databases, "+strconv.Itoa(len(inspectErrors))+" skipped")
@@ -277,8 +277,8 @@ func doImportDB(connID string, req model.ImportDBReq) (*model.SavedDBInfo, error
 		// per-field conversion of the twelve inventories and three nesting levels
 		// has to exist.
 		encodedResult, err := json.Marshal(struct {
-			Databases []transxex.DBMSInfo         `json:"databases"`
-			Skipped   []transxex.DBMSInspectError `json:"skipped,omitempty"`
+			Databases []datamig.DBMSInfo         `json:"databases"`
+			Skipped   []datamig.DBMSInspectError `json:"skipped,omitempty"`
 		}{Databases: databases, Skipped: inspectErrors})
 		if err != nil {
 			oldSavedDBInfo.Status = failedUnlessStale(oldSavedDBInfo.Status,

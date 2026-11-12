@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	transxex "github.com/cloud-barista/cm-centipede/transx-ex"
+	datamig "github.com/cloud-barista/cm-centipede/data-mig"
 	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/lib/openbao"
@@ -73,11 +73,11 @@ func checkPort(port string) error {
 	return nil
 }
 
-// checkDBType rejects a db_type transx-ex cannot inspect, so a typo fails at
+// checkDBType rejects a db_type data-mig cannot inspect, so a typo fails at
 // registration instead of at the first import.
 func checkDBType(dbType string) error {
 	switch dbType {
-	case transxex.DBMSTypeMySQL, transxex.DBMSTypeMariaDB, transxex.DBMSTypePostgreSQL, transxex.DBMSTypeMongoDB:
+	case datamig.DBMSTypeMySQL, datamig.DBMSTypeMariaDB, datamig.DBMSTypePostgreSQL, datamig.DBMSTypeMongoDB:
 		return nil
 	}
 	return errors.New("db_type must be one of mysql | mariadb | postgresql | mongodb")
@@ -93,13 +93,13 @@ func checkAccessType(field string, accessType string) error {
 	return errors.New(field + " must be one of direct | ssh-tunnel")
 }
 
-// checkTLSMode rejects an unknown db_tls_mode. transx-ex rejects one as well,
+// checkTLSMode rejects an unknown db_tls_mode. data-mig rejects one as well,
 // but only when an import runs; this keeps a connection that can never connect
 // from being stored. Empty means disable.
 func checkTLSMode(mode string) error {
 	switch mode {
-	case "", transxex.TLSModeDisable, transxex.TLSModePrefer, transxex.TLSModeRequire,
-		transxex.TLSModeVerifyCA, transxex.TLSModeVerifyFull:
+	case "", datamig.TLSModeDisable, datamig.TLSModePrefer, datamig.TLSModeRequire,
+		datamig.TLSModeVerifyCA, datamig.TLSModeVerifyFull:
 		return nil
 	}
 	return errors.New("db_tls_mode must be one of disable | prefer | require | verify-ca | verify-full")
@@ -107,13 +107,13 @@ func checkTLSMode(mode string) error {
 
 // checkPgSchema checks what honeybee can judge about a db_pg_schema selection.
 // The rules on the names themselves (length, characters, pg_ system schemas)
-// are transx-ex's and are not repeated here.
+// are data-mig's and are not repeated here.
 func checkPgSchema(dbType string, dbName string, schemas []string) error {
 	if len(schemas) == 0 {
 		return nil
 	}
 	// MySQL and MariaDB have no schema within a database, MongoDB none at all.
-	if dbType != transxex.DBMSTypePostgreSQL {
+	if dbType != datamig.DBMSTypePostgreSQL {
 		return errors.New("db_pg_schema is only supported for postgresql")
 	}
 	// Enumerating every database reuses one location for all of them, so a

@@ -3728,7 +3728,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "tlsMode": {
-                    "description": "TLSMode selects transport security; the empty value is \"auto\". \"auto\"\ntakes the mode cm-beetle recommends for the instance: verify-full,\nverify-ca or disable, falling back to require when no CA was collected and\nto prefer when cm-beetle could not say. Any other value means the same\nthing here as on DBConnConfig — see the table in transx-ex's\ndbmsx/driver/base/tls.go — and is used as given; plaintext therefore needs\n\"disable\" spelled out.",
+                    "description": "TLSMode selects transport security; the empty value is \"auto\". \"auto\"\ntakes the mode cm-beetle recommends for the instance: verify-full,\nverify-ca or disable, falling back to require when no CA was collected and\nto prefer when cm-beetle could not say. Any other value means the same\nthing here as on DBConnConfig — see the table in data-mig's\ndbmsx/driver/base/tls.go — and is used as given; plaintext therefore needs\n\"disable\" spelled out.",
                     "type": "string",
                     "enum": [
                         "auto",
@@ -3897,7 +3897,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "providerName": {
-                    "description": "ProviderName records where the database is hosted. transx-ex carries it\nthrough to DBMSLocation.ProviderName but never reads it: no routing,\nvalidation or connection decision depends on it. It is required all the\nsame, so that \"where does this data live\" has an answer for every\nconnection that holds data. A database the operator runs themselves is\nProviderOnPrem, spelled out rather than left blank.",
+                    "description": "ProviderName records where the database is hosted. data-mig carries it\nthrough to DBMSLocation.ProviderName but never reads it: no routing,\nvalidation or connection decision depends on it. It is required all the\nsame, so that \"where does this data live\" has an answer for every\nconnection that holds data. A database the operator runs themselves is\nProviderOnPrem, spelled out rather than left blank.",
                     "type": "string",
                     "enum": [
                         "aws",
@@ -3922,11 +3922,11 @@ const docTemplate = `{
                     ]
                 },
                 "tlsCAPem": {
-                    "description": "TLSCAPem is the PEM root that verify-ca and verify-full check against.\nEmpty means the system trust store, which carries only publicly trusted\nCAs, so a server using a private CA needs its root supplied here.\n\ntransx-ex also accepts a path to a CA file, but that path would name a\nfile on the centipede server rather than on the caller's machine, so it\nis deliberately not part of this API.",
+                    "description": "TLSCAPem is the PEM root that verify-ca and verify-full check against.\nEmpty means the system trust store, which carries only publicly trusted\nCAs, so a server using a private CA needs its root supplied here.\n\ndata-mig also accepts a path to a CA file, but that path would name a\nfile on the centipede server rather than on the caller's machine, so it\nis deliberately not part of this API.",
                     "type": "string"
                 },
                 "tlsMode": {
-                    "description": "TLSMode selects transport security; the empty value is \"disable\". The\nmodes mean the same thing on every engine — see transx-ex's\ndbmsx/driver/base/tls.go for the table that defines them.",
+                    "description": "TLSMode selects transport security; the empty value is \"disable\". The\nmodes mean the same thing on every engine — see data-mig's\ndbmsx/driver/base/tls.go for the table that defines them.",
                     "type": "string",
                     "enum": [
                         "disable",
@@ -3973,7 +3973,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "providerName": {
-                    "description": "ProviderName decides the endpoint, region, TLS and bucket addressing style\n(see ResolveS3Endpoint in core/migration). transxex.S3MinioConfig has no\nprovider field: it receives the resolved values.",
+                    "description": "ProviderName decides the endpoint, region, TLS and bucket addressing style\n(see ResolveS3Endpoint in core/migration). datamig.S3MinioConfig has no\nprovider field: it receives the resolved values.",
                     "type": "string",
                     "enum": [
                         "aws",
@@ -9750,6 +9750,36 @@ const docTemplate = `{
                 1048576,
                 524288,
                 2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
                 511
             ],
             "x-enum-comments": {
@@ -9760,7 +9790,7 @@ const docTemplate = `{
                 "ModeExclusive": "l: exclusive use",
                 "ModeIrregular": "?: non-regular file; nothing else is known about this file",
                 "ModeNamedPipe": "p: named pipe (FIFO)",
-                "ModePerm": "Unix permission bits",
+                "ModePerm": "Unix permission bits, 0o777",
                 "ModeSetgid": "g: setgid",
                 "ModeSetuid": "u: setuid",
                 "ModeSocket": "S: Unix domain socket",
@@ -9783,7 +9813,7 @@ const docTemplate = `{
                 "t: sticky",
                 "?: non-regular file; nothing else is known about this file",
                 "",
-                "Unix permission bits",
+                "Unix permission bits, 0o777",
                 "d: is a directory",
                 "a: append-only",
                 "l: exclusive use",
@@ -9798,7 +9828,7 @@ const docTemplate = `{
                 "t: sticky",
                 "?: non-regular file; nothing else is known about this file",
                 "",
-                "Unix permission bits"
+                "Unix permission bits, 0o777"
             ],
             "x-enum-varnames": [
                 "ModeDir",

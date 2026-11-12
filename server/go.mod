@@ -6,6 +6,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.8.3
 	github.com/cloud-barista/cb-spider v0.13.23
 	github.com/cloud-barista/cm-beetle/imdl v0.1.20
+  github.com/cloud-barista/cm-centipede/data-mig v0.1.3
 	github.com/cloud-barista/cm-centipede/dmdl v0.1.2
 	github.com/cloud-barista/cm-centipede/transx-ex v0.1.2
 	github.com/cloud-barista/cm-grasshopper/smdl v0.1.4
