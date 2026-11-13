@@ -1255,6 +1255,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 	onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
 	listeningPorts := [][]model.ListeningPortProperty{tryGetListeningPorts(connID)}
 	doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
+	onpremiseInfra.NLBs = haproxyToNLBs(infraInfo.HAProxy, infraInfo.Compute.OS.Node.Machineid)
 
 	// Reflect the collected Kubernetes cluster: its metadata, the node roles,
 	// and any cluster nodes (e.g. workers) only visible through the API.
@@ -1311,6 +1312,7 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
 		listeningPorts = append(listeningPorts, tryGetListeningPorts(conn.ID))
 		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
+		onpremiseInfra.NLBs = append(onpremiseInfra.NLBs, haproxyToNLBs(infraInfo.HAProxy, infraInfo.Compute.OS.Node.Machineid)...)
 
 		// The Kubernetes cluster is collected once per source group, from the
 		// connection of a control plane node whose kubeconfig enumerates the
