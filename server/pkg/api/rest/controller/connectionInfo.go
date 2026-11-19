@@ -374,6 +374,113 @@ func deleteConnectionSecrets(connID string) {
 	}
 }
 
+// The CSP check, the secret store and the agent run on a csp VM, kept in
+// variables so tests can stand in for the CSP, OpenBao and the SSH host.
+var (
+	checkCSP     = checkCSPConnection
+	storeSecrets = storeConnectionSecrets
+	runCSPAgent  = runAgentOn
+)
+
+func runAgentOn(ci model.ConnectionInfo) error {
+	c := &ssh.SSH{}
+	if err := c.RunAgent(ci); err != nil {
+		return err
+	}
+	c.Close()
+	return nil
+}
+
+// cspCheckResult is the outcome of a checkCSPConnection a caller has already
+// made, so that the refresh after it does not ask the CSP a second time.
+type cspCheckResult struct{ err error }
+
+// sentSSHFields names the SSH fields a connection request carries.
+func sentSSHFields(req *model.CreateConnectionInfoReq) []string {
+	var names []string
+	if strings.TrimSpace(req.IPAddress) != "" {
+		names = append(names, "ip_address")
+	}
+	if strings.TrimSpace(req.SSHPort) != "" {
+		names = append(names, "ssh_port")
+	}
+	if req.User != "" {
+		names = append(names, "user")
+	}
+	if req.Password != "" {
+		names = append(names, "password")
+	}
+	if req.PrivateKey != "" {
+		names = append(names, "private_key")
+	}
+	return names
+}
+
+// refuseCSPSSHFields refuses SSH fields on a csp connection other than a VM.
+// Such a resource has no host to reach over SSH and run the agent on
+// (agentNotApplicable), so the fields could only be stored and never used.
+func refuseCSPSSHFields(resourceType string, req *model.CreateConnectionInfoReq) error {
+	if resourceType == serverCommon.ResourceTypeVM {
+		return nil
+	}
+	names := sentSSHFields(req)
+	if len(names) == 0 {
+		return nil
+	}
+	return errors.New(strings.Join(names, ", ") + " apply to a csp vm connection only;" +
+		" a csp " + resourceType + " connection has no host to reach over SSH")
+}
+
+// mergeCSPVMSSH applies the SSH fields of an update to a csp vm connection by
+// the rule of the on-prem update: a field left empty keeps its value, so a
+// credential can be replaced but not cleared. Unlike there, a value that does
+// not parse is refused rather than skipped, as the caller could not tell it
+// was not taken. The merged fields are then checked as registration checks
+// them, so a connection given an ip_address can reach its host.
+func mergeCSPVMSSH(ci *model.ConnectionInfo, req *model.CreateConnectionInfoReq) error {
+	if ip := strings.TrimSpace(req.IPAddress); ip != "" {
+		if err := checkIPAddress(ip); err != nil {
+			return err
+		}
+		ci.IPAddress = ip
+	}
+	if port := strings.TrimSpace(req.SSHPort); port != "" {
+		if err := checkPort(port); err != nil {
+			return err
+		}
+		ci.SSHPort = port
+	}
+	if req.User != "" {
+		ci.User = req.User
+	}
+	if req.Password != "" {
+		ci.Password = req.Password
+	}
+	if req.PrivateKey != "" {
+		ci.PrivateKey = req.PrivateKey
+	}
+
+	if ci.IPAddress == "" {
+		if names := sentSSHFields(req); len(names) > 0 {
+			return errors.New("ip_address is empty (required to set " + strings.Join(names, ", ") + ")")
+		}
+		return nil
+	}
+	if ci.SSHPort == "" {
+		ci.SSHPort = "22"
+	}
+	if ci.User == "" {
+		return errors.New("user is empty (required when ip_address is provided)")
+	}
+	if ci.Password == "" && (ci.PrivateKey == "" || ci.PrivateKey == "-") {
+		return errors.New("password or private_key must be provided when ip_address is provided")
+	}
+	if ci.PrivateKey == "" {
+		ci.PrivateKey = "-"
+	}
+	return nil
+}
+
 func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnectionInfoReq *model.CreateConnectionInfoReq) (*model.ConnectionInfo, error) {
 	if sourceGroup == nil || sourceGroup.ID == "" {
 		return nil, errors.New("source group is missing")
@@ -433,6 +540,9 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 		}
 		if connectionInfo.ResourceID == "" {
 			return nil, errors.New("resource_id is empty")
+		}
+		if err := refuseCSPSSHFields(connectionInfo.ResourceType, createConnectionInfoReq); err != nil {
+			return nil, err
 		}
 
 		// Optional SSH access. cb-spider gives us the CSP-level VM metadata, but
@@ -644,6 +754,13 @@ func updateCSPConnectionStatus(connID string, collectErr error) error {
 }
 
 func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, error) {
+	return getConnectionInfo(connID, refresh, nil)
+}
+
+// getConnectionInfo is doGetConnectionInfo for a caller that has just checked
+// the csp resource: checked, when set, is the outcome of that check and stands
+// for the connection_status of a csp connection.
+func getConnectionInfo(connID string, refresh bool, checked *cspCheckResult) (*model.ConnectionInfo, error) {
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return nil, err
@@ -656,7 +773,7 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 
 	if refresh {
 		// Load SSH secrets from OpenBao (when enabled) before any SSH operation.
-		if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+		if err := hydrateSecrets(connectionInfo); err != nil {
 			return nil, err
 		}
 
@@ -670,9 +787,15 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 			// connection_status reflects CSP reachability: whether the CSP driver can
 			// identify this resource. This is a status-only check - CSP data is
 			// collected/persisted by import/infra, not here (refresh/registration).
-			if err := checkCSPConnection(sourceGroup, connectionInfo); err != nil {
+			var cspErr error
+			if checked != nil {
+				cspErr = checked.err
+			} else {
+				cspErr = checkCSP(sourceGroup, connectionInfo)
+			}
+			if cspErr != nil {
 				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusFailed
-				oldConnectionInfo.ConnectionFailedMessage = err.Error()
+				oldConnectionInfo.ConnectionFailedMessage = cspErr.Error()
 			} else {
 				oldConnectionInfo.ConnectionStatus = model.ConnectionInfoStatusSuccess
 				oldConnectionInfo.ConnectionFailedMessage = ""
@@ -687,12 +810,10 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 				oldConnectionInfo.AgentFailedMessage = "no SSH access configured for this CSP connection; " +
 					"provide ip_address/user (and password or private_key) to install the agent"
 			} else {
-				c := &ssh.SSH{}
-				if err := c.RunAgent(*connectionInfo); err != nil {
+				if err := runCSPAgent(*connectionInfo); err != nil {
 					oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusFailed
 					oldConnectionInfo.AgentFailedMessage = err.Error()
 				} else {
-					c.Close()
 					oldConnectionInfo.AgentStatus = model.ConnectionInfoStatusSuccess
 					oldConnectionInfo.AgentFailedMessage = ""
 				}
@@ -857,7 +978,7 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 	// to SSH into the source host; without this they receive empty credentials
 	// and fail with "failed to determine auth method". The DB is untouched - the
 	// refresh status update above uses a field allowlist.
-	if err := hydrateConnectionSecrets(oldConnectionInfo); err != nil {
+	if err := hydrateSecrets(oldConnectionInfo); err != nil {
 		return nil, err
 	}
 
@@ -870,13 +991,25 @@ func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, er
 }
 
 func doCreateConnectionInfo(connectionInfo *model.ConnectionInfo) (*model.ConnectionInfo, error) {
-	_, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
+	sourceGroup, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
 	if err != nil {
 		return nil, err
 	}
 
+	// A csp resource that is not there is refused before anything is written.
+	// One the CSP could not be asked about is registered as before, with
+	// connection_status failed, and checked again on refresh.
+	var checked *cspCheckResult
+	if sourceGroup.Type == serverCommon.SourceGroupTypeCSP {
+		checkErr := checkCSP(sourceGroup, connectionInfo)
+		if cspResourceRejected(checkErr) {
+			return nil, checkErr
+		}
+		checked = &cspCheckResult{err: checkErr}
+	}
+
 	// Move SSH secrets into OpenBao (when enabled) before persisting the row.
-	if err := storeConnectionSecrets(connectionInfo); err != nil {
+	if err := storeSecrets(connectionInfo); err != nil {
 		return nil, err
 	}
 
@@ -885,7 +1018,7 @@ func doCreateConnectionInfo(connectionInfo *model.ConnectionInfo) (*model.Connec
 		return nil, err
 	}
 
-	connectionInfo, err = doGetConnectionInfo(connectionInfo.ID, true)
+	connectionInfo, err = getConnectionInfo(connectionInfo.ID, true, checked)
 	if err != nil {
 		return nil, err
 	}
@@ -1141,7 +1274,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 
 	// Load existing SSH secrets (OpenBao) so fields not present in the update
 	// request keep their current values when re-stored below.
-	if err := hydrateConnectionSecrets(oldConnectionInfo); err != nil {
+	if err := hydrateSecrets(oldConnectionInfo); err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
@@ -1161,18 +1294,61 @@ func UpdateConnectionInfo(c echo.Context) error {
 	// ConnectionInfoUpdate skips zero values; the arms list the columns that may
 	// be cleared on purpose, written by name after the save.
 	var explicitColumns []string
+	// dropSecrets removes the connection's secrets from OpenBao after the save,
+	// for an arm that cleared them all: the store skips a connection with none.
+	dropSecrets := false
+	// checked is set by an arm that asked the CSP about the resource already.
+	var checked *cspCheckResult
 
 	switch sourceGroup.Type {
 	case serverCommon.SourceGroupTypeCSP:
+		// resourceChanged records that the connection now points at another
+		// resource, which is checked with the CSP as registration does.
+		resourceChanged := false
 		if updateConnectionInfoReq.ResourceType != "" {
 			rt := strings.ToLower(strings.TrimSpace(updateConnectionInfoReq.ResourceType))
 			if !serverCommon.IsValidCSPResourceType(rt) {
 				return common.ReturnErrorMsg(c, serverCommon.CSPResourceTypesMsg)
 			}
+			if rt != oldConnectionInfo.ResourceType {
+				resourceChanged = true
+			}
 			oldConnectionInfo.ResourceType = rt
 		}
-		if updateConnectionInfoReq.ResourceID != "" {
-			oldConnectionInfo.ResourceID = strings.TrimSpace(updateConnectionInfoReq.ResourceID)
+		if resourceID := strings.TrimSpace(updateConnectionInfoReq.ResourceID); resourceID != "" {
+			if resourceID != oldConnectionInfo.ResourceID {
+				resourceChanged = true
+			}
+			oldConnectionInfo.ResourceID = resourceID
+		}
+
+		if err := refuseCSPSSHFields(oldConnectionInfo.ResourceType, updateConnectionInfoReq); err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		if oldConnectionInfo.ResourceType == serverCommon.ResourceTypeVM {
+			if err := mergeCSPVMSSH(oldConnectionInfo, updateConnectionInfoReq); err != nil {
+				return common.ReturnErrorMsg(c, err.Error())
+			}
+		} else if oldConnectionInfo.IPAddress != "" || oldConnectionInfo.User != "" ||
+			oldConnectionInfo.Password != "" || (oldConnectionInfo.PrivateKey != "" && oldConnectionInfo.PrivateKey != "-") {
+			// A VM turned into another resource type leaves no SSH fields behind,
+			// or the refresh would still try to install the agent through them.
+			oldConnectionInfo.IPAddress = ""
+			oldConnectionInfo.SSHPort = ""
+			oldConnectionInfo.User = ""
+			oldConnectionInfo.Password = ""
+			oldConnectionInfo.PrivateKey = ""
+			explicitColumns = []string{"ip_address", "ssh_port", "user", "password", "private_key"}
+			dropSecrets = true
+		}
+
+		// Last, so that a request refused above does not reach the CSP.
+		if resourceChanged {
+			checkErr := checkCSP(sourceGroup, oldConnectionInfo)
+			if cspResourceRejected(checkErr) {
+				return common.ReturnErrorMsg(c, checkErr.Error())
+			}
+			checked = &cspCheckResult{err: checkErr}
 		}
 	case serverCommon.SourceGroupTypeFS:
 		// scanTargetChanged records that the update changes what the connection
@@ -1426,7 +1602,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 	}
 
 	// Persist SSH secrets to OpenBao (when enabled), clearing them from the row.
-	if err := storeConnectionSecrets(oldConnectionInfo); err != nil {
+	if err := storeSecrets(oldConnectionInfo); err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
@@ -1442,8 +1618,11 @@ func UpdateConnectionInfo(c echo.Context) error {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 	}
+	if dropSecrets {
+		deleteConnectionSecrets(oldConnectionInfo.ID)
+	}
 
-	connectionInfo, err := doGetConnectionInfo(oldConnectionInfo.ID, true)
+	connectionInfo, err := getConnectionInfo(oldConnectionInfo.ID, true, checked)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}

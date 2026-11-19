@@ -784,6 +784,86 @@ func cspVMIdentifier(resourceID string) string {
 	return id
 }
 
+// ErrCSPResourceNotFound marks a lookup the CSP answered without the
+// resource: the listing came back and nothing in it matched. A resource the CSP
+// could not be asked about (timeout, credential, unreachable endpoint) is not
+// marked, as nothing is known about it then.
+var ErrCSPResourceNotFound = errors.New("the csp resource was not found")
+
+// ErrBucketRegionMismatch marks a bucket that exists but lives outside the
+// source group's region (bucketRegionMismatch).
+var ErrBucketRegionMismatch = errors.New("the bucket is outside the source group's region")
+
+// cspResourceError carries one of the sentinels above under its own message,
+// so that the messages stay as they were while errors.Is can tell them apart.
+type cspResourceError struct {
+	kind error
+	msg  string
+}
+
+func (e cspResourceError) Error() string { return e.msg }
+
+func (e cspResourceError) Is(target error) bool { return target == e.kind }
+
+func cspNotFound(msg string) error {
+	return cspResourceError{kind: ErrCSPResourceNotFound, msg: msg}
+}
+
+// cspResourceRejected reports whether a check of the resource failed because
+// the resource cannot be the connection's, rather than because the CSP could
+// not be asked. Such a connection is refused at registration; the others are
+// registered with connection_status failed and checked again on refresh.
+func cspResourceRejected(err error) bool {
+	return errors.Is(err, ErrCSPResourceNotFound) || errors.Is(err, ErrBucketRegionMismatch)
+}
+
+// The VM calls of the CSP, kept in variables so tests can stand in for it.
+var (
+	getCSPVM  = spider.GetCSPVM
+	listCSPVM = spider.ListVM
+)
+
+// findVMByID asks the driver for the VM, and when that fails, tells a VM that
+// does not exist from a driver that could not answer by the listing. The
+// drivers report a missing VM in their own words (aws InvalidInstanceID.NotFound
+// or .Malformed, others a 404 of their SDK), so the error text is not read:
+// the VM is missing only when the listing succeeds and holds no VM of that
+// identifier. Otherwise the error of GetVM is returned as it was.
+func findVMByID(conn spider.Conn, resourceID string) (*spider.VMInfo, error) {
+	vm, getErr := getCSPVM(conn, cspVMIdentifier(resourceID))
+	if getErr == nil {
+		return vm, nil
+	}
+
+	vms, err := listCSPVM(conn)
+	if err != nil || matchVM(vms, resourceID) != nil {
+		return nil, getErr
+	}
+
+	return nil, cspNotFound("vm '" + resourceID + "' was not found " + connLabel(conn) + " (" + getErr.Error() + ")")
+}
+
+// matchVM picks the VM whose SystemId or NameId is resourceID or the name
+// cspVMIdentifier cuts out of it. The comparison ignores case, as an Azure
+// resource ID does; a match too many only leaves the GetVM error in place,
+// whereas a match missed would refuse a VM that exists.
+func matchVM(vms []spider.VMInfo, resourceID string) *spider.VMInfo {
+	ids := []string{strings.TrimSpace(resourceID), cspVMIdentifier(resourceID)}
+	for i := range vms {
+		for _, id := range ids {
+			if id == "" {
+				continue
+			}
+			iid := vms[i].IId
+			if strings.EqualFold(iid.SystemId, id) || strings.EqualFold(iid.NameId, id) {
+				return &vms[i]
+			}
+		}
+	}
+
+	return nil
+}
+
 // findClusterByID looks a Kubernetes cluster up by the identifier discovery
 // reported for it.
 //
@@ -802,7 +882,7 @@ func findClusterByID(conn spider.Conn, resourceID string) (*spider.ClusterInfo, 
 		return cl, nil
 	}
 
-	return nil, errors.New("cluster '" + resourceID + "' was not found " + connLabel(conn))
+	return nil, cspNotFound("cluster '" + resourceID + "' was not found " + connLabel(conn))
 }
 
 // matchCluster picks the cluster whose identifier is resourceID. SystemId is
@@ -838,7 +918,7 @@ func findRDBMSByID(conn spider.Conn, resourceID string) (*spider.RDBMSInfo, erro
 		return db, nil
 	}
 
-	return nil, errors.New("rdbms '" + resourceID + "' was not found " + connLabel(conn))
+	return nil, cspNotFound("rdbms '" + resourceID + "' was not found " + connLabel(conn))
 }
 
 // matchRDBMS picks the instance whose identifier is resourceID, SystemId first
@@ -906,7 +986,7 @@ func findNLBByID(conn spider.Conn, resourceID string) (*spider.NLBInfo, error) {
 		return found, nil
 	}
 
-	return nil, errors.New("nlb '" + resourceID + "' was not found " + connLabel(conn))
+	return nil, cspNotFound("nlb '" + resourceID + "' was not found " + connLabel(conn))
 }
 
 // matchNLB picks the NLB whose identifier is resourceID, SystemId first and
@@ -1033,7 +1113,7 @@ func findBucketByName(conn spider.Conn, bucketName string) (*spider.S3BucketInfo
 
 	found := matchBucket(buckets, bucketName)
 	if found == nil {
-		return nil, errors.New("bucket '" + bucketName + "' was not found " + connLabel(conn))
+		return nil, cspNotFound("bucket '" + bucketName + "' was not found " + connLabel(conn))
 	}
 
 	loc, err := getS3BucketLocation(conn, bucketName)
@@ -1055,8 +1135,8 @@ func bucketRegionMismatch(bucketName string, bucketRegion string, groupRegion st
 		return nil
 	}
 
-	return errors.New("bucket '" + bucketName + "' is in region '" + bucketRegion +
-		"', source group region is '" + groupRegion + "'")
+	return cspResourceError{kind: ErrBucketRegionMismatch, msg: "bucket '" + bucketName + "' is in region '" +
+		bucketRegion + "', source group region is '" + groupRegion + "'"}
 }
 
 // checkBucket finds the bucket and refuses it when it lives outside the
@@ -1126,8 +1206,9 @@ func matchBucket(buckets []spider.S3BucketInfo, bucketName string) *spider.S3Buc
 
 // checkCSPConnection verifies that the CSP driver can identify the resource described
 // by ci, WITHOUT persisting anything. This backs connection_status on
-// registration/refresh — those paths only report reachability. Actual data
-// collection + persistence is done by import (refreshCSPConnection).
+// registration/refresh, and the refusal of a resource that is not there when a
+// connection is registered or pointed at another resource (cspResourceRejected).
+// Actual data collection + persistence is done by import (refreshCSPConnection).
 func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 	if ci.ResourceID == "" {
 		return errors.New("resource_id is empty")
@@ -1143,7 +1224,7 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 func checkCSPResource(conn spider.Conn, ci *model.ConnectionInfo) error {
 	switch ci.ResourceType {
 	case "vm":
-		_, err := spider.GetCSPVM(conn, cspVMIdentifier(ci.ResourceID))
+		_, err := findVMByID(conn, ci.ResourceID)
 		return err
 	case "k8s":
 		_, err := findClusterByID(conn, ci.ResourceID)
@@ -1181,7 +1262,7 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo, opts 
 func collectCSPResource(conn spider.Conn, sg *model.SourceGroup, ci *model.ConnectionInfo, opts importInfraOptions) error {
 	switch ci.ResourceType {
 	case "vm":
-		vm, err := spider.GetCSPVM(conn, cspVMIdentifier(ci.ResourceID))
+		vm, err := getCSPVM(conn, cspVMIdentifier(ci.ResourceID))
 		if err != nil {
 			return err
 		}
