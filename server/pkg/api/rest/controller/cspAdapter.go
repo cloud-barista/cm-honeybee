@@ -485,7 +485,8 @@ func clusterInfoToK8s(cl *spider.ClusterInfo) kubernetes.Kubernetes {
 
 // bucketToData maps a CSP bucket into the agent's data.DataInfo shape, reusing
 // the MinIO sub-structure as the object-storage carrier. Address carries the
-// region the bucket was looked up in.
+// region the bucket lives in, or the source group's region where the CSP
+// cannot tell.
 func bucketToData(region string, d *spider.S3BucketDetail) data.DataInfo {
 	return data.DataInfo{
 		MinIO: &data.MinIOData{
@@ -524,6 +525,15 @@ func bucketToSourceProperty(d *spider.S3BucketDetail) storagemodel.SourceObjectS
 	p.Tags = d.Tags
 	p.CreationDate = d.CreationDate
 	return p
+}
+
+// cspBucketRecord is what SavedDataInfo.csp_data holds for a CSP bucket: the
+// source property cm-beetle reads, plus the region the bucket lives in, which
+// the property has no field for. Region is empty where the CSP cannot tell
+// (spider.GetS3BucketRegions) and in records stored before it was kept.
+type cspBucketRecord struct {
+	storagemodel.SourceObjectStorageProperty
+	Region string `json:"region,omitempty"`
 }
 
 // upsertSavedCSPData writes the CSP-side VM info into SavedInfraInfo.csp_data,
@@ -628,13 +638,17 @@ func upsertSavedDataStatus(connID string, payload any, cspData any, status strin
 // and returned as an error, the way a database import that read nothing is
 // (dbImportStatus). Some items failing is still a success: the rest were read
 // and the failures are listed in the stored errors.
-func storeBucketDetail(connID string, region string, d *spider.S3BucketDetail) error {
+//
+// address is what the data record's Address shows; region is the bucket's
+// region as the CSP reported it, "" when it cannot tell.
+func storeBucketDetail(connID string, address string, region string, d *spider.S3BucketDetail) error {
 	status := model.ConnectionInfoStatusSuccess
 	if d.NothingRead() {
 		status = model.ConnectionInfoStatusFailed
 	}
 
-	if err := upsertSavedDataStatus(connID, bucketToData(region, d), bucketToSourceProperty(d), status); err != nil {
+	record := cspBucketRecord{SourceObjectStorageProperty: bucketToSourceProperty(d), Region: region}
+	if err := upsertSavedDataStatus(connID, bucketToData(address, d), record, status); err != nil {
 		return err
 	}
 
@@ -795,14 +809,23 @@ func collectRDBMS(conn spider.Conn, resourceID string) (model.RDBMSInfo, error) 
 	return payload, nil
 }
 
+// The bucket calls of the CSP, kept in variables so tests can stand in for it.
+var (
+	listS3Buckets       = spider.ListS3Buckets
+	getS3BucketLocation = spider.GetS3BucketLocation
+	getS3BucketRegions  = spider.GetS3BucketRegions
+	getS3BucketDetail   = spider.GetS3BucketDetail
+)
+
 // findBucketByName looks an object storage bucket up the same way clusters are
 // looked up: the listing goes to the CSP, so existence is decided there.
 //
 // The region is not in that listing, so it is read from GetS3BucketLocation as
-// a best effort, which leaves it empty (see its comment) rather than failing
-// the whole lookup.
+// a best effort. It stays empty for a CSP that cannot tell and when the lookup
+// fails, the way discovery lists such a bucket: a bucket is refused only when
+// its region is known to differ from the group's (bucketRegionMismatch).
 func findBucketByName(conn spider.Conn, bucketName string) (*spider.S3BucketInfo, error) {
-	buckets, err := spider.ListS3Buckets(conn)
+	buckets, err := listS3Buckets(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -812,11 +835,67 @@ func findBucketByName(conn spider.Conn, bucketName string) (*spider.S3BucketInfo
 		return nil, errors.New("bucket '" + bucketName + "' was not found " + connLabel(conn))
 	}
 
-	if loc, err := spider.GetS3BucketLocation(conn, bucketName); err == nil && loc != nil {
+	loc, err := getS3BucketLocation(conn, bucketName)
+	if err != nil {
+		logger.Println(logger.WARN, false, "CSP: the region of bucket '"+bucketName+"' is left unknown "+
+			connLabel(conn)+": "+err.Error())
+	} else if loc != nil {
 		found.Region = loc.Region
 	}
 
 	return found, nil
+}
+
+// bucketRegionMismatch refuses a bucket that lives outside the source group's
+// region: the group stands for one region, and its refined model names that
+// region as the bucket's source. An unknown region ("") is not refused.
+func bucketRegionMismatch(bucketName string, bucketRegion string, groupRegion string) error {
+	if bucketRegion == "" || strings.EqualFold(bucketRegion, groupRegion) {
+		return nil
+	}
+
+	return errors.New("bucket '" + bucketName + "' is in region '" + bucketRegion +
+		"', source group region is '" + groupRegion + "'")
+}
+
+// checkBucket finds the bucket and refuses it when it lives outside the
+// group's region (conn.Region).
+func checkBucket(conn spider.Conn, bucketName string) (*spider.S3BucketInfo, error) {
+	b, err := findBucketByName(conn, bucketName)
+	if err != nil {
+		return nil, err
+	}
+	if err := bucketRegionMismatch(b.Name, b.Region, conn.Region); err != nil {
+		return nil, err
+	}
+
+	return b, nil
+}
+
+// collectBucket reads the bucket's details at the endpoint of the region it
+// lives in and stores them with that region.
+func collectBucket(conn spider.Conn, connID string, bucketName string, countObjects bool) error {
+	b, err := checkBucket(conn, bucketName)
+	if err != nil {
+		return err
+	}
+
+	detailConn := conn
+	if b.Region != "" {
+		detailConn.Region = b.Region
+	}
+	d, err := getS3BucketDetail(detailConn, b.Name, countObjects)
+	if err != nil {
+		return err
+	}
+	if d.CreationDate == "" {
+		d.CreationDate = b.CreationDate
+	}
+	for _, e := range d.Errors {
+		logger.Println(logger.WARN, false, "bucket '"+b.Name+"': "+e+" (ConnectionID="+connID+")")
+	}
+
+	return storeBucketDetail(connID, detailConn.Region, b.Region, d)
 }
 
 // connLabel names the CSP connection in an error message; it never includes
@@ -862,7 +941,7 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 			_, err := findClusterByID(conn, ci.ResourceID)
 			return err
 		case "object_storage":
-			_, err := findBucketByName(conn, ci.ResourceID)
+			_, err := checkBucket(conn, ci.ResourceID)
 			return err
 		case serverCommon.ResourceTypeRDBMS:
 			_, err := findRDBMSByID(conn, ci.ResourceID)
@@ -897,21 +976,7 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo, opts 
 			}
 			return upsertSavedK8s(ci.ID, clusterInfoToK8s(cl))
 		case "object_storage":
-			b, err := findBucketByName(conn, ci.ResourceID)
-			if err != nil {
-				return err
-			}
-			d, err := spider.GetS3BucketDetail(conn, b.Name, opts.CountObjects)
-			if err != nil {
-				return err
-			}
-			if d.CreationDate == "" {
-				d.CreationDate = b.CreationDate
-			}
-			for _, e := range d.Errors {
-				logger.Println(logger.WARN, false, "bucket '"+b.Name+"': "+e+" (ConnectionID="+ci.ID+")")
-			}
-			return storeBucketDetail(ci.ID, conn.Region, d)
+			return collectBucket(conn, ci.ID, ci.ResourceID, opts.CountObjects)
 		case serverCommon.ResourceTypeRDBMS:
 			payload, err := collectRDBMS(conn, ci.ResourceID)
 			if err != nil {

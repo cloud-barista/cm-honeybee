@@ -18,7 +18,7 @@ import (
 //
 //	@ID				discover-source-group-resources
 //	@Summary		Discover CSP resources for a SourceGroup
-//	@Description	Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Used by the UI to populate ConnectionInfo selection.
+//	@Description	Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Object-storage buckets are limited to the source group's region where the CSP reports a bucket's region (AWS), and carry that region. Used by the UI to populate ConnectionInfo selection.
 //	@Tags			[CSP] Discovery
 //	@Accept			json
 //	@Produce		json
@@ -120,22 +120,7 @@ func discoverByType(conn spider.Conn, resourceType string) ([]model.DiscoveredRe
 		}
 		return out, nil
 	case serverCommon.ResourceTypeObjectStorage:
-		buckets, err := spider.ListS3Buckets(conn)
-		if err != nil {
-			return nil, err
-		}
-		out := make([]model.DiscoveredResource, 0, len(buckets))
-		for _, b := range buckets {
-			out = append(out, model.DiscoveredResource{
-				ResourceType: serverCommon.ResourceTypeObjectStorage,
-				ResourceID:   b.Name,
-				Name:         b.Name,
-				Extra: map[string]string{
-					"creation_date": b.CreationDate,
-				},
-			})
-		}
-		return out, nil
+		return discoverBuckets(conn)
 	case serverCommon.ResourceTypeNLB:
 		// Oracle's driver errors out in CreateNLBHandler() and does not set
 		// NLBHandler in its capability. Ask what the driver supports first.
@@ -210,6 +195,51 @@ func discoverByType(conn spider.Conn, resourceType string) ([]model.DiscoveredRe
 	default:
 		return nil, errors.New("unsupported resource_type: " + resourceType + " (expected vm | k8s | object_storage | nlb | rdbms)")
 	}
+}
+
+// discoverBuckets lists the buckets of the group's region. The CSP listing
+// covers the whole account, so each bucket's region is read separately and a
+// bucket of another region is left out. Where the CSP cannot tell the region
+// (spider.GetS3BucketRegions) every bucket is listed without one, and a bucket
+// whose lookup failed is listed with the reason in extra.region_error, since
+// it cannot be told to be elsewhere.
+func discoverBuckets(conn spider.Conn) ([]model.DiscoveredResource, error) {
+	buckets, err := listS3Buckets(conn)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(buckets))
+	for _, b := range buckets {
+		names = append(names, b.Name)
+	}
+	regions, err := getS3BucketRegions(conn, names)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]model.DiscoveredResource, 0, len(buckets))
+	for _, b := range buckets {
+		item := model.DiscoveredResource{
+			ResourceType: serverCommon.ResourceTypeObjectStorage,
+			ResourceID:   b.Name,
+			Name:         b.Name,
+			Extra: map[string]string{
+				"creation_date": b.CreationDate,
+			},
+		}
+		if r, has := regions[b.Name]; has {
+			if r.Err != nil {
+				item.Extra["region_error"] = r.Err.Error()
+			} else if bucketRegionMismatch(b.Name, r.Region, conn.Region) != nil {
+				continue
+			} else {
+				item.Region = r.Region
+			}
+		}
+		out = append(out, item)
+	}
+
+	return out, nil
 }
 
 // firstNonEmpty returns the first argument that is not blank.

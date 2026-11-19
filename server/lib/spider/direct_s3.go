@@ -317,12 +317,12 @@ func listS3Buckets(c Conn) ([]S3BucketInfo, error) {
 	return s3BucketInfos(entries), nil
 }
 
-// GetS3BucketLocation returns what cb-spider's GET /s3/{Name}?location
-// answers through getBucketLocation() (rest-runtime/S3Rest.go). That handler asks
-// no CSP: it returns the Region stored in spider's meta-DB when the bucket was
-// created or registered there, and "" otherwise. honeybee registers nothing,
-// so LocationConstraint is always "". Only the provider and credential rules
-// are checked, without the Tencent CAM call, since the handler contacts nothing.
+// GetS3BucketLocation returns the region the bucket lives in, as the CSP
+// reports it. cb-spider's GET /s3/{Name}?location asked no CSP and answered
+// the region stored in its meta-DB, which honeybee never fills, so it was
+// always "". Now the region is read from the CSP where that is possible (see
+// bucketRegionProviders) and is "" elsewhere, which contacts nothing: the
+// Tencent CAM call is not made.
 func GetS3BucketLocation(c Conn, bucketName string) (*S3BucketInfo, error) {
 	return withTimeout(driverCallTimeout, func() (*S3BucketInfo, error) { return getS3BucketLocation(c, bucketName) })
 }
@@ -331,11 +331,16 @@ func getS3BucketLocation(c Conn, bucketName string) (*S3BucketInfo, error) {
 	if err := mustNonEmpty("BucketName", bucketName); err != nil {
 		return nil, err
 	}
-	if _, err := s3ConnRuleFor(c); err != nil {
+	regions, err := getS3BucketRegions(c, []string{bucketName})
+	if err != nil {
 		return nil, err
+	}
+	r := regions[bucketName]
+	if r.Err != nil {
+		return nil, r.Err
 	}
 	return &S3BucketInfo{
 		Name:   bucketName,
-		Region: "",
+		Region: r.Region,
 	}, nil
 }

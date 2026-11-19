@@ -49,7 +49,7 @@ func stubRefreshBuckets(t *testing.T, details map[string]*spider.S3BucketDetail)
 	orig := refreshCSP
 	t.Cleanup(func() { refreshCSP = orig })
 	refreshCSP = func(_ *model.SourceGroup, ci *model.ConnectionInfo, _ importInfraOptions) error {
-		return storeBucketDetail(ci.ID, "ap-northeast-2", details[ci.ID])
+		return storeBucketDetail(ci.ID, "ap-northeast-2", "", details[ci.ID])
 	}
 }
 
@@ -83,7 +83,7 @@ func TestStoreBucketDetail_NothingReadIsFailed(t *testing.T) {
 	openTestDB(t)
 	createGroup(t, cspGroup, []model.ConnectionInfo{testConn("c1", cspGroup, common.ResourceTypeObjectStorage, "")})
 
-	err := storeBucketDetail("c1", "ap-northeast-2", unreadableBucket("bucket-a"))
+	err := storeBucketDetail("c1", "ap-northeast-2", "", unreadableBucket("bucket-a"))
 	if err == nil || !strings.Contains(err.Error(), "none of the details of bucket 'bucket-a'") ||
 		!strings.Contains(err.Error(), redirectErr) {
 		t.Errorf("err = %v, want the bucket named with the first reason", err)
@@ -115,7 +115,7 @@ func TestStoreBucketDetail_PartlyReadIsSuccess(t *testing.T) {
 	openTestDB(t)
 	createGroup(t, cspGroup, []model.ConnectionInfo{testConn("c1", cspGroup, common.ResourceTypeObjectStorage, "")})
 
-	if err := storeBucketDetail("c1", "ap-northeast-2", partlyReadBucket("bucket-a")); err != nil {
+	if err := storeBucketDetail("c1", "ap-northeast-2", "", partlyReadBucket("bucket-a")); err != nil {
 		t.Fatalf("err = %v, want nil", err)
 	}
 
@@ -252,7 +252,7 @@ func TestDoImportInfra_RefreshFailMarksResourceTable(t *testing.T) {
 	if err := upsertSavedRDBMS("rdbms", model.RDBMSInfo{RDBMS: &spider.RDBMSInfo{IId: spider.IID{SystemId: "db-1"}, DBEngine: "mysql"}}); err != nil {
 		t.Fatal(err)
 	}
-	if err := storeBucketDetail("bucket", "ap-northeast-2", partlyReadBucket("bucket")); err != nil {
+	if err := storeBucketDetail("bucket", "ap-northeast-2", "", partlyReadBucket("bucket")); err != nil {
 		t.Fatal(err)
 	}
 	if tryGetKubernetesInfo("k8s") == nil {
