@@ -96,6 +96,14 @@ func mibToGiBCapacity(mib uint64) uint64 {
 }
 
 func doGetRefinedInfraInfo(infraInfo *infra.Infra) (*inframodel.NodeProperty, error) {
+	// A CSP VM the agent has not collected has only what the CSP reports. When
+	// the agent did collect it, the node is the agent's view as before, and the
+	// CSP adds its security group rules only.
+	if infraInfo.CSP != nil && !hasAgentInfra(infraInfo) {
+		node := refinedNodeFromCSP(infraInfo.CSP)
+		return &node, nil
+	}
+
 	var dataDisks []inframodel.DiskProperty
 
 	for _, dataDisk := range infraInfo.Compute.ComputeResource.DataDisk {
@@ -1227,7 +1235,7 @@ func doGetRefinedSoftwareInfo(softwareInfo *software.Software, connID string) (*
 //
 //	@ID				get-infra-info-refined
 //	@Summary		Get Refined Infra Information
-//	@Description	Get the refined infra information of the connection information. A CSP resource other than a VM makes no node; a CSP k8s connection gives its cluster as k8sCluster, and a CSP nlb connection its NLB as an entry of nlbs.
+//	@Description	Get the refined infra information of the connection information. A CSP VM the agent has not collected, or whose agent call failed after its CSP collection succeeded, is a node of its CSP data. A CSP resource other than a VM makes no node; a CSP k8s connection gives its cluster as k8sCluster, and a CSP nlb connection its NLB as an entry of nlbs.
 //	@Tags			[Get] Get refined source info
 //	@Accept			json
 //	@Produce		json
@@ -1265,7 +1273,13 @@ func GetInfraInfoRefined(c echo.Context) error {
 	// in the group refined infra. The infra record its import leaves behind is
 	// empty; a managed cluster is reflected from its kubernetes record below.
 	if !serverCommon.IsCSPType(sourceGroup.Type) || isHostConnection(sourceGroup, connectionInfo) {
-		infraInfo, err := doGetInfraInfo(connID)
+		var infraInfo *infra.Infra
+		if rec, recErr := dao.SavedInfraInfoGet(connID); recErr == nil && rec != nil &&
+			cspNodeAfterAgentFailure(sourceGroup, connectionInfo, rec) {
+			infraInfo, err = cspOnlyInfra(rec.CSPData)
+		} else {
+			infraInfo, err = doGetInfraInfo(connID)
+		}
 		if err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
@@ -1310,7 +1324,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 //
 //	@ID				get-infra-info-source-group-refined
 //	@Summary		Get Refined Infra Information Source Group
-//	@Description	Get the refined infra information of the source group. On-prem k8s connections and CSP resources other than VMs do not become nodes, and a connection whose infra has not been collected successfully is skipped. The nlbs hold the NLBs found in HAProxy on the nodes and the CSP NLBs of the csp nlb connections.
+//	@Description	Get the refined infra information of the source group. On-prem k8s connections and CSP resources other than VMs do not become nodes, and a connection whose infra has not been collected successfully is skipped, except a CSP VM whose CSP collection succeeded and only the agent call failed, which becomes a node of its CSP data. A CSP VM the agent has not collected is a node of its CSP data (name, VM id, spec, disks, addresses, image OS). The nlbs hold the NLBs found in HAProxy on the nodes and the CSP NLBs of the csp nlb connections.
 //	@Tags			[Get] Get refined source info
 //	@Accept			json
 //	@Produce		json

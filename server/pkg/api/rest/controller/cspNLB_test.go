@@ -532,3 +532,49 @@ func TestGetInfraInfoRefined_CSPNLB(t *testing.T) {
 		t.Errorf("vm refined nlbs = %+v, want only its HAProxy", got)
 	}
 }
+
+// A CSP VM whose agent call failed after its CSP collection succeeded is a
+// refined node, so the CSP NLB naming it gets its private IP too. A VM whose
+// CSP collection failed is neither, and its backend stays without an IP.
+func TestGetInfraInfoSourceGroupRefined_CSPNLBAgentFailedVM(t *testing.T) {
+	openTestDB(t)
+	conns := append(nlbGroupConns(), testConn("vm-web2", nlbGroup, common.ResourceTypeVM, "198.51.100.11"))
+	conns[0].ConnectionStatus = model.ConnectionInfoStatusSuccess
+	conns[3].ResourceID = "i-0bbb"
+	conns[3].ConnectionStatus = model.ConnectionInfoStatusFailed
+	createGroup(t, nlbGroup, conns)
+
+	for _, vm := range []struct{ connID, id, name, ip string }{
+		{"vm-web", "i-0aaa", "web-1", "192.0.2.21"},
+		{"vm-web2", "i-0bbb", "web-2", "192.0.2.22"},
+	} {
+		csp, err := json.Marshal(infra.CSPInfo{ID: vm.id, Name: vm.name, PrivateIP: vm.ip})
+		if err != nil {
+			t.Fatal(err)
+		}
+		saveInfra(t, vm.connID, "failed", hostInfra("stale-"+vm.name), string(csp))
+	}
+	n := awsNLB("internal")
+	if err := upsertSavedNLB("nlb", nlbInfoToNLB(&n)); err != nil {
+		t.Fatal(err)
+	}
+
+	rec := groupRequest(t, nlbGroup.ID, GetInfraInfoSourceGroupRefined)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	got := refinedInfraBody(t, rec.Body.Bytes()).OnpremiseInfraModel
+	if len(got.Nodes) != 1 || got.Nodes[0].Hostname != "web-1" {
+		t.Errorf("nodes = %+v, want only web-1 from its CSP data", got.Nodes)
+	}
+	if len(got.NLBs) != 1 {
+		t.Fatalf("nlbs = %+v, want one", got.NLBs)
+	}
+	servers := []string{}
+	for _, s := range got.NLBs[0].Backend.Servers {
+		servers = append(servers, s.Name+"="+s.IP)
+	}
+	if w := []string{"i-0aaa=192.0.2.21", "web-2="}; !reflect.DeepEqual(servers, w) {
+		t.Errorf("servers = %v, want %v", servers, w)
+	}
+}

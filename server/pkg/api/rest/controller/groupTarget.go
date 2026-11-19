@@ -198,7 +198,9 @@ type connInfra struct {
 // nodes of the refined infra. Only host connections are nodes: the record of a
 // bucket, a database or a cluster holds no machine. A host that has not been
 // collected, whose last import failed, or whose record cannot be read is left
-// out, as the group GET infra does, instead of failing the whole group.
+// out, as the group GET infra does, instead of failing the whole group. The
+// exception is a CSP VM whose CSP collection succeeded and only the agent call
+// failed: it is a node of its CSP data alone.
 func refinedInfraSources(sourceGroup *model.SourceGroup, conns []model.ConnectionInfo) []connInfra {
 	var sources []connInfra
 
@@ -212,14 +214,19 @@ func refinedInfraSources(sourceGroup *model.SourceGroup, conns []model.Connectio
 		if err != nil || rec == nil {
 			continue
 		}
-		if rec.Status != model.ConnectionInfoStatusSuccess {
-			continue
-		}
-		if strings.TrimSpace(rec.InfraData) == "" && strings.TrimSpace(rec.CSPData) == "" {
-			continue
-		}
 
-		infraInfo, err := doGetInfraInfo(conn.ID)
+		var infraInfo *infra.Infra
+		switch {
+		case rec.Status == model.ConnectionInfoStatusSuccess:
+			if strings.TrimSpace(rec.InfraData) == "" && strings.TrimSpace(rec.CSPData) == "" {
+				continue
+			}
+			infraInfo, err = doGetInfraInfo(conn.ID)
+		case cspNodeAfterAgentFailure(sourceGroup, conn, rec):
+			infraInfo, err = cspOnlyInfra(rec.CSPData)
+		default:
+			continue
+		}
 		if err != nil || infraInfo == nil {
 			continue
 		}

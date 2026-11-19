@@ -83,8 +83,9 @@ func tryGetCSPNLB(connID string) *model.CSPNLBRecord {
 
 // cspVMPrivateIPs maps the group's CSP VMs to their private IPs, keyed by
 // every identifier an NLB may name the VM by: the CSP ID and name the CSP
-// collection stored, and the connection's resource_id. Only VMs whose last
-// infra import succeeded are read, as for the refined nodes.
+// collection stored, and the connection's resource_id. The VMs read are those
+// that become refined nodes: the last infra import succeeded, or only its
+// agent call failed after the CSP collection succeeded.
 func cspVMPrivateIPs(sourceGroup *model.SourceGroup, conns []model.ConnectionInfo) map[string]string {
 	ips := map[string]string{}
 	if !serverCommon.IsCSPType(sourceGroup.Type) {
@@ -97,8 +98,10 @@ func cspVMPrivateIPs(sourceGroup *model.SourceGroup, conns []model.ConnectionInf
 			continue
 		}
 		rec, err := dao.SavedInfraInfoGet(conn.ID)
-		if err != nil || rec == nil || rec.Status != model.ConnectionInfoStatusSuccess ||
-			strings.TrimSpace(rec.CSPData) == "" {
+		if err != nil || rec == nil || strings.TrimSpace(rec.CSPData) == "" {
+			continue
+		}
+		if rec.Status != model.ConnectionInfoStatusSuccess && !cspNodeAfterAgentFailure(sourceGroup, conn, rec) {
 			continue
 		}
 		var csp infra.CSPInfo

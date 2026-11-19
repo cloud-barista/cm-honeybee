@@ -226,7 +226,7 @@ func refineManagedRDBMS(info *model.RDBMSInfo) rdbmsmodel.SourceRDBMSProperty {
 	}
 
 	return rdbmsmodel.SourceRDBMSProperty{
-		DisplayName: db.IId.NameId,
+		DisplayName: iidLabel(db.IId),
 		DBNode:      node,
 		DBEngine: rdbmsmodel.DBEngineProperty{
 			Engine:        normalizeRDBMSEngine(db.DBEngine),
