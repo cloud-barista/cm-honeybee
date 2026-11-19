@@ -62,7 +62,8 @@ func cspVMFixture(t *testing.T) *infra.CSPInfo {
 }
 
 // A CSP VM without agent data becomes a node of what the CSP reports. The
-// second data disk was reported without a size, so it is left out.
+// second data disk was reported without a size, so it is left out, and the
+// public IP is not on any guest NIC, so the interface holds only the private IP.
 func TestDoGetRefinedInfraInfo_CSPOnly(t *testing.T) {
 	csp := cspVMFixture(t)
 
@@ -79,7 +80,7 @@ func TestDoGetRefinedInfraInfo_CSPOnly(t *testing.T) {
 		RootDisk:  inframodel.DiskProperty{Label: "/dev/sda1", Type: "gp3", TotalSize: 50},
 		DataDisks: []inframodel.DiskProperty{{Label: "vol-0data1", Type: "gp3", TotalSize: 100}},
 		Interfaces: []inframodel.NetworkInterfaceProperty{{
-			IPv4CidrBlocks: []string{"192.0.2.10/25", "198.51.100.20/32"},
+			IPv4CidrBlocks: []string{"192.0.2.10/25"},
 			IPv6CidrBlocks: []string{},
 		}},
 		FirewallTable: []inframodel.FirewallRuleProperty{
@@ -117,6 +118,14 @@ func TestRefinedNodeFromCSP_Partial(t *testing.T) {
 		if want := []string{"192.0.2.10/32"}; len(got.Interfaces) != 1 ||
 			!reflect.DeepEqual(got.Interfaces[0].IPv4CidrBlocks, want) {
 			t.Errorf("Interfaces = %+v, want %v", got.Interfaces, want)
+		}
+	})
+
+	t.Run("public ip only", func(t *testing.T) {
+		csp := cspVMFixture(t)
+		csp.PrivateIP = ""
+		if got := refinedNodeFromCSP(csp); got.Interfaces != nil {
+			t.Errorf("Interfaces = %+v, want none for a VM with only a public IP", got.Interfaces)
 		}
 	})
 
@@ -158,6 +167,48 @@ func TestRefinedNodeFromCSP_Partial(t *testing.T) {
 		csp.ImageDetail = nil
 		if got := refinedNodeFromCSP(csp).OS; got != (inframodel.OsProperty{}) {
 			t.Errorf("OS = %+v, want empty for an AMI id", got)
+		}
+	})
+}
+
+// The architecture of a node from CSP data is written as the agent's uname -m
+// writes it, whether it comes from the spec or from the image.
+func TestCSPArchitecture(t *testing.T) {
+	tests := []struct{ in, want string }{
+		{"x86_64", "x86_64"},
+		{"amd64", "x86_64"},
+		{"AMD64", "x86_64"},
+		{"x64", "x86_64"},
+		{"x86-64", "x86_64"},
+		{" X86_64 ", "x86_64"},
+		{"arm64", "aarch64"},
+		{"ARM64", "aarch64"},
+		{"aarch64", "aarch64"},
+		{"i386", "i386"},
+		{"s390x", "s390x"},
+		{"x86_64_mac", "x86_64_mac"},
+		{"", ""},
+	}
+	for _, tt := range tests {
+		if got := cspArchitecture(tt.in); got != tt.want {
+			t.Errorf("cspArchitecture(%q) = %q, want %q", tt.in, got, tt.want)
+		}
+	}
+
+	t.Run("from spec", func(t *testing.T) {
+		csp := cspVMFixture(t)
+		csp.VMSpecDetail.Architecture = "arm64"
+		if got := refinedNodeFromCSP(csp).CPU.Architecture; got != "aarch64" {
+			t.Errorf("CPU.Architecture = %q, want aarch64", got)
+		}
+	})
+
+	t.Run("from image", func(t *testing.T) {
+		csp := cspVMFixture(t)
+		csp.VMSpecDetail.Architecture = ""
+		csp.ImageDetail.OSArchitecture = "AMD64"
+		if got := refinedNodeFromCSP(csp).CPU.Architecture; got != "x86_64" {
+			t.Errorf("CPU.Architecture = %q, want x86_64", got)
 		}
 	})
 }

@@ -72,13 +72,30 @@ func refinedNodeFromCSP(csp *infra.CSPInfo) inframodel.NodeProperty {
 		node.CPU = cspCPU(spec.VCPUs)
 		node.Memory.TotalSize = mibToGiBCapacity(uint64(spec.MemoryMiB)) // GiB
 		node.GPUCards = cspGPUCards(spec.GPUs)
-		node.CPU.Architecture = spec.Architecture
+		node.CPU.Architecture = cspArchitecture(spec.Architecture)
 	}
 	if node.CPU.Architecture == "" && csp.ImageDetail != nil {
-		node.CPU.Architecture = strings.ToLower(csp.ImageDetail.OSArchitecture)
+		node.CPU.Architecture = cspArchitecture(csp.ImageDetail.OSArchitecture)
 	}
 
 	return node
+}
+
+// cspArchitecture writes a CSP's architecture name as the agent reports it
+// (uname -m), so a node from CSP data and a node from the agent carry the same
+// value. cm-beetle passes it to the image search of cb-tumblebug, which matches
+// os_architecture exactly; "amd64" or "arm64" would match no image there.
+// Names with no agent counterpart are kept as they are.
+func cspArchitecture(arch string) string {
+	a := strings.ToLower(strings.TrimSpace(arch))
+	switch a {
+	case "amd64", "x64", "x86-64":
+		return "x86_64"
+	case "arm64":
+		return "aarch64"
+	}
+
+	return a
 }
 
 // cspCPU gives a VM's vCPU count the CPU shape cm-beetle sizes a target from:
@@ -118,8 +135,11 @@ func cspDataDisks(csp *infra.CSPInfo) []inframodel.DiskProperty {
 }
 
 // cspInterfaces gives the VM one interface holding its private IP, with the
-// prefix of the subnet the VM is in when the CSP data has it, and its public
-// IP. The guest's interface name is not known to the CSP and stays empty.
+// prefix of the subnet the VM is in when the CSP data has it. The public IP is
+// left out: the CSP maps it to the VM outside the guest, so no guest NIC holds
+// it, and cm-beetle reads interface addresses as the node's own addresses (for
+// security group rules between nodes and for NLB backends). The guest's
+// interface name is not known to the CSP and stays empty.
 func cspInterfaces(csp *infra.CSPInfo) []inframodel.NetworkInterfaceProperty {
 	iface := inframodel.NetworkInterfaceProperty{
 		IPv4CidrBlocks: []string{},
@@ -142,9 +162,6 @@ func cspInterfaces(csp *infra.CSPInfo) []inframodel.NetworkInterfaceProperty {
 
 	if ip := net.ParseIP(strings.TrimSpace(csp.PrivateIP)); ip != nil {
 		add(ip, cspSubnetPrefix(csp, ip))
-	}
-	if ip := net.ParseIP(strings.TrimSpace(csp.PublicIP)); ip != nil {
-		add(ip, -1)
 	}
 
 	if len(iface.IPv4CidrBlocks) == 0 && len(iface.IPv6CidrBlocks) == 0 {
