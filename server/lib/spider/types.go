@@ -109,7 +109,7 @@ type S3BucketInfo struct {
 type NLBInfo struct {
 	IId           IID               `json:"IId"`
 	VpcIID        IID               `json:"VpcIID"`
-	Type          string            `json:"Type"`  // PUBLIC | INTERNAL - see normalizeNLBType
+	Type          string            `json:"Type"`  // PUBLIC | INTERNAL as reported - see the controller's normalizeNLBType
 	Scope         string            `json:"Scope"` // REGION | GLOBAL
 	Listener      ListenerInfo      `json:"Listener"`
 	VMGroup       VMGroupInfo       `json:"VMGroup"`

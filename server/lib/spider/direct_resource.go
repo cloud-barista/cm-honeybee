@@ -176,7 +176,8 @@ func listSecurityGroup(c Conn) ([]SecurityGroupInfo, error) {
 //
 // The values are raw driver output: cb-spider's transformArgsToUpper() never
 // runs on this path, so Type/Scope/Protocol keep whatever case the driver
-// produced. Normalising that is the caller's job - see nlbInfoToNLB().
+// produced. Normalising that is the caller's job - see the controller's
+// nlbInfoToNLB().
 func ListNLB(c Conn) ([]NLBInfo, error) {
 	return withTimeout(driverCallTimeout, func() ([]NLBInfo, error) { return listNLB(c) })
 }
@@ -195,6 +196,37 @@ func listNLB(c Conn) ([]NLBInfo, error) {
 		return nil, err
 	}
 	return convertList[NLBInfo](list)
+}
+
+// GetNLB fetches one NLB by its IID. The IID is passed through as GetVPC does:
+// aws, alibaba, gcp, ncp and tencent read its SystemId, nhn and openstack read
+// SystemId and fall back to NameId, while azure and ibm read NameId only.
+// The values are raw driver output, as in ListNLB.
+func GetNLB(c Conn, iid IID) (*NLBInfo, error) {
+	return withTimeout(driverCallTimeout, func() (*NLBInfo, error) { return getNLB(c, iid) })
+}
+
+func getNLB(c Conn, iid IID) (*NLBInfo, error) {
+	if iid.NameId == "" && iid.SystemId == "" {
+		return nil, mustNonEmpty("NLBIID", "")
+	}
+	conn, err := connect(c)
+	if err != nil {
+		return nil, err
+	}
+	handler, err := conn.CreateNLBHandler()
+	if err != nil {
+		return nil, err
+	}
+	info, err := handler.GetNLB(cres.IID{NameId: iid.NameId, SystemId: iid.SystemId})
+	if err != nil {
+		return nil, err
+	}
+	out, err := convertJSON[NLBInfo](info)
+	if err != nil {
+		return nil, err
+	}
+	return &out, nil
 }
 
 // ListCluster returns every Kubernetes cluster the CSP has, as

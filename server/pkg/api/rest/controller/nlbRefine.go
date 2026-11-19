@@ -6,6 +6,8 @@ import (
 
 	inframodel "github.com/cloud-barista/cm-beetle/imdl/on-premise-model"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
+	"github.com/jollaman999/utils/logger"
 )
 
 // haproxyToNLBs converts the collected HAProxy configuration into NLB entries,
@@ -184,4 +186,97 @@ func firstField(s string) string {
 		return ""
 	}
 	return fields[0]
+}
+
+// cspNLBSoftware names a CSP-managed NLB in the refined model's Software
+// field, which an NLB found in HAProxy's configuration fills with "haproxy".
+// The provider is part of it, e.g. "aws-nlb", since the managed product
+// differs per CSP; "csp-nlb" is used when the provider is not known.
+func cspNLBSoftware(provider string) string {
+	provider = strings.ToLower(strings.TrimSpace(provider))
+	if provider == "" {
+		provider = "csp"
+	}
+	return provider + "-nlb"
+}
+
+// cspNLBBindAddress gives the refined listener address of a CSP NLB. cm-beetle
+// reads "*" as a PUBLIC NLB and a specific address as an INTERNAL one. An
+// INTERNAL NLB is given its first listener IP, or its DNS name on a driver that
+// reports no IP (an AWS internal NLB); an NLB whose type the driver does not
+// tell is left empty.
+func cspNLBBindAddress(rec *model.CSPNLBRecord) string {
+	switch rec.Type {
+	case nlbTypePublic:
+		return "*"
+	case nlbTypeInternal:
+		for _, ip := range strings.Split(rec.Listener.IP, ",") {
+			if ip = strings.TrimSpace(ip); ip != "" {
+				return ip
+			}
+		}
+		if rec.Listener.DNSName != "" {
+			return rec.Listener.DNSName
+		}
+		logger.Println(logger.WARN, false, "CSP NLB '"+rec.Name+"' is INTERNAL but reports neither a listener IP nor a DNS name;"+
+			" its refined bind address is left empty")
+		return ""
+	default:
+		return ""
+	}
+}
+
+// cspNLBToNlbProperty maps a stored CSP NLB into the refined model's NLB entry.
+// The drivers report the backend VMs by their identifiers only, so a server's
+// IP is taken from vmIPs, the private IPs of the group's CSP VMs keyed by their
+// CSP ID and name (cspVMPrivateIPs). A VM not in it keeps an empty IP, which
+// cm-beetle cannot match to a node. A CSP NLB runs on no host of the group, so
+// HostMachineId stays empty, and its balancing algorithm is not reported.
+func cspNLBToNlbProperty(rec *model.CSPNLBRecord, provider string, vmIPs map[string]string) inframodel.NlbProperty {
+	port := atoiPort(rec.VMGroup.Port)
+	servers := make([]inframodel.NlbServerProperty, 0, len(rec.VMGroup.VMs))
+	for _, vm := range rec.VMGroup.VMs {
+		ip := vmIPs[vm.SystemID]
+		if ip == "" && vm.Name != "" {
+			ip = vmIPs[vm.Name]
+		}
+		servers = append(servers, inframodel.NlbServerProperty{
+			Name: firstNonEmpty(vm.Name, vm.SystemID),
+			IP:   ip,
+			Port: port,
+		})
+	}
+
+	hc := rec.HealthChecker
+	return inframodel.NlbProperty{
+		Software: cspNLBSoftware(provider),
+		Listener: inframodel.NlbListenerProperty{
+			BindAddress: cspNLBBindAddress(rec),
+			Port:        atoiPort(rec.Listener.Port),
+			Protocol:    strings.ToLower(rec.Listener.Protocol),
+		},
+		Backend: inframodel.NlbBackendProperty{
+			Name:     rec.Name,
+			Protocol: strings.ToLower(rec.VMGroup.Protocol),
+			Servers:  servers,
+		},
+		HealthCheck: inframodel.NlbHealthCheckProperty{
+			Enabled:   hc.Protocol != "" || hc.Interval > 0,
+			Protocol:  strings.ToLower(hc.Protocol),
+			Port:      atoiPort(hc.Port),
+			Interval:  hc.Interval,
+			Timeout:   hc.Timeout,
+			Threshold: hc.Threshold,
+		},
+	}
+}
+
+// atoiPort reads a port a driver reported as text. Anything that is not a port
+// number, such as an empty value, becomes 0.
+func atoiPort(s string) int {
+	port, err := strconv.Atoi(strings.TrimSpace(s))
+	if err != nil || port < 1 || port > 65535 {
+		return 0
+	}
+	return port
 }

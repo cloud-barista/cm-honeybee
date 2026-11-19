@@ -1227,7 +1227,7 @@ func doGetRefinedSoftwareInfo(softwareInfo *software.Software, connID string) (*
 //
 //	@ID				get-infra-info-refined
 //	@Summary		Get Refined Infra Information
-//	@Description	Get the refined infra information of the connection information. A CSP resource other than a VM makes no node; a CSP k8s connection gives its cluster as k8sCluster.
+//	@Description	Get the refined infra information of the connection information. A CSP resource other than a VM makes no node; a CSP k8s connection gives its cluster as k8sCluster, and a CSP nlb connection its NLB as an entry of nlbs.
 //	@Tags			[Get] Get refined source info
 //	@Accept			json
 //	@Produce		json
@@ -1292,6 +1292,17 @@ func GetInfraInfoRefined(c echo.Context) error {
 		}
 	}
 
+	// A CSP NLB is an NLB entry of its own. Its backend servers are given the
+	// private IPs of the group's CSP VMs, which the CSP does not report with it.
+	if isCSPNLB(sourceGroup, connectionInfo) {
+		groupConns, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: connectionInfo.SourceGroupID}, 0, 0)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+		onpremiseInfra.NLBs = append(onpremiseInfra.NLBs,
+			refinedCSPNLBs(sourceGroup, []model.ConnectionInfo{*connectionInfo}, *groupConns)...)
+	}
+
 	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
 }
 
@@ -1299,7 +1310,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 //
 //	@ID				get-infra-info-source-group-refined
 //	@Summary		Get Refined Infra Information Source Group
-//	@Description	Get the refined infra information of the source group. On-prem k8s connections and CSP resources other than VMs do not become nodes, and a connection whose infra has not been collected successfully is skipped.
+//	@Description	Get the refined infra information of the source group. On-prem k8s connections and CSP resources other than VMs do not become nodes, and a connection whose infra has not been collected successfully is skipped. The nlbs hold the NLBs found in HAProxy on the nodes and the CSP NLBs of the csp nlb connections.
 //	@Tags			[Get] Get refined source info
 //	@Accept			json
 //	@Produce		json
@@ -1353,6 +1364,9 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 			onpremiseInfra.Nodes = mergeK8sNodes(onpremiseInfra.Nodes, k8sInfo)
 		}
 	}
+
+	// The CSP NLBs come after the HAProxy ones found on the nodes.
+	onpremiseInfra.NLBs = append(onpremiseInfra.NLBs, refinedCSPNLBs(sourceGroup, *list, *list)...)
 
 	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
 }

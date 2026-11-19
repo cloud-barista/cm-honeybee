@@ -642,6 +642,25 @@ func upsertSavedRDBMS(connID string, payload model.RDBMSInfo) error {
 	return err
 }
 
+// upsertSavedNLB writes (or replaces) SavedNLBInfo for a connection.
+func upsertSavedNLB(connID string, record model.CSPNLBRecord) error {
+	raw, err := json.Marshal(record)
+	if err != nil {
+		return err
+	}
+	rec := &model.SavedNLBInfo{
+		ConnectionID: connID,
+		NLBData:      string(raw),
+		Status:       model.ConnectionInfoStatusSuccess,
+		SavedTime:    time.Now(),
+	}
+	if existing, _ := dao.SavedNLBInfoGet(connID); existing != nil {
+		return dao.SavedNLBInfoUpdate(rec)
+	}
+	_, err = dao.SavedNLBInfoRegister(rec)
+	return err
+}
+
 // upsertSavedData writes (or replaces) SavedDataInfo for a connection. cspData,
 // when not nil, is stored as the CSP-reported bucket.
 func upsertSavedData(connID string, payload any, cspData any) error {
@@ -735,6 +754,14 @@ func markCSPResourceFailed(ci *model.ConnectionInfo) error {
 				ConnectionID: ci.ID, Status: model.ConnectionInfoStatusFailed})
 		}
 		_, err := dao.SavedRDBMSInfoRegister(&model.SavedRDBMSInfo{
+			ConnectionID: ci.ID, Status: model.ConnectionInfoStatusFailed, SavedTime: now})
+		return err
+	case serverCommon.ResourceTypeNLB:
+		if existing, _ := dao.SavedNLBInfoGet(ci.ID); existing != nil {
+			return dao.SavedNLBInfoUpdate(&model.SavedNLBInfo{
+				ConnectionID: ci.ID, Status: model.ConnectionInfoStatusFailed})
+		}
+		_, err := dao.SavedNLBInfoRegister(&model.SavedNLBInfo{
 			ConnectionID: ci.ID, Status: model.ConnectionInfoStatusFailed, SavedTime: now})
 		return err
 	default:
@@ -850,6 +877,137 @@ func collectRDBMS(conn spider.Conn, resourceID string) (model.RDBMSInfo, error) 
 	}
 
 	return payload, nil
+}
+
+// The NLB calls of the CSP, kept in variables so tests can stand in for it.
+var (
+	getCSPNLB  = spider.GetNLB
+	listCSPNLB = spider.ListNLB
+)
+
+// findNLBByID looks an NLB up by the identifier discovery reported for it,
+// its SystemId or, where the driver leaves that blank, its NameId
+// (pickIIDSystem). The driver is asked for that one NLB first, as findVPC
+// does, which avoids listing every NLB. The drivers do not agree on which
+// field of the IID GetNLB reads (spider.GetNLB), so when the answer is an
+// error or another NLB, the listing is matched by SystemId and then NameId
+// instead, as findRDBMSByID does.
+func findNLBByID(conn spider.Conn, resourceID string) (*spider.NLBInfo, error) {
+	n, getErr := getCSPNLB(conn, spider.IID{SystemId: resourceID})
+	if getErr == nil && n != nil && matchNLB([]spider.NLBInfo{*n}, resourceID) != nil {
+		return n, nil
+	}
+
+	nlbs, err := listCSPNLB(conn)
+	if err != nil {
+		return nil, errors.New("get: " + errString(getErr) + ", list: " + err.Error())
+	}
+	if found := matchNLB(nlbs, resourceID); found != nil {
+		return found, nil
+	}
+
+	return nil, errors.New("nlb '" + resourceID + "' was not found " + connLabel(conn))
+}
+
+// matchNLB picks the NLB whose identifier is resourceID, SystemId first and
+// then NameId, by the same rule as matchCluster; an empty id never matches.
+func matchNLB(nlbs []spider.NLBInfo, resourceID string) *spider.NLBInfo {
+	if resourceID == "" {
+		return nil
+	}
+
+	for i := range nlbs {
+		iid := nlbs[i].IId
+		if iid.SystemId == resourceID || (iid.NameId != "" && iid.NameId == resourceID) {
+			return &nlbs[i]
+		}
+	}
+
+	return nil
+}
+
+// The NLB types of the refined record.
+const (
+	nlbTypePublic   = "PUBLIC"
+	nlbTypeInternal = "INTERNAL"
+)
+
+// normalizeNLBType reads whether an NLB faces the internet as PUBLIC or
+// INTERNAL, or "" when the driver does not tell. The drivers spell it
+// differently and some do not report it in Type at all: aws always reports
+// PUBLIC and keeps the load balancer's own scheme (internet-facing |
+// internal) in KeyValueList, alibaba reports an intranet NLB as PRIVATE, and
+// gcp copies its forwarding rule scheme (EXTERNAL | INTERNAL) when it fills
+// Type.
+func normalizeNLBType(n *spider.NLBInfo) string {
+	t := n.Type
+	if scheme := strings.TrimSpace(keyValueListToMap(n.KeyValueList)["Scheme"]); scheme != "" {
+		t = scheme
+	}
+
+	switch strings.ToUpper(strings.TrimSpace(t)) {
+	case "PUBLIC", "EXTERNAL", "INTERNET-FACING":
+		return nlbTypePublic
+	case "INTERNAL", "PRIVATE":
+		return nlbTypeInternal
+	default:
+		return ""
+	}
+}
+
+// nonNegative turns the -1 a driver reports for a value it does not support
+// into 0.
+func nonNegative(v int) int {
+	if v < 0 {
+		return 0
+	}
+	return v
+}
+
+func upperTrim(s string) string {
+	return strings.ToUpper(strings.TrimSpace(s))
+}
+
+// nlbInfoToNLB maps spider.NLBInfo into the record stored for a CSP nlb
+// connection. The values drivers spell differently are brought to one form
+// here (normalizeNLBType, upper-case scope and protocols); discovery reports
+// them verbatim. A backend VM the driver reports with no identifier is
+// dropped.
+func nlbInfoToNLB(n *spider.NLBInfo) model.CSPNLBRecord {
+	vms := make([]model.CSPNLBVM, 0, len(n.VMGroup.VMs))
+	for _, vm := range n.VMGroup.VMs {
+		if iidLabel(vm) == "" {
+			continue
+		}
+		vms = append(vms, model.CSPNLBVM{SystemID: vm.SystemId, Name: vm.NameId})
+	}
+
+	return model.CSPNLBRecord{
+		SystemID: n.IId.SystemId,
+		Name:     iidLabel(n.IId),
+		VPC:      iidLabel(n.VpcIID),
+		Type:     normalizeNLBType(n),
+		Scope:    upperTrim(n.Scope),
+		Listener: model.CSPNLBListener{
+			Protocol: upperTrim(n.Listener.Protocol),
+			IP:       strings.TrimSpace(n.Listener.IP),
+			Port:     strings.TrimSpace(n.Listener.Port),
+			DNSName:  strings.TrimSpace(n.Listener.DNSName),
+		},
+		VMGroup: model.CSPNLBVMGroup{
+			Protocol: upperTrim(n.VMGroup.Protocol),
+			Port:     strings.TrimSpace(n.VMGroup.Port),
+			VMs:      vms,
+		},
+		HealthChecker: model.CSPNLBHealthChecker{
+			Protocol:  upperTrim(n.HealthChecker.Protocol),
+			Port:      strings.TrimSpace(n.HealthChecker.Port),
+			Interval:  nonNegative(n.HealthChecker.Interval),
+			Timeout:   nonNegative(n.HealthChecker.Timeout),
+			Threshold: nonNegative(n.HealthChecker.Threshold),
+		},
+		CreatedTime: clusterCreatedTime(n.CreatedTime),
+	}
 }
 
 // The bucket calls of the CSP, kept in variables so tests can stand in for it.
@@ -996,6 +1154,9 @@ func checkCSPResource(conn spider.Conn, ci *model.ConnectionInfo) error {
 	case serverCommon.ResourceTypeRDBMS:
 		_, err := findRDBMSByID(conn, ci.ResourceID)
 		return err
+	case serverCommon.ResourceTypeNLB:
+		_, err := findNLBByID(conn, ci.ResourceID)
+		return err
 	default:
 		return errors.New("unsupported resource_type: " + ci.ResourceType)
 	}
@@ -1039,6 +1200,12 @@ func collectCSPResource(conn spider.Conn, sg *model.SourceGroup, ci *model.Conne
 			return err
 		}
 		return upsertSavedRDBMS(ci.ID, payload)
+	case serverCommon.ResourceTypeNLB:
+		n, err := findNLBByID(conn, ci.ResourceID)
+		if err != nil {
+			return err
+		}
+		return upsertSavedNLB(ci.ID, nlbInfoToNLB(n))
 	default:
 		return errors.New("unsupported resource_type: " + ci.ResourceType)
 	}
