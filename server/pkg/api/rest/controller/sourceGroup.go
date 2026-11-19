@@ -376,6 +376,28 @@ func GetSourceGroup(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, sourceGroupRes, " ")
 }
 
+// sourceGroupTypesMsg is the error for a type filter that names no group type.
+const sourceGroupTypesMsg = "type must be one of onprem | csp | fs | db | minio"
+
+// storedSourceGroupTypes gives the stored type values a type filter of the
+// group list matches, or nil when no filter is given. On-prem groups are stored
+// as "onprem", as the legacy "ssh" or, before the type existed, as "", and
+// every one of them is an on-prem group (see common.IsOnpremType).
+func storedSourceGroupTypes(filter string) ([]string, error) {
+	t := strings.ToLower(strings.TrimSpace(filter))
+	switch t {
+	case "":
+		return nil, nil
+	case serverCommon.SourceGroupTypeOnprem:
+		return []string{serverCommon.SourceGroupTypeOnprem, serverCommon.SourceGroupTypeSSH, ""}, nil
+	case serverCommon.SourceGroupTypeCSP, serverCommon.SourceGroupTypeFS,
+		serverCommon.SourceGroupTypeDB, serverCommon.SourceGroupTypeMinIO:
+		return []string{t}, nil
+	}
+
+	return nil, errors.New(sourceGroupTypesMsg)
+}
+
 // ListSourceGroup godoc
 //
 //	@ID				list-source-group
@@ -388,6 +410,7 @@ func GetSourceGroup(c echo.Context) error {
 //	@Param			row query string false "Row of the source group list."
 //	@Param			name query string false "Name of the source group."
 //	@Param			description query string false "Description of the source group."
+//	@Param			type query string false "Type of the source group. onprem also matches the legacy ssh type." Enums(onprem, csp, fs, db, minio)
 //	@Success		200	{object}	[]model.ListSourceGroupRes		"Successfully get a list of source group."
 //	@Failure		400	{object}	common.ErrorResponse			"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse			"Failed to get a list of source group."
@@ -398,12 +421,17 @@ func ListSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	types, err := storedSourceGroupTypes(c.QueryParam("type"))
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
 	sourceGroup := &model.SourceGroup{
 		Name:        c.QueryParam("name"),
 		Description: c.QueryParam("description"),
 	}
 
-	sourceGroups, err := dao.SourceGroupGetList(sourceGroup, page, row)
+	sourceGroups, err := dao.SourceGroupGetListOfTypes(sourceGroup, types, page, row)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}

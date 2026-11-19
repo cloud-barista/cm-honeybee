@@ -502,6 +502,7 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 		connectionInfo.ResourceType = strings.ToLower(strings.TrimSpace(createConnectionInfoReq.ResourceType))
 		switch connectionInfo.ResourceType {
 		case "", serverCommon.ResourceTypeVM:
+			connectionInfo.ResourceType = serverCommon.ResourceTypeVM
 			connectionInfo.IPAddress = createConnectionInfoReq.IPAddress
 			connectionInfo.SSHPort = createConnectionInfoReq.SSHPort
 			connectionInfo.User = createConnectionInfoReq.User
@@ -982,6 +983,12 @@ func getConnectionInfo(connID string, refresh bool, checked *cspCheckResult) (*m
 		return nil, err
 	}
 
+	sourceGroup, err := dao.SourceGroupGet(oldConnectionInfo.SourceGroupID)
+	if err != nil {
+		return nil, err
+	}
+	fillResourceType(sourceGroup, oldConnectionInfo)
+
 	connectionInfo, err = encryptSecrets(oldConnectionInfo)
 	if err != nil {
 		return nil, err
@@ -1147,6 +1154,36 @@ func GetConnectionInfoDirectly(c echo.Context) error {
 	return c.JSONPretty(http.StatusOK, connectionInfo, " ")
 }
 
+// fillResourceType gives an on-prem connection registered before
+// resource_type existed the type it stands for, a VM, so a response always
+// carries the type. Only on-prem groups are filled: an fs, db or minio
+// connection has no resource_type at all, and none of vm or the CSP types
+// describes a database server or an S3 endpoint.
+func fillResourceType(sourceGroup *model.SourceGroup, connectionInfo *model.ConnectionInfo) {
+	if serverCommon.IsOnpremType(sourceGroup.Type) && connectionInfo.ResourceType == "" {
+		connectionInfo.ResourceType = serverCommon.ResourceTypeVM
+	}
+}
+
+// storedResourceTypes gives the stored resource_type values a resource_type
+// filter of the connection list matches in the group, or nil when no filter is
+// given. An on-prem VM may be stored with an empty value (see
+// fillResourceType), so vm matches that too.
+func storedResourceTypes(sourceGroup *model.SourceGroup, filter string) ([]string, error) {
+	rt := strings.ToLower(strings.TrimSpace(filter))
+	if rt == "" {
+		return nil, nil
+	}
+	if !serverCommon.IsValidCSPResourceType(rt) {
+		return nil, errors.New(serverCommon.CSPResourceTypesMsg)
+	}
+	if rt == serverCommon.ResourceTypeVM && serverCommon.IsOnpremType(sourceGroup.Type) {
+		return []string{serverCommon.ResourceTypeVM, ""}, nil
+	}
+
+	return []string{rt}, nil
+}
+
 // ListConnectionInfo godoc
 //
 //	@ID				list-connection-info
@@ -1163,6 +1200,7 @@ func GetConnectionInfoDirectly(c echo.Context) error {
 //	@Param			ip_address query string false "IP address of the connection information."
 //	@Param			ssh_port query string false "SSH port of the connection information."
 //	@Param			user query string false "User of the connection information."
+//	@Param			resource_type query string false "Resource type of the connection information. vm also matches an on-prem connection registered without resource_type." Enums(vm, k8s, object_storage, nlb, rdbms)
 //	@Success		200	{object}	[]model.ListConnectionInfoRes	"Successfully get a list of connection information."
 //	@Failure		400	{object}	common.ErrorResponse			"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse			"Failed to get a list of connection information."
@@ -1183,6 +1221,11 @@ func ListConnectionInfo(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	resourceTypes, err := storedResourceTypes(sourceGroup, c.QueryParam("resource_type"))
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
 	connectionInfo := &model.ConnectionInfo{
 		Name:          c.QueryParam("name"),
 		Description:   c.QueryParam("description"),
@@ -1192,7 +1235,7 @@ func ListConnectionInfo(c echo.Context) error {
 		User:          c.QueryParam("user"),
 	}
 
-	connectionInfos, err := dao.ConnectionInfoGetList(connectionInfo, page, row)
+	connectionInfos, err := dao.ConnectionInfoGetListOfTypes(connectionInfo, resourceTypes, page, row)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -1218,6 +1261,7 @@ func ListConnectionInfo(c echo.Context) error {
 		if err := hydrateConnectionSecrets(&ci); err != nil {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
+		fillResourceType(sourceGroup, &ci)
 
 		encryptedConnectionInfo, err := encryptSecrets(&ci)
 		if err != nil {

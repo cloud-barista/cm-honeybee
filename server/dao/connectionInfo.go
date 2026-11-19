@@ -35,6 +35,15 @@ func ConnectionInfoGet(ID string) (*model.ConnectionInfo, error) {
 }
 
 func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row int) (*[]model.ConnectionInfo, error) {
+	return ConnectionInfoGetListOfTypes(connectionInfo, nil, page, row)
+}
+
+// ConnectionInfoGetListOfTypes is ConnectionInfoGetList narrowed to the
+// connections whose stored resource_type is one of resourceTypes. A nil
+// resourceTypes does not narrow. The caller passes the stored values, since
+// one type may be stored under more than one value (an on-prem VM registered
+// before resource_type existed has an empty one).
+func ConnectionInfoGetListOfTypes(connectionInfo *model.ConnectionInfo, resourceTypes []string, page int, row int) (*[]model.ConnectionInfo, error) {
 	connectionInfos := &[]model.ConnectionInfo{}
 
 	result := db.DB.Scopes(func(d *gorm.DB) *gorm.DB {
@@ -56,7 +65,11 @@ func ConnectionInfoGetList(connectionInfo *model.ConnectionInfo, page int, row i
 
 		sshPort, _ := strconv.Atoi(connectionInfo.SSHPort)
 		if sshPort >= 1 && sshPort <= 65535 {
-			filtered = filtered.Where("ssh_port = ?", "%"+connectionInfo.SSHPort+"%")
+			filtered = filtered.Where("ssh_port = ?", strconv.Itoa(sshPort))
+		}
+
+		if resourceTypes != nil {
+			filtered = filtered.Where("resource_type IN ?", resourceTypes)
 		}
 
 		if len(connectionInfo.User) != 0 {

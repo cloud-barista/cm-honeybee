@@ -33,6 +33,13 @@ func SourceGroupGet(ID string) (*model.SourceGroup, error) {
 }
 
 func SourceGroupGetList(sourceGroup *model.SourceGroup, page int, row int) (*[]model.SourceGroup, error) {
+	return SourceGroupGetListOfTypes(sourceGroup, nil, page, row)
+}
+
+// SourceGroupGetListOfTypes is SourceGroupGetList narrowed to the groups whose
+// stored type is one of types. A nil types does not narrow. The caller passes
+// the stored values, since on-prem is stored as "onprem", "ssh" or "".
+func SourceGroupGetListOfTypes(sourceGroup *model.SourceGroup, types []string, page int, row int) (*[]model.SourceGroup, error) {
 	sourceGroups := &[]model.SourceGroup{}
 
 	result := db.DB.Scopes(func(d *gorm.DB) *gorm.DB {
@@ -44,6 +51,10 @@ func SourceGroupGetList(sourceGroup *model.SourceGroup, page int, row int) (*[]m
 
 		if len(sourceGroup.Description) != 0 {
 			filtered = filtered.Where("description LIKE ?", "%"+sourceGroup.Description+"%")
+		}
+
+		if types != nil {
+			filtered = filtered.Where("type IN ?", types)
 		}
 
 		if page != 0 && row != 0 {
