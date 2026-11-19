@@ -1271,7 +1271,7 @@ func GetInfraInfoRefined(c echo.Context) error {
 //
 //	@ID				get-infra-info-source-group-refined
 //	@Summary		Get Refined Infra Information Source Group
-//	@Description	Get the refined infra information for all connections in the source group.
+//	@Description	Get the refined infra information of the source group. On-prem k8s connections and CSP resources other than VMs do not become nodes, and a connection whose infra has not been collected successfully is skipped.
 //	@Tags			[Get] Get refined source info
 //	@Accept			json
 //	@Produce		json
@@ -1286,7 +1286,7 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	_, err := dao.SourceGroupGet(sgID)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -1300,27 +1300,30 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 	var listeningPorts [][]model.ListeningPortProperty
 	var k8sInfo *kubernetes.Kubernetes
 
-	for _, conn := range *list {
-		infraInfo, err := doGetInfraInfo(conn.ID)
-		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
-		}
+	for _, src := range refinedInfraSources(sourceGroup, *list) {
+		infraInfo := src.infra
 		refinedInfraInfo, err := doGetRefinedInfraInfo(infraInfo)
 		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
+			logger.Println(logger.ERROR, false, "Skipping a node whose infra could not be refined."+
+				" (ConnectionID = "+src.connID+", Error = "+err.Error()+")")
+			continue
 		}
 		onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
-		listeningPorts = append(listeningPorts, tryGetListeningPorts(conn.ID))
+		listeningPorts = append(listeningPorts, tryGetListeningPorts(src.connID))
 		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
 		onpremiseInfra.NLBs = append(onpremiseInfra.NLBs, haproxyToNLBs(infraInfo.HAProxy, infraInfo.Compute.OS.Node.Machineid)...)
+	}
 
-		// The Kubernetes cluster is collected once per source group, from the
-		// connection of a control plane node whose kubeconfig enumerates the
-		// whole cluster.
-		if !hasK8sClusterData(k8sInfo) {
-			if candidate := tryGetKubernetesInfo(conn.ID); hasK8sClusterData(candidate) {
-				k8sInfo = candidate
-			}
+	// The Kubernetes cluster is collected once per source group, from the
+	// connection of a control plane node whose kubeconfig enumerates the whole
+	// cluster. Every connection is a candidate, not only the node ones, so a
+	// cluster stored under a connection that is not a node is still found.
+	for _, conn := range *list {
+		if hasK8sClusterData(k8sInfo) {
+			break
+		}
+		if candidate := tryGetKubernetesInfo(conn.ID); hasK8sClusterData(candidate) {
+			k8sInfo = candidate
 		}
 	}
 
@@ -1391,7 +1394,7 @@ func GetSoftwareInfoRefined(c echo.Context) error {
 //
 //	@ID				get-software-info-source-group-refined
 //	@Summary		Get Refined Software Information Source Group
-//	@Description	Get the refined software information for all connections in the source group.
+//	@Description	Get the refined software information of the connections in the source group that run the agent. A connection whose software has not been collected successfully is skipped.
 //	@Tags			[Get] Get refined source info
 //	@Accept			json
 //	@Produce		json
@@ -1406,7 +1409,7 @@ func GetSoftwareInfoSourceGroupRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	_, err := dao.SourceGroupGet(sgID)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -1419,18 +1422,17 @@ func GetSoftwareInfoSourceGroupRefined(c echo.Context) error {
 	var sourceGroupSoftwareProperty softwaremodel.SourceGroupSoftwareProperty
 
 	sourceGroupSoftwareProperty.SourceGroupId = sgID
+	sourceGroupSoftwareProperty.ConnectionInfoList = []softwaremodel.SourceConnectionInfoSoftwareProperty{}
 
-	for _, conn := range *list {
-		softwareInfo, err := doGetSoftwareInfo(conn.ID)
+	for _, src := range refinedSoftwareSources(sourceGroup, *list) {
+		refinedSoftwareInfo, err := doGetRefinedSoftwareInfo(src.software, src.connID)
 		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
-		}
-		refinedSoftwareInfo, err := doGetRefinedSoftwareInfo(softwareInfo, conn.ID)
-		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
+			logger.Println(logger.ERROR, false, "Skipping software that could not be refined."+
+				" (ConnectionID = "+src.connID+", Error = "+err.Error()+")")
+			continue
 		}
 		sourceGroupSoftwareProperty.ConnectionInfoList = append(sourceGroupSoftwareProperty.ConnectionInfoList, softwaremodel.SourceConnectionInfoSoftwareProperty{
-			ConnectionId: conn.ID,
+			ConnectionId: src.connID,
 			Softwares:    *refinedSoftwareInfo,
 		})
 	}

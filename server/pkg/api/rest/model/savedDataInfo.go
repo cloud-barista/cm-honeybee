@@ -13,6 +13,9 @@ type SavedDataInfo struct {
 	CSPData   string    `gorm:"column:csp_data" json:"csp_data,omitempty"`
 	Status    string    `gorm:"column:status" json:"status"`
 	SavedTime time.Time `gorm:"column:saved_time" json:"saved_time"`
+	// ErrorMessage says why the last import of the connection failed. It is
+	// filled only in a group import response and is never stored.
+	ErrorMessage string `gorm:"-" json:"error_message,omitempty"`
 }
 
 type DataInfoList struct {

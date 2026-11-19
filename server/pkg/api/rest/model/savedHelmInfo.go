@@ -10,6 +10,9 @@ type SavedHelmInfo struct {
 	HelmData     string    `gorm:"column:helm_data" json:"helm_data" validate:"required"`
 	Status       string    `gorm:"column:status" json:"status"`
 	SavedTime    time.Time `gorm:"column:saved_time" json:"saved_time"`
+	// ErrorMessage says why the last import of the connection failed. It is
+	// filled only in a group import response and is never stored.
+	ErrorMessage string `gorm:"-" json:"error_message,omitempty"`
 }
 
 type HelmInfoList struct {

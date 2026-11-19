@@ -29,16 +29,15 @@ func isOnpremK8s(sourceGroup *model.SourceGroup, connectionInfo *model.Connectio
 
 // checkAgentImportable rejects connections that cannot be collected through the
 // agent, before an import writes an "importing" record it would never finish.
+// Rejecting here also keeps a failed SSH attempt from marking the records the
+// CSP collection wrote for a non-VM connection as failed.
 func checkAgentImportable(connectionInfo *model.ConnectionInfo) error {
 	sourceGroup, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
 	if err != nil {
 		return err
 	}
-	if isOnpremK8s(sourceGroup, connectionInfo) {
-		return ErrOnpremK8sAgent
-	}
 
-	return nil
+	return agentNotApplicable(sourceGroup, connectionInfo)
 }
 
 // logImportStep records how long one step of an import took. Import latency is
@@ -480,7 +479,7 @@ func ImportInfra(c echo.Context) error {
 //
 //	@ID				import-infra-source-group
 //	@Summary		Import Infra Source Group
-//	@Description	Import infra information for all connections in the source group.
+//	@Description	Import infra information for all connections in the source group. A connection that fails is listed with status failed and does not stop the others; the request fails only when every connection fails.
 //	@Tags		[Import] Import source info
 //	@Accept		json
 //	@Produce		json
@@ -496,7 +495,7 @@ func ImportInfraSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	_, err := dao.SourceGroupGet(sgID)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -511,22 +510,22 @@ func ImportInfraSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	var savedInfraInfoList []model.SavedInfraInfo
-
-	for _, conn := range *list {
-		savedInfraInfo, err := doImportInfra(conn.ID, opts)
-		if err != nil {
-			// An on-prem k8s member carries no agent; skip it rather than
-			// failing the collection for every other source in the group.
-			if errors.Is(err, ErrOnpremK8sAgent) {
-				continue
-			}
-			return common.ReturnErrorMsg(c, err.Error())
-		}
-		savedInfraInfoList = append(savedInfraInfoList, *savedInfraInfo)
+	savedInfraInfoList, err := importInfraGroup(sourceGroup, *list, opts)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, savedInfraInfoList, " ")
+}
+
+// importInfraGroup collects the infra of every connection of the group. A
+// connection that fails is listed with status failed and the rest go on; the
+// import fails only when no connection could be collected.
+func importInfraGroup(sourceGroup *model.SourceGroup, conns []model.ConnectionInfo,
+	opts importInfraOptions) ([]model.SavedInfraInfo, error) {
+	return importEach(infraImportTargets(sourceGroup, conns), func(connID string) (*model.SavedInfraInfo, error) {
+		return doImportInfra(connID, opts)
+	}, failedSavedInfraInfo)
 }
 
 // ImportSoftware godoc
@@ -575,7 +574,7 @@ func ImportSoftware(c echo.Context) error {
 //
 //	@ID				import-software-source-group
 //	@Summary		Import Software Source Group
-//	@Description	Import software information for all connections in the source group.
+//	@Description	Import software information for the connections in the source group through the agent. Connections without an agent (on-prem k8s, CSP resources other than VMs, CSP VMs without an IP address) are skipped. A connection that fails is listed with status failed and does not stop the others; the request fails only when every connection fails.
 //	@Tags			[Import] Import source info
 //	@Accept			json
 //	@Produce		json
@@ -594,7 +593,7 @@ func ImportSoftwareSourceGroup(c echo.Context) error {
 	showDefaultPackagesStr := c.QueryParam("show_default_packages")
 	showDefaultPackages, _ := strconv.ParseBool(showDefaultPackagesStr)
 
-	_, err := dao.SourceGroupGet(sgID)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -604,19 +603,14 @@ func ImportSoftwareSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	var savedSoftwareInfoList []model.SavedSoftwareInfo
-
-	for _, conn := range *list {
-		savedSoftwareInfo, err := doImportSoftware(conn.ID, showDefaultPackages)
-		if err != nil {
-			// An on-prem k8s member carries no agent; skip it rather than
-			// failing the collection for every other source in the group.
-			if errors.Is(err, ErrOnpremK8sAgent) {
-				continue
-			}
-			return common.ReturnErrorMsg(c, err.Error())
-		}
-		savedSoftwareInfoList = append(savedSoftwareInfoList, *savedSoftwareInfo)
+	// Only connections with an agent behind them are collected; a CSP
+	// resource without one would fail on SSH and stop the whole group.
+	savedSoftwareInfoList, err := importEach(agentImportTargets(sourceGroup, *list),
+		func(connID string) (*model.SavedSoftwareInfo, error) {
+			return doImportSoftware(connID, showDefaultPackages)
+		}, failedSavedSoftwareInfo)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, savedSoftwareInfoList, " ")
@@ -664,7 +658,7 @@ func ImportKubernetes(c echo.Context) error {
 //
 //	@ID				import-kubernetes-source-group
 //	@Summary		Import Kubernetes Source Group
-//	@Description	Import kubernetes information for all connections in the source group.
+//	@Description	Import kubernetes information for the connections in the source group through the agent. Connections without an agent (on-prem k8s, CSP resources other than VMs, CSP VMs without an IP address) are skipped. A connection that fails is listed with status failed and does not stop the others; the request fails only when every connection fails.
 //	@Tags			[Import] Import source info
 //	@Accept			json
 //	@Produce		json
@@ -679,7 +673,7 @@ func ImportKubernetesSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	_, err := dao.SourceGroupGet(sgID)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -689,19 +683,12 @@ func ImportKubernetesSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	var savedKubernetesInfoList []model.SavedKubernetesInfo
-
-	for _, conn := range *list {
-		savedKubernetesInfo, err := doImportKubernetes(conn.ID)
-		if err != nil {
-			// An on-prem k8s member carries no agent; skip it rather than
-			// failing the collection for every other source in the group.
-			if errors.Is(err, ErrOnpremK8sAgent) {
-				continue
-			}
-			return common.ReturnErrorMsg(c, err.Error())
-		}
-		savedKubernetesInfoList = append(savedKubernetesInfoList, *savedKubernetesInfo)
+	// Only connections with an agent behind them are collected; a CSP
+	// resource without one would fail on SSH and stop the whole group.
+	savedKubernetesInfoList, err := importEach(agentImportTargets(sourceGroup, *list),
+		doImportKubernetes, failedSavedKubernetesInfo)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, savedKubernetesInfoList, " ")
@@ -749,7 +736,7 @@ func ImportHelm(c echo.Context) error {
 //
 //	@ID				import-helm-source-group
 //	@Summary		Import helm Source Group
-//	@Description	Import helm information for all connections in the source group.
+//	@Description	Import helm information for the connections in the source group through the agent. Connections without an agent (on-prem k8s, CSP resources other than VMs, CSP VMs without an IP address) are skipped. A connection that fails is listed with status failed and does not stop the others; the request fails only when every connection fails.
 //	@Tags			[Import] Import source info
 //	@Accept			json
 //	@Produce		json
@@ -764,7 +751,7 @@ func ImportHelmSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	_, err := dao.SourceGroupGet(sgID)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -774,19 +761,12 @@ func ImportHelmSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	var savedHelmInfoList []model.SavedHelmInfo
-
-	for _, conn := range *list {
-		savedHelmInfo, err := doImportHelm(conn.ID)
-		if err != nil {
-			// An on-prem k8s member carries no agent; skip it rather than
-			// failing the collection for every other source in the group.
-			if errors.Is(err, ErrOnpremK8sAgent) {
-				continue
-			}
-			return common.ReturnErrorMsg(c, err.Error())
-		}
-		savedHelmInfoList = append(savedHelmInfoList, *savedHelmInfo)
+	// Only connections with an agent behind them are collected; a CSP
+	// resource without one would fail on SSH and stop the whole group.
+	savedHelmInfoList, err := importEach(agentImportTargets(sourceGroup, *list),
+		doImportHelm, failedSavedHelmInfo)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, savedHelmInfoList, " ")
@@ -834,7 +814,7 @@ func ImportData(c echo.Context) error {
 //
 //	@ID				import-data-source-group
 //	@Summary		Import Data Source Group
-//	@Description	Import data information for all connections in the source group.
+//	@Description	Import data information for the connections in the source group through the agent. Connections without an agent (on-prem k8s, CSP resources other than VMs, CSP VMs without an IP address) are skipped. A connection that fails is listed with status failed and does not stop the others; the request fails only when every connection fails.
 //	@Tags			[Import] Import source info
 //	@Accept			json
 //	@Produce		json
@@ -849,7 +829,7 @@ func ImportDataSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the sgId.")
 	}
 
-	_, err := dao.SourceGroupGet(sgID)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -859,19 +839,12 @@ func ImportDataSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	var savedDataInfoList []model.SavedDataInfo
-
-	for _, conn := range *list {
-		savedDataInfo, err := doImportData(conn.ID)
-		if err != nil {
-			// An on-prem k8s member carries no agent; skip it rather than
-			// failing the collection for every other source in the group.
-			if errors.Is(err, ErrOnpremK8sAgent) {
-				continue
-			}
-			return common.ReturnErrorMsg(c, err.Error())
-		}
-		savedDataInfoList = append(savedDataInfoList, *savedDataInfo)
+	// Only connections with an agent behind them are collected; a CSP
+	// resource without one would fail on SSH and stop the whole group.
+	savedDataInfoList, err := importEach(agentImportTargets(sourceGroup, *list),
+		doImportData, failedSavedDataInfo)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	return c.JSONPretty(http.StatusOK, savedDataInfoList, " ")
