@@ -976,23 +976,29 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 	}
 
 	return withCSPConn(sg, ci.Zone, func(conn spider.Conn) error {
-		switch ci.ResourceType {
-		case "vm":
-			_, err := spider.GetCSPVM(conn, cspVMIdentifier(ci.ResourceID))
-			return err
-		case "k8s":
-			_, err := findClusterByID(conn, ci.ResourceID)
-			return err
-		case "object_storage":
-			_, err := checkBucket(conn, ci.ResourceID)
-			return err
-		case serverCommon.ResourceTypeRDBMS:
-			_, err := findRDBMSByID(conn, ci.ResourceID)
-			return err
-		default:
-			return errors.New("unsupported resource_type: " + ci.ResourceType)
-		}
+		return checkCSPResource(conn, ci)
 	})
+}
+
+// checkCSPResource is the driver side of checkCSPConnection, given the
+// connection to the CSP.
+func checkCSPResource(conn spider.Conn, ci *model.ConnectionInfo) error {
+	switch ci.ResourceType {
+	case "vm":
+		_, err := spider.GetCSPVM(conn, cspVMIdentifier(ci.ResourceID))
+		return err
+	case "k8s":
+		_, err := findClusterByID(conn, ci.ResourceID)
+		return err
+	case "object_storage":
+		_, err := checkBucket(conn, ci.ResourceID)
+		return err
+	case serverCommon.ResourceTypeRDBMS:
+		_, err := findRDBMSByID(conn, ci.ResourceID)
+		return err
+	default:
+		return errors.New("unsupported resource_type: " + ci.ResourceType)
+	}
 }
 
 // refreshCSPConnection asks the CSP driver for the resource described by ci and
@@ -1005,29 +1011,35 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo, opts 
 
 	// The credential goes to the driver in memory for this call only.
 	return withCSPConn(sg, ci.Zone, func(conn spider.Conn) error {
-		switch ci.ResourceType {
-		case "vm":
-			vm, err := spider.GetCSPVM(conn, cspVMIdentifier(ci.ResourceID))
-			if err != nil {
-				return err
-			}
-			return upsertSavedCSPData(ci.ID, buildCSPInfo(conn, sg, vm))
-		case "k8s":
-			cl, err := findClusterByID(conn, ci.ResourceID)
-			if err != nil {
-				return err
-			}
-			return upsertSavedK8s(ci.ID, clusterInfoToK8s(cl))
-		case "object_storage":
-			return collectBucket(conn, ci.ID, ci.ResourceID, opts.CountObjects)
-		case serverCommon.ResourceTypeRDBMS:
-			payload, err := collectRDBMS(conn, ci.ResourceID)
-			if err != nil {
-				return err
-			}
-			return upsertSavedRDBMS(ci.ID, payload)
-		default:
-			return errors.New("unsupported resource_type: " + ci.ResourceType)
-		}
+		return collectCSPResource(conn, sg, ci, opts)
 	})
+}
+
+// collectCSPResource is the driver side of refreshCSPConnection, given the
+// connection to the CSP.
+func collectCSPResource(conn spider.Conn, sg *model.SourceGroup, ci *model.ConnectionInfo, opts importInfraOptions) error {
+	switch ci.ResourceType {
+	case "vm":
+		vm, err := spider.GetCSPVM(conn, cspVMIdentifier(ci.ResourceID))
+		if err != nil {
+			return err
+		}
+		return upsertSavedCSPData(ci.ID, buildCSPInfo(conn, sg, vm))
+	case "k8s":
+		cl, err := findClusterByID(conn, ci.ResourceID)
+		if err != nil {
+			return err
+		}
+		return upsertSavedK8s(ci.ID, clusterInfoToK8s(cl))
+	case "object_storage":
+		return collectBucket(conn, ci.ID, ci.ResourceID, opts.CountObjects)
+	case serverCommon.ResourceTypeRDBMS:
+		payload, err := collectRDBMS(conn, ci.ResourceID)
+		if err != nil {
+			return err
+		}
+		return upsertSavedRDBMS(ci.ID, payload)
+	default:
+		return errors.New("unsupported resource_type: " + ci.ResourceType)
+	}
 }
