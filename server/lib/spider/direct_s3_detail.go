@@ -45,6 +45,20 @@ type S3BucketDetail struct {
 	// each. The matching fields keep their zero value, so a reader must check
 	// here before taking a false or empty value as observed.
 	Errors []string
+
+	// ItemsTried and ItemsRead count the items asked of the CSP and the ones
+	// that answered, so a bucket none of whose items could be read is told
+	// apart from one with a few failures. An item the API cannot answer at all
+	// (versioning on Azure) is listed in Errors but not counted as tried,
+	// since it fails for every container whatever the bucket's state.
+	ItemsTried int
+	ItemsRead  int
+}
+
+// NothingRead reports whether every item asked of the CSP failed, which means
+// the bucket was not collected at all: its fields hold zero values only.
+func (d *S3BucketDetail) NothingRead() bool {
+	return d.ItemsTried > 0 && d.ItemsRead == 0
 }
 
 // GetS3BucketDetail reads versioning, CORS, default encryption, public access,
@@ -87,35 +101,47 @@ const (
 func s3BucketDetail(ctx context.Context, client *minio.Client, bucketName string, countObjects bool) *S3BucketDetail {
 	d := &S3BucketDetail{Name: bucketName}
 	fail := func(item string, err error) {
+		d.ItemsTried++
 		d.Errors = append(d.Errors, item+": "+err.Error())
+	}
+	read := func() {
+		d.ItemsTried++
+		d.ItemsRead++
 	}
 
 	if v, err := client.GetBucketVersioning(ctx, bucketName); err != nil {
 		fail("versioning", err)
 	} else {
+		read()
 		d.VersioningEnabled = v.Enabled()
 	}
 
 	// GetBucketCors answers nil, nil when no CORS configuration is set.
 	if cfg, err := client.GetBucketCors(ctx, bucketName); err != nil {
 		fail("cors", err)
-	} else if cfg != nil {
-		for _, r := range cfg.CORSRules {
-			d.CORSRules = append(d.CORSRules, S3CORSRule{
-				AllowedOrigin: r.AllowedOrigin,
-				AllowedMethod: r.AllowedMethod,
-				AllowedHeader: r.AllowedHeader,
-				ExposeHeader:  r.ExposeHeader,
-				MaxAgeSeconds: r.MaxAgeSeconds,
-			})
+	} else {
+		read()
+		if cfg != nil {
+			for _, r := range cfg.CORSRules {
+				d.CORSRules = append(d.CORSRules, S3CORSRule{
+					AllowedOrigin: r.AllowedOrigin,
+					AllowedMethod: r.AllowedMethod,
+					AllowedHeader: r.AllowedHeader,
+					ExposeHeader:  r.ExposeHeader,
+					MaxAgeSeconds: r.MaxAgeSeconds,
+				})
+			}
 		}
 	}
 
 	if cfg, err := client.GetBucketEncryption(ctx, bucketName); err != nil {
 		if minio.ToErrorResponse(err).Code != codeNoEncryption {
 			fail("encryption", err)
+		} else {
+			read()
 		}
 	} else {
+		read()
 		d.EncryptionEnabled = cfg != nil && len(cfg.Rules) > 0
 	}
 
@@ -124,16 +150,22 @@ func s3BucketDetail(ctx context.Context, client *minio.Client, bucketName string
 	if policy, err := client.GetBucketPolicy(ctx, bucketName); err != nil {
 		fail("policy", err)
 	} else {
+		read()
 		d.IsPublic = policyAllowsAnyone(policy)
 	}
 
 	if t, err := client.GetBucketTagging(ctx, bucketName); err != nil {
 		if minio.ToErrorResponse(err).Code != codeNoTagSet {
 			fail("tagging", err)
+		} else {
+			read()
 		}
-	} else if t != nil {
-		if m := t.ToMap(); len(m) > 0 {
-			d.Tags = m
+	} else {
+		read()
+		if t != nil {
+			if m := t.ToMap(); len(m) > 0 {
+				d.Tags = m
+			}
 		}
 	}
 
@@ -151,6 +183,7 @@ func s3BucketDetail(ctx context.Context, client *minio.Client, bucketName string
 		if listErr != nil {
 			fail("objects", listErr)
 		} else {
+			read()
 			d.ObjectsCounted, d.TotalSizeBytes, d.ObjectCount = true, size, count
 		}
 	}
@@ -229,13 +262,20 @@ func azureContainerDetail(ctx context.Context, connInfo *s3ConnInfo, name string
 	}
 	d := &S3BucketDetail{Name: name, EncryptionEnabled: true}
 	fail := func(item string, err error) {
+		d.ItemsTried++
 		d.Errors = append(d.Errors, item+": "+err.Error())
 	}
-	fail("versioning", errAzureVersioning)
+	read := func() {
+		d.ItemsTried++
+		d.ItemsRead++
+	}
+	// Reported without being asked, so it is not counted as tried.
+	d.Errors = append(d.Errors, "versioning: "+errAzureVersioning.Error())
 
 	if props, err := client.ServiceClient().GetProperties(ctx, nil); err != nil {
 		fail("cors", err)
 	} else {
+		read()
 		for _, r := range props.CORS {
 			if r == nil {
 				continue
@@ -257,6 +297,7 @@ func azureContainerDetail(ctx context.Context, connInfo *s3ConnInfo, name string
 	if props, err := container.GetProperties(ctx, nil); err != nil {
 		fail("properties", err)
 	} else {
+		read()
 		d.IsPublic = props.BlobPublicAccess != nil && *props.BlobPublicAccess != ""
 		if props.LastModified != nil {
 			d.CreationDate = props.LastModified.Format(time.RFC3339Nano)
@@ -292,6 +333,7 @@ func azureContainerDetail(ctx context.Context, connInfo *s3ConnInfo, name string
 		if listErr != nil {
 			fail("objects", listErr)
 		} else {
+			read()
 			d.ObjectsCounted, d.TotalSizeBytes, d.ObjectCount = true, size, count
 		}
 	}

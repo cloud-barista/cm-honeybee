@@ -592,6 +592,13 @@ func upsertSavedRDBMS(connID string, payload model.RDBMSInfo) error {
 // upsertSavedData writes (or replaces) SavedDataInfo for a connection. cspData,
 // when not nil, is stored as the CSP-reported bucket.
 func upsertSavedData(connID string, payload any, cspData any) error {
+	return upsertSavedDataStatus(connID, payload, cspData, model.ConnectionInfoStatusSuccess)
+}
+
+// upsertSavedDataStatus is upsertSavedData with the status to store, so a
+// collection that read nothing keeps its errors on record without passing for
+// a success.
+func upsertSavedDataStatus(connID string, payload any, cspData any, status string) error {
 	raw, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -606,7 +613,7 @@ func upsertSavedData(connID string, payload any, cspData any) error {
 		ConnectionID: connID,
 		DataData:     string(raw),
 		CSPData:      string(cspRaw),
-		Status:       model.ConnectionInfoStatusSuccess,
+		Status:       status,
 		SavedTime:    time.Now(),
 	}
 	if existing, _ := dao.SavedDataInfoGet(connID); existing != nil {
@@ -614,6 +621,68 @@ func upsertSavedData(connID string, payload any, cspData any) error {
 	}
 	_, err = dao.SavedDataInfoRegister(rec)
 	return err
+}
+
+// storeBucketDetail saves what was read of a bucket. A bucket none of whose
+// items could be read is saved as failed, its errors kept as the record of why,
+// and returned as an error, the way a database import that read nothing is
+// (dbImportStatus). Some items failing is still a success: the rest were read
+// and the failures are listed in the stored errors.
+func storeBucketDetail(connID string, region string, d *spider.S3BucketDetail) error {
+	status := model.ConnectionInfoStatusSuccess
+	if d.NothingRead() {
+		status = model.ConnectionInfoStatusFailed
+	}
+
+	if err := upsertSavedDataStatus(connID, bucketToData(region, d), bucketToSourceProperty(d), status); err != nil {
+		return err
+	}
+
+	if d.NothingRead() {
+		return errors.New("none of the details of bucket '" + d.Name + "' could be read: " +
+			agentResponseExcerpt(strings.Join(d.Errors, "; ")))
+	}
+
+	return nil
+}
+
+// markCSPResourceFailed records a failed CSP collection in the table the
+// resource keeps its result in, so the last success stored there is not read
+// as current. The stored data is kept: GET still shows what was collected
+// last, while refined leaves the record out. A connection that has no record
+// yet gets a failed one. A VM keeps its result in SavedInfraInfo, which the
+// infra import marks itself.
+func markCSPResourceFailed(ci *model.ConnectionInfo) error {
+	now := time.Now()
+
+	switch ci.ResourceType {
+	case serverCommon.ResourceTypeK8s:
+		if existing, _ := dao.SavedKubernetesInfoGet(ci.ID); existing != nil {
+			return dao.SavedKubernetesInfoUpdate(&model.SavedKubernetesInfo{
+				ConnectionID: ci.ID, Status: model.ConnectionInfoStatusFailed})
+		}
+		_, err := dao.SavedKubernetesInfoRegister(&model.SavedKubernetesInfo{
+			ConnectionID: ci.ID, Status: model.ConnectionInfoStatusFailed, SavedTime: now})
+		return err
+	case serverCommon.ResourceTypeObjectStorage:
+		if existing, _ := dao.SavedDataInfoGet(ci.ID); existing != nil {
+			return dao.SavedDataInfoUpdate(&model.SavedDataInfo{
+				ConnectionID: ci.ID, Status: model.ConnectionInfoStatusFailed})
+		}
+		_, err := dao.SavedDataInfoRegister(&model.SavedDataInfo{
+			ConnectionID: ci.ID, Status: model.ConnectionInfoStatusFailed, SavedTime: now})
+		return err
+	case serverCommon.ResourceTypeRDBMS:
+		if existing, _ := dao.SavedRDBMSInfoGet(ci.ID); existing != nil {
+			return dao.SavedRDBMSInfoUpdate(&model.SavedRDBMSInfo{
+				ConnectionID: ci.ID, Status: model.ConnectionInfoStatusFailed})
+		}
+		_, err := dao.SavedRDBMSInfoRegister(&model.SavedRDBMSInfo{
+			ConnectionID: ci.ID, Status: model.ConnectionInfoStatusFailed, SavedTime: now})
+		return err
+	default:
+		return nil
+	}
 }
 
 // cspVMIdentifier returns the identifier a driver's GetVM expects. cb-spider's
@@ -842,7 +911,7 @@ func refreshCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo, opts 
 			for _, e := range d.Errors {
 				logger.Println(logger.WARN, false, "bucket '"+b.Name+"': "+e+" (ConnectionID="+ci.ID+")")
 			}
-			return upsertSavedData(ci.ID, bucketToData(conn.Region, d), bucketToSourceProperty(d))
+			return storeBucketDetail(ci.ID, conn.Region, d)
 		case serverCommon.ResourceTypeRDBMS:
 			payload, err := collectRDBMS(conn, ci.ResourceID)
 			if err != nil {

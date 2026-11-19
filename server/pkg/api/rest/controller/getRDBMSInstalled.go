@@ -507,7 +507,7 @@ func doGetInstalledSoftwareForRDBMS(connID string) (*software.Software, error) {
 	var softwareInfo software.Software
 	err = json.Unmarshal([]byte(savedSoftwareInfo.SoftwareData), &softwareInfo)
 	if err != nil {
-		errMsg := "Error occurred while parsing software information." +
+		errMsg := "Error occurred while parsing the software information to find the installed rdbms." +
 			" (ConnectionID = " + connID + ")"
 		logger.Println(logger.ERROR, false, errMsg)
 		return nil, errors.New(errMsg)

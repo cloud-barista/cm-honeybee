@@ -78,6 +78,10 @@ func importInfraOptionsFrom(c echo.Context) (importInfraOptions, error) {
 // for the CSP driver.
 var refreshCSP = refreshCSPConnection
 
+// hydrateSecrets is hydrateConnectionSecrets, kept in a variable so tests can
+// stand in for OpenBao.
+var hydrateSecrets = hydrateConnectionSecrets
+
 func doImportInfra(connID string, opts importInfraOptions) (*model.SavedInfraInfo, error) {
 	total := time.Now()
 	defer func() {
@@ -117,14 +121,28 @@ func doImportInfra(connID string, opts importInfraOptions) (*model.SavedInfraInf
 	}
 
 	// For CSP sources, (re)collect the CSP-side VM info (csp_data) as part of the
-	// import — mirroring the agent-side collection below. refreshCSPConnection
+	// import - mirroring the agent-side collection below. refreshCSPConnection
 	// updates csp_data in place, separate from infra_data.
 	if sourceGroup.Type == serverCommon.SourceGroupTypeCSP {
-		if err := refreshCSP(sourceGroup, connectionInfo, opts); err != nil {
+		refreshErr := refreshCSP(sourceGroup, connectionInfo, opts)
+		// connection_status follows the collection as well as the reachability
+		// check of registration and refresh: a resource that can be found but
+		// not read is not a working connection.
+		if err := updateCSPConnectionStatus(connectionInfo.ID, refreshErr); err != nil {
+			logger.Println(logger.ERROR, false, "Error occurred while updating the connection status."+
+				" (ConnectionID="+connectionInfo.ID+", Error="+err.Error()+")")
+		}
+		if refreshErr != nil {
 			oldSavedInfraInfo.Status = "failed"
 			_ = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
+			// The resource's own table still holds the last success otherwise,
+			// and refined would go on reading it as current.
+			if err := markCSPResourceFailed(connectionInfo); err != nil {
+				logger.Println(logger.ERROR, false, "Error occurred while marking the CSP resource as failed."+
+					" (ConnectionID="+connectionInfo.ID+", Error="+err.Error()+")")
+			}
 			errMsg := "Error occurred while getting CSP infra information." +
-				" (ConnectionID=" + connectionInfo.ID + ", Error=" + err.Error() + ")"
+				" (ConnectionID=" + connectionInfo.ID + ", Error=" + refreshErr.Error() + ")"
 			logger.Println(logger.ERROR, false, errMsg)
 			return nil, errors.New(errMsg)
 		}
@@ -137,19 +155,20 @@ func doImportInfra(connID string, opts importInfraOptions) (*model.SavedInfraInf
 		if connectionInfo.IPAddress == "" {
 			// Only a VM writes csp_data (and its status) into this record; for
 			// other resources the collected result lives in its own table, so
-			// mark the import finished here.
-			if oldSavedInfraInfo.Status != model.ConnectionInfoStatusSuccess {
-				oldSavedInfraInfo.Status = model.ConnectionInfoStatusSuccess
-				oldSavedInfraInfo.SavedTime = time.Now()
-				if err := dao.SavedInfraInfoUpdate(oldSavedInfraInfo); err != nil {
-					return nil, err
-				}
+			// mark the import finished here. The time is set on every import,
+			// already successful or not, since it says when the result was taken.
+			oldSavedInfraInfo.Status = model.ConnectionInfoStatusSuccess
+			oldSavedInfraInfo.SavedTime = time.Now()
+			if err := dao.SavedInfraInfoUpdate(oldSavedInfraInfo); err != nil {
+				return nil, err
 			}
 			return oldSavedInfraInfo, nil
 		}
 	}
 
-	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+	if err := hydrateSecrets(connectionInfo); err != nil {
+		oldSavedInfraInfo.Status = "failed"
+		_ = dao.SavedInfraInfoUpdate(oldSavedInfraInfo)
 		return nil, err
 	}
 	s := &ssh.SSH{}
@@ -212,7 +231,9 @@ func doImportSoftware(connID string, showDefaultPackages bool) (*model.SavedSoft
 		oldSavedSoftwareInfo = savedSoftwareInfo
 	}
 
-	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+	if err := hydrateSecrets(connectionInfo); err != nil {
+		oldSavedSoftwareInfo.Status = "failed"
+		_ = dao.SavedSoftwareInfoUpdate(oldSavedSoftwareInfo)
 		return nil, err
 	}
 	s := &ssh.SSH{}
@@ -275,7 +296,9 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 		oldSavedKubernetesInfo = savedKubernetesInfo
 	}
 
-	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+	if err := hydrateSecrets(connectionInfo); err != nil {
+		oldSavedKubernetesInfo.Status = "failed"
+		_ = dao.SavedKubernetesInfoUpdate(oldSavedKubernetesInfo)
 		return nil, err
 	}
 	s := &ssh.SSH{}
@@ -285,7 +308,7 @@ func doImportKubernetes(connID string) (*model.SavedKubernetesInfo, error) {
 	if err != nil {
 		oldSavedKubernetesInfo.Status = "failed"
 		_ = dao.SavedKubernetesInfoUpdate(oldSavedKubernetesInfo)
-		errMsg := "Error occurred while getting software information." +
+		errMsg := "Error occurred while getting kubernetes information." +
 			" (ConnectionID = " + connectionInfo.ID + ")"
 		logger.Println(logger.ERROR, false, errMsg)
 		return nil, errors.New(errMsg)
@@ -338,7 +361,9 @@ func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
 		oldSavedHelmInfo = savedHelmInfo
 	}
 
-	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+	if err := hydrateSecrets(connectionInfo); err != nil {
+		oldSavedHelmInfo.Status = "failed"
+		_ = dao.SavedHelmInfoUpdate(oldSavedHelmInfo)
 		return nil, err
 	}
 	s := &ssh.SSH{}
@@ -348,7 +373,7 @@ func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
 	if err != nil {
 		oldSavedHelmInfo.Status = "failed"
 		_ = dao.SavedHelmInfoUpdate(oldSavedHelmInfo)
-		errMsg := "Error occurred while getting software information." +
+		errMsg := "Error occurred while getting helm information." +
 			" (ConnectionID = " + connectionInfo.ID + ")"
 		logger.Println(logger.ERROR, false, errMsg)
 		return nil, errors.New(errMsg)
@@ -359,7 +384,7 @@ func doImportHelm(connID string) (*model.SavedHelmInfo, error) {
 	oldSavedHelmInfo.SavedTime = time.Now()
 	err = dao.SavedHelmInfoUpdate(oldSavedHelmInfo)
 	if err != nil {
-		errMsg := "Error occurred while saving the kubernetes information." +
+		errMsg := "Error occurred while saving the helm information." +
 			" (ConnectionID = " + connectionInfo.ID + ")"
 		logger.Println(logger.ERROR, false, errMsg)
 		return nil, errors.New(errMsg)
@@ -401,7 +426,9 @@ func doImportData(connID string) (*model.SavedDataInfo, error) {
 		oldSavedDataInfo = savedDataInfo
 	}
 
-	if err := hydrateConnectionSecrets(connectionInfo); err != nil {
+	if err := hydrateSecrets(connectionInfo); err != nil {
+		oldSavedDataInfo.Status = "failed"
+		_ = dao.SavedDataInfoUpdate(oldSavedDataInfo)
 		return nil, err
 	}
 	s := &ssh.SSH{}

@@ -369,10 +369,10 @@ func TestRefinedInstalledRDBMS(t *testing.T) {
 	inf.Compute.ComputeResource.CPU.Threads = 8
 	inf.Compute.ComputeResource.Memory.Size = 16384 // MiB
 
-	saveJSON(t, &model.SavedSoftwareInfo{ConnectionID: "with-infra", SoftwareData: mustMarshal(t, sw)})
+	saveJSON(t, &model.SavedSoftwareInfo{ConnectionID: "with-infra", SoftwareData: mustMarshal(t, sw), Status: "success"})
 	saveJSON(t, &model.SavedInfraInfo{ConnectionID: "with-infra", InfraData: mustMarshal(t, inf)})
-	saveJSON(t, &model.SavedSoftwareInfo{ConnectionID: "no-infra", SoftwareData: mustMarshal(t, sw)})
-	saveJSON(t, &model.SavedSoftwareInfo{ConnectionID: "no-db", SoftwareData: mustMarshal(t, software.Software{})})
+	saveJSON(t, &model.SavedSoftwareInfo{ConnectionID: "no-infra", SoftwareData: mustMarshal(t, sw), Status: "success"})
+	saveJSON(t, &model.SavedSoftwareInfo{ConnectionID: "no-db", SoftwareData: mustMarshal(t, software.Software{}), Status: "success"})
 
 	got, err := doGetRefinedInstalledRDBMS("with-infra")
 	if err != nil {

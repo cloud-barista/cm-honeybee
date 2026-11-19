@@ -624,6 +624,25 @@ func checkCreateConnectionInfoReq(sourceGroup *model.SourceGroup, createConnecti
 	return connectionInfo, nil
 }
 
+// updateCSPConnectionStatus sets connection_status from the outcome of a CSP
+// collection: failed with the reason when collectErr is set, success
+// otherwise. Only the two status columns are written.
+func updateCSPConnectionStatus(connID string, collectErr error) error {
+	ci := &model.ConnectionInfo{
+		ID:               connID,
+		ConnectionStatus: model.ConnectionInfoStatusSuccess,
+	}
+	if collectErr != nil {
+		ci.ConnectionStatus = model.ConnectionInfoStatusFailed
+		ci.ConnectionFailedMessage = collectErr.Error()
+	}
+
+	return dao.ConnectionInfoUpdateWithSelect(ci, []string{
+		"connection_status",
+		"connection_failed_message",
+	})
+}
+
 func doGetConnectionInfo(connID string, refresh bool) (*model.ConnectionInfo, error) {
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {

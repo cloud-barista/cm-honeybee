@@ -512,12 +512,20 @@ func gpuCardsFromK8s(gpus []kubernetes.NodeGPU) []inframodel.GpuCardProperty {
 }
 
 // tryGetKubernetesInfo returns the collected Kubernetes information of the
-// connection, or nil if the connection has no Kubernetes data. Unlike
+// connection, or nil if the connection has no Kubernetes data or its last
+// import did not succeed. Unlike
 // doGetKubernetesInfo, missing data is not treated as an error because most
 // connections are not Kubernetes nodes.
 func tryGetKubernetesInfo(connID string) *kubernetes.Kubernetes {
 	savedKubernetesInfo, err := dao.SavedKubernetesInfoGet(connID)
 	if err != nil {
+		return nil
+	}
+	// A record whose last import failed holds either nothing or a result that
+	// is no longer current; refined output is what a migration is planned from.
+	if savedKubernetesInfo.Status != model.ConnectionInfoStatusSuccess {
+		logger.Println(logger.WARN, false, "Skipping kubernetes information whose last import did not succeed."+
+			" (ConnectionID = "+connID+", Status = "+savedKubernetesInfo.Status+")")
 		return nil
 	}
 

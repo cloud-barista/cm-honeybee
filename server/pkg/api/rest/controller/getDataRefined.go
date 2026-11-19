@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -19,9 +20,23 @@ import (
 // imported yet.
 var errBucketNotCollected = errors.New("no CSP bucket information was collected for this connection; run import/infra first")
 
+// errBucketCollectFailed means the last import of the bucket did not succeed.
+// What is stored is then either a result that is no longer current or one
+// whose fields could not be read, which would pass for unset values (for
+// example encryption reading as off).
+var errBucketCollectFailed = errors.New("the last collection of the bucket did not succeed; check the errors of GET .../data and run import/infra again")
+
 func doGetRefinedBucket(connID string) (*storagemodel.SourceObjectStorageProperty, error) {
 	saved, err := dao.SavedDataInfoGet(connID)
-	if err != nil || saved == nil || saved.CSPData == "" {
+	if err != nil || saved == nil {
+		return nil, errBucketNotCollected
+	}
+	// Only a CSP bucket's own record is judged by its status: an agent's data
+	// record holds no bucket here, whatever became of its import.
+	if saved.Status != model.ConnectionInfoStatusSuccess && isCSPBucketRecord(connID, saved) {
+		return nil, fmt.Errorf("%w (ConnectionID = %s, Status = %s)", errBucketCollectFailed, connID, saved.Status)
+	}
+	if saved.CSPData == "" {
 		return nil, errBucketNotCollected
 	}
 	var p storagemodel.SourceObjectStorageProperty
@@ -29,6 +44,21 @@ func doGetRefinedBucket(connID string) (*storagemodel.SourceObjectStoragePropert
 		return nil, errors.New("error occurred while parsing bucket information (ConnectionID = " + connID + ")")
 	}
 	return &p, nil
+}
+
+// isCSPBucketRecord reports whether the data record was written by a CSP
+// bucket collection: it holds a CSP bucket, or it belongs to an object-storage
+// connection whose first collection failed before any bucket was stored.
+func isCSPBucketRecord(connID string, saved *model.SavedDataInfo) bool {
+	if saved.CSPData != "" {
+		return true
+	}
+	conn, err := dao.ConnectionInfoGet(connID)
+	if err != nil || conn == nil {
+		return false
+	}
+
+	return conn.ResourceType == serverCommon.ResourceTypeObjectStorage
 }
 
 func storageSourceCloud(sg *model.SourceGroup) *storagemodel.CloudProperty {
@@ -84,7 +114,7 @@ func GetDataInfoRefined(c echo.Context) error {
 //
 //	@ID				get-data-info-source-group-refined
 //	@Summary		Get Refined Object Storage Information Source Group
-//	@Description	Get every collected bucket of the source group's CSP object-storage connections in the source model cm-beetle recommends target buckets from. Connections without a collected bucket are left out.
+//	@Description	Get every collected bucket of the source group's CSP object-storage connections in the source model cm-beetle recommends target buckets from. Connections without a successfully collected bucket are left out.
 //	@Tags			[Get] Get refined source info
 //	@Accept			json
 //	@Produce		json
@@ -111,7 +141,7 @@ func GetDataInfoSourceGroupRefined(c echo.Context) error {
 	for _, conn := range *list {
 		p, err := doGetRefinedBucket(conn.ID)
 		if err != nil {
-			if errors.Is(err, errBucketNotCollected) {
+			if errors.Is(err, errBucketNotCollected) || errors.Is(err, errBucketCollectFailed) {
 				continue
 			}
 			return common.ReturnErrorMsg(c, err.Error())

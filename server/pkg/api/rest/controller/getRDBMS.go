@@ -38,6 +38,45 @@ func (e errRDBMSNotApplicable) Error() string {
 // has not been imported.
 var errRDBMSNotCollected = errors.New("rdbms information has not been collected")
 
+// checkCollectedForRefine refuses a record whose last import did not succeed.
+// Its data is either a result that is no longer current or empty, and refined
+// output is what a migration plan is made from. The error wraps
+// errRDBMSNotCollected, so a source group query skips the connection.
+func checkCollectedForRefine(connID string, what string, status string) error {
+	if status == model.ConnectionInfoStatusSuccess {
+		return nil
+	}
+
+	errMsg := "The last import of the " + what + " information did not succeed; run the import again." +
+		" (ConnectionID = " + connID + ", Status = " + status + ")"
+	logger.Println(logger.ERROR, false, errMsg)
+
+	return fmt.Errorf("%s: %w", errMsg, errRDBMSNotCollected)
+}
+
+// managedRDBMSRefinable checks the stored record of a managed database before
+// it is refined. A missing record is left to the reader, which reports it as
+// not collected.
+func managedRDBMSRefinable(connID string) error {
+	rec, err := dao.SavedRDBMSInfoGet(connID)
+	if err != nil || rec == nil {
+		return nil
+	}
+
+	return checkCollectedForRefine(connID, "rdbms", rec.Status)
+}
+
+// installedRDBMSRefinable checks the stored software of a VM, which the
+// installed databases are found in, before it is refined.
+func installedRDBMSRefinable(connID string) error {
+	rec, err := dao.SavedSoftwareInfoGet(connID)
+	if err != nil || rec == nil {
+		return nil
+	}
+
+	return checkCollectedForRefine(connID, "software", rec.Status)
+}
+
 // isManagedRDBMS reports whether the connection is a CSP managed database,
 // collected through the CSP driver into SavedRDBMSInfo.
 func isManagedRDBMS(connectionInfo *model.ConnectionInfo) bool {
@@ -116,6 +155,10 @@ func doGetRDBMSInfo(connID string) ([]model.RDBMSInfo, error) {
 // and on which port it listens) and the saved infra information (the host's
 // CPU, memory and disks). A VM with no database gives an empty list.
 func doGetRefinedInstalledRDBMS(connID string) ([]rdbmsmodel.SourceRDBMSProperty, error) {
+	if err := installedRDBMSRefinable(connID); err != nil {
+		return nil, err
+	}
+
 	softwareInfo, err := doGetInstalledSoftwareForRDBMS(connID)
 	if err != nil {
 		return nil, err
@@ -145,6 +188,9 @@ func doGetRefinedRDBMSInfo(connID string) ([]rdbmsmodel.SourceRDBMSProperty, err
 
 	switch {
 	case isManagedRDBMS(connectionInfo):
+		if err := managedRDBMSRefinable(connectionInfo.ID); err != nil {
+			return nil, err
+		}
 		rdbmsInfo, err := doGetManagedRDBMSInfo(connectionInfo)
 		if err != nil {
 			return nil, err
@@ -426,7 +472,7 @@ func GetRDBMSInfoRefined(c echo.Context) error {
 //
 //	@ID				get-rdbms-info-source-group-refined
 //	@Summary		Get Refined RDBMS Information Source Group
-//	@Description	Get the refined database information for all connections in the source group, in the source model cm-beetle recommends from. Connections that cannot hold a database or have not been collected are skipped.
+//	@Description	Get the refined database information for all connections in the source group, in the source model cm-beetle recommends from. Connections that cannot hold a database, have not been collected, or whose last import failed are skipped.
 //	@Tags			[Get] Get refined source info
 //	@Accept			json
 //	@Produce		json
