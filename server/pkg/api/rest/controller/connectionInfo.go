@@ -1492,6 +1492,7 @@ func DeleteConnectionInfo(c echo.Context) error {
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
+	deleteSavedImports(connectionInfo)
 
 	return c.JSONPretty(http.StatusOK, model.SimpleMsg{Message: "success"}, " ")
 }

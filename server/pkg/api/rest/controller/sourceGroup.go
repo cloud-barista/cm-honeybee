@@ -62,6 +62,51 @@ func deleteSavedRDBMSInfo(connectionInfo *model.ConnectionInfo) {
 	}
 }
 
+func deleteSavedHelmInfo(connectionInfo *model.ConnectionInfo) {
+	savedHelmInfo, _ := dao.SavedHelmInfoGet(connectionInfo.ID)
+	if savedHelmInfo == nil {
+		return
+	}
+	err := dao.SavedHelmInfoDelete(savedHelmInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+}
+
+func deleteSavedDataInfo(connectionInfo *model.ConnectionInfo) {
+	savedDataInfo, _ := dao.SavedDataInfoGet(connectionInfo.ID)
+	if savedDataInfo == nil {
+		return
+	}
+	err := dao.SavedDataInfoDelete(savedDataInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+}
+
+func deleteSavedNLBInfo(connectionInfo *model.ConnectionInfo) {
+	savedNLBInfo, _ := dao.SavedNLBInfoGet(connectionInfo.ID)
+	if savedNLBInfo == nil {
+		return
+	}
+	err := dao.SavedNLBInfoDelete(savedNLBInfo)
+	if err != nil {
+		logger.Println(logger.ERROR, true, err)
+	}
+}
+
+// deleteSavedImports removes what the imports stored for a connection, so a
+// deleted connection leaves no record behind in the tables keyed by its ID.
+func deleteSavedImports(connectionInfo *model.ConnectionInfo) {
+	deleteSavedInfraInfo(connectionInfo)
+	deleteSavedSoftwareInfo(connectionInfo)
+	deleteSavedKubernetesInfo(connectionInfo)
+	deleteSavedHelmInfo(connectionInfo)
+	deleteSavedDataInfo(connectionInfo)
+	deleteSavedRDBMSInfo(connectionInfo)
+	deleteSavedNLBInfo(connectionInfo)
+}
+
 func doDeleteSourceGroup(sourceGroupID string) error {
 	sourceGroup, err := dao.SourceGroupGet(sourceGroupID)
 	if err != nil {
@@ -75,10 +120,7 @@ func doDeleteSourceGroup(sourceGroupID string) error {
 		return errors.New("failed to get connection info list to delete")
 	}
 	for _, connectionInfo := range *connectionInfoList {
-		deleteSavedInfraInfo(&connectionInfo)
-		deleteSavedSoftwareInfo(&connectionInfo)
-		deleteSavedKubernetesInfo(&connectionInfo)
-		deleteSavedRDBMSInfo(&connectionInfo)
+		deleteSavedImports(&connectionInfo)
 		deleteConnectionSecrets(connectionInfo.ID)
 		err = dao.ConnectionInfoDelete(&connectionInfo)
 		if err != nil {
