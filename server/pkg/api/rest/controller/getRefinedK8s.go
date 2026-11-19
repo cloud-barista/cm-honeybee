@@ -6,16 +6,26 @@ import (
 
 	softwaremodel "github.com/cloud-barista/cm-grasshopper/smdl"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/kubernetes"
+	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
+	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 	"github.com/jollaman999/utils/logger"
 )
 
 // tryGetHelmInfo returns the collected Helm releases of the connection, or nil
-// when the connection has none. Mirrors tryGetKubernetesInfo: a connection
-// without Helm data is the normal case, not an error.
+// when the connection has none or its last import did not succeed. Mirrors
+// tryGetKubernetesInfo: a connection without Helm data is the normal case, not
+// an error.
 func tryGetHelmInfo(connID string) *kubernetes.Helm {
 	savedHelmInfo, err := dao.SavedHelmInfoGet(connID)
 	if err != nil {
+		return nil
+	}
+	// A failed import leaves either nothing or the releases of an earlier one,
+	// which would be planned from as if they were current.
+	if savedHelmInfo.Status != model.ConnectionInfoStatusSuccess {
+		logger.Println(logger.WARN, false, "Skipping helm information whose last import did not succeed."+
+			" (ConnectionID = "+connID+", Status = "+savedHelmInfo.Status+")")
 		return nil
 	}
 
@@ -31,13 +41,73 @@ func tryGetHelmInfo(connID string) *kubernetes.Helm {
 
 // hasK8sClusterData reports whether a collected record came from a control
 // plane node. Worker nodes have no kubeconfig, so their record is saved empty;
-// selecting on record existence alone picks that empty one.
+// selecting on record existence alone picks that empty one. The record the CSP
+// collection stores for a managed cluster names the cluster and its version,
+// so it reads as cluster data as well.
 func hasK8sClusterData(info *kubernetes.Kubernetes) bool {
 	if info == nil {
 		return false
 	}
 
 	return info.Cluster.Version != "" || info.Cluster.Name != "" || len(info.Nodes) > 0
+}
+
+// isCSPManagedK8s reports whether the connection is a CSP k8s connection, whose
+// kubernetes record the CSP collection stores. Such a record names the cluster
+// and its version but holds no workloads: the cluster is read through the
+// CSP's API, not through a kubeconfig.
+func isCSPManagedK8s(sourceGroup *model.SourceGroup, connectionInfo *model.ConnectionInfo) bool {
+	return serverCommon.IsCSPType(sourceGroup.Type) &&
+		connectionInfo.ResourceType == serverCommon.ResourceTypeK8s
+}
+
+// connIsCSPManagedK8s is isCSPManagedK8s for a connection ID. A connection or
+// source group that cannot be read is not taken for one, which leaves the
+// caller's handling of the connection as it was.
+func connIsCSPManagedK8s(connID string) bool {
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
+	if err != nil {
+		return false
+	}
+	sourceGroup, err := dao.SourceGroupGet(connectionInfo.SourceGroupID)
+	if err != nil {
+		return false
+	}
+
+	return isCSPManagedK8s(sourceGroup, connectionInfo)
+}
+
+// groupK8sCluster picks the Kubernetes cluster of the source group and reports
+// whether it is a CSP-managed one. The cluster is collected once per group,
+// from the connection of a control plane node whose kubeconfig enumerates the
+// whole cluster. Every connection is a candidate, not only the node ones, so a
+// cluster stored under a connection that is not a node is still found.
+//
+// A cluster the agent collected is taken before a CSP-managed one, whatever
+// the order of the connections: only it lists the nodes, which give the node
+// roles and the workers only the API sees. A managed cluster, which lists
+// none, is taken only when the group has no other.
+func groupK8sCluster(sourceGroup *model.SourceGroup, conns []model.ConnectionInfo) (*kubernetes.Kubernetes, bool) {
+	var managed *kubernetes.Kubernetes
+
+	for i := range conns {
+		candidate := tryGetKubernetesInfo(conns[i].ID)
+		if !hasK8sClusterData(candidate) {
+			continue
+		}
+		if !isCSPManagedK8s(sourceGroup, &conns[i]) {
+			return candidate, false
+		}
+		if managed == nil {
+			managed = candidate
+		}
+	}
+
+	if managed != nil {
+		return managed, true
+	}
+
+	return nil, false
 }
 
 // workloadItems reads one kind out of the collected workload map. The agent

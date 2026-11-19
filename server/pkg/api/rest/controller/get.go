@@ -85,7 +85,10 @@ func doGetSoftwareInfo(connID string) (*software.Software, error) {
 	return &softwareInfo, nil
 }
 
-func doGetKubernetesInfo(connID string) (*kubernetes.Kubernetes, error) {
+// doGetKubernetesInfo reads the stored kubernetes record of the connection as
+// it was stored: the agent's kubernetes shape and, for a CSP-managed cluster,
+// the csp section clusterInfoToK8s adds.
+func doGetKubernetesInfo(connID string) (*model.CSPKubernetesRecord, error) {
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return nil, err
@@ -98,7 +101,7 @@ func doGetKubernetesInfo(connID string) (*kubernetes.Kubernetes, error) {
 		logger.Println(logger.ERROR, false, errMsg)
 		return nil, errors.New(errMsg)
 	}
-	var kubernetesInfo kubernetes.Kubernetes
+	var kubernetesInfo model.CSPKubernetesRecord
 	err = json.Unmarshal([]byte(savedKubernetesInfo.KubernetesData), &kubernetesInfo)
 	if err != nil {
 		errMsg := "Error occurred while parsing kubernetes information." +
@@ -302,13 +305,13 @@ func GetSoftwareInfoSourceGroup(c echo.Context) error {
 //
 //	@ID				get-kubernetes-info
 //	@Summary		Get Kubernetes Information
-//	@Description	Get the kubernetes information of the connection information.
+//	@Description	Get the kubernetes information of the connection information. A CSP-managed cluster also carries a csp section with the cluster's system ID, status, creation time and node groups.
 //	@Tags			[Get] Get source info
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
 //	@Param			connId path string true "ID of the connection info."
-//	@Success		200	{object}	kubernetes.Kubernetes		"Successfully get information of the kubernetes."
+//	@Success		200	{object}	model.CSPKubernetesRecord		"Successfully get information of the kubernetes."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get information of the kubernetes."
 //	@Router			/source_group/{sgId}/connection_info/{connId}/kubernetes [get]
@@ -340,7 +343,7 @@ func GetKubernetesInfo(c echo.Context) error {
 //
 //	@ID				get-kubernetes-info-source-group
 //	@Summary		Get Kubernetes Information Source Group
-//	@Description	Get the kubernetes information for all connections in the source group.
+//	@Description	Get the kubernetes information for all connections in the source group. A CSP-managed cluster also carries a csp section with the cluster's system ID, status, creation time and node groups.
 //	@Tags			[Get] Get source info
 //	@Accept			json
 //	@Produce		json

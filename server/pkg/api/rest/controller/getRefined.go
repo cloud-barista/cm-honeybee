@@ -18,6 +18,7 @@ import (
 	"github.com/moby/moby/api/types/container"
 
 	inframodel "github.com/cloud-barista/cm-beetle/imdl/on-premise-model"
+	serverCommon "github.com/cloud-barista/cm-honeybee/server/common"
 	"github.com/cloud-barista/cm-honeybee/server/dao"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/common"
 	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
@@ -1205,8 +1206,12 @@ func doGetRefinedSoftwareInfo(softwareInfo *software.Software, connID string) (*
 	containers = append(containers, podmanContainers...)
 
 	// Only a control plane connection carries cluster data, so every other
-	// connection in the group yields no kubernetes entry.
-	kubernetes := buildK8sSoftware(tryGetKubernetesInfo(connID), tryGetHelmInfo(connID))
+	// connection in the group yields no kubernetes entry. A CSP-managed cluster
+	// yields none either: its record holds no workloads to migrate.
+	var kubernetes []softwaremodel.Kubernetes
+	if !connIsCSPManagedK8s(connID) {
+		kubernetes = buildK8sSoftware(tryGetKubernetesInfo(connID), tryGetHelmInfo(connID))
+	}
 
 	refinedSoftwareInfo := &softwaremodel.SoftwareList{
 		Binaries:   binaries,
@@ -1222,7 +1227,7 @@ func doGetRefinedSoftwareInfo(softwareInfo *software.Software, connID string) (*
 //
 //	@ID				get-infra-info-refined
 //	@Summary		Get Refined Infra Information
-//	@Description	Get the refined infra information of the connection information.
+//	@Description	Get the refined infra information of the connection information. A CSP resource other than a VM makes no node; a CSP k8s connection gives its cluster as k8sCluster.
 //	@Tags			[Get] Get refined source info
 //	@Accept			json
 //	@Produce		json
@@ -1243,33 +1248,48 @@ func GetInfraInfoRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, "Please provide the connId.")
 	}
 
-	_, err := dao.SourceGroupGet(sgID)
+	sourceGroup, err := dao.SourceGroupGet(sgID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	infraInfo, err := doGetInfraInfo(connID)
-	if err != nil {
-		return common.ReturnErrorMsg(c, err.Error())
-	}
-
-	refinedInfraInfo, err := doGetRefinedInfraInfo(infraInfo)
+	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	var onpremiseInfra inframodel.OnpremInfra
+	var listeningPorts [][]model.ListeningPortProperty
 
-	onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
-	listeningPorts := [][]model.ListeningPortProperty{tryGetListeningPorts(connID)}
-	doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
-	onpremiseInfra.NLBs = haproxyToNLBs(infraInfo.HAProxy, infraInfo.Compute.OS.Node.Machineid)
+	// A CSP resource other than a VM holds no machine, so it makes no node, as
+	// in the group refined infra. The infra record its import leaves behind is
+	// empty; a managed cluster is reflected from its kubernetes record below.
+	if !serverCommon.IsCSPType(sourceGroup.Type) || isHostConnection(sourceGroup, connectionInfo) {
+		infraInfo, err := doGetInfraInfo(connID)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+
+		refinedInfraInfo, err := doGetRefinedInfraInfo(infraInfo)
+		if err != nil {
+			return common.ReturnErrorMsg(c, err.Error())
+		}
+
+		onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
+		listeningPorts = append(listeningPorts, tryGetListeningPorts(connID))
+		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
+		onpremiseInfra.NLBs = haproxyToNLBs(infraInfo.HAProxy, infraInfo.Compute.OS.Node.Machineid)
+	}
 
 	// Reflect the collected Kubernetes cluster: its metadata, the node roles,
-	// and any cluster nodes (e.g. workers) only visible through the API.
+	// and any cluster nodes (e.g. workers) only visible through the API. A
+	// CSP-managed cluster lists no nodes, the CSP runs them, so it has no node
+	// roles to give.
 	if k8sInfo := tryGetKubernetesInfo(connID); hasK8sClusterData(k8sInfo) {
 		onpremiseInfra.K8sCluster = buildK8sCluster(k8sInfo)
-		onpremiseInfra.Nodes = mergeK8sNodes(onpremiseInfra.Nodes, k8sInfo)
+		if !isCSPManagedK8s(sourceGroup, connectionInfo) {
+			onpremiseInfra.Nodes = mergeK8sNodes(onpremiseInfra.Nodes, k8sInfo)
+		}
 	}
 
 	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
@@ -1306,7 +1326,6 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 
 	var onpremiseInfra inframodel.OnpremInfra
 	var listeningPorts [][]model.ListeningPortProperty
-	var k8sInfo *kubernetes.Kubernetes
 
 	for _, src := range refinedInfraSources(sourceGroup, *list) {
 		infraInfo := src.infra
@@ -1322,24 +1341,17 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		onpremiseInfra.NLBs = append(onpremiseInfra.NLBs, haproxyToNLBs(infraInfo.HAProxy, infraInfo.Compute.OS.Node.Machineid)...)
 	}
 
-	// The Kubernetes cluster is collected once per source group, from the
-	// connection of a control plane node whose kubeconfig enumerates the whole
-	// cluster. Every connection is a candidate, not only the node ones, so a
-	// cluster stored under a connection that is not a node is still found.
-	for _, conn := range *list {
-		if hasK8sClusterData(k8sInfo) {
-			break
-		}
-		if candidate := tryGetKubernetesInfo(conn.ID); hasK8sClusterData(candidate) {
-			k8sInfo = candidate
-		}
-	}
+	k8sInfo, managed := groupK8sCluster(sourceGroup, *list)
 
 	// Reflect the cluster once all host-level nodes are gathered, so the merge
-	// covers nodes appended before the cluster data was found.
+	// covers nodes appended before the cluster data was found. A CSP-managed
+	// cluster lists no nodes, the CSP runs them, so it has no node roles to
+	// give.
 	if k8sInfo != nil {
 		onpremiseInfra.K8sCluster = buildK8sCluster(k8sInfo)
-		onpremiseInfra.Nodes = mergeK8sNodes(onpremiseInfra.Nodes, k8sInfo)
+		if !managed {
+			onpremiseInfra.Nodes = mergeK8sNodes(onpremiseInfra.Nodes, k8sInfo)
+		}
 	}
 
 	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")

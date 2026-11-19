@@ -468,19 +468,62 @@ func buildCSPInfoWith(lookup cspNetworkLookup, sg *model.SourceGroup, vm *spider
 	return csp
 }
 
-// clusterInfoToK8s maps spider.ClusterInfo into the agent's kubernetes.Kubernetes
-// shape — primarily node counts derived from NodeGroupList desired sizes.
-func clusterInfoToK8s(cl *spider.ClusterInfo) kubernetes.Kubernetes {
+// clusterInfoToK8s maps spider.ClusterInfo into the record stored for a CSP
+// k8s connection. The cluster name and version go where refined reads them
+// from an agent-collected cluster, so a managed cluster becomes the refined
+// k8sCluster as well. Node counts are the desired sizes of the node groups,
+// all of them workers: the control plane of a managed cluster is the CSP's.
+//
+// The pod and service CIDRs stay empty: cb-spider's ClusterInfo.Network holds
+// the VPC, subnets and security groups only.
+func clusterInfoToK8s(cl *spider.ClusterInfo) model.CSPKubernetesRecord {
 	worker := 0
+	groups := make([]model.CSPKubernetesNodeGroup, 0, len(cl.NodeGroupList))
 	for _, ng := range cl.NodeGroupList {
 		worker += ng.DesiredNodeSize
+		groups = append(groups, model.CSPKubernetesNodeGroup{
+			Name:            iidLabel(ng.IId),
+			VMSpec:          naToEmpty(ng.VMSpecName),
+			Image:           naToEmpty(iidLabel(ng.ImageIID)),
+			RootDiskType:    naToEmpty(ng.RootDiskType),
+			RootDiskSize:    naToEmpty(ng.RootDiskSize),
+			OnAutoScaling:   ng.OnAutoScaling,
+			DesiredNodeSize: ng.DesiredNodeSize,
+			MinNodeSize:     ng.MinNodeSize,
+			MaxNodeSize:     ng.MaxNodeSize,
+			Status:          ng.Status,
+		})
 	}
-	return kubernetes.Kubernetes{
-		NodeCount: kubernetes.NodeCount{
-			Total:  worker,
-			Worker: worker,
+
+	return model.CSPKubernetesRecord{
+		Kubernetes: kubernetes.Kubernetes{
+			Cluster: kubernetes.Cluster{
+				Name:    iidLabel(cl.IId),
+				Version: cl.Version,
+			},
+			NodeCount: kubernetes.NodeCount{
+				Total:  worker,
+				Worker: worker,
+			},
+		},
+		CSP: &model.CSPKubernetesCluster{
+			SystemID:    cl.IId.SystemId,
+			Status:      cl.Status,
+			CreatedTime: clusterCreatedTime(cl.CreatedTime),
+			NodeGroups:  groups,
 		},
 	}
+}
+
+// clusterCreatedTime drops the zero time cb-spider reports for a cluster whose
+// driver did not fill CreatedTime, so an unknown time reads as absent rather
+// than as year 1.
+func clusterCreatedTime(s string) string {
+	t, err := time.Parse(time.RFC3339Nano, s)
+	if err == nil && t.IsZero() {
+		return ""
+	}
+	return s
 }
 
 // bucketToData maps a CSP bucket into the agent's data.DataInfo shape, reusing
