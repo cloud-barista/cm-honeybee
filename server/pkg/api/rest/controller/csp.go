@@ -50,7 +50,7 @@ var credentialExamples = map[string]map[string]credExample{
 	},
 	"NCP": {
 		"ncloud_access_key": {"<NCLOUD_ACCESS_KEY>", "NCP Access Key"},
-		"ncloud_secret_key":  {"<NCLOUD_SECRET_KEY>", "NCP Secret Key"},
+		"ncloud_secret_key": {"<NCLOUD_SECRET_KEY>", "NCP Secret Key"},
 	},
 	"OPENSTACK": {
 		"IdentityEndpoint": {"http://openstack-host:5000/v3", "Keystone identity endpoint"},
