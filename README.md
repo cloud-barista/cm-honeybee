@@ -105,11 +105,35 @@ A source group has a `type` field:
 - `onprem` - on-premise sources. A connection is either a host reached over SSH
   (`resource_type: vm`) or a Kubernetes cluster registered by its kubeconfig
   (`resource_type: k8s`).
-- `csp` - collects from cloud sources (VM / Kubernetes / Object Storage) through the cb-spider drivers linked into the server.
+- `csp` - collects from cloud sources (VM / Kubernetes / Object Storage / managed database / load balancer) through the cb-spider drivers linked into the server.
 
 `onprem`, `ssh` and an omitted `type` are all treated as on-premise, so payloads
 written against earlier versions keep working unchanged. An omitted `type` is
 still stored and returned as `ssh`; send `onprem` explicitly to store that value.
+
+`GET /source_group/types` describes every source group type (`onprem`, `csp`,
+`fs`, `db`, `minio`): the fields the group itself takes, the connection types it
+holds and the fields each connection type takes (`auth_fields`, `fields`, each
+with `required`, `secret`, `enum`, `default` and the like), so a client can build
+its registration forms from it. The credential keys of a CSP come from
+`GET /csp/{name}` (2.2).
+
+`GET /source_group?type=<type>` lists the groups of one type. `type=onprem` also
+matches the groups stored as `ssh` or without a type.
+
+Every group response (`POST`, `GET`, `PUT` and the list) also carries
+- `connection_count_by_type`: the number of connections per connection type. For
+  `onprem` and `csp` groups that is the `resource_type` (an on-premise connection
+  stored without one counts as `vm`); for `fs`, `db` and `minio` groups, whose
+  connections take no `resource_type`, it is the group type.
+- `capabilities`: which collections the group can run with the connections it holds
+  now - `isCollectInfra`, `isCollectSoftware`, `isCollectKubernetes`,
+  `isCollectObjectStorage`, `isCollectDb`, `isCollectFs`, `isCollectNlb`. A group
+  without a connection a collection acts on reports `false` for it, so an empty
+  group reports `false` for all of them.
+
+Deleting a group or a connection also deletes everything the imports stored for
+it (infra, software, kubernetes, helm, data, rdbms and nlb records).
 
 #### 2.1 On-premise source group
 - Request
@@ -142,7 +166,8 @@ curl -X 'POST' \
 
 #### 2.2 CSP source group
 A CSP group represents one CSP connection (provider + region + credential).
-Resources under the group (VMs, Kubernetes clusters, object-storage buckets) are
+Resources under the group (VMs, Kubernetes clusters, object-storage buckets,
+managed databases, load balancers) are
 registered as individual `connection_info` entries.
 
 Discover the credential keys required by the target CSP first:
@@ -157,8 +182,22 @@ spelling differs per CSP: AWS uses lowercase snake_case
 
 It also includes `region_keys`, which is the shape of a region for that CSP
 (e.g. `["Region", "Zone"]`) rather than a list of regions, and `default_region`.
-The actual regions need a stored credential - get them from
-`GET /source_group/{sgID}/region` after the group is created.
+The actual regions need a credential. Before the group exists, post the
+credential to `POST /csp/{name}/region`; it is used for that one query and is
+neither stored nor logged. After the group is created,
+`GET /source_group/{sgID}/region` uses the stored one. Both return the same shape.
+```shell
+curl -X 'POST' 'http://127.0.0.1:8081/honeybee/csp/aws/region' \
+  -H 'Content-Type: application/json' \
+  -d '{ "credential": [
+        {"key": "aws_access_key_id",     "value": "$AWS_ACCESS_KEY_ID"},
+        {"key": "aws_secret_access_key", "value": "$AWS_SECRET_ACCESS_KEY"} ] }'
+```
+
+`GET /csp` also returns `supported_resource_types`, the `resource_type` values a
+connection of each CSP can be collected as (3.3). It is read from the linked
+driver's capabilities; `object_storage` is listed for every CSP whose buckets are
+read through the S3 API.
 
 Then create the group:
 ```shell
@@ -184,7 +223,9 @@ Register the connection information to the source group. The body shape
 depends on the group's `type`.
 
 #### 3.1 On-premise SSH connection info
-`resource_type` defaults to `vm` and may be omitted. Agent will be installed automatically.
+`resource_type` defaults to `vm` and may be omitted. A response always carries it:
+an on-premise connection stored without one, registered before the field
+existed, is returned as `vm`. Agent will be installed automatically.
 - Request
 ```shell
 curl -X 'POST' \
@@ -247,6 +288,8 @@ You can list available resources first via the discovery endpoint:
 curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=vm'
 curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=k8s'
 curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=object_storage'
+curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=rdbms'
+curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=nlb'
 ```
 Then register the picked resource:
 ```shell
@@ -255,20 +298,96 @@ curl -X 'POST' \
  -H 'Content-Type: application/json' \
  -d '{ "name": "vm-app01", "resource_type": "vm", "resource_id": "i-0abc..." }'
 ```
-`resource_type` is one of `vm`, `k8s`, or `object_storage`.
+`resource_type` is one of `vm`, `k8s`, `object_storage`, `rdbms` or `nlb`.
+`GET /csp` tells which of them a CSP supports (`supported_resource_types`).
+
+A `vm` connection may also take `ip_address`, `ssh_port`, `user` and
+`password` or `private_key`; with them the agent is installed in the VM and
+collects the guest as well (section 4). The other resource types have no host to
+reach, so a request that sends any SSH field for them is refused with 400.
+
+Registration checks the resource with the CSP:
+- A `resource_id` the CSP does not have is refused with 400. The resource counts
+  as missing only when the CSP listing came back and holds no such resource.
+- A bucket in another region than the group's is refused with 400 (see the table
+  below for the CSPs where the region is known).
+- When the CSP cannot be asked (timeout, credential, unreachable endpoint), the
+  connection is registered with `connection_status: failed` and the reason in
+  `connection_failed_message`, and is checked again on refresh.
+
+`PUT .../connection_info/{connId}` on a csp connection:
+- On a `vm` connection it takes the SSH fields above. A field left empty keeps its
+  stored value, so a credential can be replaced but not cleared. An `ip_address`,
+  stored or sent, needs `user` and `password` or `private_key`; `ssh_port` defaults
+  to `22`.
+- On the other resource types SSH fields are refused with 400. A `vm` connection
+  changed into another resource type drops its SSH fields and secrets.
+- A changed `resource_type` or `resource_id` is checked with the CSP as on
+  registration, with the same 400 for a missing resource or a bucket in another region.
+
+`GET .../connection_info` takes `resource_type` (`vm`, `k8s`, `object_storage`,
+`nlb`, `rdbms`) to list one type. On an on-premise group `resource_type=vm`
+also matches the connections stored without one. `ssh_port` matches the port
+exactly.
+
+Bucket regions. A source group stands for one region, but the bucket listing
+of most CSPs covers the whole account. Where the CSP tells a bucket's region,
+discovery lists only the buckets of the group's region, with the region in
+`region`; registration refuses a bucket of another region; and the bucket is read
+at the endpoint of its region. Where it cannot, the region is left unknown, every
+bucket is listed, and none is refused for its region.
+
+| Provider | Region read | How, or why not |
+|----------|-------------|-----------------|
+| AWS | yes | `HEAD` on the bucket at the group region's endpoint. S3 serves it there only for a bucket of that region and names the bucket's region in `x-amz-bucket-region` otherwise. |
+| Azure | no | A container has no region of its own; its storage account's location is an Azure Resource Manager property the Blob API does not expose to the account key. |
+| GCP | no | `?location` answers a GCS location, which is a multi- or dual-region (`US`, `ASIA`, `NAM4`) as often as a region, in another spelling than the group's region. |
+| IBM | no | The location constraint carries the storage class (`us-south-standard`), not the region alone. |
+| Alibaba, Tencent, NCP, NHN | no | Each has its own location naming through its S3-compatible API, not verified against the region names the group uses. |
+| KT, OpenStack | no | One endpoint for the whole account: there is no region to compare with. |
+
+A discovered bucket whose region lookup failed is still listed, with the reason
+in `extra.region_error`, since it cannot be told to be elsewhere.
 
 `PUT .../refresh` only re-checks the connection status; it stores nothing.
-Collection is done by `POST .../import/infra`, which queries the CSP and
-writes to a table chosen by `resource_type`:
+Collection is done by `POST .../import/infra` on one connection, or by the
+group imports of section 4. Either queries the CSP and writes to a table chosen
+by `resource_type`:
 
 | `resource_type` | Stored in | Read back with |
 |-----------------|-----------|----------------|
 | `vm` | `SavedInfraInfo.csp_data` | `GET .../infra` (the `csp` section) |
-| `k8s` | `SavedKubernetesInfo` | `GET .../kubernetes` |
+| `k8s` | `SavedKubernetesInfo` | `GET .../kubernetes` (the `csp` section holds the node groups) |
 | `object_storage` | `SavedDataInfo` | `GET .../data` |
+| `rdbms` | `SavedRDBMSInfo` | `GET .../rdbms` |
+| `nlb` | `SavedNLBInfo` | `GET .../nlb` |
 
 Note that `import/kubernetes` and `import/data` are the agent-over-SSH paths and
-do not apply to CSP resources - use `import/infra` for all three.
+do not apply to CSP resources - use `import/infra`, or a group import by kind.
+
+What is collected:
+- `k8s`: the managed cluster's name (its name at the CSP, or its system ID when it
+  has none), version, status, creation time and node groups (spec, image, root
+  disk, desired/min/max size, autoscaling). The nodes and workloads are not
+  collected: the cluster is read through the CSP's API, not through a kubeconfig.
+- `nlb`: the listener (protocol, IP, port, DNS name), the backend VM group
+  (protocol, port, VMs) and the health check. `type` is `PUBLIC`, `INTERNAL`, or
+  empty when the driver does not tell.
+- `object_storage`: the bucket's settings and, unless `count_objects=false`, its
+  object count and total size. The region the bucket was found in is kept as well.
+
+A collection that reads nothing is recorded as `failed`, not `success`:
+- A bucket none of whose details could be read is stored with `status: failed`
+  and its errors, and the import returns 400. Some details failing is still a
+  success; the failures are kept in the stored errors. An item a CSP cannot
+  answer for any bucket (versioning on Azure) does not count.
+- When the CSP collection of a `k8s`, `object_storage`, `rdbms` or `nlb`
+  connection fails, its record is marked `failed`. `GET` still shows the last data
+  collected, while the refined APIs leave the record out.
+- An import of a csp connection also sets `connection_status` (and
+  `connection_failed_message`) from the outcome of the collection, not only
+  registration and refresh do: a resource that can be found but not read is not a
+  working connection.
 
 ### 4. Save current source information.
 Below example is saving infrastructure information of all connection in the source group.
@@ -282,6 +401,52 @@ curl -X 'POST' \
 - For Kubernetes: POST http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/import/kubernetes
 - For Helm: POST http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/import/helm
 
+To collect a whole group in one call, or one kind of resource of it, use the
+imports and refined APIs by resource kind. All paths are under
+`/honeybee/source_group/{sgID}`.
+
+| Resource kind | Group import | Refined (group) | Refined (one connection) |
+|---------------|--------------|-----------------|--------------------------|
+| Everything an onprem or csp group holds | `POST import/all` | - | - |
+| Hosts (onprem vm, csp vm) | `POST import/infra` | `GET infra/refined` | `GET connection_info/{connId}/infra/refined` |
+| Software in hosts (agent) | `POST import/software` | `GET software/refined` | `GET connection_info/{connId}/software/refined` |
+| CSP buckets (`object_storage`) | `POST import/bucket` | `GET bucket/refined` | `GET connection_info/{connId}/bucket/refined` |
+| CSP managed databases (`rdbms`) | `POST import/rdbms` | `GET rdbms/refined` | `GET connection_info/{connId}/rdbms/refined` |
+| CSP managed Kubernetes (`k8s`) | `POST import/k8s` | `GET k8s/refined` | `GET connection_info/{connId}/k8s/refined` |
+| CSP load balancers (`nlb`) | `POST import/nlb` | `GET nlb/refined` | `GET connection_info/{connId}/nlb/refined` |
+| fs / db / minio groups | `POST import/fs`, `import/db`, `import/objectstorage` | `GET fs/refined`, `db/refined`, `objectstorage/refined` | the same under `connection_info/{connId}/` |
+
+- `import/all` collects every connection the way its type is collected: a csp
+  resource other than a VM from the CSP, a VM as infra (the CSP side on a csp
+  group, and through the agent when it has an `ip_address`), and a host the agent
+  can reach also as software, kubernetes and helm. An on-premise `k8s` connection
+  has nothing to collect and is left out. It takes the options of `import/infra`
+  (`count_objects`) and of `import/software` (`show_default_packages`). An `fs`,
+  `db` or `minio` group is refused with 400 and the import to use instead.
+- `import/bucket`, `import/rdbms`, `import/k8s` and `import/nlb` collect only the
+  csp connections of that `resource_type` and leave the rest alone. A group that
+  is not `csp` is refused with 400. A Kubernetes cluster on VMs is collected
+  through the agent by `import/kubernetes`.
+- These five return one entry per connection: `connection_id`, `resource_type`
+  and `results`, one `{kind, status, error_message}` per collection run, `kind`
+  being `infra`, `software`, `kubernetes`, `helm`, `bucket`, `rdbms` or `nlb`.
+- The older `import/infra` and `data/refined` stay as they were and give the same
+  results: `import/infra` on a csp group collects every resource type, and
+  `data/refined` is `bucket/refined`.
+
+Every group import runs only on the connections it applies to and does not stop
+at a failing one:
+- `import/software`, `import/kubernetes`, `import/helm` and `import/data` go
+  through the agent, so they run only on the connections the agent can be reached
+  on: on-premise hosts, csp `vm` connections with an `ip_address`, and the
+  connections of the other group types. The others are skipped, not reported as
+  failed. Calling one of them on a single connection without an agent is refused.
+- `import/infra` runs on every connection but an on-premise `k8s` one.
+- A failing connection is listed with `status: failed` and the reason in
+  `error_message`, and the rest go on. The request fails (400) only when no
+  connection succeeded. A group with no connection to collect gives 200 and an
+  empty list.
+
 ### 5. Get saved source information.
 Below example is getting saved infrastructure information of all connection in the source group.
 ```shell
@@ -293,6 +458,8 @@ curl -X 'GET' \
 - For software: GET http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/software
 - For Kubernetes: GET http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/kubernetes
 - For Helm: GET http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/helm
+- For CSP managed databases: GET http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/rdbms
+- For CSP load balancers: GET http://X.X.X.X:8081/honeybee/source_group/{SourceGroupID}/nlb
 
 ### 6. Get refined, saved source information.
 Below example is getting refined, saved infrastructure information of all connection in the source group.
@@ -301,6 +468,51 @@ curl -X 'GET' \
  'http://127.0.0.1:8081/honeybee/source_group/b9e86d53-9fbe-4a96-9e06-627f77fdd6b7/infra/refined' \
  -H 'accept: application/json'
 ```
+
+The refined APIs by resource kind are listed in section 4. A refined API reads
+only what the last import collected successfully: a connection that has not
+been collected, or whose last import failed, is left out of the group result.
+
+`infra/refined` of a csp group:
+- Only `vm` connections become nodes. A VM collected through the agent is refined
+  from the agent's data, as an on-premise host is.
+- A VM the agent did not collect (no `ip_address`, or only the agent call failed
+  while the CSP collection succeeded) becomes a node from the CSP's data:
+  hostname is the VM name, `machineId` the CSP's VM ID, the CPU is the vCPU count
+  (1 CPU with as many cores and threads), memory, root and data disks, GPUs,
+  firewall rules and one interface with the private IP. The public IP is not put
+  in the interfaces: the CSP maps it outside the guest, and cm-beetle reads
+  interface addresses as the node's own. The architecture is written as the agent
+  writes it (`x86_64`, `aarch64`, not `amd64`, `arm64`).
+- The OS of such a node is read from the image description, which is free text
+  that differs per CSP. The distribution is found by name (Ubuntu, Debian, Rocky,
+  AlmaLinux, CentOS, RHEL, Oracle Linux, Amazon Linux, SLES, Fedora, Windows) and
+  the version is the first number after it, or the release codename for Ubuntu and
+  Debian. When none of the image's OS description, name or ID holds a
+  distribution's name, as with an Amazon Linux image known only as
+  `al2023-ami-...`, the OS has no ID or version and `prettyName` keeps the
+  description if the CSP gave one. Every SUSE image, openSUSE included, reads as
+  `sles`.
+- `k8sCluster` is the cluster the agent collected on a node; when the group has
+  none, it is a CSP managed cluster with its name and version. The pod and service
+  CIDRs of a managed cluster stay empty, as the CSP driver does not report them,
+  and its nodes are not listed.
+- `nlbs` holds the NLBs found in HAProxy on the nodes, then the CSP NLBs. A CSP NLB
+  has `software` `"<provider>-nlb"` (e.g. `aws-nlb`) instead of `haproxy`, an
+  empty `hostMachineId`, and listener address `*` when it is `PUBLIC`, its first
+  IP (or DNS name) when it is `INTERNAL`, and empty when the type is not known. Its
+  balancing algorithm is not reported. Its backend servers get the private IPs
+  of the group's CSP VMs, matched by VM ID or name; a backend VM not registered in
+  the group keeps an empty IP.
+
+`k8s/refined` returns the same `k8sCluster`, with `managed` and, for a managed
+cluster, a `csp` section with its node groups. `software/refined` has no
+Kubernetes entry for a managed cluster, since its workloads are not collected.
+
+`bucket/refined` (and `data/refined`) of one connection names the region the bucket
+was found in as `sourceCloud.region`, or the group's region where the CSP cannot
+tell. The group result names the group's region and leaves out a bucket found in
+another region, since the model has one region for all of its buckets.
 
 ## Health-check
 

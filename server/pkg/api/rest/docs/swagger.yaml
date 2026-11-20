@@ -1110,9 +1110,133 @@ definitions:
         description: |-
           RegionKeys are the keys needed to define a region for this CSP (e.g.
           ["Region","Zone"]) - NOT the list of available regions. The actual region
-          list requires a credential; get it via GET /source_group/{sgId}/region.
+          list requires a credential; get it via GET /source_group/{sgId}/region,
+          or via POST /csp/{name}/region before the group exists.
         items:
           type: string
+        type: array
+      supported_resource_types:
+        description: |-
+          SupportedResourceTypes are the resource_type values a connection of a
+          csp source group of this CSP can be collected as. Empty when honeybee has
+          no driver for the CSP.
+        items:
+          type: string
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPKubernetesCluster:
+    properties:
+      created_time:
+        type: string
+      node_groups:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPKubernetesNodeGroup'
+        type: array
+      status:
+        type: string
+      system_id:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPKubernetesNodeGroup:
+    properties:
+      desired_node_size:
+        type: integer
+      image:
+        type: string
+      max_node_size:
+        type: integer
+      min_node_size:
+        type: integer
+      name:
+        type: string
+      on_auto_scaling:
+        type: boolean
+      root_disk_size:
+        type: string
+      root_disk_type:
+        type: string
+      status:
+        type: string
+      vm_spec:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPKubernetesRecord:
+    properties:
+      cluster:
+        $ref: '#/definitions/kubernetes.Cluster'
+      csp:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPKubernetesCluster'
+      node_count:
+        $ref: '#/definitions/kubernetes.NodeCount'
+      nodes:
+        items:
+          $ref: '#/definitions/kubernetes.Node'
+        type: array
+      workloads:
+        additionalProperties: true
+        type: object
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBHealthChecker:
+    properties:
+      interval:
+        type: integer
+      port:
+        type: string
+      protocol:
+        type: string
+      threshold:
+        type: integer
+      timeout:
+        type: integer
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBListener:
+    properties:
+      dns_name:
+        type: string
+      ip:
+        type: string
+      port:
+        type: string
+      protocol:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBRecord:
+    properties:
+      created_time:
+        type: string
+      health_checker:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBHealthChecker'
+      listener:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBListener'
+      name:
+        type: string
+      scope:
+        type: string
+      system_id:
+        type: string
+      type:
+        type: string
+      vm_group:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBVMGroup'
+      vpc:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBVM:
+    properties:
+      name:
+        type: string
+      system_id:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBVMGroup:
+    properties:
+      port:
+        type: string
+      protocol:
+        type: string
+      vms:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBVM'
         type: array
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPRegion:
@@ -1278,6 +1402,35 @@ definitions:
         type: integer
       count_connection_success:
         type: integer
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionTypeSpec:
+    properties:
+      auth_fields:
+        description: AuthFields are the fields that reach and authenticate to the
+          source.
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceFieldSpec'
+        type: array
+      description:
+        type: string
+      fields:
+        description: 'Fields are the other fields: which resource or what part of
+          it to collect.'
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceFieldSpec'
+        type: array
+      resource_type:
+        description: |-
+          ResourceType is the resource_type value to send, or null when the
+          connection takes none.
+        type: string
+      type:
+        description: |-
+          Type names the connection type, as connection_count_by_type of a source
+          group counts it: the resource_type when there is one, the source group
+          type otherwise.
+        example: vm
+        type: string
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CreateConnectionInfoReq:
     properties:
@@ -1533,6 +1686,18 @@ definitions:
     required:
     - servers
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportConnectionResult:
+    properties:
+      connection_id:
+        type: string
+      resource_type:
+        example: vm
+        type: string
+      results:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportKindResult'
+        type: array
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportDBReq:
     properties:
       metric:
@@ -1545,6 +1710,21 @@ definitions:
         type: integer
       metric:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.FSMetricReq'
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportKindResult:
+    properties:
+      error_message:
+        description: ErrorMessage says why the collection failed. It is left out on
+          success.
+        type: string
+      kind:
+        description: Kind is infra, software, kubernetes, helm, bucket, rdbms or nlb.
+        example: infra
+        type: string
+      status:
+        description: Status is success or failed.
+        example: success
+        type: string
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportObjectStorageReq:
     properties:
@@ -1617,10 +1797,18 @@ definitions:
     properties:
       servers:
         items:
-          $ref: '#/definitions/kubernetes.Kubernetes'
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPKubernetesRecord'
         type: array
     required:
     - servers
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListCSPRegionReq:
+    properties:
+      credential:
+        description: Credential takes the keys GET /csp/{name} lists in credential_keys.
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue'
+        type: array
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListCSPRes:
     properties:
@@ -1628,6 +1816,15 @@ definitions:
         items:
           type: string
         type: array
+      supported_resource_types:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        description: |-
+          SupportedResourceTypes maps each name in CSP to the resource_type values
+          its connections can be collected as (see CSPInfo).
+        type: object
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListConnectionInfoRes:
     properties:
@@ -1655,6 +1852,42 @@ definitions:
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes'
         type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListSourceGroupTypesRes:
+    properties:
+      types:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupTypeSpec'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListeningPortProperty:
+    properties:
+      bindAddress:
+        description: |-
+          BindAddress is the local address the socket is bound to, e.g. "0.0.0.0",
+          "::", "127.0.0.1". It is left out when the agent that collected the node
+          predates per-socket collection and only reported the port.
+        example: 0.0.0.0
+        type: string
+      port:
+        example: 8080
+        type: integer
+      processName:
+        example: nginx
+        type: string
+      protocol:
+        description: tcp, udp
+        example: tcp
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.NLBInfoList:
+    properties:
+      servers:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBRecord'
+        type: array
+    required:
+    - servers
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.OSMetricReq:
     properties:
@@ -1697,6 +1930,104 @@ definitions:
         type: array
     required:
     - servers
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedK8sClusterModel:
+    properties:
+      connection_id:
+        description: |-
+          ConnectionID is the connection the cluster was collected from, empty
+          when there is no cluster.
+        type: string
+      csp:
+        allOf:
+        - $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPKubernetesCluster'
+        description: |-
+          CSP is the CSP's own view of a managed cluster, its node groups among
+          it. It is left out for a cluster the agent collected and for a record
+          stored before it was kept.
+      k8sCluster:
+        $ref: '#/definitions/onpremisemodel.K8sClusterProperty'
+      managed:
+        description: |-
+          Managed is true for a cluster the CSP runs, collected from a csp k8s
+          connection, and false for one the agent collected through a kubeconfig.
+        type: boolean
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedNLBModel:
+    properties:
+      nlbs:
+        items:
+          $ref: '#/definitions/onpremisemodel.NlbProperty'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedNodeProperty:
+    properties:
+      cpu:
+        $ref: '#/definitions/onpremisemodel.CpuProperty'
+      dataDisks:
+        items:
+          $ref: '#/definitions/onpremisemodel.DiskProperty'
+        type: array
+      firewallTable:
+        items:
+          $ref: '#/definitions/onpremisemodel.FirewallRuleProperty'
+        type: array
+      gpuCards:
+        description: Physical GPU cards installed on the node
+        items:
+          $ref: '#/definitions/onpremisemodel.GpuCardProperty'
+        type: array
+      hostname:
+        type: string
+      interfaces:
+        items:
+          $ref: '#/definitions/onpremisemodel.NetworkInterfaceProperty'
+        type: array
+      listeningPorts:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListeningPortProperty'
+        type: array
+      machineId:
+        description: Unique identifier for the node (e.g., UUID)
+        type: string
+      memory:
+        $ref: '#/definitions/onpremisemodel.MemoryProperty'
+      os:
+        $ref: '#/definitions/onpremisemodel.OsProperty'
+      role:
+        description: Node role (e.g., "control-plane", "worker", "standalone")
+        example: control-plane
+        type: string
+      rootDisk:
+        $ref: '#/definitions/onpremisemodel.DiskProperty'
+      routingTable:
+        items:
+          $ref: '#/definitions/onpremisemodel.RouteProperty'
+        type: array
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremInfra:
+    properties:
+      k8sCluster:
+        $ref: '#/definitions/onpremisemodel.K8sClusterProperty'
+      network:
+        $ref: '#/definitions/onpremisemodel.NetworkProperty'
+      nlbs:
+        items:
+          $ref: '#/definitions/onpremisemodel.NlbProperty'
+        type: array
+      nodes:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedNodeProperty'
+        type: array
+    required:
+    - nodes
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremiseInfraModel:
+    properties:
+      onpremiseInfraModel:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremInfra'
+    required:
+    - onpremiseInfraModel
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RegisterTargetInfoReq:
     properties:
@@ -1748,9 +2079,16 @@ definitions:
       csp_data:
         description: |-
           CSPData is the bucket as the CSP reported it (CSP source groups only), a
-          storagemodel.SourceObjectStorageProperty in JSON.
+          storagemodel.SourceObjectStorageProperty in JSON with the bucket's region
+          added under "region" (empty when the CSP cannot tell it or the lookup
+          failed).
         type: string
       data_data:
+        type: string
+      error_message:
+        description: |-
+          ErrorMessage says why the last import of the connection failed. It is
+          filled only in a group import response and is never stored.
         type: string
       saved_time:
         type: string
@@ -1778,6 +2116,11 @@ definitions:
     properties:
       connection_id:
         type: string
+      error_message:
+        description: |-
+          ErrorMessage says why the last import of the connection failed. It is
+          filled only in a group import response and is never stored.
+        type: string
       helm_data:
         type: string
       saved_time:
@@ -1798,6 +2141,11 @@ definitions:
           from InfraData (agent-collected) so importing the agent data does not
           overwrite the CSP data and vice versa.
         type: string
+      error_message:
+        description: |-
+          ErrorMessage says why the last import of the connection failed. It is
+          filled only in a group import response and is never stored.
+        type: string
       infra_data:
         type: string
       saved_time:
@@ -1810,6 +2158,11 @@ definitions:
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SavedKubernetesInfo:
     properties:
       connection_id:
+        type: string
+      error_message:
+        description: |-
+          ErrorMessage says why the last import of the connection failed. It is
+          filled only in a group import response and is never stored.
         type: string
       kubernetes_data:
         type: string
@@ -1845,6 +2198,11 @@ definitions:
     properties:
       connection_id:
         type: string
+      error_message:
+        description: |-
+          ErrorMessage says why the last import of the connection failed. It is
+          filled only in a group import response and is never stored.
+        type: string
       saved_time:
         type: string
       software_data:
@@ -1869,8 +2227,59 @@ definitions:
     required:
     - servers
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceFieldSpec:
+    properties:
+      credential_source:
+        description: CredentialSource is the API that lists the keys of a credential
+          field.
+        type: string
+      default:
+        description: Default is the value taken when the field is left empty.
+        type: string
+      description:
+        type: string
+      enum:
+        description: Enum lists the values accepted, when they are fixed.
+        items:
+          type: string
+        type: array
+      name:
+        description: Name is the JSON field name in the request.
+        example: ip_address
+        type: string
+      one_of:
+        description: |-
+          OneOf groups fields of which at least one must be set. The fields with
+          the same OneOf value form one group.
+        type: string
+      required:
+        type: boolean
+      required_when:
+        description: |-
+          RequiredWhen names the condition under which an optional field becomes
+          required: another field being set ("ip_address") or having a value
+          ("db_access_type=ssh-tunnel").
+        type: string
+      secret:
+        description: Secret marks a value honeybee keeps in OpenBao and a form should
+          mask.
+        type: boolean
+      values_source:
+        description: ValuesSource is the API that lists the values of the field.
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroup:
     properties:
+      capabilities:
+        allOf:
+        - $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupCapabilities'
+        description: |-
+          Capabilities and ConnectionCountByType are computed for a response from
+          the group's connections and are never stored.
+      connection_count_by_type:
+        additionalProperties:
+          type: integer
+        type: object
       credential:
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue'
@@ -1912,8 +2321,52 @@ definitions:
     - id
     - name
     type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupCapabilities:
+    properties:
+      isCollectDb:
+        description: |-
+          IsCollectDb: there is a db connection, a csp rdbms connection or a host
+          the agent can find an installed database on.
+        type: boolean
+      isCollectFs:
+        description: 'IsCollectFs: there is an fs connection.'
+        type: boolean
+      isCollectInfra:
+        description: |-
+          IsCollectInfra: import/infra has a connection to collect, a host or a
+          csp resource.
+        type: boolean
+      isCollectKubernetes:
+        description: |-
+          IsCollectKubernetes: there is a csp k8s cluster or a host the agent
+          collects a cluster from.
+        type: boolean
+      isCollectNlb:
+        description: 'IsCollectNlb: there is a csp nlb connection.'
+        type: boolean
+      isCollectObjectStorage:
+        description: |-
+          IsCollectObjectStorage: there is a csp object_storage connection or a
+          minio connection.
+        type: boolean
+      isCollectSoftware:
+        description: 'IsCollectSoftware: there is a connection the agent can be reached
+          on.'
+        type: boolean
+    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupRes:
     properties:
+      capabilities:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupCapabilities'
+      connection_count_by_type:
+        additionalProperties:
+          type: integer
+        description: |-
+          ConnectionCountByType counts the connections by connection type: the
+          resource_type for onprem and csp groups (an on-prem connection stored
+          without one counts as vm), the group type for fs, db and minio groups,
+          whose connections take no resource_type.
+        type: object
       connection_info_status_count:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionInfoStatusCount'
       description:
@@ -1931,6 +2384,35 @@ definitions:
     required:
     - id
     - name
+    type: object
+  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupTypeSpec:
+    properties:
+      aliases:
+        description: Aliases are other values the type is accepted and stored as.
+        items:
+          type: string
+        type: array
+      connection_types:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ConnectionTypeSpec'
+        type: array
+      default_resource_type:
+        type: string
+      description:
+        type: string
+      group_fields:
+        description: |-
+          GroupFields are the fields the source group itself takes besides name
+          and description: provider_name, region_name and credential.
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceFieldSpec'
+        type: array
+      resource_type_field:
+        description: ResourceTypeField is "required", "optional" or "none".
+        type: string
+      type:
+        example: onprem
+        type: string
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.TargetInfo:
     properties:
@@ -2810,8 +3292,60 @@ definitions:
     - cpus
     - threads
     type: object
+  infra.CSPDataDisk:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      size:
+        description: GB
+        type: integer
+      status:
+        type: string
+      type:
+        type: string
+    type: object
+  infra.CSPGPU:
+    properties:
+      count:
+        type: integer
+      memory_gb:
+        description: per device
+        type: integer
+      model:
+        type: string
+      vendor:
+        type: string
+    type: object
+  infra.CSPImage:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      os_architecture:
+        description: e.g. x86_64
+        type: string
+      os_disk_size_gb:
+        type: integer
+      os_disk_type:
+        type: string
+      os_distribution:
+        description: e.g. Ubuntu 22.04
+        type: string
+      os_platform:
+        description: e.g. Linux/UNIX
+        type: string
+      status:
+        type: string
+    type: object
   infra.CSPInfo:
     properties:
+      data_disk_details:
+        items:
+          $ref: '#/definitions/infra.CSPDataDisk'
+        type: array
       data_disks:
         items:
           type: string
@@ -2822,6 +3356,14 @@ definitions:
       image:
         description: ImageIId NameId
         type: string
+      image_detail:
+        $ref: '#/definitions/infra.CSPImage'
+      keypair:
+        allOf:
+        - $ref: '#/definitions/infra.CSPKeyPair'
+        description: |-
+          The fields below come from separate driver calls made after GetVM. Each
+          is left empty when its call fails or the driver has no such handler.
       name:
         description: VM NameId
         type: string
@@ -2842,6 +3384,9 @@ definitions:
         $ref: '#/definitions/infra.Disk'
       start_time:
         type: string
+      status:
+        description: e.g. Running, Suspended
+        type: string
       tags:
         additionalProperties:
           type: string
@@ -2849,7 +3394,18 @@ definitions:
       vm_spec:
         description: e.g. Standard_D2s_v3
         type: string
+      vm_spec_detail:
+        $ref: '#/definitions/infra.CSPVMSpec'
       zone:
+        type: string
+    type: object
+  infra.CSPKeyPair:
+    properties:
+      fingerprint:
+        type: string
+      id:
+        type: string
+      name:
         type: string
     type: object
   infra.CSPNetwork:
@@ -2893,6 +3449,24 @@ definitions:
         type: string
       zone:
         type: string
+    type: object
+  infra.CSPVMSpec:
+    properties:
+      architecture:
+        type: string
+      disk_gb:
+        description: 0 when the spec has no fixed disk
+        type: integer
+      gpus:
+        items:
+          $ref: '#/definitions/infra.CSPGPU'
+        type: array
+      memory_mib:
+        type: integer
+      name:
+        type: string
+      vcpus:
+        type: integer
     type: object
   infra.CSPVPC:
     properties:
@@ -3542,20 +4116,6 @@ definitions:
         items:
           $ref: '#/definitions/kubernetes.Repo'
         type: array
-    type: object
-  kubernetes.Kubernetes:
-    properties:
-      cluster:
-        $ref: '#/definitions/kubernetes.Cluster'
-      node_count:
-        $ref: '#/definitions/kubernetes.NodeCount'
-      nodes:
-        items:
-          $ref: '#/definitions/kubernetes.Node'
-        type: array
-      workloads:
-        additionalProperties: true
-        type: object
     type: object
   kubernetes.Node:
     properties:
@@ -4383,78 +4943,6 @@ definitions:
         description: Traffic weight (reference only)
         type: integer
     type: object
-  onpremisemodel.NodeProperty:
-    properties:
-      cpu:
-        $ref: '#/definitions/onpremisemodel.CpuProperty'
-      dataDisks:
-        items:
-          $ref: '#/definitions/onpremisemodel.DiskProperty'
-        type: array
-      firewallTable:
-        items:
-          $ref: '#/definitions/onpremisemodel.FirewallRuleProperty'
-        type: array
-      gpuCards:
-        description: Physical GPU cards installed on the node
-        items:
-          $ref: '#/definitions/onpremisemodel.GpuCardProperty'
-        type: array
-      hostname:
-        type: string
-      interfaces:
-        items:
-          $ref: '#/definitions/onpremisemodel.NetworkInterfaceProperty'
-        type: array
-      machineId:
-        description: Unique identifier for the node (e.g., UUID)
-        type: string
-      memory:
-        $ref: '#/definitions/onpremisemodel.MemoryProperty'
-      os:
-        $ref: '#/definitions/onpremisemodel.OsProperty'
-      role:
-        description: Node role (e.g., "control-plane", "worker", "standalone")
-        example: control-plane
-        type: string
-      rootDisk:
-        $ref: '#/definitions/onpremisemodel.DiskProperty'
-      routingTable:
-        items:
-          $ref: '#/definitions/onpremisemodel.RouteProperty'
-        type: array
-    type: object
-  onpremisemodel.OnpremInfra:
-    properties:
-      k8sCluster:
-        allOf:
-        - $ref: '#/definitions/onpremisemodel.K8sClusterProperty'
-        description: 'TODO: Extend to a general ClusterProperty if other orchestrators
-          (e.g., OpenShift, Rancher) are needed.'
-      network:
-        $ref: '#/definitions/onpremisemodel.NetworkProperty'
-      nlbs:
-        description: |-
-          NLBs holds on-premise NLB instances (HAProxy-based), one entry per frontend-backend pair.
-          Populated by cm-honeybee when HAProxy is detected on a node.
-          Used exclusively by POST /recommendation/infraWithNlb; ignored by POST /recommendation/infra.
-        items:
-          $ref: '#/definitions/onpremisemodel.NlbProperty'
-        type: array
-      nodes:
-        items:
-          $ref: '#/definitions/onpremisemodel.NodeProperty'
-        type: array
-    required:
-    - nodes
-    type: object
-  onpremisemodel.OnpremiseInfraModel:
-    properties:
-      onpremiseInfraModel:
-        $ref: '#/definitions/onpremisemodel.OnpremInfra'
-    required:
-    - onpremiseInfraModel
-    type: object
   onpremisemodel.OsProperty:
     properties:
       id:
@@ -5036,6 +5524,19 @@ definitions:
       version:
         type: string
     type: object
+  software.ListenSocket:
+    properties:
+      bind_address:
+        description: |-
+          BindAddress is the local address the socket is bound to, e.g. "0.0.0.0",
+          "::", "127.0.0.1". A wildcard address accepts traffic on every interface.
+        type: string
+      port:
+        type: integer
+      protocol:
+        description: tcp, udp
+        type: string
+    type: object
   software.Listener:
     properties:
       container_id:
@@ -5048,6 +5549,15 @@ definitions:
         type: string
       executable_path:
         type: string
+      listen_sockets:
+        description: |-
+          ListenSockets are the process's listening sockets one by one: its LISTEN
+          TCP sockets and its bound, unconnected UDP sockets, each with the address
+          it is bound to. A process listening only on UDP has these and no Ports.
+          Sorted by protocol, port and address, without duplicates.
+        items:
+          $ref: '#/definitions/software.ListenSocket'
+        type: array
       name:
         type: string
       package:
@@ -6125,6 +6635,12 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
     format: int64
     type: integer
     x-enum-varnames:
@@ -6146,6 +6662,12 @@ definitions:
     - Hour
     - minDuration
     - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
     - Nanosecond
     - Microsecond
     - Millisecond
@@ -6505,7 +7027,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Return the list of CSPs supported by the linked cb-spider drivers.
+      description: Return the list of CSPs supported by the linked cb-spider drivers,
+        and for each the resource_type values its connections can be collected as.
       operationId: list-csp
       produces:
       - application/json
@@ -6552,6 +7075,46 @@ paths:
       summary: Get CSP metadata
       tags:
       - '[CSP] Metadata'
+  /csp/{name}/region:
+    post:
+      consumes:
+      - application/json
+      description: Return the CSP's available regions and zones, queried live with
+        the credential in the body, so the region of a csp source group can be chosen
+        before the group exists. The credential takes the keys GET /csp/{name} lists
+        and is neither stored nor logged. The region queried is the CSP's default
+        one for listing.
+      operationId: list-csp-regions
+      parameters:
+      - description: CSP name (case-insensitive, e.g. aws or AWS)
+        in: path
+        name: name
+        required: true
+        type: string
+      - description: CSP credential
+        in: body
+        name: Credential
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListCSPRegionReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Regions and zones
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListRegionRes'
+        "400":
+          description: Unsupported CSP name, or a credential key missing or not accepted
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to read CSP metadata or query the CSP
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: List CSP regions with a credential
+      tags:
+      - '[CSP] Metadata'
   /readyz:
     get:
       consumes:
@@ -6594,6 +7157,17 @@ paths:
       - description: Description of the source group.
         in: query
         name: description
+        type: string
+      - description: Type of the source group. onprem also matches the legacy ssh
+          type.
+        enum:
+        - onprem
+        - csp
+        - fs
+        - db
+        - minio
+        in: query
+        name: type
         type: string
       produces:
       - application/json
@@ -6772,6 +7346,40 @@ paths:
       summary: Uninstall Agent (Source Group)
       tags:
       - '[On-premise] ConnectionInfo'
+  /source_group/{sgId}/bucket/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get every collected bucket of the source group's CSP object-storage
+        connections in the source model cm-beetle recommends target buckets from.
+        The response is the same as data/refined of the group. Connections without
+        a successfully collected bucket are left out, as are buckets found in a region
+        other than the group's. sourceCloud.region is the group's region.
+      operationId: get-bucket-info-source-group-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the buckets.
+          schema:
+            $ref: '#/definitions/storagemodel.SourceObjectStorageModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the buckets.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Bucket Information Source Group
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/connection_info:
     get:
       consumes:
@@ -6811,6 +7419,17 @@ paths:
       - description: User of the connection information.
         in: query
         name: user
+        type: string
+      - description: Resource type of the connection information. vm also matches
+          an on-prem connection registered without resource_type.
+        enum:
+        - vm
+        - k8s
+        - object_storage
+        - nlb
+        - rdbms
+        in: query
+        name: resource_type
         type: string
       produces:
       - application/json
@@ -7013,6 +7632,45 @@ paths:
       summary: Uninstall Agent
       tags:
       - '[On-premise] ConnectionInfo'
+  /source_group/{sgId}/connection_info/{connId}/bucket/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the bucket of a CSP object-storage connection in the source
+        model cm-beetle recommends a target bucket from. The response is the same
+        as data/refined of the connection. The values are those collected by import/bucket
+        or import/infra. sourceCloud.region is the region the bucket was found in,
+        or the source group's region where the CSP cannot tell.
+      operationId: get-bucket-info-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the bucket.
+          schema:
+            $ref: '#/definitions/storagemodel.SourceObjectStorageModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the bucket.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined Bucket Information
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/connection_info/{connId}/data:
     get:
       consumes:
@@ -7054,7 +7712,8 @@ paths:
       - application/json
       description: Get the bucket of a CSP object-storage connection in the source
         model cm-beetle recommends a target bucket from. The values are those collected
-        by import/infra.
+        by import/infra. sourceCloud.region is the region the bucket was found in,
+        or the source group's region where the CSP cannot tell.
       operationId: get-data-info-refined
       parameters:
       - description: ID of the source group.
@@ -7608,6 +8267,10 @@ paths:
       consumes:
       - application/json
       description: Get the refined infra information of the connection information.
+        A CSP VM the agent has not collected, or whose agent call failed after its
+        CSP collection succeeded, is a node of its CSP data. A CSP resource other
+        than a VM makes no node; a CSP k8s connection gives its cluster as k8sCluster,
+        and a CSP nlb connection its NLB as an entry of nlbs.
       operationId: get-infra-info-refined
       parameters:
       - description: ID of the source group.
@@ -7626,7 +8289,7 @@ paths:
         "200":
           description: Successfully get refined information of the infra.
           schema:
-            $ref: '#/definitions/onpremisemodel.OnpremiseInfraModel'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremiseInfraModel'
         "400":
           description: Sent bad request.
           schema:
@@ -7638,11 +8301,52 @@ paths:
       summary: Get Refined Infra Information
       tags:
       - '[Get] Get refined source info'
+  /source_group/{sgId}/connection_info/{connId}/k8s/refined:
+    get:
+      consumes:
+      - application/json
+      description: 'Get the Kubernetes cluster collected from the connection: a CSP-managed
+        cluster of a csp k8s connection, or the cluster the agent collected on a control
+        plane node. k8sCluster is what infra/refined of the connection gives as k8sCluster.
+        A managed cluster also carries a csp section with its node groups. A connection
+        without a successfully collected cluster is a bad request.'
+      operationId: get-k8s-info-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the cluster.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedK8sClusterModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the cluster.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined K8s Information
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/connection_info/{connId}/kubernetes:
     get:
       consumes:
       - application/json
-      description: Get the kubernetes information of the connection information.
+      description: Get the kubernetes information of the connection information. A
+        CSP-managed cluster also carries a csp section with the cluster's system ID,
+        status, creation time and node groups.
       operationId: get-kubernetes-info
       parameters:
       - description: ID of the source group.
@@ -7661,7 +8365,7 @@ paths:
         "200":
           description: Successfully get information of the kubernetes.
           schema:
-            $ref: '#/definitions/kubernetes.Kubernetes'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPKubernetesRecord'
         "400":
           description: Sent bad request.
           schema:
@@ -7673,6 +8377,82 @@ paths:
       summary: Get Kubernetes Information
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/nlb:
+    get:
+      consumes:
+      - application/json
+      description: Get the network load balancer collected from the CSP for a csp
+        nlb connection. The last NLB collected is returned even when a later import
+        failed.
+      operationId: get-nlb-info
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the nlb.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPNLBRecord'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the nlb.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get NLB Information
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/connection_info/{connId}/nlb/refined:
+    get:
+      consumes:
+      - application/json
+      description: 'Get the load balancers of the connection, the list infra/refined
+        of the connection gives as nlbs: the NLBs found in HAProxy on a host, or the
+        CSP NLB of a csp nlb connection with its backend servers given the private
+        IPs of the group''s CSP VMs. A host whose infra has not been collected is
+        a bad request, as in infra/refined.'
+      operationId: get-nlb-info-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: ID of the connection info.
+        in: path
+        name: connId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the load balancers.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedNLBModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the load balancers.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined NLB Information
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/connection_info/{connId}/objectstorage:
     get:
       consumes:
@@ -7958,7 +8738,9 @@ paths:
       - application/json
       description: Get every collected bucket of the source group's CSP object-storage
         connections in the source model cm-beetle recommends target buckets from.
-        Connections without a collected bucket are left out.
+        Connections without a successfully collected bucket are left out, as are buckets
+        found in a region other than the group's. sourceCloud.region is the group's
+        region.
       operationId: get-data-info-source-group-refined
       parameters:
       - description: ID of the source group.
@@ -8052,7 +8834,9 @@ paths:
       - application/json
       description: Lists VMs / K8s clusters / object-storage buckets / network load
         balancers / managed databases reachable through the CSP connection bound to
-        this SourceGroup. Used by the UI to populate ConnectionInfo selection.
+        this SourceGroup. Object-storage buckets are limited to the source group's
+        region where the CSP reports a bucket's region (AWS), and carry that region.
+        Used by the UI to populate ConnectionInfo selection.
       operationId: discover-source-group-resources
       parameters:
       - description: ID of the SourceGroup (must be type=csp)
@@ -8176,11 +8960,106 @@ paths:
       summary: Get helm Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/import/all:
+    post:
+      consumes:
+      - application/json
+      description: Collect every connection of an onprem or csp source group the way
+        its type is collected. A csp resource other than a VM is collected from the
+        CSP and reported as kubernetes, bucket, rdbms or nlb. A VM is collected as
+        infra (on a csp group the CSP side, and through the agent when it has an ip_address),
+        and a host the agent can reach also as software, kubernetes and helm, as the
+        group imports of those kinds pick them. An on-prem k8s connection has nothing
+        to collect and is left out. A failing collection is listed with status failed
+        and does not stop the others; the request fails only when no collection of
+        any connection succeeded. fs, db and minio groups are refused with the import
+        to use instead (import/fs, import/db, import/objectstorage).
+      operationId: import-all-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: For object-storage connections, count each bucket's objects and
+          total size by listing every object. Default true.
+        in: query
+        name: count_objects
+        type: boolean
+      - description: 'Enable for show all packages include default packages. (Default:
+          false)'
+        in: query
+        name: show_default_packages
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The collections run for each connection and their results
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportConnectionResult'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to collect the source group
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import All Source Group
+      tags:
+      - '[Import] Import source info'
+  /source_group/{sgId}/import/bucket:
+    post:
+      consumes:
+      - application/json
+      description: Collect from the CSP the object_storage connections of a csp source
+        group. The other connections are left alone. A failing connection is listed
+        with status failed and does not stop the others; the request fails only when
+        every connection fails. A source group that is not csp is refused.
+      operationId: import-bucket-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      - description: Count each bucket's objects and total size by listing every object.
+          Default true.
+        in: query
+        name: count_objects
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The result of each bucket connection
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportConnectionResult'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to collect the buckets
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import Bucket Source Group
+      tags:
+      - '[Import] Import source info'
   /source_group/{sgId}/import/data:
     post:
       consumes:
       - application/json
-      description: Import data information for all connections in the source group.
+      description: Import data information for the connections in the source group
+        through the agent. Connections without an agent (on-prem k8s, CSP resources
+        other than VMs, CSP VMs without an IP address) are skipped. A connection that
+        fails is listed with status failed and does not stop the others; the request
+        fails only when every connection fails.
       operationId: import-data-source-group
       parameters:
       - description: ID of the source group.
@@ -8288,7 +9167,11 @@ paths:
     post:
       consumes:
       - application/json
-      description: Import helm information for all connections in the source group.
+      description: Import helm information for the connections in the source group
+        through the agent. Connections without an agent (on-prem k8s, CSP resources
+        other than VMs, CSP VMs without an IP address) are skipped. A connection that
+        fails is listed with status failed and does not stop the others; the request
+        fails only when every connection fails.
       operationId: import-helm-source-group
       parameters:
       - description: ID of the source group.
@@ -8321,6 +9204,8 @@ paths:
       consumes:
       - application/json
       description: Import infra information for all connections in the source group.
+        A connection that fails is listed with status failed and does not stop the
+        others; the request fails only when every connection fails.
       operationId: import-infra-source-group
       parameters:
       - description: ID of the source group.
@@ -8353,12 +9238,51 @@ paths:
       summary: Import Infra Source Group
       tags:
       - '[Import] Import source info'
+  /source_group/{sgId}/import/k8s:
+    post:
+      consumes:
+      - application/json
+      description: Collect from the CSP the k8s connections (managed clusters) of
+        a csp source group. The other connections are left alone; a cluster on VMs
+        is collected through the agent by import/kubernetes. A failing connection
+        is listed with status failed and does not stop the others; the request fails
+        only when every connection fails. A source group that is not csp is refused.
+      operationId: import-k8s-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The result of each k8s connection
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportConnectionResult'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to collect the managed clusters
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import K8s Source Group
+      tags:
+      - '[Import] Import source info'
   /source_group/{sgId}/import/kubernetes:
     post:
       consumes:
       - application/json
-      description: Import kubernetes information for all connections in the source
-        group.
+      description: Import kubernetes information for the connections in the source
+        group through the agent. Connections without an agent (on-prem k8s, CSP resources
+        other than VMs, CSP VMs without an IP address) are skipped. A connection that
+        fails is listed with status failed and does not stop the others; the request
+        fails only when every connection fails.
       operationId: import-kubernetes-source-group
       parameters:
       - description: ID of the source group.
@@ -8384,6 +9308,41 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Import Kubernetes Source Group
+      tags:
+      - '[Import] Import source info'
+  /source_group/{sgId}/import/nlb:
+    post:
+      consumes:
+      - application/json
+      description: Collect from the CSP the nlb connections of a csp source group.
+        The other connections are left alone. A failing connection is listed with
+        status failed and does not stop the others; the request fails only when every
+        connection fails. A source group that is not csp is refused.
+      operationId: import-nlb-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The result of each nlb connection
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportConnectionResult'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to collect the load balancers
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import NLB Source Group
       tags:
       - '[Import] Import source info'
   /source_group/{sgId}/import/objectstorage:
@@ -8424,11 +9383,50 @@ paths:
       summary: Import object storage Source Group
       tags:
       - '[Import] Import source info'
+  /source_group/{sgId}/import/rdbms:
+    post:
+      consumes:
+      - application/json
+      description: Collect from the CSP the rdbms connections (managed databases)
+        of a csp source group. The other connections are left alone. A failing connection
+        is listed with status failed and does not stop the others; the request fails
+        only when every connection fails. A source group that is not csp is refused.
+      operationId: import-rdbms-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: The result of each rdbms connection
+          schema:
+            items:
+              $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ImportConnectionResult'
+            type: array
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to collect the managed databases
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Import RDBMS Source Group
+      tags:
+      - '[Import] Import source info'
   /source_group/{sgId}/import/software:
     post:
       consumes:
       - application/json
-      description: Import software information for all connections in the source group.
+      description: Import software information for the connections in the source group
+        through the agent. Connections without an agent (on-prem k8s, CSP resources
+        other than VMs, CSP VMs without an IP address) are skipped. A connection that
+        fails is listed with status failed and does not stop the others; the request
+        fails only when every connection fails.
       operationId: import-software-source-group
       parameters:
       - description: ID of the source group.
@@ -8495,8 +9493,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get the refined infra information for all connections in the source
-        group.
+      description: Get the refined infra information of the source group. On-prem
+        k8s connections and CSP resources other than VMs do not become nodes, and
+        a connection whose infra has not been collected successfully is skipped, except
+        a CSP VM whose CSP collection succeeded and only the agent call failed, which
+        becomes a node of its CSP data. A CSP VM the agent has not collected is a
+        node of its CSP data (name, VM id, spec, disks, addresses, image OS). The
+        nlbs hold the NLBs found in HAProxy on the nodes and the CSP NLBs of the csp
+        nlb connections.
       operationId: get-infra-info-source-group-refined
       parameters:
       - description: ID of the source group.
@@ -8510,7 +9514,7 @@ paths:
         "200":
           description: Successfully get refined information of the infra.
           schema:
-            $ref: '#/definitions/onpremisemodel.OnpremiseInfraModel'
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremiseInfraModel'
         "400":
           description: Sent bad request.
           schema:
@@ -8522,12 +9526,47 @@ paths:
       summary: Get Refined Infra Information Source Group
       tags:
       - '[Get] Get refined source info'
+  /source_group/{sgId}/k8s/refined:
+    get:
+      consumes:
+      - application/json
+      description: Get the Kubernetes cluster of the source group, the one infra/refined
+        of the group gives as k8sCluster. A cluster the agent collected is taken before
+        a CSP-managed one; a managed one also carries a csp section with its node
+        groups. A group without a successfully collected cluster gives k8sCluster
+        null.
+      operationId: get-k8s-info-source-group-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the cluster.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedK8sClusterModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the cluster.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined K8s Information Source Group
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/kubernetes:
     get:
       consumes:
       - application/json
       description: Get the kubernetes information for all connections in the source
-        group.
+        group. A CSP-managed cluster also carries a csp section with the cluster's
+        system ID, status, creation time and node groups.
       operationId: get-kubernetes-info-source-group
       parameters:
       - description: ID of the source group.
@@ -8553,6 +9592,72 @@ paths:
       summary: Get Kubernetes Information Source Group
       tags:
       - '[Get] Get source info'
+  /source_group/{sgId}/nlb:
+    get:
+      consumes:
+      - application/json
+      description: Get the network load balancers collected from the CSP for all csp
+        nlb connections in the source group. Connections that are not nlb connections,
+        have not been collected or whose last import failed are skipped.
+      operationId: get-nlb-info-source-group
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get information of the nlb.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.NLBInfoList'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get information of the nlb.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get NLB Information Source Group
+      tags:
+      - '[Get] Get source info'
+  /source_group/{sgId}/nlb/refined:
+    get:
+      consumes:
+      - application/json
+      description: 'Get the load balancers of the source group, the list infra/refined
+        of the group gives as nlbs: the NLBs found in HAProxy on the refined nodes,
+        then the CSP NLBs of the csp nlb connections whose last import succeeded,
+        their backend servers given the private IPs of the group''s CSP VMs. A group
+        without any gives an empty list.'
+      operationId: get-nlb-info-source-group-refined
+      parameters:
+      - description: ID of the source group.
+        in: path
+        name: sgId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully get refined information of the load balancers.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedNLBModel'
+        "400":
+          description: Sent bad request.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+        "500":
+          description: Failed to get refined information of the load balancers.
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
+      summary: Get Refined NLB Information Source Group
+      tags:
+      - '[Get] Get refined source info'
   /source_group/{sgId}/objectstorage:
     get:
       consumes:
@@ -8653,7 +9758,8 @@ paths:
       - application/json
       description: Get the refined database information for all connections in the
         source group, in the source model cm-beetle recommends from. Connections that
-        cannot hold a database or have not been collected are skipped.
+        cannot hold a database, have not been collected, or whose last import failed
+        are skipped.
       operationId: get-rdbms-info-source-group-refined
       parameters:
       - description: ID of the source group.
@@ -8775,8 +9881,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get the refined software information for all connections in the
-        source group.
+      description: Get the refined software information of the connections in the
+        source group that run the agent. A connection whose software has not been
+        collected successfully is skipped.
       operationId: get-software-info-source-group-refined
       parameters:
       - description: ID of the source group.
@@ -8836,6 +9943,24 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
       summary: Register TargetInfo to SourceGroup
+      tags:
+      - '[On-premise] SourceGroup'
+  /source_group/types:
+    get:
+      consumes:
+      - application/json
+      description: Return each source group type with the connection types it holds
+        and the fields each takes, so a client can build the registration forms. The
+        credential keys of a csp group come from GET /csp/{name}.
+      operationId: list-source-group-types
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Source group types
+          schema:
+            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListSourceGroupTypesRes'
+      summary: List source group types
       tags:
       - '[On-premise] SourceGroup'
 swagger: "2.0"
