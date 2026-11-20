@@ -25,7 +25,7 @@ func MigratePlaintextSecretsToOpenBao() {
 	var conns []model.ConnectionInfo
 	// Rows that still carry a secret in the DB. "-" is the sentinel for "no key".
 	err := db.DB.Where(
-		"(password IS NOT NULL AND password <> '') OR "+
+		"(password IS NOT NULL AND password <> '') OR " +
 			"(private_key IS NOT NULL AND private_key <> '' AND private_key <> '-')",
 	).Find(&conns).Error
 	if err != nil {
