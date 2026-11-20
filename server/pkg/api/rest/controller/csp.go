@@ -60,6 +60,20 @@ var credentialExamples = map[string]map[string]credExample{
 		"DomainName":       {"Default", "OpenStack domain name"},
 		"ProjectID":        {"<OPENSTACK_PROJECT_ID>", "OpenStack project ID"},
 	},
+	"NHN": {
+		"IdentityEndpoint": {"https://api-identity-infrastructure.nhncloudservice.com", "NHN Cloud identity endpoint"},
+		"Username":         {"<NHN_USERNAME>", "NHN Cloud API user"},
+		"Password":         {"<NHN_PASSWORD>", "NHN Cloud API password"},
+		"DomainName":       {"<NHN_DOMAIN_NAME>", "NHN Cloud domain name"},
+		"TenantId":         {"<NHN_TENANT_ID>", "NHN Cloud tenant ID"},
+	},
+	"KT": {
+		"IdentityEndpoint": {"https://api.ucloudbiz.olleh.com/d1/identity/v3/", "KT Cloud identity endpoint"},
+		"Username":         {"<KT_USERNAME>", "KT Cloud user"},
+		"Password":         {"<KT_PASSWORD>", "KT Cloud password"},
+		"DomainName":       {"<KT_DOMAIN_NAME>", "KT Cloud domain name"},
+		"ProjectID":        {"<KT_PROJECT_ID>", "KT Cloud project ID"},
+	},
 }
 
 // buildCredentialFields pairs each required credential key with its example.
