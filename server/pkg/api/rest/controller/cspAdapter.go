@@ -1018,13 +1018,25 @@ const (
 // PUBLIC and keeps the load balancer's own scheme (internet-facing |
 // internal) in KeyValueList, alibaba reports an intranet NLB as PRIVATE, and
 // gcp copies its forwarding rule scheme (EXTERNAL | INTERNAL) when it fills
-// Type.
+// Type. The gcp driver (cb-spider v0.13.23) reads that scheme under another
+// key and leaves Type empty, while the listener's KeyValueList still carries
+// it as LoadBalancingScheme; that is read only when Type and Scheme do not
+// decide.
 func normalizeNLBType(n *spider.NLBInfo) string {
 	t := n.Type
 	if scheme := strings.TrimSpace(keyValueListToMap(n.KeyValueList)["Scheme"]); scheme != "" {
 		t = scheme
 	}
 
+	if typ := nlbTypeOf(t); typ != "" {
+		return typ
+	}
+	return nlbTypeOf(keyValueListToMap(n.Listener.KeyValueList)["LoadBalancingScheme"])
+}
+
+// nlbTypeOf maps one driver spelling of an NLB's exposure to PUBLIC or
+// INTERNAL, or "" when it is not one of them.
+func nlbTypeOf(t string) string {
 	switch strings.ToUpper(strings.TrimSpace(t)) {
 	case "PUBLIC", "EXTERNAL", "INTERNET-FACING":
 		return nlbTypePublic

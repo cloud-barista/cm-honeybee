@@ -381,6 +381,8 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
   않습니다(kubeconfig가 아니라 CSP API로 읽기 때문). Pod/Service CIDR은 cb-spider가 주지 않아 비어 있습니다.
 - **`nlb`**: 리스너(프로토콜, IP, 포트, DNS 이름), 백엔드 VM 그룹(프로토콜, 포트, VM 목록), 헬스 체크를
   저장합니다. `type`은 `PUBLIC`·`INTERNAL`, 드라이버가 알려주지 않으면 빈 값입니다.
+  GCP의 cb-spider 드라이버는 타입을 비워 두므로 리스너의 `LoadBalancingScheme`으로 정합니다
+  (`EXTERNAL`이면 `PUBLIC`, `INTERNAL`이면 `INTERNAL`).
   AWS의 cb-spider 드라이버는 대상 그룹을 **NLB 자신의 이름**으로 찾습니다(cb-spider가 NLB를 만들 때 대상 그룹에
   붙이는 이름). cb-spider 밖에서 만든 NLB의 대상 그룹 이름이 NLB 이름과 다르면 드라이버가 대상 그룹을 못 찾고
   이를 에러로 내지 않아, import는 성공하고 `vm_group`은 `{"protocol": "", "port": "", "vms": []}`,
