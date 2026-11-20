@@ -377,9 +377,14 @@ What is collected:
   creates. For an NLB created outside cb-spider whose target group has another
   name, the driver finds no target group and does not report it as an error, so
   the import succeeds with `vm_group` `{"protocol": "", "port": "", "vms": []}`
-  and a zero `health_checker`. An empty `vm_group.protocol` therefore means the
-  target group was not read; a target group that was read but has no targets has
-  its protocol and port with an empty `vms`.
+  and a zero `health_checker`. Such a record has `vm_group_unknown: true` (with a
+  warning in the server log), so an unread target group is told apart from one
+  that was read but has no targets, which has its protocol and port with an empty
+  `vms` and `vm_group_unknown: false`. `GET .../nlb` of a connection and of the
+  group carry the field, and so does discovery in `extra.vm_group_unknown`; a
+  record stored before the field existed gets it from its empty `vm_group`. The
+  refined NLBs (`nlbs`) have no place for it and show such an NLB with no
+  backend servers.
 - `object_storage`: the bucket's settings and, unless `count_objects=false`, its
   object count and total size. The region the bucket was found in is kept as well.
 

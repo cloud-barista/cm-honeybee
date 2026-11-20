@@ -44,6 +44,11 @@ func readSavedNLB(connID string) (*model.CSPNLBRecord, string, error) {
 		logger.Println(logger.ERROR, false, errMsg)
 		return nil, saved.Status, errors.New(errMsg)
 	}
+	// A record stored before vm_group_unknown existed lacks the field; the
+	// empty VM group it stored tells the same thing.
+	if rec.VMGroup.Protocol == "" && rec.VMGroup.Port == "" && len(rec.VMGroup.VMs) == 0 {
+		rec.VMGroupUnknown = true
+	}
 
 	return &rec, saved.Status, nil
 }

@@ -1048,6 +1048,13 @@ func upperTrim(s string) string {
 	return strings.ToUpper(strings.TrimSpace(s))
 }
 
+// nlbVMGroupUnread reports whether the driver gave none of the VM group: no
+// protocol, no port and no VMs. A target group that was read always has a
+// protocol and a port, even with no targets.
+func nlbVMGroupUnread(g spider.VMGroupInfo) bool {
+	return strings.TrimSpace(g.Protocol) == "" && strings.TrimSpace(g.Port) == "" && len(g.VMs) == 0
+}
+
 // nlbInfoToNLB maps spider.NLBInfo into the record stored for a CSP nlb
 // connection. The values drivers spell differently are brought to one form
 // here (normalizeNLBType, upper-case scope and protocols); discovery reports
@@ -1079,6 +1086,7 @@ func nlbInfoToNLB(n *spider.NLBInfo) model.CSPNLBRecord {
 			Port:     strings.TrimSpace(n.VMGroup.Port),
 			VMs:      vms,
 		},
+		VMGroupUnknown: nlbVMGroupUnread(n.VMGroup),
 		HealthChecker: model.CSPNLBHealthChecker{
 			Protocol:  upperTrim(n.HealthChecker.Protocol),
 			Port:      strings.TrimSpace(n.HealthChecker.Port),
@@ -1286,7 +1294,13 @@ func collectCSPResource(conn spider.Conn, sg *model.SourceGroup, ci *model.Conne
 		if err != nil {
 			return err
 		}
-		return upsertSavedNLB(ci.ID, nlbInfoToNLB(n))
+		rec := nlbInfoToNLB(n)
+		if rec.VMGroupUnknown {
+			logger.Println(logger.WARN, false, "CSP: the driver reported no target group for nlb '"+rec.Name+"' "+
+				connLabel(conn)+"; its vm_group and health_checker are stored as unknown"+
+				" (ConnectionID = "+ci.ID+")")
+		}
+		return upsertSavedNLB(ci.ID, rec)
 	default:
 		return errors.New("unsupported resource_type: " + ci.ResourceType)
 	}

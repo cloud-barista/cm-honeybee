@@ -199,6 +199,9 @@ func discoveredNLB(n *spider.NLBInfo) model.DiscoveredResource {
 			"listener": rec.Listener.Protocol + "/" + rec.Listener.Port,
 			"endpoint": firstNonEmpty(rec.Listener.DNSName, rec.Listener.IP),
 			"vm_count": strconv.Itoa(len(rec.VMGroup.VMs)),
+			// vm_count is 0 both for no targets and for a target group the
+			// driver did not read; this tells them apart.
+			"vm_group_unknown": strconv.FormatBool(rec.VMGroupUnknown),
 		},
 	}
 }

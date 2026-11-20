@@ -384,8 +384,11 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
   AWS의 cb-spider 드라이버는 대상 그룹을 **NLB 자신의 이름**으로 찾습니다(cb-spider가 NLB를 만들 때 대상 그룹에
   붙이는 이름). cb-spider 밖에서 만든 NLB의 대상 그룹 이름이 NLB 이름과 다르면 드라이버가 대상 그룹을 못 찾고
   이를 에러로 내지 않아, import는 성공하고 `vm_group`은 `{"protocol": "", "port": "", "vms": []}`,
-  `health_checker`는 0으로 저장됩니다. 그래서 `vm_group.protocol`이 비어 있으면 대상 그룹을 읽지 못한 것이고,
-  대상 그룹을 읽었는데 대상이 0대면 프로토콜·포트가 있고 `vms`만 빕니다.
+  `health_checker`는 0으로 저장됩니다. 이런 레코드는 **`vm_group_unknown: true`**가 되고 서버 로그에 경고가 남습니다.
+  대상 그룹을 읽었는데 대상이 0대면 프로토콜·포트가 있고 `vms`만 비며 `vm_group_unknown: false`라서 둘이 구별됩니다.
+  연결 1개와 그룹의 `GET .../nlb` 응답, 디스커버리의 `extra.vm_group_unknown`에 이 값이 나옵니다. 이 필드가 생기기
+  전에 저장된 레코드는 비어 있는 `vm_group`을 보고 같은 값을 채워 돌려줍니다. 정제 NLB(`nlbs`)에는 담을 자리가
+  없어 이런 NLB는 백엔드 서버가 없는 것으로 나옵니다.
 - **`object_storage`**: 버킷 설정과, `count_objects=false`가 아니면 객체 수·전체 크기를 저장합니다.
 
 > **주의:** CSP 소스의 k8s·오브젝트 스토리지 정보를 채우려면 `POST /import/kubernetes`나

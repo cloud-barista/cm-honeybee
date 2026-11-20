@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -262,6 +263,8 @@ func TestDiscoveredNLB(t *testing.T) {
 			"listener": "TCP/80",
 			"endpoint": "web-nlb-0123.elb.example.com",
 			"vm_count": "2",
+
+			"vm_group_unknown": "false",
 		},
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -360,6 +363,122 @@ func importNLBThrough(t *testing.T) {
 	t.Cleanup(func() { refreshCSP = orig })
 	refreshCSP = func(sg *model.SourceGroup, ci *model.ConnectionInfo, opts importInfraOptions) error {
 		return collectCSPResource(testCSPConn, sg, ci, opts)
+	}
+}
+
+// awsNLBWithoutTargetGroup is an NLB the aws driver could not find the target
+// group of: it looks the group up by the NLB's name and reports one of
+// another name as none, with no error.
+func awsNLBWithoutTargetGroup() spider.NLBInfo {
+	n := awsNLB("internal")
+	n.VMGroup = spider.VMGroupInfo{}
+	n.HealthChecker = spider.HealthCheckerInfo{}
+	return n
+}
+
+// An unread target group is told apart from one with no targets.
+func TestNLBInfoToNLB_VMGroupUnknown(t *testing.T) {
+	noTargets := awsNLB("internal")
+	noTargets.VMGroup = spider.VMGroupInfo{Protocol: "TCP", Port: "22"}
+	blank := awsNLB("internal")
+	blank.VMGroup = spider.VMGroupInfo{Protocol: " ", Port: " "}
+	onlyVMs := awsNLB("internal")
+	onlyVMs.VMGroup = spider.VMGroupInfo{VMs: []spider.IID{{SystemId: "i-0aaa"}}}
+
+	tests := []struct {
+		name string
+		n    spider.NLBInfo
+		want bool
+	}{
+		{"target group read", awsNLB("internal"), false},
+		{"target group with no targets", noTargets, false},
+		{"VMs without protocol and port", onlyVMs, false},
+		{"no target group", awsNLBWithoutTargetGroup(), true},
+		{"blank protocol and port", blank, true},
+	}
+	for _, tc := range tests {
+		got := nlbInfoToNLB(&tc.n)
+		if got.VMGroupUnknown != tc.want {
+			t.Errorf("%s: vm_group_unknown = %v, want %v", tc.name, got.VMGroupUnknown, tc.want)
+		}
+		raw, err := json.Marshal(got)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if wantJSON := `"vm_group_unknown":` + strconv.FormatBool(tc.want); !strings.Contains(string(raw), wantJSON) {
+			t.Errorf("%s: %s, want %s", tc.name, raw, wantJSON)
+		}
+	}
+
+	n := awsNLBWithoutTargetGroup()
+	if d := discoveredNLB(&n); d.Extra["vm_group_unknown"] != "true" || d.Extra["vm_count"] != "0" {
+		t.Errorf("discovery extra = %v, want vm_group_unknown true", d.Extra)
+	}
+}
+
+// An import of an NLB whose target group the driver did not find stores
+// vm_group_unknown, and the connection and group GETs answer with it.
+func TestDoImportInfra_NLBVMGroupUnknown(t *testing.T) {
+	openTestDB(t)
+	createGroup(t, nlbGroup, nlbGroupConns())
+	importNLBThrough(t)
+	stubNLBCSP(t, []spider.NLBInfo{awsNLBWithoutTargetGroup()}, nil)
+
+	if _, err := doImportInfra("nlb", importInfraOptions{}); err != nil {
+		t.Fatalf("import = %v", err)
+	}
+	saved, err := dao.SavedNLBInfoGet("nlb")
+	if err != nil || saved.Status != model.ConnectionInfoStatusSuccess ||
+		!strings.Contains(saved.NLBData, `"vm_group_unknown":true`) {
+		t.Fatalf("saved = %+v, %v, want success with vm_group_unknown", saved, err)
+	}
+
+	rec := connRequest(t, http.MethodGet, nlbGroup.ID, "nlb", GetNLBInfo)
+	var got model.CSPNLBRecord
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Code != http.StatusOK || !got.VMGroupUnknown {
+		t.Errorf("GET nlb: status = %d, body = %s, want vm_group_unknown true", rec.Code, rec.Body.String())
+	}
+
+	rec = groupRequest(t, nlbGroup.ID, GetNLBInfoSourceGroup)
+	var list model.NLBInfoList
+	if err := json.Unmarshal(rec.Body.Bytes(), &list); err != nil {
+		t.Fatal(err)
+	}
+	if rec.Code != http.StatusOK || len(list.Servers) != 1 || !list.Servers[0].VMGroupUnknown {
+		t.Errorf("group GET nlb: status = %d, body = %s, want one NLB with vm_group_unknown true", rec.Code, rec.Body.String())
+	}
+}
+
+// A record stored before vm_group_unknown existed has no such field; GET
+// reads it from the empty VM group the record holds.
+func TestReadSavedNLB_RecordWithoutVMGroupUnknown(t *testing.T) {
+	tests := []struct {
+		name string
+		data string
+		want bool
+	}{
+		{"empty vm group", `{"system_id":"lb-1","name":"lb-1","type":"INTERNAL","listener":{"protocol":"TCP","port":"22"},` +
+			`"vm_group":{"protocol":"","port":"","vms":[]},"health_checker":{"interval":0,"timeout":0,"threshold":0}}`, true},
+		{"read vm group", `{"system_id":"lb-1","name":"lb-1","type":"INTERNAL","listener":{"protocol":"TCP","port":"22"},` +
+			`"vm_group":{"protocol":"TCP","port":"22","vms":[]},"health_checker":{"interval":30,"timeout":10,"threshold":5}}`, false},
+	}
+	for _, tc := range tests {
+		openTestDB(t)
+		if _, err := dao.SavedNLBInfoRegister(&model.SavedNLBInfo{
+			ConnectionID: "nlb", NLBData: tc.data, Status: model.ConnectionInfoStatusSuccess,
+		}); err != nil {
+			t.Fatal(err)
+		}
+		rec, _, err := readSavedNLB("nlb")
+		if err != nil {
+			t.Fatalf("%s: %v", tc.name, err)
+		}
+		if rec.VMGroupUnknown != tc.want {
+			t.Errorf("%s: vm_group_unknown = %v, want %v", tc.name, rec.VMGroupUnknown, tc.want)
+		}
 	}
 }
 

@@ -28,6 +28,12 @@ type CSPNLBRecord struct {
 	VMGroup       CSPNLBVMGroup       `json:"vm_group"`
 	HealthChecker CSPNLBHealthChecker `json:"health_checker"`
 	CreatedTime   string              `json:"created_time,omitempty"`
+	// VMGroupUnknown is true when the driver reported no target group at all
+	// (no protocol, port or VMs), so VMGroup and HealthChecker are unknown
+	// rather than empty. The aws driver looks the target group up by the NLB's
+	// name and reports a target group of another name as none. A target group
+	// with no targets still has its protocol and port, so it stays false.
+	VMGroupUnknown bool `json:"vm_group_unknown"`
 }
 
 // CSPNLBListener is the frontend of an NLB. IP is empty on drivers that do not
