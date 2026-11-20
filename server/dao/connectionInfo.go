@@ -128,3 +128,43 @@ func ConnectionInfoDelete(connectionInfo *model.ConnectionInfo) error {
 
 	return nil
 }
+
+// ConnectionTypeCount counts the connections of one source group that share a
+// stored resource_type.
+type ConnectionTypeCount struct {
+	SourceGroupID string `gorm:"column:source_group_id"`
+	ResourceType  string `gorm:"column:resource_type"`
+	Total         int    `gorm:"column:total"`
+	// ConnectionSuccess and AgentSuccess count the connections whose
+	// connection_status or agent_status is success.
+	ConnectionSuccess int `gorm:"column:connection_success"`
+	AgentSuccess      int `gorm:"column:agent_success"`
+	// WithIPAddress counts the connections that have an ip_address.
+	WithIPAddress int `gorm:"column:with_ip_address"`
+}
+
+// ConnectionInfoCountByType counts the connections of the given source groups
+// by source group and stored resource_type in one query, so a group list does
+// not read the connections of each group on its own.
+func ConnectionInfoCountByType(sourceGroupIDs []string) ([]ConnectionTypeCount, error) {
+	counts := []ConnectionTypeCount{}
+	if len(sourceGroupIDs) == 0 {
+		return counts, nil
+	}
+
+	result := db.DB.Model(&model.ConnectionInfo{}).
+		Select("source_group_id, COALESCE(resource_type, '') AS resource_type, COUNT(*) AS total, "+
+			"SUM(CASE WHEN connection_status = ? THEN 1 ELSE 0 END) AS connection_success, "+
+			"SUM(CASE WHEN agent_status = ? THEN 1 ELSE 0 END) AS agent_success, "+
+			"SUM(CASE WHEN TRIM(COALESCE(ip_address, '')) <> '' THEN 1 ELSE 0 END) AS with_ip_address",
+			model.ConnectionInfoStatusSuccess, model.ConnectionInfoStatusSuccess).
+		Where("source_group_id IN ?", sourceGroupIDs).
+		Group("source_group_id, COALESCE(resource_type, '')").
+		Order("source_group_id, resource_type").
+		Find(&counts)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return counts, nil
+}

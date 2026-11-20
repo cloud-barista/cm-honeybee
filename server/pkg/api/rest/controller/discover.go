@@ -124,11 +124,11 @@ func discoverByType(conn spider.Conn, resourceType string) ([]model.DiscoveredRe
 	case serverCommon.ResourceTypeNLB:
 		// Oracle's driver errors out in CreateNLBHandler() and does not set
 		// NLBHandler in its capability. Ask what the driver supports first.
-		capability, err := spider.GetDriverCapability(conn.Provider)
+		capability, err := driverCapability(conn.Provider)
 		if err != nil {
 			return nil, err
 		}
-		if !capability.NLBHandler {
+		if !driverSupports(capability, serverCommon.ResourceTypeNLB) {
 			return nil, errDriverUnsupported{
 				msg: "this source group's CSP has no NLB support in its cb-spider driver",
 			}
@@ -164,11 +164,11 @@ func discoverByType(conn spider.Conn, resourceType string) ([]model.DiscoveredRe
 	case serverCommon.ResourceTypeRDBMS:
 		// Not every driver implements RDBMSHandler; ask before creating one,
 		// as for NLB.
-		capability, err := spider.GetDriverCapability(conn.Provider)
+		capability, err := driverCapability(conn.Provider)
 		if err != nil {
 			return nil, err
 		}
-		if !capability.RDBMSHandler {
+		if !driverSupports(capability, serverCommon.ResourceTypeRDBMS) {
 			return nil, errDriverUnsupported{
 				msg: "this source group's CSP has no RDBMS support in its cb-spider driver",
 			}

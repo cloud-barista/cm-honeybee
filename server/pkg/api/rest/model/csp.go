@@ -10,9 +10,14 @@ type CSPInfo struct {
 	Credentials []CSPCredentialField `json:"credentials"`
 	// RegionKeys are the keys needed to define a region for this CSP (e.g.
 	// ["Region","Zone"]) - NOT the list of available regions. The actual region
-	// list requires a credential; get it via GET /source_group/{sgId}/region.
+	// list requires a credential; get it via GET /source_group/{sgId}/region,
+	// or via POST /csp/{name}/region before the group exists.
 	RegionKeys    []string `json:"region_keys"`
 	DefaultRegion string   `json:"default_region,omitempty"`
+	// SupportedResourceTypes are the resource_type values a connection of a
+	// csp source group of this CSP can be collected as. Empty when honeybee has
+	// no driver for the CSP.
+	SupportedResourceTypes []string `json:"supported_resource_types"`
 }
 
 // CSPCredentialField describes one credential key of a CSP with an example.
@@ -25,6 +30,16 @@ type CSPCredentialField struct {
 // ListCSPRes is the response payload for GET /csp.
 type ListCSPRes struct {
 	CSP []string `json:"csp"`
+	// SupportedResourceTypes maps each name in CSP to the resource_type values
+	// its connections can be collected as (see CSPInfo).
+	SupportedResourceTypes map[string][]string `json:"supported_resource_types"`
+}
+
+// ListCSPRegionReq is the request body for POST /csp/{name}/region. The
+// credential is used for this one query and is not stored.
+type ListCSPRegionReq struct {
+	// Credential takes the keys GET /csp/{name} lists in credential_keys.
+	Credential []KeyValue `json:"credential"`
 }
 
 // CSPRegion is one region (with its zones) available for a CSP.
@@ -34,7 +49,8 @@ type CSPRegion struct {
 	Zones       []string `json:"zones,omitempty"`
 }
 
-// ListRegionRes is the response payload for GET /source_group/{sgId}/region.
+// ListRegionRes is the response payload for GET /source_group/{sgId}/region
+// and POST /csp/{name}/region.
 type ListRegionRes struct {
 	Provider string      `json:"provider"`
 	Regions  []CSPRegion `json:"regions"`

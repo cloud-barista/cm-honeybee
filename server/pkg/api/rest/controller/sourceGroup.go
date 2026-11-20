@@ -258,16 +258,7 @@ func CreateSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	sourceGroupRes := model.SourceGroupRes{
-		ID:                        sourceGroup.ID,
-		Name:                      sourceGroup.Name,
-		Description:               sourceGroup.Description,
-		Type:                      sourceGroup.Type,
-		ProviderName:              sourceGroup.ProviderName,
-		RegionName:                sourceGroup.RegionName,
-		ConnectionInfoStatusCount: model.ConnectionInfoStatusCount{},
-	}
-
+	var createdConnectionInfos []model.ConnectionInfo
 	var encryptedConnectionInfosLock sync.Mutex
 	var errMsgLock sync.Mutex
 	var wg sync.WaitGroup
@@ -293,17 +284,7 @@ func CreateSourceGroup(c echo.Context) error {
 			}
 
 			encryptedConnectionInfosLock.Lock()
-			sourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
-			if encryptedConnectionInfo.ConnectionStatus == model.ConnectionInfoStatusSuccess {
-				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
-			} else {
-				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
-			}
-			if encryptedConnectionInfo.AgentStatus == model.ConnectionInfoStatusSuccess {
-				sourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
-			} else {
-				sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
-			}
+			createdConnectionInfos = append(createdConnectionInfos, *encryptedConnectionInfo)
 			encryptedConnectionInfosLock.Unlock()
 		}(ci)
 	}
@@ -316,7 +297,7 @@ func CreateSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, errMsg)
 	}
 
-	return c.JSONPretty(http.StatusOK, sourceGroupRes, " ")
+	return c.JSONPretty(http.StatusOK, sourceGroupRes(sourceGroup, countConnectionsByType(sourceGroup.ID, createdConnectionInfos)), " ")
 }
 
 // GetSourceGroup godoc
@@ -343,37 +324,12 @@ func GetSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	var sourceGroupRes model.SourceGroupRes
-	sourceGroupRes.ID = sourceGroup.ID
-	sourceGroupRes.Name = sourceGroup.Name
-	sourceGroupRes.Description = sourceGroup.Description
-	sourceGroupRes.Type = sourceGroup.Type
-	sourceGroupRes.ProviderName = sourceGroup.ProviderName
-	sourceGroupRes.RegionName = sourceGroup.RegionName
-
-	connectionInfo := &model.ConnectionInfo{
-		SourceGroupID: sourceGroup.ID,
-	}
-	connectionInfos, err := dao.ConnectionInfoGetList(connectionInfo, 0, 0)
+	counts, err := dao.ConnectionInfoCountByType([]string{sourceGroup.ID})
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	for _, ci := range *connectionInfos {
-		sourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
-		if ci.ConnectionStatus == model.ConnectionInfoStatusSuccess {
-			sourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
-		} else {
-			sourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
-		}
-		if ci.AgentStatus == model.ConnectionInfoStatusSuccess {
-			sourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
-		} else {
-			sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
-		}
-	}
-
-	return c.JSONPretty(http.StatusOK, sourceGroupRes, " ")
+	return c.JSONPretty(http.StatusOK, sourceGroupRes(sourceGroup, counts), " ")
 }
 
 // sourceGroupTypesMsg is the error for a type filter that names no group type.
@@ -436,48 +392,33 @@ func ListSourceGroup(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	sgIDs := make([]string, 0, len(*sourceGroups))
+	for _, sg := range *sourceGroups {
+		sgIDs = append(sgIDs, sg.ID)
+	}
+	counts, err := dao.ConnectionInfoCountByType(sgIDs)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+	countsOfGroup := make(map[string][]dao.ConnectionTypeCount, len(sgIDs))
+	for _, cnt := range counts {
+		countsOfGroup[cnt.SourceGroupID] = append(countsOfGroup[cnt.SourceGroupID], cnt)
+	}
+
 	var listSourceGroupRes model.ListSourceGroupRes
 
-	for _, sg := range *sourceGroups {
-		connectionInfo := &model.ConnectionInfo{
-			SourceGroupID: sg.ID,
-		}
-		connectionInfos, err := dao.ConnectionInfoGetList(connectionInfo, 0, 0)
-		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
-		}
+	for i := range *sourceGroups {
+		sg := &(*sourceGroups)[i]
+		res := sourceGroupRes(sg, countsOfGroup[sg.ID])
 
-		var sourceGroupRes = model.SourceGroupRes{
-			ID:           sg.ID,
-			Name:         sg.Name,
-			Description:  sg.Description,
-			Type:         sg.Type,
-			ProviderName: sg.ProviderName,
-			RegionName:   sg.RegionName,
-		}
+		total := &listSourceGroupRes.ConnectionInfoStatusCount
+		total.ConnectionInfoTotal += res.ConnectionInfoStatusCount.ConnectionInfoTotal
+		total.CountConnectionSuccess += res.ConnectionInfoStatusCount.CountConnectionSuccess
+		total.CountConnectionFailed += res.ConnectionInfoStatusCount.CountConnectionFailed
+		total.CountAgentSuccess += res.ConnectionInfoStatusCount.CountAgentSuccess
+		total.CountAgentFailed += res.ConnectionInfoStatusCount.CountAgentFailed
 
-		for _, ci := range *connectionInfos {
-			sourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
-			listSourceGroupRes.ConnectionInfoStatusCount.ConnectionInfoTotal++
-
-			if ci.ConnectionStatus == model.ConnectionInfoStatusSuccess {
-				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
-				listSourceGroupRes.ConnectionInfoStatusCount.CountConnectionSuccess++
-			} else {
-				sourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
-				listSourceGroupRes.ConnectionInfoStatusCount.CountConnectionFailed++
-			}
-
-			if ci.AgentStatus == model.ConnectionInfoStatusSuccess {
-				sourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
-				listSourceGroupRes.ConnectionInfoStatusCount.CountAgentSuccess++
-			} else {
-				sourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
-				listSourceGroupRes.ConnectionInfoStatusCount.CountAgentFailed++
-			}
-		}
-
-		listSourceGroupRes.SourceGroup = append(listSourceGroupRes.SourceGroup, sourceGroupRes)
+		listSourceGroupRes.SourceGroup = append(listSourceGroupRes.SourceGroup, res)
 	}
 
 	sort.Slice(listSourceGroupRes.SourceGroup, func(i, j int) bool {
@@ -574,10 +515,22 @@ func UpdateSourceGroup(c echo.Context) error {
 		oldSourceGroup.RegionName = strings.ToLower(strings.TrimSpace(updateSourceGroupReq.RegionName))
 	}
 
+	// Counted before the update so that a failure leaves the group unchanged
+	// rather than updated behind an error response. The update changes no
+	// connection, so the counts stay true.
+	counts, err := dao.ConnectionInfoCountByType([]string{oldSourceGroup.ID})
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
 	err = dao.SourceGroupUpdate(oldSourceGroup)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
+
+	capabilities := sourceGroupCapabilities(oldSourceGroup, counts)
+	oldSourceGroup.Capabilities = &capabilities
+	oldSourceGroup.ConnectionCountByType = connectionCountByType(oldSourceGroup, counts)
 
 	return c.JSONPretty(http.StatusOK, oldSourceGroup, " ")
 }

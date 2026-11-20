@@ -11,4 +11,5 @@ import (
 func RegisterCSP(e *echo.Echo) {
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/csp", controller.ListCSP)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/csp/:name", controller.GetCSP)
+	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/csp/:name/region", controller.ListCSPRegions)
 }

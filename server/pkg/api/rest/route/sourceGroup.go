@@ -9,6 +9,7 @@ import (
 
 func RegisterSourceGroup(e *echo.Echo) {
 	e.POST("/"+strings.ToLower(common.ShortModuleName)+"/source_group", controller.CreateSourceGroup)
+	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/types", controller.ListSourceGroupTypes)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId", controller.GetSourceGroup)
 	e.GET("/"+strings.ToLower(common.ShortModuleName)+"/source_group", controller.ListSourceGroup)
 	e.PUT("/"+strings.ToLower(common.ShortModuleName)+"/source_group/:sgId", controller.UpdateSourceGroup)

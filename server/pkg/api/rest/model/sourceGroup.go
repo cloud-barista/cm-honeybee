@@ -74,6 +74,36 @@ type SourceGroup struct {
 	ProviderName string       `gorm:"column:provider_name" json:"provider_name,omitempty"`
 	RegionName   string       `gorm:"column:region_name" json:"region_name,omitempty"`
 	Credential   KeyValueList `gorm:"column:credential" json:"credential,omitempty"`
+
+	// Capabilities and ConnectionCountByType are computed for a response from
+	// the group's connections and are never stored.
+	Capabilities          *SourceGroupCapabilities `gorm:"-" json:"capabilities,omitempty"`
+	ConnectionCountByType map[string]int           `gorm:"-" json:"connection_count_by_type,omitempty"`
+}
+
+// SourceGroupCapabilities tells which collections the source group can run,
+// judged by its type and the connections it holds now. A group without a
+// connection the collection acts on reports false, so an empty group reports
+// false for all of them.
+type SourceGroupCapabilities struct {
+	// IsCollectInfra: import/infra has a connection to collect, a host or a
+	// csp resource.
+	IsCollectInfra bool `json:"isCollectInfra"`
+	// IsCollectSoftware: there is a connection the agent can be reached on.
+	IsCollectSoftware bool `json:"isCollectSoftware"`
+	// IsCollectKubernetes: there is a csp k8s cluster or a host the agent
+	// collects a cluster from.
+	IsCollectKubernetes bool `json:"isCollectKubernetes"`
+	// IsCollectObjectStorage: there is a csp object_storage connection or a
+	// minio connection.
+	IsCollectObjectStorage bool `json:"isCollectObjectStorage"`
+	// IsCollectDb: there is a db connection, a csp rdbms connection or a host
+	// the agent can find an installed database on.
+	IsCollectDb bool `json:"isCollectDb"`
+	// IsCollectFs: there is an fs connection.
+	IsCollectFs bool `json:"isCollectFs"`
+	// IsCollectNlb: there is a csp nlb connection.
+	IsCollectNlb bool `json:"isCollectNlb"`
 }
 
 type CreateSourceGroupReq struct {
@@ -115,6 +145,12 @@ type SourceGroupRes struct {
 	ProviderName              string                    `json:"provider_name,omitempty"`
 	RegionName                string                    `json:"region_name,omitempty"`
 	ConnectionInfoStatusCount ConnectionInfoStatusCount `json:"connection_info_status_count"`
+	Capabilities              SourceGroupCapabilities   `json:"capabilities"`
+	// ConnectionCountByType counts the connections by connection type: the
+	// resource_type for onprem and csp groups (an on-prem connection stored
+	// without one counts as vm), the group type for fs, db and minio groups,
+	// whose connections take no resource_type.
+	ConnectionCountByType map[string]int `json:"connection_count_by_type"`
 }
 
 type ListSourceGroupRes struct {

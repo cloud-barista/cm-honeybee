@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -76,11 +77,73 @@ func buildCredentialFields(canonical string, keys []string) []model.CSPCredentia
 	return fields
 }
 
+// The cb-spider calls of this file, kept in variables so tests can stand in
+// for them.
+var (
+	listCloudOS      = spider.ListCloudOS
+	driverCapability = spider.GetDriverCapability
+	listRegionZone   = spider.ListRegionZone
+)
+
+// driverSupports reports whether the driver capability covers a csp
+// resource_type that is collected through a driver handler. Discovery and the
+// CSP metadata both ask it, so the two cannot disagree. object_storage is not
+// a driver handler (see objectStorageSupported).
+func driverSupports(capability *spider.DriverCapability, resourceType string) bool {
+	if capability == nil {
+		return false
+	}
+	switch resourceType {
+	case serverCommon.ResourceTypeVM:
+		return capability.VMHandler
+	case serverCommon.ResourceTypeK8s:
+		return capability.ClusterHandler
+	case serverCommon.ResourceTypeNLB:
+		return capability.NLBHandler
+	case serverCommon.ResourceTypeRDBMS:
+		return capability.RDBMSHandler
+	}
+	return false
+}
+
+// objectStorageSupported reports whether buckets of the provider can be
+// collected. Buckets are read through the S3 API by lib/spider (s3ConnRule),
+// not through a driver handler, so the driver capability does not tell; the
+// providers it handles are the ones in providers but onprem.
+// TestObjectStorageSupported_MatchesS3Rules holds the two together.
+func objectStorageSupported(provider string) bool {
+	p := strings.ToLower(strings.TrimSpace(provider))
+	return p != providerOnPrem && isSupportedProvider(p)
+}
+
+// supportedResourceTypes gives the csp resource_type values a connection of
+// the provider can be collected as, in the order of cspResourceTypes. A
+// provider honeybee has no driver for supports none.
+func supportedResourceTypes(provider string) []string {
+	out := []string{}
+	capability, err := driverCapability(provider)
+	if err != nil {
+		return out
+	}
+	for _, rt := range cspResourceTypes {
+		if rt == serverCommon.ResourceTypeObjectStorage {
+			if objectStorageSupported(provider) {
+				out = append(out, rt)
+			}
+			continue
+		}
+		if driverSupports(capability, rt) {
+			out = append(out, rt)
+		}
+	}
+	return out
+}
+
 // ListCSP godoc
 //
 //	@ID				list-csp
 //	@Summary		List supported CSPs
-//	@Description	Return the list of CSPs supported by the linked cb-spider drivers.
+//	@Description	Return the list of CSPs supported by the linked cb-spider drivers, and for each the resource_type values its connections can be collected as.
 //	@Tags			[CSP] Metadata
 //	@Accept			json
 //	@Produce		json
@@ -88,16 +151,18 @@ func buildCredentialFields(canonical string, keys []string) []model.CSPCredentia
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to read CSP metadata"
 //	@Router			/csp [get]
 func ListCSP(c echo.Context) error {
-	list, err := spider.ListCloudOS()
+	list, err := listCloudOS()
 	if err != nil {
 		return common.ReturnInternalError(c, err, "failed to list CSPs from the driver metadata")
 	}
 	// Output provider names in lowercase (e.g. "aws", "azure"); they are matched
 	// case-insensitively on input.
+	supported := make(map[string][]string, len(list))
 	for i := range list {
+		supported[strings.ToLower(list[i])] = supportedResourceTypes(list[i])
 		list[i] = strings.ToLower(list[i])
 	}
-	return c.JSONPretty(http.StatusOK, model.ListCSPRes{CSP: list}, " ")
+	return c.JSONPretty(http.StatusOK, model.ListCSPRes{CSP: list, SupportedResourceTypes: supported}, " ")
 }
 
 // GetCSP godoc
@@ -148,6 +213,8 @@ func GetCSP(c echo.Context) error {
 		Credentials:    buildCredentialFields(canonical, credKeys),
 		RegionKeys:     meta.Region,
 		DefaultRegion:  defaultRegion,
+
+		SupportedResourceTypes: supportedResourceTypes(canonical),
 	}, " ")
 }
 
@@ -182,9 +249,17 @@ func ListSourceGroupRegions(c echo.Context) error {
 	if err != nil {
 		return common.ReturnInternalError(c, err, "failed to load the source group's CSP credential")
 	}
-	list, err := spider.ListRegionZone(provider, credential)
+
+	return returnRegions(c, provider, credential)
+}
+
+// returnRegions queries the CSP's regions with the credential and writes them
+// as the response. A driver error may quote what it was given, so the
+// credential values are masked in it before it is logged or returned.
+func returnRegions(c echo.Context, provider string, credential []spider.KeyValue) error {
+	list, err := listRegionZone(provider, credential)
 	if err != nil {
-		return common.ReturnInternalError(c, err, "failed to list regions from the CSP")
+		return common.ReturnInternalError(c, maskCredential(err, credential), "failed to list regions from the CSP")
 	}
 
 	regions := make([]model.CSPRegion, 0, len(list))
@@ -201,7 +276,67 @@ func ListSourceGroupRegions(c echo.Context) error {
 	}
 
 	return c.JSONPretty(http.StatusOK, model.ListRegionRes{
-		Provider: strings.ToLower(sourceGroup.ProviderName),
+		Provider: strings.ToLower(provider),
 		Regions:  regions,
 	}, " ")
+}
+
+// maskCredential replaces every credential value quoted in err.
+func maskCredential(err error, credential []spider.KeyValue) error {
+	msg := err.Error()
+	for _, kv := range credential {
+		if kv.Value != "" {
+			msg = strings.ReplaceAll(msg, kv.Value, "****")
+		}
+	}
+	if msg == err.Error() {
+		return err
+	}
+	return errors.New(msg)
+}
+
+// ListCSPRegions godoc
+//
+//	@ID				list-csp-regions
+//	@Summary		List CSP regions with a credential
+//	@Description	Return the CSP's available regions and zones, queried live with the credential in the body, so the region of a csp source group can be chosen before the group exists. The credential takes the keys GET /csp/{name} lists and is neither stored nor logged. The region queried is the CSP's default one for listing.
+//	@Tags			[CSP] Metadata
+//	@Accept			json
+//	@Produce		json
+//	@Param			name path string true "CSP name (case-insensitive, e.g. aws or AWS)"
+//	@Param			Credential body model.ListCSPRegionReq true "CSP credential"
+//	@Success		200	{object}	model.ListRegionRes		"Regions and zones"
+//	@Failure		400	{object}	common.ErrorResponse	"Unsupported CSP name, or a credential key missing or not accepted"
+//	@Failure		500	{object}	common.ErrorResponse	"Failed to read CSP metadata or query the CSP"
+//	@Router			/csp/{name}/region [post]
+func ListCSPRegions(c echo.Context) error {
+	name := c.Param("name")
+	if name == "" {
+		return common.ReturnErrorMsg(c, "Please provide the CSP name.")
+	}
+
+	req := new(model.ListCSPRegionReq)
+	if err := c.Bind(req); err != nil {
+		return common.ReturnErrorMsg(c, "request body is not valid JSON")
+	}
+	if len(req.Credential) == 0 {
+		return common.ReturnErrorMsg(c, "credential is empty")
+	}
+
+	provider, err := spider.NormalizeProvider(name)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+	meta, err := spider.GetCloudOSMetaInfo(provider)
+	if err != nil {
+		return common.ReturnInternalError(c, err, "failed to get CSP metainfo from the driver metadata")
+	}
+	// The same key check as registering a csp source group, so a credential
+	// that lists regions here is one the group registration accepts.
+	credential, err := canonicalizeCredentialKV(provider, meta, req.Credential)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return returnRegions(c, provider, toSpiderKV(credential))
 }
