@@ -381,6 +381,11 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
   않습니다(kubeconfig가 아니라 CSP API로 읽기 때문). Pod/Service CIDR은 cb-spider가 주지 않아 비어 있습니다.
 - **`nlb`**: 리스너(프로토콜, IP, 포트, DNS 이름), 백엔드 VM 그룹(프로토콜, 포트, VM 목록), 헬스 체크를
   저장합니다. `type`은 `PUBLIC`·`INTERNAL`, 드라이버가 알려주지 않으면 빈 값입니다.
+  AWS의 cb-spider 드라이버는 대상 그룹을 **NLB 자신의 이름**으로 찾습니다(cb-spider가 NLB를 만들 때 대상 그룹에
+  붙이는 이름). cb-spider 밖에서 만든 NLB의 대상 그룹 이름이 NLB 이름과 다르면 드라이버가 대상 그룹을 못 찾고
+  이를 에러로 내지 않아, import는 성공하고 `vm_group`은 `{"protocol": "", "port": "", "vms": []}`,
+  `health_checker`는 0으로 저장됩니다. 그래서 `vm_group.protocol`이 비어 있으면 대상 그룹을 읽지 못한 것이고,
+  대상 그룹을 읽었는데 대상이 0대면 프로토콜·포트가 있고 `vms`만 빕니다.
 - **`object_storage`**: 버킷 설정과, `count_objects=false`가 아니면 객체 수·전체 크기를 저장합니다.
 
 > **주의:** CSP 소스의 k8s·오브젝트 스토리지 정보를 채우려면 `POST /import/kubernetes`나

@@ -372,7 +372,14 @@ What is collected:
   collected: the cluster is read through the CSP's API, not through a kubeconfig.
 - `nlb`: the listener (protocol, IP, port, DNS name), the backend VM group
   (protocol, port, VMs) and the health check. `type` is `PUBLIC`, `INTERNAL`, or
-  empty when the driver does not tell.
+  empty when the driver does not tell. On AWS the cb-spider driver looks the
+  target group up by the NLB's own name, the name it gives the target groups it
+  creates. For an NLB created outside cb-spider whose target group has another
+  name, the driver finds no target group and does not report it as an error, so
+  the import succeeds with `vm_group` `{"protocol": "", "port": "", "vms": []}`
+  and a zero `health_checker`. An empty `vm_group.protocol` therefore means the
+  target group was not read; a target group that was read but has no targets has
+  its protocol and port with an empty `vms`.
 - `object_storage`: the bucket's settings and, unless `count_objects=false`, its
   object count and total size. The region the bucket was found in is kept as well.
 
