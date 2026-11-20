@@ -138,27 +138,8 @@ func discoverByType(conn spider.Conn, resourceType string) ([]model.DiscoveredRe
 			return nil, err
 		}
 		out := make([]model.DiscoveredResource, 0, len(nlbs))
-		for _, n := range nlbs {
-			// Reported verbatim: this is the survey step, and several drivers
-			// hardcode or omit these fields. Normalising them is the collection
-			// step's job (nlbInfoToNLB) - doing it in both places guarantees the
-			// two drift apart.
-			out = append(out, model.DiscoveredResource{
-				ResourceType: serverCommon.ResourceTypeNLB,
-				ResourceID:   pickIIDSystem(n.IId),
-				Name:         n.IId.NameId,
-				Extra: map[string]string{
-					"type":  n.Type,
-					"scope": n.Scope,
-					// SystemId fallback: AWS builds VpcIID from the raw driver
-					// value and sets only SystemId (irs.IID{SystemId: *nlbResInfo.VpcId}),
-					// so reading NameId alone leaves this blank for every AWS NLB.
-					"vpc":      pickIIDSystem(n.VpcIID),
-					"listener": n.Listener.Protocol + "/" + n.Listener.Port,
-					"endpoint": firstNonEmpty(n.Listener.DNSName, n.Listener.IP),
-					"vm_count": strconv.Itoa(len(n.VMGroup.VMs)),
-				},
-			})
+		for i := range nlbs {
+			out = append(out, discoveredNLB(&nlbs[i]))
 		}
 		return out, nil
 	case serverCommon.ResourceTypeRDBMS:
@@ -194,6 +175,31 @@ func discoverByType(conn spider.Conn, resourceType string) ([]model.DiscoveredRe
 		return out, nil
 	default:
 		return nil, errors.New("unsupported resource_type: " + resourceType + " (expected vm | k8s | object_storage | nlb | rdbms)")
+	}
+}
+
+// discoveredNLB reports an NLB to discovery. The values drivers spell
+// differently go through nlbInfoToNLB, as collection does, so discovery shows
+// what collection will store: the aws driver always reports Type PUBLIC and
+// keeps the real scheme in KeyValueList, which a verbatim Type would show as
+// PUBLIC for an internal NLB.
+func discoveredNLB(n *spider.NLBInfo) model.DiscoveredResource {
+	rec := nlbInfoToNLB(n)
+	return model.DiscoveredResource{
+		ResourceType: serverCommon.ResourceTypeNLB,
+		ResourceID:   pickIIDSystem(n.IId),
+		Name:         n.IId.NameId,
+		Extra: map[string]string{
+			"type":  rec.Type,
+			"scope": rec.Scope,
+			// SystemId fallback: AWS builds VpcIID from the raw driver
+			// value and sets only SystemId (irs.IID{SystemId: *nlbResInfo.VpcId}),
+			// so reading NameId alone leaves this blank for every AWS NLB.
+			"vpc":      pickIIDSystem(n.VpcIID),
+			"listener": rec.Listener.Protocol + "/" + rec.Listener.Port,
+			"endpoint": firstNonEmpty(rec.Listener.DNSName, rec.Listener.IP),
+			"vm_count": strconv.Itoa(len(rec.VMGroup.VMs)),
+		},
 	}
 }
 

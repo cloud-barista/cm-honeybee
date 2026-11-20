@@ -244,6 +244,44 @@ func TestNLBInfoToNLB(t *testing.T) {
 	}
 }
 
+// Discovery shows the values collection stores, not the driver's raw ones:
+// the aws driver reports Type PUBLIC for an internal NLB.
+func TestDiscoveredNLB(t *testing.T) {
+	n := awsNLB("internal")
+	n.Listener.DNSName = " web-nlb-0123.elb.example.com "
+	got := discoveredNLB(&n)
+
+	want := model.DiscoveredResource{
+		ResourceType: common.ResourceTypeNLB,
+		ResourceID:   nlbARN,
+		Name:         "web-nlb",
+		Extra: map[string]string{
+			"type":     "INTERNAL",
+			"scope":    "REGION",
+			"vpc":      "vpc-0a1b",
+			"listener": "TCP/80",
+			"endpoint": "web-nlb-0123.elb.example.com",
+			"vm_count": "2",
+		},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("discovered =\n%+v\nwant\n%+v", got, want)
+	}
+
+	rec := nlbInfoToNLB(&n)
+	if got.Extra["type"] != rec.Type || got.Extra["scope"] != rec.Scope {
+		t.Errorf("discovery type %q scope %q, stored type %q scope %q",
+			got.Extra["type"], got.Extra["scope"], rec.Type, rec.Scope)
+	}
+
+	public := awsNLB("internet-facing")
+	public.Listener = spider.ListenerInfo{Protocol: "udp", IP: "198.51.100.7", Port: "53"}
+	got = discoveredNLB(&public)
+	if got.Extra["type"] != "PUBLIC" || got.Extra["listener"] != "UDP/53" || got.Extra["endpoint"] != "198.51.100.7" {
+		t.Errorf("extra = %v, want type PUBLIC, listener UDP/53, endpoint 198.51.100.7", got.Extra)
+	}
+}
+
 func TestCSPNLBToNlbProperty(t *testing.T) {
 	vmIPs := map[string]string{"i-0aaa": "192.0.2.21"}
 

@@ -1051,8 +1051,8 @@ func upperTrim(s string) string {
 // nlbInfoToNLB maps spider.NLBInfo into the record stored for a CSP nlb
 // connection. The values drivers spell differently are brought to one form
 // here (normalizeNLBType, upper-case scope and protocols); discovery reports
-// them verbatim. A backend VM the driver reports with no identifier is
-// dropped.
+// them through this function as well (discoveredNLB). A backend VM the driver
+// reports with no identifier is dropped.
 func nlbInfoToNLB(n *spider.NLBInfo) model.CSPNLBRecord {
 	vms := make([]model.CSPNLBVM, 0, len(n.VMGroup.VMs))
 	for _, vm := range n.VMGroup.VMs {
