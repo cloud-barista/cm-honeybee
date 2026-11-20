@@ -291,6 +291,9 @@ curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=
 curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=rdbms'
 curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=nlb'
 ```
+When the CSP's driver has no handler for the `resource_type` (`k8s`, `nlb` or
+`rdbms`; e.g. `k8s` and `rdbms` on kt), discovery answers 200 with empty `items`,
+`unsupported: true` and the reason in `reason`, without asking the CSP.
 Then register the picked resource:
 ```shell
 curl -X 'POST' \
@@ -312,6 +315,11 @@ collects the guest as well (section 4). The other resource types have no host to
 reach, so a request that sends any SSH field for them is refused with 400.
 
 Registration checks the resource with the CSP:
+- A `resource_type` the group's CSP is not collected as (not in its
+  `supported_resource_types` of `GET /csp`) is refused with 400 before the CSP
+  is asked, e.g. `resource_type 'rdbms' is not supported for kt (supported: vm,
+  object_storage, nlb)`. Connections stored with such a type before are kept,
+  and their refresh asks the CSP as before.
 - A `resource_id` the CSP does not have is refused with 400. The resource counts
   as missing only when the CSP listing came back and holds no such resource; for
   `k8s`, reading the cluster by that ID must also fail or return another cluster.
@@ -328,8 +336,9 @@ Registration checks the resource with the CSP:
   to `22`.
 - On the other resource types SSH fields are refused with 400. A `vm` connection
   changed into another resource type drops its SSH fields and secrets.
-- A changed `resource_type` or `resource_id` is checked with the CSP as on
-  registration, with the same 400 for a missing resource or a bucket in another region.
+- A changed `resource_type` or `resource_id` is checked as on registration, with
+  the same 400 for a `resource_type` the CSP is not collected as, a missing
+  resource or a bucket in another region.
 
 `GET .../connection_info` takes `resource_type` (`vm`, `k8s`, `object_storage`,
 `nlb`, `rdbms`) to list one type. On an on-premise group `resource_type=vm`

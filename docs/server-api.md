@@ -653,6 +653,9 @@ Body: `model.CreateConnectionInfoReq`. 필수 필드는 그룹의 `type`과 이 
 
 csp 연결은 등록할 때 CSP에 리소스를 확인합니다.
 
+- 그룹 CSP가 수집할 수 없는 `resource_type`(`GET /csp`의 `supported_resource_types`에 없는 값)은 CSP에 묻기 전에
+  **400으로 거부**합니다. 예: `resource_type 'rdbms' is not supported for kt (supported: vm, object_storage, nlb)`.
+  이 규칙 전에 저장된 연결은 그대로 두고, `refresh`도 전처럼 CSP에 확인합니다.
 - 계정에 없는 `resource_id`는 **400으로 거부**합니다. CSP 목록 조회가 성공했는데 일치하는 리소스가 없을 때만
   없는 것으로 봅니다. `k8s`는 목록에 없으면 그 ID로 클러스터를 한 번 더 읽고, 그것도 실패하거나 다른 클러스터가
   와야 없는 것으로 봅니다.
@@ -681,7 +684,8 @@ csp 연결에서는 다음과 같이 동작합니다.
   `ssh_port`는 기본 `22`입니다. 형식이 틀린 값은 건너뛰지 않고 400입니다.
 - `vm`이 아닌 연결에 SSH 필드를 보내면 400입니다. `vm` 연결을 다른 `resource_type`으로 바꾸면 SSH 필드와
   비밀값을 지웁니다.
-- `resource_type`이나 `resource_id`가 바뀌면 등록 때처럼 CSP에 확인하고, 없는 리소스·다른 리전 버킷은 400입니다.
+- `resource_type`이나 `resource_id`가 바뀌면 등록 때처럼 확인하고, 그룹 CSP가 수집할 수 없는 `resource_type`·
+  없는 리소스·다른 리전 버킷은 400입니다.
 
 ### `DELETE /source_group/{sgId}/connection_info/{connId}` — 삭제
 연결과, 그 연결에 import가 저장한 기록(infra, software, kubernetes, helm, data, rdbms, nlb)을 함께 지웁니다.
@@ -784,6 +788,9 @@ curl "http://localhost:8081/honeybee/source_group/$SG/discover?resource_type=k8s
 
 `object_storage`는 버킷 리전을 판정하는 CSP(AWS)에서 **그룹 리전의 버킷만** 돌려주고 각 항목의 `region`을
 채웁니다([버킷 리전](#버킷-리전)).
+
+CSP 드라이버에 해당 핸들러가 없는 `resource_type`(`k8s`·`nlb`·`rdbms`, 예: kt의 `k8s`·`rdbms`)은 CSP에 묻지 않고
+200과 빈 `items`, `unsupported: true`, 사유 `reason`을 돌려줍니다.
 
 ---
 

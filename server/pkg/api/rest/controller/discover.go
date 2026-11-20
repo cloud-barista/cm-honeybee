@@ -18,7 +18,7 @@ import (
 //
 //	@ID				discover-source-group-resources
 //	@Summary		Discover CSP resources for a SourceGroup
-//	@Description	Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Object-storage buckets are limited to the source group's region where the CSP reports a bucket's region (AWS), and carry that region. Used by the UI to populate ConnectionInfo selection.
+//	@Description	Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Object-storage buckets are limited to the source group's region where the CSP reports a bucket's region (AWS), and carry that region. A resource type the CSP's driver has no handler for (k8s, nlb, rdbms) answers 200 with empty items and unsupported true. Used by the UI to populate ConnectionInfo selection.
 //	@Tags			[CSP] Discovery
 //	@Accept			json
 //	@Produce		json
@@ -77,6 +77,10 @@ type errDriverUnsupported struct{ msg string }
 
 func (e errDriverUnsupported) Error() string { return e.msg }
 
+// The cluster listing of discovery, kept in a variable so tests can stand in
+// for the CSP.
+var discoverClusters = spider.ListCluster
+
 func discoverByType(conn spider.Conn, resourceType string) ([]model.DiscoveredResource, error) {
 	switch resourceType {
 	case serverCommon.ResourceTypeVM:
@@ -102,7 +106,18 @@ func discoverByType(conn spider.Conn, resourceType string) ([]model.DiscoveredRe
 		}
 		return out, nil
 	case serverCommon.ResourceTypeK8s:
-		clusters, err := spider.ListCluster(conn)
+		// Not every driver implements ClusterHandler (kt has none); ask before
+		// creating one, as for NLB, or the listing fails with a 500.
+		capability, err := driverCapability(conn.Provider)
+		if err != nil {
+			return nil, err
+		}
+		if !driverSupports(capability, serverCommon.ResourceTypeK8s) {
+			return nil, errDriverUnsupported{
+				msg: "this source group's CSP has no K8s support in its cb-spider driver",
+			}
+		}
+		clusters, err := discoverClusters(conn)
 		if err != nil {
 			return nil, err
 		}

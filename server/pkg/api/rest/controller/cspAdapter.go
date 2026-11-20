@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -798,6 +799,11 @@ var ErrCSPResourceNotFound = errors.New("the csp resource was not found")
 // source group's region (bucketRegionMismatch).
 var ErrBucketRegionMismatch = errors.New("the bucket is outside the source group's region")
 
+// ErrCSPResourceUnsupported marks a resource_type the provider's connections
+// cannot be collected as (supportedResourceTypes): the driver has no handler
+// for it, so asking the CSP could only fail.
+var ErrCSPResourceUnsupported = errors.New("the resource_type is not supported for the csp")
+
 // cspResourceError carries one of the sentinels above under its own message,
 // so that the messages stay as they were while errors.Is can tell them apart.
 type cspResourceError struct {
@@ -818,7 +824,30 @@ func cspNotFound(msg string) error {
 // not be asked. Such a connection is refused at registration; the others are
 // registered with connection_status failed and checked again on refresh.
 func cspResourceRejected(err error) bool {
-	return errors.Is(err, ErrCSPResourceNotFound) || errors.Is(err, ErrBucketRegionMismatch)
+	return errors.Is(err, ErrCSPResourceNotFound) || errors.Is(err, ErrBucketRegionMismatch) ||
+		errors.Is(err, ErrCSPResourceUnsupported)
+}
+
+// checkCSPResourceType refuses a resource_type the source group's provider is
+// not collected as, by the list GET /csp gives (supportedResourceTypes). A
+// provider that cannot be told is left to the CSP check, which reports it as
+// it did.
+func checkCSPResourceType(sg *model.SourceGroup, resourceType string) error {
+	provider, err := spider.NormalizeProvider(sg.ProviderName)
+	if err != nil {
+		return nil
+	}
+	supported := supportedResourceTypes(provider)
+	if slices.Contains(supported, resourceType) {
+		return nil
+	}
+	list := "none"
+	if len(supported) > 0 {
+		list = strings.Join(supported, ", ")
+	}
+	return cspResourceError{kind: ErrCSPResourceUnsupported,
+		msg: "resource_type '" + resourceType + "' is not supported for " + strings.ToLower(provider) +
+			" (supported: " + list + ")"}
 }
 
 // The VM calls of the CSP, kept in variables so tests can stand in for it.
@@ -1279,6 +1308,18 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 	return withCSPConn(sg, ci.Zone, func(conn spider.Conn) error {
 		return checkCSPResource(conn, ci)
 	})
+}
+
+// checkNewCSPResource checks a resource a connection is registered for or
+// pointed at: a resource_type the provider is not collected as is refused
+// without asking the CSP, the others go to the CSP check. The refresh of a
+// stored connection asks the CSP only (checkCSP), so a connection stored
+// before the refusal keeps its status as the CSP gives it.
+func checkNewCSPResource(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
+	if err := checkCSPResourceType(sg, ci.ResourceType); err != nil {
+		return err
+	}
+	return checkCSP(sg, ci)
 }
 
 // checkCSPResource is the driver side of checkCSPConnection, given the
