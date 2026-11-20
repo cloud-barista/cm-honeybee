@@ -301,6 +301,11 @@ curl -X 'POST' \
 `resource_type` is one of `vm`, `k8s`, `object_storage`, `rdbms` or `nlb`.
 `GET /csp` tells which of them a CSP supports (`supported_resource_types`).
 
+NCP Kubernetes clusters do not appear in `discover?resource_type=k8s`, as the
+cb-spider NCP driver lists no clusters. Such a cluster is still registered and
+collected by its system ID (the cluster UUID): when the listing does not hold
+the cluster, honeybee reads it by that ID.
+
 A `vm` connection may also take `ip_address`, `ssh_port`, `user` and
 `password` or `private_key`; with them the agent is installed in the VM and
 collects the guest as well (section 4). The other resource types have no host to
@@ -308,7 +313,8 @@ reach, so a request that sends any SSH field for them is refused with 400.
 
 Registration checks the resource with the CSP:
 - A `resource_id` the CSP does not have is refused with 400. The resource counts
-  as missing only when the CSP listing came back and holds no such resource.
+  as missing only when the CSP listing came back and holds no such resource; for
+  `k8s`, reading the cluster by that ID must also fail or return another cluster.
 - A bucket in another region than the group's is refused with 400 (see the table
   below for the CSPs where the region is known).
 - When the CSP cannot be asked (timeout, credential, unreachable endpoint), the
@@ -370,6 +376,8 @@ What is collected:
   has none), version, status, creation time and node groups (spec, image, root
   disk, desired/min/max size, autoscaling). The nodes and workloads are not
   collected: the cluster is read through the CSP's API, not through a kubeconfig.
+  A cluster the CSP listing does not hold is read by its ID, which is how an NCP
+  cluster is collected.
 - `nlb`: the listener (protocol, IP, port, DNS name), the backend VM group
   (protocol, port, VMs) and the health check. `type` is `PUBLIC`, `INTERNAL`, or
   empty when the driver does not tell. On GCP the cb-spider driver leaves the

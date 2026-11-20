@@ -785,9 +785,13 @@ func cspVMIdentifier(resourceID string) string {
 }
 
 // ErrCSPResourceNotFound marks a lookup the CSP answered without the
-// resource: the listing came back and nothing in it matched. A resource the CSP
-// could not be asked about (timeout, credential, unreachable endpoint) is not
-// marked, as nothing is known about it then.
+// resource: the listing came back and nothing in it matched, and for a k8s
+// cluster the read by its identifier that follows failed as well or returned
+// another cluster. A resource the CSP could not be asked about (timeout,
+// credential, unreachable endpoint) is not marked, as nothing is known about it
+// then. The read of a cluster is the exception: its failure is marked even
+// though it may be a passing outage, since the drivers do not tell one apart
+// from a missing cluster.
 var ErrCSPResourceNotFound = errors.New("the csp resource was not found")
 
 // ErrBucketRegionMismatch marks a bucket that exists but lives outside the
@@ -821,6 +825,12 @@ func cspResourceRejected(err error) bool {
 var (
 	getCSPVM  = spider.GetCSPVM
 	listCSPVM = spider.ListVM
+)
+
+// The cluster calls of the CSP, kept in variables so tests can stand in for it.
+var (
+	getCSPCluster  = spider.GetCluster
+	listCSPCluster = spider.ListCluster
 )
 
 // findVMByID asks the driver for the VM, and when that fails, tells a VM that
@@ -872,8 +882,14 @@ func matchVM(vms []spider.VMInfo, resourceID string) *spider.VMInfo {
 // meta-DB, which never held a cluster cb-spider did not create. SystemId is matched first because
 // it is the identifier a CSP-only cluster carries; NameId is accepted as well
 // for a cluster cb-spider does manage.
+//
+// A listing that succeeds without the cluster is not taken as its absence:
+// some drivers list nothing at all (ncp's ListCluster returns nil, nil) yet
+// read a cluster by its SystemId. GetCluster is asked then, and its answer is
+// taken only when it is the cluster asked for, so a driver that answers with
+// another cluster still leaves this one missing.
 func findClusterByID(conn spider.Conn, resourceID string) (*spider.ClusterInfo, error) {
-	clusters, err := spider.ListCluster(conn)
+	clusters, err := listCSPCluster(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -882,7 +898,16 @@ func findClusterByID(conn spider.Conn, resourceID string) (*spider.ClusterInfo, 
 		return cl, nil
 	}
 
-	return nil, cspNotFound("cluster '" + resourceID + "' was not found " + connLabel(conn))
+	msg := "cluster '" + resourceID + "' was not found " + connLabel(conn)
+	cl, getErr := getCSPCluster(conn, resourceID)
+	if getErr != nil {
+		return nil, cspNotFound(msg + " (" + getErr.Error() + ")")
+	}
+	if cl != nil && matchCluster([]spider.ClusterInfo{*cl}, resourceID) != nil {
+		return cl, nil
+	}
+
+	return nil, cspNotFound(msg)
 }
 
 // matchCluster picks the cluster whose identifier is resourceID. SystemId is
@@ -904,8 +929,8 @@ func matchCluster(clusters []spider.ClusterInfo, resourceID string) *spider.Clus
 }
 
 // findRDBMSByID looks a managed database instance up by the identifier
-// discovery reported for it. It lists and filters, as findClusterByID does,
-// rather than calling the driver's GetRDBMS: drivers' GetRDBMS takes a SystemId,
+// discovery reported for it. It lists and filters, as findClusterByID does
+// first, but does not fall back to the driver's GetRDBMS: drivers' GetRDBMS takes a SystemId,
 // but discovery falls back to NameId when a driver leaves SystemId blank
 // (pickIIDSystem), and only a listing can resolve both.
 func findRDBMSByID(conn spider.Conn, resourceID string) (*spider.RDBMSInfo, error) {

@@ -341,6 +341,8 @@ curl -s $BASE/source_group/$SG/infra/refined | jq
 
 > **디스커버리(선택):** resource_id를 모르면 `GET /source_group/{sgId}/discover?resource_type=vm|k8s|object_storage|nlb|rdbms`로
 > 해당 CSP의 리소스 목록을 조회해 `resource_id`를 얻을 수 있습니다(이 호출도 저장된 credential로 CSP를 직접 조회).
+> NCP의 Kubernetes 클러스터는 cb-spider NCP 드라이버가 클러스터 목록을 주지 않아 `discover?resource_type=k8s`에 나오지
+> 않습니다. 클러스터 UUID(system ID)를 `resource_id`로 주면 등록·수집됩니다.
 
 ---
 
@@ -371,7 +373,7 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
 | resource_type | 드라이버 호출 | 저장 위치 | 조회 경로 |
 |---------------|----------------|-----------|-----------|
 | `vm` | VM 핸들러 `GetVM` (CSP 리소스 ID) | `SavedInfraInfo.csp_data` | `GET /.../infra`의 `csp` 섹션 |
-| `k8s` | 클러스터 핸들러 `ListCluster` 후 ID 매칭 | `SavedKubernetesInfo` | `GET /.../kubernetes` (`csp` 섹션에 노드 그룹) |
+| `k8s` | 클러스터 핸들러 `ListCluster` 후 ID 매칭, 목록에 없으면 `GetCluster`(system ID)로 조회해 ID가 같을 때만 채택 | `SavedKubernetesInfo` | `GET /.../kubernetes` (`csp` 섹션에 노드 그룹) |
 | `object_storage` | S3 버킷 목록 후 이름 매칭 + 버킷 리전 판정(아래 표), 버킷 리전의 엔드포인트에서 상세 조회 | `SavedDataInfo` (버킷 리전을 `region`으로 함께 저장) | `GET /.../data` |
 | `rdbms` | RDBMS 핸들러 목록 후 ID 매칭 | `SavedRDBMSInfo` | `GET /.../rdbms` |
 | `nlb` | NLB 핸들러 `GetNLB`, 맞지 않으면 목록 후 ID 매칭 | `SavedNLBInfo` | `GET /.../nlb` |
@@ -379,6 +381,7 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
 - **`k8s`**: 관리형 클러스터의 이름(CSP의 이름, 없으면 system ID)·버전·상태·생성 시각·노드 그룹(스펙,
   이미지, 루트 디스크, desired/min/max 크기, 오토스케일링)을 저장합니다. 노드와 워크로드는 수집하지
   않습니다(kubeconfig가 아니라 CSP API로 읽기 때문). Pod/Service CIDR은 cb-spider가 주지 않아 비어 있습니다.
+  NCP 클러스터는 목록에 나오지 않아 `GetCluster`로 읽습니다.
 - **`nlb`**: 리스너(프로토콜, IP, 포트, DNS 이름), 백엔드 VM 그룹(프로토콜, 포트, VM 목록), 헬스 체크를
   저장합니다. `type`은 `PUBLIC`·`INTERNAL`, 드라이버가 알려주지 않으면 빈 값입니다.
   GCP의 cb-spider 드라이버는 타입을 비워 두므로 리스너의 `LoadBalancingScheme`으로 정합니다
@@ -646,7 +649,8 @@ Body: `model.CreateConnectionInfoReq`. 필수 필드는 그룹의 `type`과 이 
 csp 연결은 등록할 때 CSP에 리소스를 확인합니다.
 
 - 계정에 없는 `resource_id`는 **400으로 거부**합니다. CSP 목록 조회가 성공했는데 일치하는 리소스가 없을 때만
-  없는 것으로 봅니다.
+  없는 것으로 봅니다. `k8s`는 목록에 없으면 그 ID로 클러스터를 한 번 더 읽고, 그것도 실패하거나 다른 클러스터가
+  와야 없는 것으로 봅니다.
 - 그룹 리전과 다른 리전으로 판정된 버킷도 **400으로 거부**합니다([버킷 리전](#버킷-리전)).
 - CSP에 물어볼 수 없는 일시 장애(타임아웃, credential, 엔드포인트 도달 불가)는 등록하고
   `connection_status: failed`와 사유를 남깁니다. `refresh`에서 다시 확인합니다.
