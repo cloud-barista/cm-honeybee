@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -16,6 +17,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/cloud-barista/cm-honeybee/server/lib/spider"
@@ -29,17 +31,48 @@ var (
 	fakeAWSSecret = "fake-" + "secret-0002"
 )
 
-// useSpiderRoot points $CBSPIDER_ROOT at a temp dir holding cb-spider's
+// spiderRoot holds cb-spider's metadata files for every test in this package.
+// It is made once and removed in TestMain, not per test: cb-spider watches
+// cloudos_meta.yaml from a goroutine it starts on first load, and that
+// goroutine exits the whole test binary (cblog.Fatal) if the file is gone by
+// the time it adds the watch, which a per-test t.TempDir() made happen now and
+// then.
+var (
+	spiderRootOnce sync.Once
+	spiderRootDir  string
+	spiderRootErr  error
+)
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+	if spiderRootDir != "" {
+		_ = os.RemoveAll(spiderRootDir)
+	}
+	os.Exit(code)
+}
+
+// useSpiderRoot points $CBSPIDER_ROOT at the package's copy of cb-spider's
 // metadata files from the module cache, as lib/spider's own tests do.
 func useSpiderRoot(t *testing.T) {
 	t.Helper()
 
+	spiderRootOnce.Do(func() { spiderRootDir, spiderRootErr = makeSpiderRoot() })
+	if spiderRootErr != nil {
+		t.Fatal(spiderRootErr)
+	}
+	t.Setenv("CBSPIDER_ROOT", spiderRootDir)
+}
+
+func makeSpiderRoot() (string, error) {
 	out, err := exec.Command("go", "list", "-m", "-f", "{{.Dir}}", "github.com/cloud-barista/cb-spider").Output()
 	if err != nil {
-		t.Fatalf("go list cb-spider: %v", err)
+		return "", fmt.Errorf("go list cb-spider: %w", err)
 	}
 	src := strings.TrimSpace(string(out))
-	root := t.TempDir()
+	root, err := os.MkdirTemp("", "cbspider-root-")
+	if err != nil {
+		return "", err
+	}
 	for _, rel := range []string{
 		"cloud-driver-libs/cloudos.yaml",
 		"cloud-driver-libs/cloudos_meta.yaml",
@@ -48,17 +81,17 @@ func useSpiderRoot(t *testing.T) {
 	} {
 		b, err := os.ReadFile(filepath.Join(src, rel))
 		if err != nil {
-			t.Fatal(err)
+			return root, err
 		}
 		dst := filepath.Join(root, rel)
 		if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
-			t.Fatal(err)
+			return root, err
 		}
 		if err := os.WriteFile(dst, b, 0644); err != nil {
-			t.Fatal(err)
+			return root, err
 		}
 	}
-	t.Setenv("CBSPIDER_ROOT", root)
+	return root, nil
 }
 
 // stubDriverCapability answers capabilities by provider; one not in caps has
