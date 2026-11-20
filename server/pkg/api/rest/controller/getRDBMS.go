@@ -181,25 +181,34 @@ func doGetRefinedInstalledRDBMS(connID string) ([]rdbmsmodel.SourceRDBMSProperty
 // doGetRefinedRDBMSInfo returns the refined databases of one connection,
 // choosing the source by the connection's resource_type.
 func doGetRefinedRDBMSInfo(connID string) ([]rdbmsmodel.SourceRDBMSProperty, error) {
+	instances, _, err := doGetRefinedRDBMSInfoZone(connID)
+	return instances, err
+}
+
+// doGetRefinedRDBMSInfoZone is doGetRefinedRDBMSInfo that also gives the zone a
+// managed database runs in, as its CSP record reports it (rdbmsZone). It is ""
+// for a database installed on a VM and for a CSP that reports no zone.
+func doGetRefinedRDBMSInfoZone(connID string) ([]rdbmsmodel.SourceRDBMSProperty, string, error) {
 	connectionInfo, err := dao.ConnectionInfoGet(connID)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	switch {
 	case isManagedRDBMS(connectionInfo):
 		if err := managedRDBMSRefinable(connectionInfo.ID); err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		rdbmsInfo, err := doGetManagedRDBMSInfo(connectionInfo)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
-		return []rdbmsmodel.SourceRDBMSProperty{refineManagedRDBMS(rdbmsInfo)}, nil
+		return []rdbmsmodel.SourceRDBMSProperty{refineManagedRDBMS(rdbmsInfo)}, rdbmsZone(rdbmsInfo.RDBMS), nil
 	case isInstalledRDBMSHost(connectionInfo):
-		return doGetRefinedInstalledRDBMS(connectionInfo.ID)
+		instances, err := doGetRefinedInstalledRDBMS(connectionInfo.ID)
+		return instances, "", err
 	default:
-		return nil, errRDBMSNotApplicable{resourceType: connectionInfo.ResourceType}
+		return nil, "", errRDBMSNotApplicable{resourceType: connectionInfo.ResourceType}
 	}
 }
 
@@ -322,7 +331,14 @@ func rdbmsRole(kvs []spider.KeyValue) string {
 
 // rdbmsSourceCloud describes where a CSP source group's databases run. An
 // on-prem group has no cloud, and gives nil.
-func rdbmsSourceCloud(sourceGroup *model.SourceGroup) *rdbmsmodel.CloudProperty {
+//
+// dbZones are the zones the refined databases' connections reported, one per
+// connection that gave a database, "" where a connection reported none. The
+// model has one zone for all of its databases, so it is the databases' own zone
+// only when each of them reported it and they all agree; otherwise it is the
+// group's zone. A managed database runs in a zone the CSP chose or it was
+// created in, which need not be the zone the group was registered with.
+func rdbmsSourceCloud(sourceGroup *model.SourceGroup, dbZones []string) *rdbmsmodel.CloudProperty {
 	if !serverCommon.IsCSPType(sourceGroup.Type) {
 		return nil
 	}
@@ -331,12 +347,29 @@ func rdbmsSourceCloud(sourceGroup *model.SourceGroup) *rdbmsmodel.CloudProperty 
 	if err != nil {
 		return nil
 	}
+	if dbZone := commonZone(dbZones); dbZone != "" {
+		zone = dbZone
+	}
 
 	return &rdbmsmodel.CloudProperty{
 		Csp:    strings.ToLower(sourceGroup.ProviderName),
 		Region: region,
 		Zone:   zone,
 	}
+}
+
+// commonZone gives the zone every entry of zones names, or "" when there is no
+// entry, an entry is "", or two entries differ.
+func commonZone(zones []string) string {
+	if len(zones) == 0 {
+		return ""
+	}
+	for _, z := range zones {
+		if z == "" || z != zones[0] {
+			return ""
+		}
+	}
+	return zones[0]
 }
 
 // skippableInSourceGroup reports whether a connection's error only means it has
@@ -456,13 +489,13 @@ func GetRDBMSInfoRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	instances, err := doGetRefinedRDBMSInfo(connID)
+	instances, dbZone, err := doGetRefinedRDBMSInfoZone(connID)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
 	var sourceRDBMSModel rdbmsmodel.SourceRDBMSModel
-	sourceRDBMSModel.SourceRDBMSModel.SourceCloud = rdbmsSourceCloud(sourceGroup)
+	sourceRDBMSModel.SourceRDBMSModel.SourceCloud = rdbmsSourceCloud(sourceGroup, []string{dbZone})
 	sourceRDBMSModel.SourceRDBMSModel.SourceRDBMSInstances = instances
 
 	return c.JSONPretty(http.StatusOK, sourceRDBMSModel, " ")
@@ -498,9 +531,10 @@ func GetRDBMSInfoSourceGroupRefined(c echo.Context) error {
 	}
 
 	instances := []rdbmsmodel.SourceRDBMSProperty{}
+	var dbZones []string
 
 	for _, conn := range *list {
-		refined, err := doGetRefinedRDBMSInfo(conn.ID)
+		refined, dbZone, err := doGetRefinedRDBMSInfoZone(conn.ID)
 		if err != nil {
 			if skippableInSourceGroup(err) {
 				continue
@@ -508,10 +542,13 @@ func GetRDBMSInfoSourceGroupRefined(c echo.Context) error {
 			return common.ReturnErrorMsg(c, err.Error())
 		}
 		instances = append(instances, refined...)
+		if len(refined) > 0 {
+			dbZones = append(dbZones, dbZone)
+		}
 	}
 
 	var sourceRDBMSModel rdbmsmodel.SourceRDBMSModel
-	sourceRDBMSModel.SourceRDBMSModel.SourceCloud = rdbmsSourceCloud(sourceGroup)
+	sourceRDBMSModel.SourceRDBMSModel.SourceCloud = rdbmsSourceCloud(sourceGroup, dbZones)
 	sourceRDBMSModel.SourceRDBMSModel.SourceRDBMSInstances = instances
 
 	return c.JSONPretty(http.StatusOK, sourceRDBMSModel, " ")

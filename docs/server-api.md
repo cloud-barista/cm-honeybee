@@ -375,7 +375,7 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
 | `vm` | VM 핸들러 `GetVM` (CSP 리소스 ID) | `SavedInfraInfo.csp_data` | `GET /.../infra`의 `csp` 섹션 |
 | `k8s` | 클러스터 핸들러 `ListCluster` 후 ID 매칭, 목록에 없으면 `GetCluster`(system ID)로 조회해 ID가 같을 때만 채택 | `SavedKubernetesInfo` | `GET /.../kubernetes` (`csp` 섹션에 노드 그룹) |
 | `object_storage` | S3 버킷 목록 후 이름 매칭 + 버킷 리전 판정(아래 표), 버킷 리전의 엔드포인트에서 상세 조회 | `SavedDataInfo` (버킷 리전을 `region`으로 함께 저장) | `GET /.../data` |
-| `rdbms` | RDBMS 핸들러 목록 후 ID 매칭 | `SavedRDBMSInfo` | `GET /.../rdbms` |
+| `rdbms` | RDBMS 핸들러 목록 후 ID 매칭, DB가 있는 zone에서 스펙 조회 | `SavedRDBMSInfo` | `GET /.../rdbms` |
 | `nlb` | NLB 핸들러 `GetNLB`, 맞지 않으면 목록 후 ID 매칭 | `SavedNLBInfo` | `GET /.../nlb` |
 
 - **`k8s`**: 관리형 클러스터의 이름(CSP의 이름, 없으면 system ID)·버전·상태·생성 시각·노드 그룹(스펙,
@@ -395,6 +395,11 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
   전에 저장된 레코드는 비어 있는 `vm_group`을 보고 같은 값을 채워 돌려줍니다. 정제 NLB(`nlbs`)에는 담을 자리가
   없어 이런 NLB는 백엔드 서버가 없는 것으로 나옵니다.
 - **`object_storage`**: 버킷 설정과, `count_objects=false`가 아니면 객체 수·전체 크기를 저장합니다.
+- **`rdbms`**: 드라이버가 준 DB 정보와 스펙(vCPU·메모리)을 저장합니다. 스펙은 **DB가 실제로 있는 zone**으로
+  조회합니다. zone은 드라이버의 `KeyValueList`에서 읽습니다: AWS `AvailabilityZone`, GCP `GceZone`,
+  Alibaba `ZoneId`, Tencent `Zone`(키 이름은 대소문자 무시, 숫자뿐인 값은 zone ID라 쓰지 않음). Azure·IBM처럼
+  zone을 주지 않으면 그룹 zone으로 조회합니다. Alibaba는 다른 zone으로 조회하면 스펙을 찾지 못합니다.
+  스펙 조회가 실패해도 import는 성공하고 정제 결과의 CPU·메모리만 비어 cm-beetle이 기본값을 채웁니다.
 
 > **주의:** CSP 소스의 k8s·오브젝트 스토리지 정보를 채우려면 `POST /import/kubernetes`나
 > `POST /import/data`가 아니라 **`POST /import/infra`**(또는 그룹의 종류별 import)를 불러야 합니다.
@@ -899,6 +904,9 @@ curl $BASE/source_group/$SG/software/refined
   때문입니다.
 - `nlb/refined`: `infra/refined`의 `nlbs`와 같은 목록을 `nlbs`로 돌려줍니다. 그룹에 없으면 빈 목록입니다.
 - `bucket/refined`(=`data/refined`): [버킷 리전](#버킷-리전) 절의 리전 규칙을 따릅니다.
+- `rdbms/refined`: `sourceCloud.zone`은 DB가 실제로 있는 zone(위 `rdbms` 수집과 같은 키)이고, 드라이버가
+  zone을 주지 않으면 그룹 zone입니다. 그룹 결과는 모델에 zone이 하나뿐이라 **모든 DB가 같은 zone을 줄 때만**
+  그 zone이고, zone이 다르거나 zone을 모르는 DB(VM에 설치된 DB 포함)가 섞이면 그룹 zone입니다.
 
 ### 노드의 GPU (`gpuCards`)
 

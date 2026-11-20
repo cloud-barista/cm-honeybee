@@ -928,13 +928,20 @@ func matchCluster(clusters []spider.ClusterInfo, resourceID string) *spider.Clus
 	return nil
 }
 
+// The managed database calls of the CSP, kept in variables so tests can stand
+// in for it.
+var (
+	listCSPRDBMS = spider.ListRDBMS
+	getCSPDBSpec = spider.GetDBSpec
+)
+
 // findRDBMSByID looks a managed database instance up by the identifier
 // discovery reported for it. It lists and filters, as findClusterByID does
 // first, but does not fall back to the driver's GetRDBMS: drivers' GetRDBMS takes a SystemId,
 // but discovery falls back to NameId when a driver leaves SystemId blank
 // (pickIIDSystem), and only a listing can resolve both.
 func findRDBMSByID(conn spider.Conn, resourceID string) (*spider.RDBMSInfo, error) {
-	instances, err := spider.ListRDBMS(conn)
+	instances, err := listCSPRDBMS(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -967,16 +974,26 @@ func matchRDBMS(instances []spider.RDBMSInfo, resourceID string) *spider.RDBMSIn
 // lookup is best-effort: without it the refined model leaves CPU and memory
 // empty for cm-beetle to fill in, which is still a usable result, whereas
 // failing here would lose the engine, version and storage as well.
+//
+// The spec is asked for in the zone the instance runs in, when the CSP reports
+// one, rather than in the group's zone: alibaba looks the spec up among the
+// engine versions a zone offers, and in another zone of the region it finds
+// none, which left a database outside the group's zone without CPU and memory.
 func collectRDBMS(conn spider.Conn, resourceID string) (model.RDBMSInfo, error) {
 	db, err := findRDBMSByID(conn, resourceID)
 	if err != nil {
 		return model.RDBMSInfo{}, err
 	}
 
+	specConn := conn
+	if zone := rdbmsZone(db); zone != "" && zone != conn.Zone {
+		specConn.Zone = zone
+	}
+
 	payload := model.RDBMSInfo{RDBMS: db}
-	spec, err := spider.GetDBSpec(conn, db.DBEngine, db.DBSpec)
+	spec, err := getCSPDBSpec(specConn, db.DBEngine, db.DBSpec)
 	if err != nil {
-		logger.Println(logger.WARN, true, "CSP: failed to get db spec '"+db.DBSpec+"' "+connLabel(conn)+": "+err.Error())
+		logger.Println(logger.WARN, true, "CSP: failed to get db spec '"+db.DBSpec+"' "+connLabel(specConn)+": "+err.Error())
 	} else {
 		payload.DBSpec = spec
 	}

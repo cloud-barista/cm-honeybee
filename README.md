@@ -536,6 +536,14 @@ was found in as `sourceCloud.region`, or the group's region where the CSP cannot
 tell. The group result names the group's region and leaves out a bucket found in
 another region, since the model has one region for all of its buckets.
 
+`rdbms/refined` of one connection names the zone the database runs in as
+`sourceCloud.zone`, read from the driver's record (AWS `AvailabilityZone`, GCP
+`GceZone`, Alibaba `ZoneId`, Tencent `Zone`), or the group's zone where the CSP
+does not report one (Azure, IBM). The group result names the databases' zone
+only when all of them report the same one, and the group's zone otherwise. The
+spec (vCPU and memory) of a database is collected in its own zone as well:
+Alibaba finds no spec when asked in another zone of the region.
+
 ## Health-check
 
 ### Server
