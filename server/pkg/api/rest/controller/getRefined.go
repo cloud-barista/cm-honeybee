@@ -1266,14 +1266,28 @@ func GetInfraInfoRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	onpremiseInfra, listeningPorts, err := connRefinedOnpremInfra(sourceGroup, connectionInfo)
+	if err != nil {
+		return common.ReturnErrorMsg(c, err.Error())
+	}
+
+	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
+}
+
+// connRefinedOnpremInfra builds the refined infra of one connection, as
+// infra/refined of the connection answers it. k8s/refined and nlb/refined of
+// the connection take their part of it from here, so they cannot drift apart.
+func connRefinedOnpremInfra(sourceGroup *model.SourceGroup, connectionInfo *model.ConnectionInfo) (inframodel.OnpremInfra, [][]model.ListeningPortProperty, error) {
 	var onpremiseInfra inframodel.OnpremInfra
 	var listeningPorts [][]model.ListeningPortProperty
+	connID := connectionInfo.ID
 
 	// A CSP resource other than a VM holds no machine, so it makes no node, as
 	// in the group refined infra. The infra record its import leaves behind is
 	// empty; a managed cluster is reflected from its kubernetes record below.
 	if !serverCommon.IsCSPType(sourceGroup.Type) || isHostConnection(sourceGroup, connectionInfo) {
 		var infraInfo *infra.Infra
+		var err error
 		if rec, recErr := dao.SavedInfraInfoGet(connID); recErr == nil && rec != nil &&
 			cspNodeAfterAgentFailure(sourceGroup, connectionInfo, rec) {
 			infraInfo, err = cspOnlyInfra(rec.CSPData)
@@ -1281,12 +1295,12 @@ func GetInfraInfoRefined(c echo.Context) error {
 			infraInfo, err = doGetInfraInfo(connID)
 		}
 		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
+			return onpremiseInfra, nil, err
 		}
 
 		refinedInfraInfo, err := doGetRefinedInfraInfo(infraInfo)
 		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
+			return onpremiseInfra, nil, err
 		}
 
 		onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
@@ -1311,13 +1325,13 @@ func GetInfraInfoRefined(c echo.Context) error {
 	if isCSPNLB(sourceGroup, connectionInfo) {
 		groupConns, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: connectionInfo.SourceGroupID}, 0, 0)
 		if err != nil {
-			return common.ReturnErrorMsg(c, err.Error())
+			return onpremiseInfra, nil, err
 		}
 		onpremiseInfra.NLBs = append(onpremiseInfra.NLBs,
 			refinedCSPNLBs(sourceGroup, []model.ConnectionInfo{*connectionInfo}, *groupConns)...)
 	}
 
-	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
+	return onpremiseInfra, listeningPorts, nil
 }
 
 // GetInfraInfoSourceGroupRefined godoc
@@ -1349,10 +1363,19 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
+	onpremiseInfra, listeningPorts := groupRefinedOnpremInfra(sourceGroup, *list)
+
+	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
+}
+
+// groupRefinedOnpremInfra builds the refined infra of the source group, as
+// infra/refined of the group answers it. k8s/refined and nlb/refined of the
+// group take their part of it from here, so they cannot drift apart.
+func groupRefinedOnpremInfra(sourceGroup *model.SourceGroup, conns []model.ConnectionInfo) (inframodel.OnpremInfra, [][]model.ListeningPortProperty) {
 	var onpremiseInfra inframodel.OnpremInfra
 	var listeningPorts [][]model.ListeningPortProperty
 
-	for _, src := range refinedInfraSources(sourceGroup, *list) {
+	for _, src := range refinedInfraSources(sourceGroup, conns) {
 		infraInfo := src.infra
 		refinedInfraInfo, err := doGetRefinedInfraInfo(infraInfo)
 		if err != nil {
@@ -1366,7 +1389,7 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		onpremiseInfra.NLBs = append(onpremiseInfra.NLBs, haproxyToNLBs(infraInfo.HAProxy, infraInfo.Compute.OS.Node.Machineid)...)
 	}
 
-	k8sInfo, managed := groupK8sCluster(sourceGroup, *list)
+	k8sInfo, managed := groupK8sCluster(sourceGroup, conns)
 
 	// Reflect the cluster once all host-level nodes are gathered, so the merge
 	// covers nodes appended before the cluster data was found. A CSP-managed
@@ -1380,9 +1403,9 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 	}
 
 	// The CSP NLBs come after the HAProxy ones found on the nodes.
-	onpremiseInfra.NLBs = append(onpremiseInfra.NLBs, refinedCSPNLBs(sourceGroup, *list, *list)...)
+	onpremiseInfra.NLBs = append(onpremiseInfra.NLBs, refinedCSPNLBs(sourceGroup, conns, conns)...)
 
-	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
+	return onpremiseInfra, listeningPorts
 }
 
 // GetSoftwareInfoRefined godoc

@@ -88,7 +88,16 @@ func connIsCSPManagedK8s(connID string) bool {
 // roles and the workers only the API sees. A managed cluster, which lists
 // none, is taken only when the group has no other.
 func groupK8sCluster(sourceGroup *model.SourceGroup, conns []model.ConnectionInfo) (*kubernetes.Kubernetes, bool) {
+	_, info, managed := groupK8sClusterSource(sourceGroup, conns)
+
+	return info, managed
+}
+
+// groupK8sClusterSource is groupK8sCluster that also names the connection the
+// cluster was taken from, or "" when the group has none.
+func groupK8sClusterSource(sourceGroup *model.SourceGroup, conns []model.ConnectionInfo) (string, *kubernetes.Kubernetes, bool) {
 	var managed *kubernetes.Kubernetes
+	managedConnID := ""
 
 	for i := range conns {
 		candidate := tryGetKubernetesInfo(conns[i].ID)
@@ -96,18 +105,19 @@ func groupK8sCluster(sourceGroup *model.SourceGroup, conns []model.ConnectionInf
 			continue
 		}
 		if !isCSPManagedK8s(sourceGroup, &conns[i]) {
-			return candidate, false
+			return conns[i].ID, candidate, false
 		}
 		if managed == nil {
 			managed = candidate
+			managedConnID = conns[i].ID
 		}
 	}
 
 	if managed != nil {
-		return managed, true
+		return managedConnID, managed, true
 	}
 
-	return nil, false
+	return "", nil, false
 }
 
 // workloadItems reads one kind out of the collected workload map. The agent
