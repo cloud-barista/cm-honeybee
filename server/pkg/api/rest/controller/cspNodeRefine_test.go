@@ -321,7 +321,7 @@ func TestRefinedInfra_CSPVMAfterAgentFailure(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
 	}
-	var got model.RefinedOnpremiseInfraModel
+	var got inframodel.OnpremiseInfraModel
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
@@ -333,14 +333,14 @@ func TestRefinedInfra_CSPVMAfterAgentFailure(t *testing.T) {
 		t.Fatalf("node hostnames = %q, want %q", hostnames, want)
 	}
 	if n := got.OnpremiseInfraModel.Nodes[0]; n.CPU.Threads != 8 || n.Memory.TotalSize != 16 || n.OS.ID != "ubuntu" {
-		t.Errorf("node of the CSP data = %+v", n.NodeProperty)
+		t.Errorf("node of the CSP data = %+v", n)
 	}
 
 	single := connRequest(t, http.MethodGet, cspGroup.ID, "vm-agent-failed", GetInfraInfoRefined)
 	if single.Code != http.StatusOK {
 		t.Fatalf("single status = %d, body = %s", single.Code, single.Body.String())
 	}
-	var one model.RefinedOnpremiseInfraModel
+	var one inframodel.OnpremiseInfraModel
 	if err := json.Unmarshal(single.Body.Bytes(), &one); err != nil {
 		t.Fatal(err)
 	}

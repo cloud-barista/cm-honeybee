@@ -146,10 +146,10 @@ func TestClusterInfoToK8s_ReadsAsClusterData(t *testing.T) {
 	}
 }
 
-func refinedInfraBody(t *testing.T, body []byte) model.RefinedOnpremiseInfraModel {
+func refinedInfraBody(t *testing.T, body []byte) inframodel.OnpremiseInfraModel {
 	t.Helper()
 
-	var got model.RefinedOnpremiseInfraModel
+	var got inframodel.OnpremiseInfraModel
 	if err := json.Unmarshal(body, &got); err != nil {
 		t.Fatal(err)
 	}

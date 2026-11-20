@@ -2102,7 +2102,7 @@
                     "200": {
                         "description": "Successfully get refined information of the infra.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremiseInfraModel"
+                            "$ref": "#/definitions/onpremisemodel.OnpremiseInfraModel"
                         }
                     },
                     "400": {
@@ -3809,7 +3809,7 @@
                     "200": {
                         "description": "Successfully get refined information of the infra.",
                         "schema": {
-                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremiseInfraModel"
+                            "$ref": "#/definitions/onpremisemodel.OnpremiseInfraModel"
                         }
                     },
                     "400": {
@@ -6892,29 +6892,6 @@
                 }
             }
         },
-        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListeningPortProperty": {
-            "type": "object",
-            "properties": {
-                "bindAddress": {
-                    "description": "BindAddress is the local address the socket is bound to, e.g. \"0.0.0.0\",\n\"::\", \"127.0.0.1\". It is left out when the agent that collected the node\npredates per-socket collection and only reported the port.",
-                    "type": "string",
-                    "example": "0.0.0.0"
-                },
-                "port": {
-                    "type": "integer",
-                    "example": 8080
-                },
-                "processName": {
-                    "type": "string",
-                    "example": "nginx"
-                },
-                "protocol": {
-                    "description": "tcp, udp",
-                    "type": "string",
-                    "example": "tcp"
-                }
-            }
-        },
         "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.NLBInfoList": {
             "type": "object",
             "required": [
@@ -7026,109 +7003,6 @@
                     "items": {
                         "$ref": "#/definitions/onpremisemodel.NlbProperty"
                     }
-                }
-            }
-        },
-        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedNodeProperty": {
-            "type": "object",
-            "properties": {
-                "cpu": {
-                    "$ref": "#/definitions/onpremisemodel.CpuProperty"
-                },
-                "dataDisks": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/onpremisemodel.DiskProperty"
-                    }
-                },
-                "firewallTable": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/onpremisemodel.FirewallRuleProperty"
-                    }
-                },
-                "gpuCards": {
-                    "description": "Physical GPU cards installed on the node",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/onpremisemodel.GpuCardProperty"
-                    }
-                },
-                "hostname": {
-                    "type": "string"
-                },
-                "interfaces": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/onpremisemodel.NetworkInterfaceProperty"
-                    }
-                },
-                "listeningPorts": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListeningPortProperty"
-                    }
-                },
-                "machineId": {
-                    "description": "Unique identifier for the node (e.g., UUID)",
-                    "type": "string"
-                },
-                "memory": {
-                    "$ref": "#/definitions/onpremisemodel.MemoryProperty"
-                },
-                "os": {
-                    "$ref": "#/definitions/onpremisemodel.OsProperty"
-                },
-                "role": {
-                    "description": "Node role (e.g., \"control-plane\", \"worker\", \"standalone\")",
-                    "type": "string",
-                    "example": "control-plane"
-                },
-                "rootDisk": {
-                    "$ref": "#/definitions/onpremisemodel.DiskProperty"
-                },
-                "routingTable": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/onpremisemodel.RouteProperty"
-                    }
-                }
-            }
-        },
-        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremInfra": {
-            "type": "object",
-            "required": [
-                "nodes"
-            ],
-            "properties": {
-                "k8sCluster": {
-                    "$ref": "#/definitions/onpremisemodel.K8sClusterProperty"
-                },
-                "network": {
-                    "$ref": "#/definitions/onpremisemodel.NetworkProperty"
-                },
-                "nlbs": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/onpremisemodel.NlbProperty"
-                    }
-                },
-                "nodes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedNodeProperty"
-                    }
-                }
-            }
-        },
-        "github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremiseInfraModel": {
-            "type": "object",
-            "required": [
-                "onpremiseInfraModel"
-            ],
-            "properties": {
-                "onpremiseInfraModel": {
-                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremInfra"
                 }
             }
         },
@@ -10816,6 +10690,31 @@
                 }
             }
         },
+        "onpremisemodel.ListeningPortProperty": {
+            "type": "object",
+            "properties": {
+                "bindAddress": {
+                    "description": "Local bind address (e.g., \"0.0.0.0\", \"::\", \"127.0.0.1\")",
+                    "type": "string",
+                    "example": "0.0.0.0"
+                },
+                "port": {
+                    "description": "Listening port number",
+                    "type": "integer",
+                    "example": 8080
+                },
+                "processName": {
+                    "description": "Owning process name if available",
+                    "type": "string",
+                    "example": "nginx"
+                },
+                "protocol": {
+                    "description": "Transport protocol (e.g., \"tcp\", \"udp\")",
+                    "type": "string",
+                    "example": "tcp"
+                }
+            }
+        },
         "onpremisemodel.MemoryProperty": {
             "type": "object",
             "required": [
@@ -11023,6 +10922,116 @@
                 }
             }
         },
+        "onpremisemodel.NodeProperty": {
+            "type": "object",
+            "properties": {
+                "cpu": {
+                    "$ref": "#/definitions/onpremisemodel.CpuProperty"
+                },
+                "dataDisks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.DiskProperty"
+                    }
+                },
+                "firewallTable": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.FirewallRuleProperty"
+                    }
+                },
+                "gpuCards": {
+                    "description": "Physical GPU cards installed on the node",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.GpuCardProperty"
+                    }
+                },
+                "hostname": {
+                    "type": "string"
+                },
+                "interfaces": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.NetworkInterfaceProperty"
+                    }
+                },
+                "listeningPorts": {
+                    "description": "Listening TCP/UDP sockets on the node",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.ListeningPortProperty"
+                    }
+                },
+                "machineId": {
+                    "description": "Unique identifier for the node (e.g., UUID)",
+                    "type": "string"
+                },
+                "memory": {
+                    "$ref": "#/definitions/onpremisemodel.MemoryProperty"
+                },
+                "os": {
+                    "$ref": "#/definitions/onpremisemodel.OsProperty"
+                },
+                "role": {
+                    "description": "Node role (e.g., \"control-plane\", \"worker\", \"standalone\")",
+                    "type": "string",
+                    "example": "control-plane"
+                },
+                "rootDisk": {
+                    "$ref": "#/definitions/onpremisemodel.DiskProperty"
+                },
+                "routingTable": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.RouteProperty"
+                    }
+                }
+            }
+        },
+        "onpremisemodel.OnpremInfra": {
+            "type": "object",
+            "required": [
+                "nodes"
+            ],
+            "properties": {
+                "k8sCluster": {
+                    "description": "TODO: Extend to a general ClusterProperty if other orchestrators (e.g., OpenShift, Rancher) are needed.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/onpremisemodel.K8sClusterProperty"
+                        }
+                    ]
+                },
+                "network": {
+                    "$ref": "#/definitions/onpremisemodel.NetworkProperty"
+                },
+                "nlbs": {
+                    "description": "NLBs holds on-premise NLB instances (HAProxy-based), one entry per frontend-backend pair.\nPopulated by cm-honeybee when HAProxy is detected on a node.\nUsed exclusively by POST /recommendation/infraWithNlb; ignored by POST /recommendation/infra.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.NlbProperty"
+                    }
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/onpremisemodel.NodeProperty"
+                    }
+                }
+            }
+        },
+        "onpremisemodel.OnpremiseInfraModel": {
+            "type": "object",
+            "required": [
+                "onpremiseInfraModel"
+            ],
+            "properties": {
+                "onpremiseInfraModel": {
+                    "$ref": "#/definitions/onpremisemodel.OnpremInfra"
+                }
+            }
+        },
         "onpremisemodel.OsProperty": {
             "type": "object",
             "required": [
@@ -11102,6 +11111,21 @@
             "type": "integer",
             "format": "int32",
             "enum": [
+                2147483648,
+                1073741824,
+                536870912,
+                268435456,
+                134217728,
+                67108864,
+                33554432,
+                16777216,
+                8388608,
+                4194304,
+                2097152,
+                1048576,
+                524288,
+                2401763328,
+                511,
                 2147483648,
                 1073741824,
                 536870912,
@@ -13222,6 +13246,8 @@
                 1000000000,
                 60000000000,
                 3600000000000,
+                -9223372036854775808,
+                9223372036854775807,
                 1,
                 1000,
                 1000000,
@@ -13231,9 +13257,19 @@
                 1,
                 1000,
                 1000000,
-                1000000000
+                1000000000,
+                60000000000,
+                3600000000000
             ],
             "x-enum-varnames": [
+                "minDuration",
+                "maxDuration",
+                "Nanosecond",
+                "Microsecond",
+                "Millisecond",
+                "Second",
+                "Minute",
+                "Hour",
                 "minDuration",
                 "maxDuration",
                 "Nanosecond",
@@ -13247,11 +13283,7 @@
                 "Millisecond",
                 "Second",
                 "Minute",
-                "Hour",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second"
+                "Hour"
             ]
         },
         "v1.Descriptor": {
