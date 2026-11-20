@@ -29,10 +29,38 @@ func normalizeRegion(meta *spider.CloudOSMetaInfo, region string) string {
 	return region
 }
 
+// optionalCredentialKeys are the credential keys a csp source group of the
+// provider takes besides the required ones (CredentialCSP). They are the S3
+// keys buckets are read with where the main keys do not reach object storage
+// (spider.UsesS3Keys), so they are needed for object_storage only and must be
+// given together.
+func optionalCredentialKeys(provider string) []string {
+	if spider.UsesS3Keys(provider) {
+		return []string{spider.S3AccessKey, spider.S3SecretKey}
+	}
+	return []string{}
+}
+
+// optionalCredentialAliases maps other names of the optional keys, upper-cased,
+// to the optional key they are stored as. Azure's S3 keys are a storage account
+// name and key, and lib/spider reads them under either name.
+func optionalCredentialAliases(provider string) map[string]string {
+	if strings.EqualFold(provider, "AZURE") {
+		return map[string]string{
+			"STORAGEACCOUNTNAME": spider.S3AccessKey,
+			"STORAGEACCOUNTKEY":  spider.S3SecretKey,
+		}
+	}
+	return nil
+}
+
 // canonicalizeCredentialKV normalizes credential KV against the CSP's required
-// keys. It returns an error when:
+// and optional keys (optionalCredentialKeys). It returns an error when:
 //   - any required key is missing, or
-//   - any provided key is not in the required set.
+//   - any provided key is neither required nor optional, or
+//   - only some of the optional keys are provided.
+//
+// An optional key with a blank value counts as not provided and is dropped.
 func canonicalizeCredentialKV(provider string, meta *spider.CloudOSMetaInfo, in []model.KeyValue) ([]model.KeyValue, error) {
 	// Canonical credential keys follow cb-spider's "credentialcsp" convention,
 	// which matches cb-tumblebug's template.credentials.yaml (e.g. Azure
@@ -51,6 +79,15 @@ func canonicalizeCredentialKV(provider string, meta *spider.CloudOSMetaInfo, in 
 			accept[strings.ToUpper(meta.Credential[i])] = cspKey
 		}
 	}
+	optional := optionalCredentialKeys(provider)
+	isOptional := make(map[string]bool, len(optional))
+	for _, key := range optional {
+		accept[strings.ToUpper(key)] = key
+		isOptional[key] = true
+	}
+	for alias, key := range optionalCredentialAliases(provider) {
+		accept[alias] = key
+	}
 
 	out := make([]model.KeyValue, 0, len(in))
 	provided := make(map[string]bool, len(in))
@@ -58,6 +95,9 @@ func canonicalizeCredentialKV(provider string, meta *spider.CloudOSMetaInfo, in 
 		canonical, ok := accept[strings.ToUpper(strings.TrimSpace(kv.Key))]
 		if !ok {
 			return nil, errors.New("credential key not accepted by " + provider + " CSP: " + kv.Key)
+		}
+		if isOptional[canonical] && strings.TrimSpace(kv.Value) == "" {
+			continue
 		}
 		if provided[canonical] {
 			return nil, errors.New("duplicate credential key: " + canonical)
@@ -75,6 +115,16 @@ func canonicalizeCredentialKV(provider string, meta *spider.CloudOSMetaInfo, in 
 	if len(missing) > 0 {
 		sort.Strings(missing)
 		return nil, errors.New("missing required credential keys: " + strings.Join(missing, ", "))
+	}
+
+	given := 0
+	for _, key := range optional {
+		if provided[key] {
+			given++
+		}
+	}
+	if given > 0 && given < len(optional) {
+		return nil, errors.New(strings.Join(optional, " and ") + " must be given together")
 	}
 
 	return out, nil

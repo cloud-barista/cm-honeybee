@@ -118,6 +118,76 @@ func TestS3ConnRuleMissingKeys(t *testing.T) {
 	}
 }
 
+// UsesS3Keys names exactly the providers s3ConnRule cannot read buckets of
+// with the main credential keys alone, and for those it reads S3AccessKey and
+// S3SecretKey, for every CSP cb-spider lists.
+func TestUsesS3Keys_MatchesS3ConnRule(t *testing.T) {
+	list, err := ListCloudOS()
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	for _, p := range list {
+		meta, err := loadMetaInfo(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		mainKeys := make([]KeyValue, 0, len(meta.Credential))
+		for _, k := range meta.Credential {
+			v := "fake-main-value"
+			if k == "IdentityEndpoint" {
+				v = "https://keystone.example/v3"
+			}
+			mainKeys = append(mainKeys, KeyValue{Key: k, Value: v})
+		}
+
+		_, err = s3ConnRule(p, "r", mainKeys)
+		if err != nil && strings.Contains(err.Error(), "does not support Object Storage") {
+			if UsesS3Keys(p) {
+				t.Errorf("%s: UsesS3Keys is true for a provider s3ConnRule does not handle", p)
+			}
+			continue
+		}
+		seen[p] = true
+		if UsesS3Keys(p) != (err != nil) {
+			t.Errorf("%s: UsesS3Keys = %v, s3ConnRule with the main keys only: %v", p, UsesS3Keys(p), err)
+			continue
+		}
+		if !UsesS3Keys(p) {
+			continue
+		}
+		if !errors.Is(err, ErrS3CredentialMissing) {
+			t.Errorf("%s: err = %v, want ErrS3CredentialMissing", p, err)
+		}
+
+		fakeAccess, fakeSecret := "fake-s3-access", "fake-s3-secret"
+		withS3 := append(append([]KeyValue{}, mainKeys...),
+			KeyValue{Key: S3AccessKey, Value: fakeAccess}, KeyValue{Key: S3SecretKey, Value: fakeSecret})
+		got, err := s3ConnRule(p, "r", withS3)
+		if err != nil {
+			t.Errorf("%s: with %s/%s: %v", p, S3AccessKey, S3SecretKey, err)
+			continue
+		}
+		if got.AccessKey != fakeAccess || got.SecretKey != fakeSecret {
+			t.Errorf("%s: read %q/%q, want the S3 keys", p, got.AccessKey, got.SecretKey)
+		}
+	}
+	for p := range s3KeyProviders {
+		if !seen[p] {
+			t.Errorf("%s: in s3KeyProviders but not a provider s3ConnRule handles among cb-spider's", p)
+		}
+	}
+}
+
+// An empty key of a provider that reads its main keys is not marked as a
+// missing S3 key.
+func TestS3ConnRuleMissingMainKeyIsNotS3(t *testing.T) {
+	_, err := s3ConnRule("AWS", "us-east-1", []KeyValue{{Key: "ClientId", Value: ""}, {Key: "ClientSecret", Value: "sk"}})
+	if err == nil || errors.Is(err, ErrS3CredentialMissing) {
+		t.Fatalf("got %v, want an error not marked ErrS3CredentialMissing", err)
+	}
+}
+
 func TestOpenStackS3Endpoint(t *testing.T) {
 	tests := map[string]string{
 		"http://192.0.2.10:5000/v3":     "192.0.2.10:8080",

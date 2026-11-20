@@ -18,7 +18,7 @@ import (
 //
 //	@ID				discover-source-group-resources
 //	@Summary		Discover CSP resources for a SourceGroup
-//	@Description	Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Object-storage buckets are limited to the source group's region where the CSP reports a bucket's region (AWS), and carry that region. A resource type the CSP's driver has no handler for (k8s, nlb, rdbms) answers 200 with empty items and unsupported true. Used by the UI to populate ConnectionInfo selection.
+//	@Description	Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Object-storage buckets are limited to the source group's region where the CSP reports a bucket's region (AWS), and carry that region. A resource type the CSP's driver has no handler for (k8s, nlb, rdbms) answers 200 with empty items and unsupported true, and so does object_storage on a CSP that reads buckets with S3 keys (GET /csp/{name} optional_credential_keys) when the source group credential has none. Used by the UI to populate ConnectionInfo selection.
 //	@Tags			[CSP] Discovery
 //	@Accept			json
 //	@Produce		json
@@ -71,8 +71,9 @@ func DiscoverSourceGroupResources(c echo.Context) error {
 }
 
 // errDriverUnsupported marks a resource type the provider's driver implements
-// no handler for. It travels up from discoverByType so the HTTP layer can answer
-// 200 + Unsupported rather than 500.
+// no handler for, or object_storage on a group whose credential lacks the S3
+// keys the provider reads buckets with. It travels up from discoverByType so
+// the HTTP layer can answer 200 + Unsupported rather than 500.
 type errDriverUnsupported struct{ msg string }
 
 func (e errDriverUnsupported) Error() string { return e.msg }
@@ -230,6 +231,11 @@ func discoveredNLB(n *spider.NLBInfo) model.DiscoveredResource {
 func discoverBuckets(conn spider.Conn) ([]model.DiscoveredResource, error) {
 	buckets, err := listS3Buckets(conn)
 	if err != nil {
+		// A group without the S3 keys its CSP reads buckets with cannot list
+		// them, which is not a failure of the request either.
+		if errors.Is(err, spider.ErrS3CredentialMissing) {
+			return nil, errDriverUnsupported{msg: s3CredentialMissingMsg(conn.Provider)}
+		}
 		return nil, err
 	}
 	names := make([]string, 0, len(buckets))

@@ -93,7 +93,7 @@
 | 메서드 | 경로 | 설명 |
 |--------|------|------|
 | GET | `/csp` | 서버에 포함된 cb-spider 드라이버가 지원하는 CSP 목록과 CSP별 수집 가능한 `resource_type`. |
-| GET | `/csp/{name}` | CSP 메타데이터(자격 증명 키+예시, 리전 키 등) 조회. 대소문자 무시, 미지원 시 지원목록 안내. |
+| GET | `/csp/{name}` | CSP 메타데이터(자격 증명 필수·선택 키+예시, 리전 키 등) 조회. 대소문자 무시, 미지원 시 지원목록 안내. |
 | POST | `/csp/{name}/region` | 바디의 credential로 **그룹 없이** 실제 리전/존 목록 조회. credential은 저장하지 않음. |
 | GET | `/source_group/{sgId}/region` | `csp` SourceGroup의 **실제 리전/존 목록**(저장 credential로 live 조회). |
 | GET | `/source_group/{sgId}/discover` | `csp` SourceGroup의 VM / K8s 클러스터 / 오브젝트 스토리지 / NLB / 관리형 DB 디스커버리. |
@@ -237,6 +237,8 @@ SQLite에는 비밀 정보를 저장하지 않습니다.
   [template.credentials.yaml](https://github.com/cloud-barista/cb-tumblebug/blob/main/init/template.credentials.yaml)
   규약(= cb-spider `credentialcsp`)을 따릅니다. 예: Azure `clientId/clientSecret/tenantId/subscriptionId`,
   AWS `aws_access_key_id/aws_secret_access_key`. (`GET /csp/{name}`가 키+예시 제공)
+- 버킷을 S3 키로 읽는 CSP(ibm·openstack·kt·gcp·nhn·azure)는 필수 키 외에 **선택 키 `S3AccessKey`·`S3SecretKey`**를
+  받습니다([CSP credential의 선택 키](#csp-credential의-선택-키)). 함께 OpenBao에 저장됩니다.
 - 구조·부팅 흐름·복구 시나리오·프로덕션(KMS auto-unseal) 등 자세한 내용은
   [`docs/openbao.md`](openbao.md) 참고. OpenBao 포함 전체 컨테이너 구성은
   [`server/docker-compose.yaml`](../server/docker-compose.yaml).
@@ -299,6 +301,8 @@ curl -s $BASE/csp/azure | jq
 #   클라이언트는 credential_keys로 입력 폼을 동적 렌더링.
 #   키 표기는 CSP마다 다릅니다 (AWS=aws_access_key_id 소문자, Azure=clientId camelCase).
 #   region_keys는 "리전을 어떤 키로 표현하는가"일 뿐 리전 목록이 아닙니다(아래 3-1 참고).
+#   optional_credential_keys(azure는 ["S3AccessKey","S3SecretKey"])는 버킷(object_storage)을 수집할 때만
+#   필요한 선택 키입니다. 둘 다 주거나 둘 다 빼야 합니다.
 
 # 3. CSP 타입 SourceGroup 등록 + VM ConnectionInfo (한 번에)
 #    connection_info에 resource_type/resource_id(=CSP 리소스 식별) + 선택적 SSH 접속 정보.
@@ -395,6 +399,9 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
   전에 저장된 레코드는 비어 있는 `vm_group`을 보고 같은 값을 채워 돌려줍니다. 정제 NLB(`nlbs`)에는 담을 자리가
   없어 이런 NLB는 백엔드 서버가 없는 것으로 나옵니다.
 - **`object_storage`**: 버킷 설정과, `count_objects=false`가 아니면 객체 수·전체 크기를 저장합니다.
+  ibm·openstack·kt·gcp·nhn·azure는 그룹 credential에 선택 키 `S3AccessKey`·`S3SecretKey`가 있어야 버킷을 읽습니다
+  ([CSP credential의 선택 키](#csp-credential의-선택-키)). 없으면 등록·수정은 400, 디스커버리는
+  `unsupported: true`이고, 그 전에 저장된 연결의 `refresh`·import는 같은 사유로 실패합니다. CSP에는 묻지 않습니다.
 - **`rdbms`**: 드라이버가 준 DB 정보와 스펙(vCPU·메모리)을 저장합니다. 스펙은 **DB가 실제로 있는 zone**으로
   조회합니다. zone은 드라이버의 `KeyValueList`에서 읽습니다: AWS `AvailabilityZone`, GCP `GceZone`,
   Alibaba `ZoneId`, Tencent `Zone`(키 이름은 대소문자 무시, 숫자뿐인 값은 zone ID라 쓰지 않음). Azure·IBM처럼
@@ -593,6 +600,8 @@ SSH 정보를 함께 준 CSP(Azure) VM 소스의 실제 응답 예시입니다. 
 
 ### `POST /source_group` — SourceGroup 등록
 Body: `model.CreateSourceGroupReq`. 생성된 `model.SourceGroupRes`를 반환.
+csp 그룹의 `credential`은 `GET /csp/{name}`의 `credential_keys`를 모두 담아야 하고, 그 밖의 키는
+`optional_credential_keys`만 받습니다([CSP credential의 선택 키](#csp-credential의-선택-키)). 나머지 키는 400입니다.
 
 ### `GET /source_group` — SourceGroup 목록
 Query: `page`, `row`, `name`, `description`, `type` (모두 선택 필터).
@@ -620,6 +629,8 @@ CSP credential 키는 `GET /csp/{name}`이 알려줍니다.
 
 ### `PUT /source_group/{sgId}` — SourceGroup 수정
 Body: `model.UpdateSourceGroupReq`.
+csp 그룹에 `credential`을 보내면 저장된 credential을 **통째로 바꿉니다**. 등록 때와 같이 검사하므로 필수 키도
+다시 담아야 하고, 선택 키를 빼고 보내면 선택 키는 지워집니다. 기존 그룹에 S3 키를 더할 때도 필수 키와 함께 보냅니다.
 
 ### `DELETE /source_group/{sgId}` — SourceGroup 삭제
 그룹의 모든 연결과, 각 연결에 import가 저장한 기록(infra, software, kubernetes, helm, data, rdbms, nlb)을
@@ -660,6 +671,9 @@ csp 연결은 등록할 때 CSP에 리소스를 확인합니다.
   없는 것으로 봅니다. `k8s`는 목록에 없으면 그 ID로 클러스터를 한 번 더 읽고, 그것도 실패하거나 다른 클러스터가
   와야 없는 것으로 봅니다.
 - 그룹 리전과 다른 리전으로 판정된 버킷도 **400으로 거부**합니다([버킷 리전](#버킷-리전)).
+- 선택 키 `S3AccessKey`·`S3SecretKey`가 필요한 CSP인데 그룹 credential에 없으면 `object_storage` 연결을 CSP에 묻기
+  전에 **400으로 거부**합니다. 예: `object_storage on gcp needs S3AccessKey and S3SecretKey in the source group credential`.
+  이 규칙 전에 저장된 연결은 그대로 두고, `refresh`는 같은 사유로 `connection_status: failed`가 됩니다.
 - CSP에 물어볼 수 없는 일시 장애(타임아웃, credential, 엔드포인트 도달 불가)는 등록하고
   `connection_status: failed`와 사유를 남깁니다. `refresh`에서 다시 확인합니다.
 
@@ -685,7 +699,7 @@ csp 연결에서는 다음과 같이 동작합니다.
 - `vm`이 아닌 연결에 SSH 필드를 보내면 400입니다. `vm` 연결을 다른 `resource_type`으로 바꾸면 SSH 필드와
   비밀값을 지웁니다.
 - `resource_type`이나 `resource_id`가 바뀌면 등록 때처럼 확인하고, 그룹 CSP가 수집할 수 없는 `resource_type`·
-  없는 리소스·다른 리전 버킷은 400입니다.
+  S3 키가 없는 그룹의 버킷·없는 리소스·다른 리전 버킷은 400입니다.
 
 ### `DELETE /source_group/{sgId}/connection_info/{connId}` — 삭제
 연결과, 그 연결에 import가 저장한 기록(infra, software, kubernetes, helm, data, rdbms, nlb)을 함께 지웁니다.
@@ -717,7 +731,8 @@ curl http://localhost:8081/honeybee/csp
 
 `supported_resource_types`는 CSP마다 그 CSP의 csp 연결이 수집될 수 있는 `resource_type` 목록입니다.
 `vm`·`k8s`·`nlb`·`rdbms`는 링크된 드라이버의 핸들러 지원 여부로, `object_storage`는 honeybee가 S3 API로
-버킷을 읽는 CSP인지로 정합니다. honeybee에 드라이버가 없는 CSP는 빈 목록입니다.
+버킷을 읽는 CSP인지로 정합니다. 선택 S3 키가 필요한 CSP도 `object_storage`를 담습니다(키가 없는 그룹의 버킷은
+등록 때 거부). honeybee에 드라이버가 없는 CSP는 빈 목록입니다.
 
 ### `GET /csp/{name}` — CSP 메타데이터 조회
 해당 CSP의 자격 증명 키/리전/기타 메타데이터를 반환합니다.
@@ -731,9 +746,40 @@ curl http://localhost:8081/honeybee/csp
 curl http://localhost:8081/honeybee/csp/azure
 #  { "name":"azure",
 #    "credential_keys":["clientId","clientSecret","tenantId","subscriptionId"],
-#    "credentials":[ {"key":"clientId","example":"<AZURE_CLIENT_ID>","description":"Azure Client ID, a GUID"}, ... ],
+#    "optional_credential_keys":["S3AccessKey","S3SecretKey"],
+#    "credentials":[ {"key":"clientId","example":"<AZURE_CLIENT_ID>","description":"Azure Client ID, a GUID","optional":false}, ...,
+#                    {"key":"S3AccessKey","example":"<AZURE_STORAGE_ACCOUNT_NAME>",
+#                     "description":"Azure storage account name, for object_storage (also taken as StorageAccountName)",
+#                     "optional":true,"resource_types":["object_storage"]}, ... ],
 #    "region_keys":["Region","Zone"], "default_region":"koreacentral" }
 ```
+
+- `credential_keys`는 필수 키만 담습니다(이전과 같음). `optional_credential_keys`는 그 밖에 받는 선택 키이고,
+  없는 CSP는 `[]`입니다.
+- `credentials[]`는 필수 키 다음에 선택 키를 담습니다. 선택 키는 `optional: true`이고 `resource_types`에 그 키가
+  필요한 `resource_type`(`["object_storage"]`)을 적습니다. 필수 키는 `optional: false`이고 `resource_types`가 없습니다.
+
+#### CSP credential의 선택 키
+
+ibm·openstack·kt·gcp·nhn·azure는 버킷을 기본 credential이 아니라 S3(호환) API 키로 읽습니다(cb-spider
+`GetS3ConnectionInfo`와 같은 규칙). 그래서 이 CSP의 csp 그룹은 필수 키 외에 `S3AccessKey`·`S3SecretKey`를 받습니다. 키 이름은 cb-tumblebug
+`template.credentials.yaml`의 "Cloud Storage interoperability" 키와 같습니다.
+aws·alibaba·tencent·ncp는 기본 credential로 버킷을 읽어 선택 키가 없고, S3 키를 보내면 다른 모르는 키처럼 400입니다.
+
+| CSP | `S3AccessKey` / `S3SecretKey`에 넣을 값 |
+|-----|------------------------------------------|
+| azure | 스토리지 계정 이름 / 스토리지 계정 키. `StorageAccountName`·`StorageAccountKey`로 보내도 받습니다 |
+| gcp | Cloud Storage HMAC 키의 access ID / secret |
+| ibm | Cloud Object Storage HMAC `access_key_id` / `secret_access_key` |
+| openstack | Identity > User Credentials 에 만든 사용자 credential 데이터(`{"access": ..., "secret": ...}`)의 access / secret |
+| nhn, kt | Object Storage S3 API 키의 access / secret |
+
+- 키 이름은 대소문자를 무시하고 `S3AccessKey`·`S3SecretKey`로 저장합니다(azure 별칭도 같은 이름으로).
+- **둘 다 주거나 둘 다 빼야** 합니다. 하나만 주면 400 `S3AccessKey and S3SecretKey must be given together`.
+  값이 빈 선택 키는 보내지 않은 것으로 봅니다.
+- 없어도 그룹 등록·수정·리전 조회와 `object_storage` 밖의 수집은 됩니다. `object_storage`는 등록·수정이 400,
+  디스커버리가 `unsupported: true`입니다.
+- `POST /source_group`, `PUT /source_group/{sgId}`, `POST /csp/{name}/region`이 모두 같은 규칙으로 검사합니다.
 
 `default_region`은 cb-spider 드라이버 메타정보에 적힌 그 CSP의 기본 질의 리전입니다(비어 있으면 생략).
 
@@ -751,7 +797,8 @@ curl http://localhost:8081/honeybee/csp/azure
 ### `POST /csp/{name}/region` - 그룹 없이 리전/존 목록 조회
 바디의 credential로 CSP에 live 질의해 리전과 각 리전의 zone을 돌려줍니다. 응답 모양은
 `GET /source_group/{sgId}/region`과 같습니다. credential은 이 조회에만 쓰고 **저장하거나 로그에 남기지
-않습니다**. 키는 `GET /csp/{name}`의 `credential_keys`를 따릅니다. 질의에 쓰는 리전은 그 CSP의 목록 조회용
+않습니다**. 키는 `GET /csp/{name}`의 `credential_keys`를 따르고, 그룹 등록과 같이 `optional_credential_keys`도
+받습니다(리전 조회에는 쓰지 않음). 질의에 쓰는 리전은 그 CSP의 목록 조회용
 기본 리전입니다.
 
 ```bash
@@ -790,7 +837,8 @@ curl "http://localhost:8081/honeybee/source_group/$SG/discover?resource_type=k8s
 채웁니다([버킷 리전](#버킷-리전)).
 
 CSP 드라이버에 해당 핸들러가 없는 `resource_type`(`k8s`·`nlb`·`rdbms`, 예: kt의 `k8s`·`rdbms`)은 CSP에 묻지 않고
-200과 빈 `items`, `unsupported: true`, 사유 `reason`을 돌려줍니다.
+200과 빈 `items`, `unsupported: true`, 사유 `reason`을 돌려줍니다. 선택 S3 키가 필요한 CSP인데 그룹 credential에
+없을 때의 `object_storage`도 같습니다(`reason`: `object_storage on gcp needs S3AccessKey and S3SecretKey in the source group credential`).
 
 ---
 

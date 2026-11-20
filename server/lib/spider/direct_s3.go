@@ -2,6 +2,7 @@ package spider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -60,6 +61,51 @@ func openStackS3Endpoint(kvList []KeyValue) (string, error) {
 	}
 
 	return host, nil
+}
+
+// S3AccessKey and S3SecretKey are the credential keys s3ConnRule reads first
+// for the providers of UsesS3Keys.
+const (
+	S3AccessKey = "S3AccessKey"
+	S3SecretKey = "S3SecretKey"
+)
+
+// s3KeyProviders are the providers whose buckets s3ConnRule reads with
+// S3AccessKey and S3SecretKey (or a provider-specific alias of them) instead
+// of the main credential keys. TestUsesS3Keys_MatchesS3ConnRule holds the two
+// together.
+var s3KeyProviders = map[string]bool{
+	"IBM": true, "OPENSTACK": true, "KT": true, "GCP": true, "NHN": true, "AZURE": true,
+}
+
+// UsesS3Keys reports whether the provider's buckets are read with the S3 keys
+// of the credential rather than its main keys. The provider is matched
+// case-insensitively.
+func UsesS3Keys(provider string) bool {
+	return s3KeyProviders[strings.ToUpper(strings.TrimSpace(provider))]
+}
+
+// ErrS3CredentialMissing marks an S3 connection that could not be made because
+// the credential lacks the S3 key of a provider that reads its buckets with
+// them (UsesS3Keys). No CSP has been contacted when it is returned.
+var ErrS3CredentialMissing = errors.New("the credential has no S3 key")
+
+// s3CredentialMissingError keeps the message of s3ConnRule while errors.Is
+// tells it apart as ErrS3CredentialMissing.
+type s3CredentialMissingError struct{ msg string }
+
+func (e s3CredentialMissingError) Error() string { return e.msg }
+
+func (e s3CredentialMissingError) Is(target error) bool { return target == ErrS3CredentialMissing }
+
+// s3KeyMissing is the error of an empty S3 key. Only a provider of UsesS3Keys
+// is marked: the others read the main keys, which a source group cannot be
+// registered without.
+func s3KeyMissing(providerName, msg string) error {
+	if UsesS3Keys(providerName) {
+		return s3CredentialMissingError{msg: msg}
+	}
+	return errors.New(msg)
 }
 
 // s3ConnRule applies the per-provider endpoint and credential rules of
@@ -154,10 +200,10 @@ func s3ConnRule(providerName, regionID string, kvList []KeyValue) (*s3ConnInfo, 
 	}
 
 	if accessKey == "" {
-		return nil, fmt.Errorf("accessKey is empty for provider '%s'", providerName)
+		return nil, s3KeyMissing(providerName, fmt.Sprintf("accessKey is empty for provider '%s'", providerName))
 	}
 	if secretKey == "" {
-		return nil, fmt.Errorf("secretKey is empty for provider '%s'", providerName)
+		return nil, s3KeyMissing(providerName, fmt.Sprintf("secretKey is empty for provider '%s'", providerName))
 	}
 
 	return &s3ConnInfo{

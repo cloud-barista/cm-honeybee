@@ -76,13 +76,54 @@ var credentialExamples = map[string]map[string]credExample{
 	},
 }
 
-// buildCredentialFields pairs each required credential key with its example.
-func buildCredentialFields(canonical string, keys []string) []model.CSPCredentialField {
-	exMap := credentialExamples[canonical]
-	fields := make([]model.CSPCredentialField, 0, len(keys))
+// optionalCredentialExamples maps canonical CSP name -> optional credential key
+// (optionalCredentialKeys) -> example, as credentialExamples does for the
+// required keys. The keys are the "Cloud Storage interoperability" keys of
+// cb-tumblebug's template.credentials.yaml.
+var optionalCredentialExamples = map[string]map[string]credExample{
+	"AZURE": {
+		"S3AccessKey": {"<AZURE_STORAGE_ACCOUNT_NAME>", "Azure storage account name, for object_storage (also taken as StorageAccountName)"},
+		"S3SecretKey": {"<AZURE_STORAGE_ACCOUNT_KEY>", "Azure storage account key, for object_storage (also taken as StorageAccountKey)"},
+	},
+	"GCP": {
+		"S3AccessKey": {"<GCP_HMAC_ACCESS_ID>", "GCP Cloud Storage HMAC key access ID, for object_storage"},
+		"S3SecretKey": {"<GCP_HMAC_SECRET>", "GCP Cloud Storage HMAC key secret, for object_storage"},
+	},
+	"IBM": {
+		"S3AccessKey": {"<IBM_COS_HMAC_ACCESS_KEY_ID>", "IBM Cloud Object Storage HMAC access_key_id, for object_storage"},
+		"S3SecretKey": {"<IBM_COS_HMAC_SECRET_ACCESS_KEY>", "IBM Cloud Object Storage HMAC secret_access_key, for object_storage"},
+	},
+	"OPENSTACK": {
+		"S3AccessKey": {"<OPENSTACK_CREDENTIAL_ACCESS>", "OpenStack user credential access (Identity > User Credentials), for object_storage"},
+		"S3SecretKey": {"<OPENSTACK_CREDENTIAL_SECRET>", "OpenStack user credential secret (Identity > User Credentials), for object_storage"},
+	},
+	"NHN": {
+		"S3AccessKey": {"<NHN_S3_ACCESS_KEY>", "NHN Cloud Object Storage S3 API credential access key, for object_storage"},
+		"S3SecretKey": {"<NHN_S3_SECRET_KEY>", "NHN Cloud Object Storage S3 API credential secret key, for object_storage"},
+	},
+	"KT": {
+		"S3AccessKey": {"<KT_S3_ACCESS_KEY>", "KT Cloud Object Storage S3 access key, for object_storage"},
+		"S3SecretKey": {"<KT_S3_SECRET_KEY>", "KT Cloud Object Storage S3 secret key, for object_storage"},
+	},
+}
+
+// buildCredentialFields pairs each required credential key, then each
+// optional one, with its example. The optional keys are for object_storage
+// only (optionalCredentialKeys).
+func buildCredentialFields(canonical string, keys []string, optionalKeys []string) []model.CSPCredentialField {
+	fields := make([]model.CSPCredentialField, 0, len(keys)+len(optionalKeys))
 	for _, k := range keys {
 		f := model.CSPCredentialField{Key: k}
-		if ex, ok := exMap[k]; ok {
+		if ex, ok := credentialExamples[canonical][k]; ok {
+			f.Example = ex.example
+			f.Description = ex.description
+		}
+		fields = append(fields, f)
+	}
+	for _, k := range optionalKeys {
+		f := model.CSPCredentialField{Key: k, Optional: true,
+			ResourceTypes: []string{serverCommon.ResourceTypeObjectStorage}}
+		if ex, ok := optionalCredentialExamples[canonical][k]; ok {
 			f.Example = ex.example
 			f.Description = ex.description
 		}
@@ -183,7 +224,7 @@ func ListCSP(c echo.Context) error {
 //
 //	@ID				get-csp
 //	@Summary		Get CSP metadata
-//	@Description	Return the credential keys, regions, and other metadata for the given CSP. Name is matched case-insensitively.
+//	@Description	Return the credential keys, regions, and other metadata for the given CSP. Name is matched case-insensitively. credential_keys must all be given to a csp source group; optional_credential_keys (S3AccessKey, S3SecretKey on ibm, openstack, kt, gcp, nhn and azure) may be given besides, all or none, and object_storage connections of those CSPs need them.
 //	@Tags			[CSP] Metadata
 //	@Accept			json
 //	@Produce		json
@@ -221,12 +262,15 @@ func GetCSP(c echo.Context) error {
 		credKeys = meta.Credential
 	}
 
+	optionalKeys := optionalCredentialKeys(canonical)
+
 	return c.JSONPretty(http.StatusOK, model.CSPInfo{
-		Name:           strings.ToLower(canonical),
-		CredentialKeys: credKeys,
-		Credentials:    buildCredentialFields(canonical, credKeys),
-		RegionKeys:     meta.Region,
-		DefaultRegion:  defaultRegion,
+		Name:                   strings.ToLower(canonical),
+		CredentialKeys:         credKeys,
+		OptionalCredentialKeys: optionalKeys,
+		Credentials:            buildCredentialFields(canonical, credKeys, optionalKeys),
+		RegionKeys:             meta.Region,
+		DefaultRegion:          defaultRegion,
 
 		SupportedResourceTypes: supportedResourceTypes(canonical),
 	}, " ")
@@ -313,14 +357,14 @@ func maskCredential(err error, credential []spider.KeyValue) error {
 //
 //	@ID				list-csp-regions
 //	@Summary		List CSP regions with a credential
-//	@Description	Return the CSP's available regions and zones, queried live with the credential in the body, so the region of a csp source group can be chosen before the group exists. The credential takes the keys GET /csp/{name} lists and is neither stored nor logged. The region queried is the CSP's default one for listing.
+//	@Description	Return the CSP's available regions and zones, queried live with the credential in the body, so the region of a csp source group can be chosen before the group exists. The credential takes the keys GET /csp/{name} lists (credential_keys, and optional_credential_keys as a csp source group does) and is neither stored nor logged. The region queried is the CSP's default one for listing.
 //	@Tags			[CSP] Metadata
 //	@Accept			json
 //	@Produce		json
 //	@Param			name path string true "CSP name (case-insensitive, e.g. aws or AWS)"
 //	@Param			Credential body model.ListCSPRegionReq true "CSP credential"
 //	@Success		200	{object}	model.ListRegionRes		"Regions and zones"
-//	@Failure		400	{object}	common.ErrorResponse	"Unsupported CSP name, or a credential key missing or not accepted"
+//	@Failure		400	{object}	common.ErrorResponse	"Unsupported CSP name, a credential key missing or not accepted, or one optional key without the other"
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to read CSP metadata or query the CSP"
 //	@Router			/csp/{name}/region [post]
 func ListCSPRegions(c echo.Context) error {

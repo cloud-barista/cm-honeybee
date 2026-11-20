@@ -3,10 +3,17 @@ package model
 // CSPInfo describes a CSP supported by cb-spider together with the credential
 // keys honeybee will require when registering a SourceGroup of that CSP.
 type CSPInfo struct {
-	Name           string   `json:"name" example:"AWS"`
+	Name string `json:"name" example:"AWS"`
+	// CredentialKeys are the credential keys a csp source group must be given.
 	CredentialKeys []string `json:"credential_keys"`
-	// Credentials lists each required credential key with an example value and a
-	// short description, so a client can render a self-documenting input form.
+	// OptionalCredentialKeys are the credential keys a csp source group may be
+	// given besides CredentialKeys, all of them or none. They are the S3 keys
+	// buckets are read with on a CSP whose main keys do not reach its object
+	// storage, so object_storage connections need them. Empty for the others.
+	OptionalCredentialKeys []string `json:"optional_credential_keys"`
+	// Credentials lists each required credential key, then each optional one,
+	// with an example value and a short description, so a client can render a
+	// self-documenting input form.
 	Credentials []CSPCredentialField `json:"credentials"`
 	// RegionKeys are the keys needed to define a region for this CSP (e.g.
 	// ["Region","Zone"]) - NOT the list of available regions. The actual region
@@ -25,6 +32,12 @@ type CSPCredentialField struct {
 	Key         string `json:"key" example:"ClientId"`
 	Example     string `json:"example,omitempty"`
 	Description string `json:"description,omitempty"`
+	// Optional is true for a key of OptionalCredentialKeys.
+	Optional bool `json:"optional"`
+	// ResourceTypes are the resource_type values an optional key is needed for
+	// (e.g. ["object_storage"]). Empty for a required key, which every
+	// resource_type needs.
+	ResourceTypes []string `json:"resource_types,omitempty"`
 }
 
 // ListCSPRes is the response payload for GET /csp.
@@ -38,7 +51,8 @@ type ListCSPRes struct {
 // ListCSPRegionReq is the request body for POST /csp/{name}/region. The
 // credential is used for this one query and is not stored.
 type ListCSPRegionReq struct {
-	// Credential takes the keys GET /csp/{name} lists in credential_keys.
+	// Credential takes the keys GET /csp/{name} lists in credential_keys, and
+	// the ones in optional_credential_keys as a csp source group does.
 	Credential []KeyValue `json:"credential"`
 }
 

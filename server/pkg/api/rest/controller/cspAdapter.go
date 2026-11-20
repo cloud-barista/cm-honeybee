@@ -823,9 +823,12 @@ func cspNotFound(msg string) error {
 // the resource cannot be the connection's, rather than because the CSP could
 // not be asked. Such a connection is refused at registration; the others are
 // registered with connection_status failed and checked again on refresh.
+// A bucket of a group whose credential has no S3 keys is refused as well: no
+// CSP is contacted then (spider.ErrS3CredentialMissing), and asking again
+// cannot succeed until the group's credential is changed.
 func cspResourceRejected(err error) bool {
 	return errors.Is(err, ErrCSPResourceNotFound) || errors.Is(err, ErrBucketRegionMismatch) ||
-		errors.Is(err, ErrCSPResourceUnsupported)
+		errors.Is(err, ErrCSPResourceUnsupported) || errors.Is(err, spider.ErrS3CredentialMissing)
 }
 
 // checkCSPResourceType refuses a resource_type the source group's provider is
@@ -1199,7 +1202,7 @@ var (
 func findBucketByName(conn spider.Conn, bucketName string) (*spider.S3BucketInfo, error) {
 	buckets, err := listS3Buckets(conn)
 	if err != nil {
-		return nil, err
+		return nil, s3CredentialMissing(conn, err)
 	}
 
 	found := matchBucket(buckets, bucketName)
@@ -1216,6 +1219,23 @@ func findBucketByName(conn spider.Conn, bucketName string) (*spider.S3BucketInfo
 	}
 
 	return found, nil
+}
+
+// s3CredentialMissingMsg says which keys the source group's credential lacks
+// for object_storage on the provider.
+func s3CredentialMissingMsg(provider string) string {
+	return "object_storage on " + strings.ToLower(provider) + " needs " +
+		strings.Join(optionalCredentialKeys(provider), " and ") + " in the source group credential"
+}
+
+// s3CredentialMissing words an error of the bucket calls that the group's
+// credential has no S3 keys (spider.ErrS3CredentialMissing) as what the group
+// is missing, keeping it marked. Other errors are returned as they are.
+func s3CredentialMissing(conn spider.Conn, err error) error {
+	if !errors.Is(err, spider.ErrS3CredentialMissing) {
+		return err
+	}
+	return cspResourceError{kind: spider.ErrS3CredentialMissing, msg: s3CredentialMissingMsg(conn.Provider)}
 }
 
 // bucketRegionMismatch refuses a bucket that lives outside the source group's

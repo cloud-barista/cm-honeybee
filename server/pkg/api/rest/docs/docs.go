@@ -283,7 +283,7 @@ const docTemplate = `{
         },
         "/csp/{name}": {
             "get": {
-                "description": "Return the credential keys, regions, and other metadata for the given CSP. Name is matched case-insensitively.",
+                "description": "Return the credential keys, regions, and other metadata for the given CSP. Name is matched case-insensitively. credential_keys must all be given to a csp source group; optional_credential_keys (S3AccessKey, S3SecretKey on ibm, openstack, kt, gcp, nhn and azure) may be given besides, all or none, and object_storage connections of those CSPs need them.",
                 "consumes": [
                     "application/json"
                 ],
@@ -328,7 +328,7 @@ const docTemplate = `{
         },
         "/csp/{name}/region": {
             "post": {
-                "description": "Return the CSP's available regions and zones, queried live with the credential in the body, so the region of a csp source group can be chosen before the group exists. The credential takes the keys GET /csp/{name} lists and is neither stored nor logged. The region queried is the CSP's default one for listing.",
+                "description": "Return the CSP's available regions and zones, queried live with the credential in the body, so the region of a csp source group can be chosen before the group exists. The credential takes the keys GET /csp/{name} lists (credential_keys, and optional_credential_keys as a csp source group does) and is neither stored nor logged. The region queried is the CSP's default one for listing.",
                 "consumes": [
                     "application/json"
                 ],
@@ -366,7 +366,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Unsupported CSP name, or a credential key missing or not accepted",
+                        "description": "Unsupported CSP name, a credential key missing or not accepted, or one optional key without the other",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -2881,7 +2881,7 @@ const docTemplate = `{
         },
         "/source_group/{sgId}/discover": {
             "get": {
-                "description": "Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Object-storage buckets are limited to the source group's region where the CSP reports a bucket's region (AWS), and carry that region. Used by the UI to populate ConnectionInfo selection.",
+                "description": "Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Object-storage buckets are limited to the source group's region where the CSP reports a bucket's region (AWS), and carry that region. A resource type the CSP's driver has no handler for (k8s, nlb, rdbms) answers 200 with empty items and unsupported true, and so does object_storage on a CSP that reads buckets with S3 keys (GET /csp/{name} optional_credential_keys) when the source group credential has none. Used by the UI to populate ConnectionInfo selection.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5859,6 +5859,17 @@ const docTemplate = `{
                 "key": {
                     "type": "string",
                     "example": "ClientId"
+                },
+                "optional": {
+                    "description": "Optional is true for a key of OptionalCredentialKeys.",
+                    "type": "boolean"
+                },
+                "resource_types": {
+                    "description": "ResourceTypes are the resource_type values an optional key is needed for\n(e.g. [\"object_storage\"]). Empty for a required key, which every\nresource_type needs.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -5866,13 +5877,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "credential_keys": {
+                    "description": "CredentialKeys are the credential keys a csp source group must be given.",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "credentials": {
-                    "description": "Credentials lists each required credential key with an example value and a\nshort description, so a client can render a self-documenting input form.",
+                    "description": "Credentials lists each required credential key, then each optional one,\nwith an example value and a short description, so a client can render a\nself-documenting input form.",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPCredentialField"
@@ -5884,6 +5896,13 @@ const docTemplate = `{
                 "name": {
                     "type": "string",
                     "example": "AWS"
+                },
+                "optional_credential_keys": {
+                    "description": "OptionalCredentialKeys are the credential keys a csp source group may be\ngiven besides CredentialKeys, all of them or none. They are the S3 keys\nbuckets are read with on a CSP whose main keys do not reach its object\nstorage, so object_storage connections need them. Empty for the others.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "region_keys": {
                     "description": "RegionKeys are the keys needed to define a region for this CSP (e.g.\n[\"Region\",\"Zone\"]) - NOT the list of available regions. The actual region\nlist requires a credential; get it via GET /source_group/{sgId}/region,\nor via POST /csp/{name}/region before the group exists.",
@@ -6817,7 +6836,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "credential": {
-                    "description": "Credential takes the keys GET /csp/{name} lists in credential_keys.",
+                    "description": "Credential takes the keys GET /csp/{name} lists in credential_keys, and\nthe ones in optional_credential_keys as a csp source group does.",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue"

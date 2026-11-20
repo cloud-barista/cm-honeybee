@@ -180,6 +180,21 @@ spelling differs per CSP: AWS uses lowercase snake_case
 (`aws_access_key_id`, `aws_secret_access_key`) while Azure uses camelCase
 (`clientId`, `clientSecret`, `tenantId`, `subscriptionId`).
 
+`optional_credential_keys` lists the keys a group may take besides them. On
+ibm, openstack, kt, gcp, nhn and azure the buckets are read through an S3 API
+that the main credential does not reach, so these CSPs take `S3AccessKey` and
+`S3SecretKey` (the Cloud Storage interoperability keys of cb-tumblebug's
+`template.credentials.yaml`; on azure the storage account name and key, also
+taken as `StorageAccountName` and `StorageAccountKey`). They are optional: a group without them registers, lists
+regions and collects every other resource type, but its `object_storage`
+connections are refused (3.3). Give both or neither; one alone is refused with
+400 (`S3AccessKey and S3SecretKey must be given together`). The key names are
+matched case-insensitively and stored as `S3AccessKey` and `S3SecretKey`. The
+other CSPs read buckets with the main credential and have no optional keys;
+an S3 key sent to them is refused like any unknown key. `credentials` lists
+the required keys, then the optional ones with `optional: true` and
+`resource_types: ["object_storage"]`.
+
 It also includes `region_keys`, which is the shape of a region for that CSP
 (e.g. `["Region", "Zone"]`) rather than a list of regions, and `default_region`.
 The actual regions need a credential. Before the group exists, post the
@@ -197,7 +212,7 @@ curl -X 'POST' 'http://127.0.0.1:8081/honeybee/csp/aws/region' \
 `GET /csp` also returns `supported_resource_types`, the `resource_type` values a
 connection of each CSP can be collected as (3.3). It is read from the linked
 driver's capabilities; `object_storage` is listed for every CSP whose buckets are
-read through the S3 API.
+read through the S3 API, including the ones that need the optional S3 keys above.
 
 Then create the group:
 ```shell
@@ -293,7 +308,9 @@ curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=
 ```
 When the CSP's driver has no handler for the `resource_type` (`k8s`, `nlb` or
 `rdbms`; e.g. `k8s` and `rdbms` on kt), discovery answers 200 with empty `items`,
-`unsupported: true` and the reason in `reason`, without asking the CSP.
+`unsupported: true` and the reason in `reason`, without asking the CSP. So does
+`object_storage` on a group whose CSP needs the optional S3 keys (2.2) when the
+group's credential has none.
 Then register the picked resource:
 ```shell
 curl -X 'POST' \
@@ -320,6 +337,11 @@ Registration checks the resource with the CSP:
   is asked, e.g. `resource_type 'rdbms' is not supported for kt (supported: vm,
   object_storage, nlb)`. Connections stored with such a type before are kept,
   and their refresh asks the CSP as before.
+- An `object_storage` connection on a group whose CSP needs the optional S3 keys
+  (2.2) and whose credential has none is refused with 400 before the CSP is
+  asked, e.g. `object_storage on gcp needs S3AccessKey and S3SecretKey in the
+  source group credential`. Add them with `PUT /source_group/{sgID}`, whose
+  `credential` replaces the stored one and so must carry the required keys as well.
 - A `resource_id` the CSP does not have is refused with 400. The resource counts
   as missing only when the CSP listing came back and holds no such resource; for
   `k8s`, reading the cluster by that ID must also fail or return another cluster.
@@ -337,8 +359,9 @@ Registration checks the resource with the CSP:
 - On the other resource types SSH fields are refused with 400. A `vm` connection
   changed into another resource type drops its SSH fields and secrets.
 - A changed `resource_type` or `resource_id` is checked as on registration, with
-  the same 400 for a `resource_type` the CSP is not collected as, a missing
-  resource or a bucket in another region.
+  the same 400 for a `resource_type` the CSP is not collected as, a bucket on a
+  group without the S3 keys its CSP needs, a missing resource or a bucket in
+  another region.
 
 `GET .../connection_info` takes `resource_type` (`vm`, `k8s`, `object_storage`,
 `nlb`, `rdbms`) to list one type. On an on-premise group `resource_type=vm`

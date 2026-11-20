@@ -1087,17 +1087,31 @@ definitions:
       key:
         example: ClientId
         type: string
+      optional:
+        description: Optional is true for a key of OptionalCredentialKeys.
+        type: boolean
+      resource_types:
+        description: |-
+          ResourceTypes are the resource_type values an optional key is needed for
+          (e.g. ["object_storage"]). Empty for a required key, which every
+          resource_type needs.
+        items:
+          type: string
+        type: array
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPInfo:
     properties:
       credential_keys:
+        description: CredentialKeys are the credential keys a csp source group must
+          be given.
         items:
           type: string
         type: array
       credentials:
         description: |-
-          Credentials lists each required credential key with an example value and a
-          short description, so a client can render a self-documenting input form.
+          Credentials lists each required credential key, then each optional one,
+          with an example value and a short description, so a client can render a
+          self-documenting input form.
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPCredentialField'
         type: array
@@ -1106,6 +1120,15 @@ definitions:
       name:
         example: AWS
         type: string
+      optional_credential_keys:
+        description: |-
+          OptionalCredentialKeys are the credential keys a csp source group may be
+          given besides CredentialKeys, all of them or none. They are the S3 keys
+          buckets are read with on a CSP whose main keys do not reach its object
+          storage, so object_storage connections need them. Empty for the others.
+        items:
+          type: string
+        type: array
       region_keys:
         description: |-
           RegionKeys are the keys needed to define a region for this CSP (e.g.
@@ -1813,7 +1836,9 @@ definitions:
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListCSPRegionReq:
     properties:
       credential:
-        description: Credential takes the keys GET /csp/{name} lists in credential_keys.
+        description: |-
+          Credential takes the keys GET /csp/{name} lists in credential_keys, and
+          the ones in optional_credential_keys as a csp source group does.
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue'
         type: array
@@ -6973,7 +6998,10 @@ paths:
       consumes:
       - application/json
       description: Return the credential keys, regions, and other metadata for the
-        given CSP. Name is matched case-insensitively.
+        given CSP. Name is matched case-insensitively. credential_keys must all be
+        given to a csp source group; optional_credential_keys (S3AccessKey, S3SecretKey
+        on ibm, openstack, kt, gcp, nhn and azure) may be given besides, all or none,
+        and object_storage connections of those CSPs need them.
       operationId: get-csp
       parameters:
       - description: CSP name (case-insensitive, e.g. aws or AWS)
@@ -7006,6 +7034,7 @@ paths:
       description: Return the CSP's available regions and zones, queried live with
         the credential in the body, so the region of a csp source group can be chosen
         before the group exists. The credential takes the keys GET /csp/{name} lists
+        (credential_keys, and optional_credential_keys as a csp source group does)
         and is neither stored nor logged. The region queried is the CSP's default
         one for listing.
       operationId: list-csp-regions
@@ -7029,7 +7058,8 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListRegionRes'
         "400":
-          description: Unsupported CSP name, or a credential key missing or not accepted
+          description: Unsupported CSP name, a credential key missing or not accepted,
+            or one optional key without the other
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
@@ -8760,7 +8790,11 @@ paths:
         balancers / managed databases reachable through the CSP connection bound to
         this SourceGroup. Object-storage buckets are limited to the source group's
         region where the CSP reports a bucket's region (AWS), and carry that region.
-        Used by the UI to populate ConnectionInfo selection.
+        A resource type the CSP's driver has no handler for (k8s, nlb, rdbms) answers
+        200 with empty items and unsupported true, and so does object_storage on a
+        CSP that reads buckets with S3 keys (GET /csp/{name} optional_credential_keys)
+        when the source group credential has none. Used by the UI to populate ConnectionInfo
+        selection.
       operationId: discover-source-group-resources
       parameters:
       - description: ID of the SourceGroup (must be type=csp)
