@@ -379,7 +379,7 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
 | `vm` | VM 핸들러 `GetVM` (CSP 리소스 ID) | `SavedInfraInfo.csp_data` | `GET /.../infra`의 `csp` 섹션 |
 | `k8s` | 클러스터 핸들러 `ListCluster` 후 ID 매칭, 목록에 없으면 `GetCluster`(system ID)로 조회해 ID가 같을 때만 채택 | `SavedKubernetesInfo` | `GET /.../kubernetes` (`csp` 섹션에 노드 그룹) |
 | `object_storage` | S3 버킷 목록 후 이름 매칭 + 버킷 리전 판정(아래 표), 버킷 리전의 엔드포인트에서 상세 조회 | `SavedDataInfo` (버킷 리전을 `region`으로 함께 저장) | `GET /.../data` |
-| `rdbms` | RDBMS 핸들러 목록 후 ID 매칭, DB가 있는 zone에서 스펙 조회 | `SavedRDBMSInfo` | `GET /.../rdbms` |
+| `rdbms` | RDBMS 핸들러 목록 후 ID 매칭, DB 정보에 크기가 없으면 DB가 있는 zone에서 스펙 조회 | `SavedRDBMSInfo` | `GET /.../rdbms` |
 | `nlb` | NLB 핸들러 `GetNLB`, 맞지 않으면 목록 후 ID 매칭 | `SavedNLBInfo` | `GET /.../nlb` |
 
 - **`k8s`**: 관리형 클러스터의 이름(CSP의 이름, 없으면 system ID)·버전·상태·생성 시각·노드 그룹(스펙,
@@ -406,6 +406,10 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
   조회합니다. zone은 드라이버의 `KeyValueList`에서 읽습니다: AWS `AvailabilityZone`, GCP `GceZone`,
   Alibaba `ZoneId`, Tencent `Zone`(키 이름은 대소문자 무시, 숫자뿐인 값은 zone ID라 쓰지 않음). Azure·IBM처럼
   zone을 주지 않으면 그룹 zone으로 조회합니다. Alibaba는 다른 zone으로 조회하면 스펙을 찾지 못합니다.
+  다만 드라이버의 `KeyValueList`에 vCPU 수와 메모리(MiB)가 둘 다 양의 정수로 있으면 그 값을 스펙으로 쓰고
+  스펙은 조회하지 않습니다. 지금은 Alibaba의 `DBInstanceCPU`·`DBInstanceMemory`만 읽습니다(키 이름은 대소문자
+  무시). Alibaba의 스펙 조회는 1분을 넘겨 드라이버 호출 상한(60초)에 걸리기 때문입니다. 둘 중 하나라도 없거나
+  0이면 위처럼 스펙을 조회합니다.
   스펙 조회가 실패해도 import는 성공하고 정제 결과의 CPU·메모리만 비어 cm-beetle이 기본값을 채웁니다.
 
 > **주의:** CSP 소스의 k8s·오브젝트 스토리지 정보를 채우려면 `POST /import/kubernetes`나

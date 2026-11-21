@@ -1011,10 +1011,18 @@ func matchRDBMS(instances []spider.RDBMSInfo, resourceID string) *spider.RDBMSIn
 // one, rather than in the group's zone: alibaba looks the spec up among the
 // engine versions a zone offers, and in another zone of the region it finds
 // none, which left a database outside the group's zone without CPU and memory.
+//
+// Where the CSP's record of the instance already carries its vCPU count and
+// memory (rdbmsSizeKeys), those are the spec and the spec is not asked for:
+// alibaba's spec lookup can outlast the driver call timeout.
 func collectRDBMS(conn spider.Conn, resourceID string) (model.RDBMSInfo, error) {
 	db, err := findRDBMSByID(conn, resourceID)
 	if err != nil {
 		return model.RDBMSInfo{}, err
+	}
+
+	if spec := rdbmsSpecFromRecord(db); spec != nil {
+		return model.RDBMSInfo{RDBMS: db, DBSpec: spec}, nil
 	}
 
 	specConn := conn

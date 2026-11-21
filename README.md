@@ -574,7 +574,11 @@ another region, since the model has one region for all of its buckets.
 does not report one (Azure, IBM). The group result names the databases' zone
 only when all of them report the same one, and the group's zone otherwise. The
 spec (vCPU and memory) of a database is collected in its own zone as well:
-Alibaba finds no spec when asked in another zone of the region.
+Alibaba finds no spec when asked in another zone of the region. Where the
+driver's record already carries the vCPU count and memory (Alibaba
+`DBInstanceCPU` and `DBInstanceMemory`), those are used and the spec is not
+looked up, since Alibaba's spec lookup can outlast the 60-second driver call
+timeout.
 
 ## Health-check
 
