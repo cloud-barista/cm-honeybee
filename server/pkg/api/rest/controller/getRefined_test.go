@@ -9,7 +9,6 @@ import (
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/network"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
-	"github.com/cloud-barista/cm-honeybee/server/pkg/api/rest/model"
 )
 
 func TestMibToGiB(t *testing.T) {
@@ -138,7 +137,7 @@ func TestListeningPortsFromListeners(t *testing.T) {
 		{Name: "sshd", Ports: []int{22}}, // collected by an agent without listen_sockets
 	}
 
-	want := []model.ListeningPortProperty{
+	want := []inframodel.ListeningPortProperty{
 		{Protocol: "tcp", Port: 22, ProcessName: "sshd"},
 		{Protocol: "tcp", BindAddress: "0.0.0.0", Port: 80, ProcessName: "nginx"},
 		{Protocol: "tcp", BindAddress: "::", Port: 80, ProcessName: "nginx"},
@@ -154,19 +153,25 @@ func TestListeningPortsFromListeners(t *testing.T) {
 	}
 }
 
-// TestBuildRefinedInfraModelJSON pins the JSON path cm-beetle reads the
-// listening ports from: onpremiseInfraModel.nodes[].listeningPorts[], next to
-// the node's other fields rather than nested under the embedded NodeProperty.
-func TestBuildRefinedInfraModelJSON(t *testing.T) {
-	onprem := inframodel.OnpremInfra{Nodes: []inframodel.NodeProperty{
-		{Hostname: "web-1"},
-		{Hostname: "k8s-worker"}, // appended from the Kubernetes API
-	}}
-	ports := [][]model.ListeningPortProperty{
-		{{Protocol: "tcp", BindAddress: "0.0.0.0", Port: 8080, ProcessName: "nginx"}},
+// TestRefinedInfraListeningPortsJSON pins the JSON path cm-beetle reads the
+// listening ports from: onpremiseInfraModel.nodes[].listeningPorts[], and
+// verifies that nodes without ports omit the field.
+func TestRefinedInfraListeningPortsJSON(t *testing.T) {
+	model := inframodel.OnpremiseInfraModel{
+		OnpremiseInfraModel: inframodel.OnpremInfra{
+			Nodes: []inframodel.NodeProperty{
+				{
+					Hostname: "web-1",
+					ListeningPorts: []inframodel.ListeningPortProperty{
+						{Protocol: "tcp", BindAddress: "0.0.0.0", Port: 8080, ProcessName: "nginx"},
+					},
+				},
+				{Hostname: "k8s-worker"}, // appended from the Kubernetes API
+			},
+		},
 	}
 
-	b, err := json.Marshal(buildRefinedInfraModel(onprem, ports))
+	b, err := json.Marshal(model)
 	if err != nil {
 		t.Fatal(err)
 	}

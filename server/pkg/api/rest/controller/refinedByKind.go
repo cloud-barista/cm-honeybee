@@ -194,7 +194,7 @@ func GetNLBInfoRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	onpremiseInfra, _, err := connRefinedOnpremInfra(sourceGroup, connectionInfo)
+	onpremiseInfra, err := connRefinedOnpremInfra(sourceGroup, connectionInfo)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
@@ -231,7 +231,7 @@ func GetNLBInfoSourceGroupRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	onpremiseInfra, _ := groupRefinedOnpremInfra(sourceGroup, *list)
+	onpremiseInfra := groupRefinedOnpremInfra(sourceGroup, *list)
 
 	return c.JSONPretty(http.StatusOK, refinedNLBModel(onpremiseInfra.NLBs), " ")
 }

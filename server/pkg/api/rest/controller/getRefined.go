@@ -309,7 +309,7 @@ func cspPortRange(from, to string) string {
 // tryGetListeningPorts returns the listening ports recorded in the saved
 // software information of a connection. A connection whose software has not
 // been imported, such as a CSP source without the agent, has none.
-func tryGetListeningPorts(connID string) []model.ListeningPortProperty {
+func tryGetListeningPorts(connID string) []inframodel.ListeningPortProperty {
 	saved, err := dao.SavedSoftwareInfoGet(connID)
 	if err != nil || strings.TrimSpace(saved.SoftwareData) == "" {
 		return nil
@@ -331,10 +331,10 @@ func tryGetListeningPorts(connID string) []model.ListeningPortProperty {
 // its TCP LISTEN ports, which are passed on as TCP without a bind address.
 // The result is sorted by protocol, port, bind address and process name,
 // without duplicates.
-func listeningPortsFromListeners(listeners []software.Listener) []model.ListeningPortProperty {
-	var ports []model.ListeningPortProperty
-	seen := map[model.ListeningPortProperty]bool{}
-	add := func(p model.ListeningPortProperty) {
+func listeningPortsFromListeners(listeners []software.Listener) []inframodel.ListeningPortProperty {
+	var ports []inframodel.ListeningPortProperty
+	seen := map[inframodel.ListeningPortProperty]bool{}
+	add := func(p inframodel.ListeningPortProperty) {
 		if p.Port <= 0 || seen[p] {
 			return
 		}
@@ -345,7 +345,7 @@ func listeningPortsFromListeners(listeners []software.Listener) []model.Listenin
 	for _, l := range listeners {
 		if len(l.ListenSockets) > 0 {
 			for _, s := range l.ListenSockets {
-				add(model.ListeningPortProperty{
+				add(inframodel.ListeningPortProperty{
 					Protocol:    s.Protocol,
 					BindAddress: s.BindAddress,
 					Port:        s.Port,
@@ -355,7 +355,7 @@ func listeningPortsFromListeners(listeners []software.Listener) []model.Listenin
 			continue
 		}
 		for _, port := range l.Ports {
-			add(model.ListeningPortProperty{Protocol: "tcp", Port: port, ProcessName: l.Name})
+			add(inframodel.ListeningPortProperty{Protocol: "tcp", Port: port, ProcessName: l.Name})
 		}
 	}
 
@@ -374,30 +374,6 @@ func listeningPortsFromListeners(listeners []software.Listener) []model.Listenin
 	})
 
 	return ports
-}
-
-// buildRefinedInfraModel wraps the refined infra into the response, attaching
-// to each node collected from a connection that connection's listening ports.
-// listeningPorts is indexed like the connection nodes, which mergeK8sNodes
-// keeps in place; nodes it appends from the Kubernetes API have none.
-func buildRefinedInfraModel(onprem inframodel.OnpremInfra, listeningPorts [][]model.ListeningPortProperty) model.RefinedOnpremiseInfraModel {
-	nodes := make([]model.RefinedNodeProperty, 0, len(onprem.Nodes))
-	for i, n := range onprem.Nodes {
-		node := model.RefinedNodeProperty{NodeProperty: n}
-		if i < len(listeningPorts) {
-			node.ListeningPorts = listeningPorts[i]
-		}
-		nodes = append(nodes, node)
-	}
-
-	return model.RefinedOnpremiseInfraModel{
-		OnpremiseInfraModel: model.RefinedOnpremInfra{
-			Network:    onprem.Network,
-			Nodes:      nodes,
-			K8sCluster: onprem.K8sCluster,
-			NLBs:       onprem.NLBs,
-		},
-	}
 }
 
 // mibToGB converts a mebibyte reading into the gigabytes the refined model
@@ -1241,7 +1217,7 @@ func doGetRefinedSoftwareInfo(softwareInfo *software.Software, connID string) (*
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
 //	@Param			connId path string true "ID of the connection info."
-//	@Success		200	{object}	model.RefinedOnpremiseInfraModel	"Successfully get refined information of the infra."
+//	@Success		200	{object}	inframodel.OnpremiseInfraModel	"Successfully get refined information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
 //	@Router			/source_group/{sgId}/connection_info/{connId}/infra/refined [get]
@@ -1266,20 +1242,23 @@ func GetInfraInfoRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	onpremiseInfra, listeningPorts, err := connRefinedOnpremInfra(sourceGroup, connectionInfo)
+	onpremiseInfra, err := connRefinedOnpremInfra(sourceGroup, connectionInfo)
 	if err != nil {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
+	return c.JSONPretty(http.StatusOK, inframodel.OnpremiseInfraModel{
+		OnpremiseInfraModel: onpremiseInfra,
+	}, " ")
 }
 
 // connRefinedOnpremInfra builds the refined infra of one connection, as
 // infra/refined of the connection answers it. k8s/refined and nlb/refined of
 // the connection take their part of it from here, so they cannot drift apart.
-func connRefinedOnpremInfra(sourceGroup *model.SourceGroup, connectionInfo *model.ConnectionInfo) (inframodel.OnpremInfra, [][]model.ListeningPortProperty, error) {
-	var onpremiseInfra inframodel.OnpremInfra
-	var listeningPorts [][]model.ListeningPortProperty
+func connRefinedOnpremInfra(sourceGroup *model.SourceGroup, connectionInfo *model.ConnectionInfo) (inframodel.OnpremInfra, error) {
+	onpremiseInfra := inframodel.OnpremInfra{
+		Nodes: []inframodel.NodeProperty{},
+	}
 	connID := connectionInfo.ID
 
 	// A CSP resource other than a VM holds no machine, so it makes no node, as
@@ -1295,16 +1274,16 @@ func connRefinedOnpremInfra(sourceGroup *model.SourceGroup, connectionInfo *mode
 			infraInfo, err = doGetInfraInfo(connID)
 		}
 		if err != nil {
-			return onpremiseInfra, nil, err
+			return onpremiseInfra, err
 		}
 
 		refinedInfraInfo, err := doGetRefinedInfraInfo(infraInfo)
 		if err != nil {
-			return onpremiseInfra, nil, err
+			return onpremiseInfra, err
 		}
 
+		refinedInfraInfo.ListeningPorts = tryGetListeningPorts(connID)
 		onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
-		listeningPorts = append(listeningPorts, tryGetListeningPorts(connID))
 		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
 		onpremiseInfra.NLBs = haproxyToNLBs(infraInfo.HAProxy, infraInfo.Compute.OS.Node.Machineid)
 	}
@@ -1325,13 +1304,13 @@ func connRefinedOnpremInfra(sourceGroup *model.SourceGroup, connectionInfo *mode
 	if isCSPNLB(sourceGroup, connectionInfo) {
 		groupConns, err := dao.ConnectionInfoGetList(&model.ConnectionInfo{SourceGroupID: connectionInfo.SourceGroupID}, 0, 0)
 		if err != nil {
-			return onpremiseInfra, nil, err
+			return onpremiseInfra, err
 		}
 		onpremiseInfra.NLBs = append(onpremiseInfra.NLBs,
 			refinedCSPNLBs(sourceGroup, []model.ConnectionInfo{*connectionInfo}, *groupConns)...)
 	}
 
-	return onpremiseInfra, listeningPorts, nil
+	return onpremiseInfra, nil
 }
 
 // GetInfraInfoSourceGroupRefined godoc
@@ -1343,7 +1322,7 @@ func connRefinedOnpremInfra(sourceGroup *model.SourceGroup, connectionInfo *mode
 //	@Accept			json
 //	@Produce		json
 //	@Param			sgId path string true "ID of the source group."
-//	@Success		200	{object}	model.RefinedOnpremiseInfraModel	"Successfully get refined information of the infra."
+//	@Success		200	{object}	inframodel.OnpremiseInfraModel	"Successfully get refined information of the infra."
 //	@Failure		400	{object}	common.ErrorResponse	"Sent bad request."
 //	@Failure		500	{object}	common.ErrorResponse	"Failed to get refined information of the infra."
 //	@Router		/source_group/{sgId}/infra/refined [get]
@@ -1363,17 +1342,20 @@ func GetInfraInfoSourceGroupRefined(c echo.Context) error {
 		return common.ReturnErrorMsg(c, err.Error())
 	}
 
-	onpremiseInfra, listeningPorts := groupRefinedOnpremInfra(sourceGroup, *list)
+	onpremiseInfra := groupRefinedOnpremInfra(sourceGroup, *list)
 
-	return c.JSONPretty(http.StatusOK, buildRefinedInfraModel(onpremiseInfra, listeningPorts), " ")
+	return c.JSONPretty(http.StatusOK, inframodel.OnpremiseInfraModel{
+		OnpremiseInfraModel: onpremiseInfra,
+	}, " ")
 }
 
 // groupRefinedOnpremInfra builds the refined infra of the source group, as
 // infra/refined of the group answers it. k8s/refined and nlb/refined of the
 // group take their part of it from here, so they cannot drift apart.
-func groupRefinedOnpremInfra(sourceGroup *model.SourceGroup, conns []model.ConnectionInfo) (inframodel.OnpremInfra, [][]model.ListeningPortProperty) {
-	var onpremiseInfra inframodel.OnpremInfra
-	var listeningPorts [][]model.ListeningPortProperty
+func groupRefinedOnpremInfra(sourceGroup *model.SourceGroup, conns []model.ConnectionInfo) inframodel.OnpremInfra {
+	onpremiseInfra := inframodel.OnpremInfra{
+		Nodes: []inframodel.NodeProperty{},
+	}
 
 	for _, src := range refinedInfraSources(sourceGroup, conns) {
 		infraInfo := src.infra
@@ -1383,8 +1365,8 @@ func groupRefinedOnpremInfra(sourceGroup *model.SourceGroup, conns []model.Conne
 				" (ConnectionID = "+src.connID+", Error = "+err.Error()+")")
 			continue
 		}
+		refinedInfraInfo.ListeningPorts = tryGetListeningPorts(src.connID)
 		onpremiseInfra.Nodes = append(onpremiseInfra.Nodes, *refinedInfraInfo)
-		listeningPorts = append(listeningPorts, tryGetListeningPorts(src.connID))
 		doGetRefinedNetworkInfo(&onpremiseInfra.Network, &infraInfo.Network.Host.Route, &infraInfo.Compute.OS.Node.Machineid)
 		onpremiseInfra.NLBs = append(onpremiseInfra.NLBs, haproxyToNLBs(infraInfo.HAProxy, infraInfo.Compute.OS.Node.Machineid)...)
 	}
@@ -1405,7 +1387,7 @@ func groupRefinedOnpremInfra(sourceGroup *model.SourceGroup, conns []model.Conne
 	// The CSP NLBs come after the HAProxy ones found on the nodes.
 	onpremiseInfra.NLBs = append(onpremiseInfra.NLBs, refinedCSPNLBs(sourceGroup, conns, conns)...)
 
-	return onpremiseInfra, listeningPorts
+	return onpremiseInfra
 }
 
 // GetSoftwareInfoRefined godoc
