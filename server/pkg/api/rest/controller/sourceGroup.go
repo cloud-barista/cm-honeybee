@@ -489,17 +489,13 @@ func UpdateSourceGroup(c echo.Context) error {
 			}
 			oldSourceGroup.Credential = stored
 		} else {
-			// Region-only change: validate the region against metainfo without
-			// touching the stored credential (no re-supply required).
+			// Region-only change: match the region to the CSP's region list with
+			// the stored credential, without touching it (no re-supply required).
 			provider, err := spider.NormalizeProvider(oldSourceGroup.ProviderName)
 			if err != nil {
 				return common.ReturnErrorMsg(c, err.Error())
 			}
-			meta, err := spider.GetCloudOSMetaInfo(provider)
-			if err != nil {
-				return common.ReturnErrorMsg(c, "failed to load CSP metainfo: "+err.Error())
-			}
-			region := normalizeRegion(meta, oldSourceGroup.RegionName)
+			region := normalizeStoredRegion(oldSourceGroup, oldSourceGroup.RegionName)
 			if region == "" {
 				return common.ReturnErrorMsg(c, "region_name is empty")
 			}

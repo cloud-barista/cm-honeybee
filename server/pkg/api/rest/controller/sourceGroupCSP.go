@@ -12,21 +12,105 @@ import (
 	"github.com/jollaman999/utils/logger"
 )
 
-// normalizeRegion case-corrects region against the CSP's metainfo when possible.
-// If the region is not in the metainfo list it is returned as-is (some CSPs
-// return an incomplete list).
-func normalizeRegion(meta *spider.CloudOSMetaInfo, region string) string {
-	region = strings.TrimSpace(region)
-	if meta == nil {
-		return region
+// normalizeRegion trims a csp group's region_name and spells it as the CSP's
+// region list does, matched case-insensitively, since the region goes to the
+// driver as it is stored and some CSPs take only their own spelling (ncp's SDK
+// puts the region in the API path and answers 404 for "kr" where it wants
+// "KR"). The zone of a "<region>/<zone>" value is matched among that region's
+// zones the same way. The list is queried live with credential. A part the
+// list does not name, or every part when the query fails, is kept as given
+// (trimmed): some CSPs list regions incompletely, and refusing the group for
+// it would block a value the driver may still take.
+func normalizeRegion(provider string, credential []spider.KeyValue, regionName string) string {
+	region, zone, hasZone := splitRegionName(regionName)
+	if region == "" {
+		return joinRegionName(region, zone, hasZone)
 	}
-	target := strings.ToUpper(region)
-	for _, r := range meta.Region {
-		if strings.ToUpper(r) == target {
-			return r
-		}
+
+	list, err := listRegionZone(provider, credential)
+	if err != nil {
+		logger.Println(logger.WARN, true, "CSP: region "+region+" kept as given, failed to list "+provider+
+			" regions: "+maskCredential(err, credential).Error())
+		return joinRegionName(region, zone, hasZone)
+	}
+	regionNames := make([]string, 0, len(list))
+	for _, r := range list {
+		regionNames = append(regionNames, r.Name)
+	}
+	i := matchName(regionNames, region)
+	if i < 0 {
+		logger.Println(logger.WARN, true, "CSP: region "+region+" kept as given, not in the "+provider+" region list")
+		return joinRegionName(region, zone, hasZone)
+	}
+	region = list[i].Name
+	if zone == "" {
+		return joinRegionName(region, zone, hasZone)
+	}
+	zoneNames := make([]string, 0, len(list[i].ZoneList))
+	for _, z := range list[i].ZoneList {
+		zoneNames = append(zoneNames, z.Name)
+	}
+	if j := matchName(zoneNames, zone); j >= 0 {
+		zone = zoneNames[j]
+	} else {
+		logger.Println(logger.WARN, true, "CSP: zone "+zone+" kept as given, not in the zones of "+provider+
+			" region "+region)
+	}
+	return joinRegionName(region, zone, hasZone)
+}
+
+// splitRegionName splits region_name into its region and the zone of a
+// "<region>/<zone>" value, each trimmed. hasZone tells whether a zone part was
+// written at all, so joinRegionName gives back the same form.
+func splitRegionName(regionName string) (region, zone string, hasZone bool) {
+	region = strings.TrimSpace(regionName)
+	if i := strings.Index(region, "/"); i >= 0 {
+		return strings.TrimSpace(region[:i]), strings.TrimSpace(region[i+1:]), true
+	}
+	return region, "", false
+}
+
+// joinRegionName is the inverse of splitRegionName.
+func joinRegionName(region, zone string, hasZone bool) string {
+	if hasZone {
+		return region + "/" + zone
 	}
 	return region
+}
+
+// matchName returns the index of want in names, an exact match before one that
+// differs only in case, or -1.
+func matchName(names []string, want string) int {
+	for i, name := range names {
+		if name == want {
+			return i
+		}
+	}
+	for i, name := range names {
+		if strings.EqualFold(name, want) {
+			return i
+		}
+	}
+	return -1
+}
+
+// normalizeStoredRegion is normalizeRegion for a csp group whose credential is
+// not given anew: the region list is queried with the stored credential. When
+// that cannot be read the region is kept as given, trimmed as normalizeRegion
+// trims it. A value with no region part is returned without reading anything,
+// for the caller to refuse.
+func normalizeStoredRegion(sg *model.SourceGroup, regionName string) string {
+	region, zone, hasZone := splitRegionName(regionName)
+	if region == "" {
+		return joinRegionName(region, zone, hasZone)
+	}
+	provider, credential, err := groupCredential(sg)
+	if err != nil {
+		logger.Println(logger.WARN, true, "CSP: region "+region+
+			" kept as given, failed to read the credential of source group "+sg.ID+": "+err.Error())
+		return joinRegionName(region, zone, hasZone)
+	}
+	return normalizeRegion(provider, credential, regionName)
 }
 
 // optionalCredentialKeys are the credential keys a csp source group of the
@@ -193,10 +277,11 @@ func deleteCSPCredential(sgID string) {
 	}
 }
 
-// validateAndCanonicalizeCSP validates the supplied plaintext credential and
-// region against the CSP metainfo and records canonical provider/region/credential
+// validateAndCanonicalizeCSP validates the supplied plaintext credential against
+// the CSP metainfo, matches the region to the CSP's region list read with that
+// credential (normalizeRegion), and records canonical provider/region/credential
 // on sg. It performs NO writes outside honeybee: credentials go to the drivers
-// only in memory at discovery/collection time (see withCSPConn).
+// only in memory, for that read and at discovery/collection time (see withCSPConn).
 //
 // sg.Credential is left as canonical-cased plaintext; the caller must encrypt it
 // before persisting to honeybee's DB.
@@ -213,10 +298,10 @@ func validateAndCanonicalizeCSP(sg *model.SourceGroup, plainKV []model.KeyValue)
 	if err != nil {
 		return err
 	}
-	region := normalizeRegion(meta, sg.RegionName)
-	if region == "" {
+	if strings.TrimSpace(sg.RegionName) == "" {
 		return errors.New("region_name is empty")
 	}
+	region := normalizeRegion(provider, toSpiderKV(canonicalKV), sg.RegionName)
 
 	sg.ProviderName = strings.ToLower(provider)
 	sg.RegionName = region
@@ -259,6 +344,11 @@ func cspCredential(sg *model.SourceGroup) (string, []spider.KeyValue, error) {
 	}
 	return provider, toSpiderKV(plainKV), nil
 }
+
+// groupCredential reads a csp group's stored credential where the region of
+// the group is matched to the CSP's spelling. It is a variable so tests can
+// stand in for OpenBao.
+var groupCredential = cspCredential
 
 // withCSPConn builds the CSP connection of a SourceGroup from its region and
 // its credential in OpenBao, and invokes fn with it. Nothing is registered or

@@ -233,6 +233,17 @@ curl -X 'POST' \
 honeybee stores the credential in OpenBao and keeps it there. For each call it
 hands the credential to the CSP driver in memory; it is not registered or
 written anywhere else. No connection name is kept on the source group.
+
+`region_name` (`"<region>"` or `"<region>/<zone>"`) is stored as the CSP's own
+region list spells it, matched case-insensitively (ncp `kr/kr-1` is stored as
+`KR/KR-1`; ncp takes only its own spelling). The list is read with the
+credential given at registration (or with a new credential on update), and
+with the stored credential when
+`PUT /source_group/{sgId}` changes only the region. If the list or the stored
+credential cannot be read, or the list does not name the region or zone, that
+part is stored as given and the request is not refused. Either way the region
+and the zone are each trimmed, so `" kr / kr-1 "` is stored as `kr/kr-1` even
+when nothing is matched.
 ### 3. Register connection info
 Register the connection information to the source group. The body shape
 depends on the group's `type`.

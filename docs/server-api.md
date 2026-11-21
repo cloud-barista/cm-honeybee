@@ -364,6 +364,12 @@ cb-spider 드라이버에 바로 넘깁니다. credential/region/connection을 �
   빈 값. 즉 `region_name`은 `"koreacentral"` 또는 `"koreacentral/2"`를, ConnectionInfo는
   `"zone":"2"`를 지원하며, 둘 다 있으면 ConnectionInfo의 `zone`이 우선합니다.
   선택 가능한 zone 목록은 `GET /source_group/{sgId}/region`의 각 리전 `zones`에서 확인합니다.
+- **region 표기**: `region_name`은 CSP 리전 목록의 표기로 맞춰 저장됩니다(대소문자 무시). `"<region>/<zone>"`이면
+  zone도 그 리전의 zone 목록 표기로 맞춥니다. 예: ncp `kr/kr-1` → `KR/KR-1` (ncp는 자기 표기만 받아 `kr`이면 404).
+  목록은 등록(`POST /source_group`)과 credential을 같이 준 수정에서는 받은 credential로, region만 고치는
+  `PUT /source_group/{sgId}`에서는 저장된 credential로 조회합니다. 조회 실패, 목록에 없는 region·zone,
+  저장된 credential을 못 읽은 경우에는 그 부분을 넣은 값 그대로 저장하고 거절하지 않습니다.
+  어느 경우든 region과 zone은 각각 앞뒤 공백을 지웁니다(`" kr / kr-1 "`은 맞출 수 없을 때도 `kr/kr-1`로 저장).
 - **Azure 주의:** cb-spider Azure 드라이버는 `RegionInfo.Region`을 **리소스 그룹**으로 사용합니다.
   따라서 Azure에서는 `region_name`에 **VM이 속한 리소스 그룹 이름**을 넣어야 합니다.
 

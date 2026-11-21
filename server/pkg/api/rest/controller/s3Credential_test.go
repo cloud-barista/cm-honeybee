@@ -148,6 +148,7 @@ func TestCanonicalizeCredentialKV_OptionalS3Keys(t *testing.T) {
 // stored.
 func TestSourceGroupCredential_OptionalS3Keys(t *testing.T) {
 	useSpiderRoot(t)
+	stubRegionZone(t, []spider.RegionZoneInfo{{Name: "asia-northeast3"}}, nil)
 
 	sg := &model.SourceGroup{ProviderName: "gcp", RegionName: "asia-northeast3"}
 	in := withKV(gcpMainKV(),
