@@ -1,0 +1,6 @@
+// swag (v1.16.4 to v1.16.6) collects the enum constants of os.FileMode and
+// time.Duration differently from run to run, so make swag gave a different
+// swagger each time. Both are written as plain integers instead.
+replace os.FileMode int
+replace io/fs.FileMode int
+replace time.Duration int

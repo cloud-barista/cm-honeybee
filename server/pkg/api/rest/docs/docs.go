@@ -5037,11 +5037,7 @@ const docTemplate = `{
             "properties": {
                 "interval": {
                     "description": "Zero means to inherit. Durations are expressed as integer nanoseconds.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "retries": {
                     "description": "Retries is the number of consecutive failures needed to consider a container as unhealthy.\nZero means inherit.",
@@ -5049,19 +5045,11 @@ const docTemplate = `{
                 },
                 "startInterval": {
                     "description": "The interval to attempt healthchecks at during the start period",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "startPeriod": {
                     "description": "The start period for the container to initialize before the retries starts to count down.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "test": {
                     "description": "Test is the test to perform to check that the container is healthy.\nAn empty slice means to inherit the default.\nThe options are:\n{} : inherit healthcheck\n{\"NONE\"} : disable healthcheck\n{\"CMD\", args...} : exec arguments directly\n{\"CMD-SHELL\", command} : run command with system's default shell",
@@ -5072,11 +5060,7 @@ const docTemplate = `{
                 },
                 "timeout": {
                     "description": "Timeout is the time to wait before considering the check to have hung.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 }
             }
         },
@@ -10167,11 +10151,7 @@ const docTemplate = `{
             "properties": {
                 "mode": {
                     "description": "Mode of the tmpfs upon creation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/os.FileMode"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "options": {
                     "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
@@ -11123,92 +11103,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        },
-        "os.FileMode": {
-            "type": "integer",
-            "format": "int32",
-            "enum": [
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511
-            ],
-            "x-enum-comments": {
-                "ModeAppend": "a: append-only",
-                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
-                "ModeDevice": "D: device file",
-                "ModeDir": "d: is a directory",
-                "ModeExclusive": "l: exclusive use",
-                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
-                "ModeNamedPipe": "p: named pipe (FIFO)",
-                "ModePerm": "Unix permission bits, 0o777",
-                "ModeSetgid": "g: setgid",
-                "ModeSetuid": "u: setuid",
-                "ModeSocket": "S: Unix domain socket",
-                "ModeSticky": "t: sticky",
-                "ModeSymlink": "L: symbolic link",
-                "ModeTemporary": "T: temporary file; Plan 9 only"
-            },
-            "x-enum-descriptions": [
-                "d: is a directory",
-                "a: append-only",
-                "l: exclusive use",
-                "T: temporary file; Plan 9 only",
-                "L: symbolic link",
-                "D: device file",
-                "p: named pipe (FIFO)",
-                "S: Unix domain socket",
-                "u: setuid",
-                "g: setgid",
-                "c: Unix character device, when ModeDevice is set",
-                "t: sticky",
-                "?: non-regular file; nothing else is known about this file",
-                "",
-                "Unix permission bits, 0o777"
-            ],
-            "x-enum-varnames": [
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm"
-            ]
         },
         "rdbmsmodel.CloudProperty": {
             "type": "object",
@@ -13236,50 +13130,6 @@ const docTemplate = `{
                 }
             }
         },
-        "time.Duration": {
-            "type": "integer",
-            "format": "int64",
-            "enum": [
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000
-            ],
-            "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second"
-            ]
-        },
         "v1.Descriptor": {
             "type": "object",
             "properties": {
@@ -13420,11 +13270,7 @@ const docTemplate = `{
             "properties": {
                 "interval": {
                     "description": "Zero means to inherit. Durations are expressed as integer nanoseconds.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "retries": {
                     "description": "Retries is the number of consecutive failures needed to consider a container as unhealthy.\nZero means inherit.",
@@ -13432,19 +13278,11 @@ const docTemplate = `{
                 },
                 "startInterval": {
                     "description": "The interval to attempt healthchecks at during the start period",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "startPeriod": {
                     "description": "The start period for the container to initialize before the retries starts to count down.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "test": {
                     "description": "Test is the test to perform to check that the container is healthy.\nAn empty slice means to inherit the default.\nThe options are:\n{} : inherit healthcheck\n{\"NONE\"} : disable healthcheck\n{\"CMD\", args...} : exec arguments directly\n{\"CMD-SHELL\", command} : run command with system's default shell",
@@ -13455,11 +13293,7 @@ const docTemplate = `{
                 },
                 "timeout": {
                     "description": "Timeout is the time to wait before considering the check to have hung.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 }
             }
         },
