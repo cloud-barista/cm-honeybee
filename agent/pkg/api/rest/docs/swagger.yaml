@@ -406,23 +406,20 @@ definitions:
   container.HealthConfig:
     properties:
       interval:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: Zero means to inherit. Durations are expressed as integer nanoseconds.
+        type: integer
       retries:
         description: |-
           Retries is the number of consecutive failures needed to consider a container as unhealthy.
           Zero means inherit.
         type: integer
       startInterval:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: The interval to attempt healthchecks at during the start period
+        type: integer
       startPeriod:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: The start period for the container to initialize before the retries
           starts to count down.
+        type: integer
       test:
         description: |-
           Test is the test to perform to check that the container is healthy.
@@ -436,10 +433,9 @@ definitions:
           type: string
         type: array
       timeout:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: Timeout is the time to wait before considering the check to have
           hung.
+        type: integer
     type: object
   container.HealthStatus:
     enum:
@@ -1503,8 +1499,60 @@ definitions:
     - cpus
     - threads
     type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPDataDisk:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      size:
+        description: GB
+        type: integer
+      status:
+        type: string
+      type:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPGPU:
+    properties:
+      count:
+        type: integer
+      memory_gb:
+        description: per device
+        type: integer
+      model:
+        type: string
+      vendor:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPImage:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+      os_architecture:
+        description: e.g. x86_64
+        type: string
+      os_disk_size_gb:
+        type: integer
+      os_disk_type:
+        type: string
+      os_distribution:
+        description: e.g. Ubuntu 22.04
+        type: string
+      os_platform:
+        description: e.g. Linux/UNIX
+        type: string
+      status:
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPInfo:
     properties:
+      data_disk_details:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPDataDisk'
+        type: array
       data_disks:
         items:
           type: string
@@ -1515,6 +1563,14 @@ definitions:
       image:
         description: ImageIId NameId
         type: string
+      image_detail:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPImage'
+      keypair:
+        allOf:
+        - $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPKeyPair'
+        description: |-
+          The fields below come from separate driver calls made after GetVM. Each
+          is left empty when its call fails or the driver has no such handler.
       name:
         description: VM NameId
         type: string
@@ -1535,6 +1591,9 @@ definitions:
         $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.Disk'
       start_time:
         type: string
+      status:
+        description: e.g. Running, Suspended
+        type: string
       tags:
         additionalProperties:
           type: string
@@ -1542,7 +1601,18 @@ definitions:
       vm_spec:
         description: e.g. Standard_D2s_v3
         type: string
+      vm_spec_detail:
+        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPVMSpec'
       zone:
+        type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPKeyPair:
+    properties:
+      fingerprint:
+        type: string
+      id:
+        type: string
+      name:
         type: string
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPNetwork:
@@ -1586,6 +1656,24 @@ definitions:
         type: string
       zone:
         type: string
+    type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPVMSpec:
+    properties:
+      architecture:
+        type: string
+      disk_gb:
+        description: 0 when the spec has no fixed disk
+        type: integer
+      gpus:
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPGPU'
+        type: array
+      memory_mib:
+        type: integer
+      name:
+        type: string
+      vcpus:
+        type: integer
     type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPVPC:
     properties:
@@ -2696,6 +2784,19 @@ definitions:
       version:
         type: string
     type: object
+  github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.ListenSocket:
+    properties:
+      bind_address:
+        description: |-
+          BindAddress is the local address the socket is bound to, e.g. "0.0.0.0",
+          "::", "127.0.0.1". A wildcard address accepts traffic on every interface.
+        type: string
+      port:
+        type: integer
+      protocol:
+        description: tcp, udp
+        type: string
+    type: object
   github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Listener:
     properties:
       container_id:
@@ -2708,6 +2809,15 @@ definitions:
         type: string
       executable_path:
         type: string
+      listen_sockets:
+        description: |-
+          ListenSockets are the process's listening sockets one by one: its LISTEN
+          TCP sockets and its bound, unconnected UDP sockets, each with the address
+          it is bound to. A process listening only on UDP has these and no Ports.
+          Sorted by protocol, port and address, without duplicates.
+        items:
+          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.ListenSocket'
+        type: array
       name:
         type: string
       package:
@@ -3452,9 +3562,8 @@ definitions:
   mount.TmpfsOptions:
     properties:
       mode:
-        allOf:
-        - $ref: '#/definitions/os.FileMode'
         description: Mode of the tmpfs upon creation
+        type: integer
       options:
         description: |-
           Options to be passed to the tmpfs mount. An array of arrays. Flag
@@ -3600,192 +3709,6 @@ definitions:
     additionalProperties:
       type: object
     type: object
-  os.FileMode:
-    enum:
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 8388608
-    - 4194304
-    - 1048576
-    - 511
-    format: int32
-    type: integer
-    x-enum-comments:
-      ModeAppend: 'a: append-only'
-      ModeCharDevice: 'c: Unix character device, when ModeDevice is set'
-      ModeDevice: 'D: device file'
-      ModeDir: 'd: is a directory'
-      ModeExclusive: 'l: exclusive use'
-      ModeIrregular: '?: non-regular file; nothing else is known about this file'
-      ModeNamedPipe: 'p: named pipe (FIFO)'
-      ModePerm: Unix permission bits, 0o777
-      ModeSetgid: 'g: setgid'
-      ModeSetuid: 'u: setuid'
-      ModeSocket: 'S: Unix domain socket'
-      ModeSticky: 't: sticky'
-      ModeSymlink: 'L: symbolic link'
-      ModeTemporary: 'T: temporary file; Plan 9 only'
-    x-enum-descriptions:
-    - 'd: is a directory'
-    - 'a: append-only'
-    - 'l: exclusive use'
-    - 'T: temporary file; Plan 9 only'
-    - 'L: symbolic link'
-    - 'D: device file'
-    - 'p: named pipe (FIFO)'
-    - 'S: Unix domain socket'
-    - 'u: setuid'
-    - 'g: setgid'
-    - 'c: Unix character device, when ModeDevice is set'
-    - 't: sticky'
-    - '?: non-regular file; nothing else is known about this file'
-    - ""
-    - Unix permission bits, 0o777
-    - 'd: is a directory'
-    - 'a: append-only'
-    - 'l: exclusive use'
-    - 'T: temporary file; Plan 9 only'
-    - 'L: symbolic link'
-    - 'D: device file'
-    - 'p: named pipe (FIFO)'
-    - 'S: Unix domain socket'
-    - 'u: setuid'
-    - 'g: setgid'
-    - 'c: Unix character device, when ModeDevice is set'
-    - 't: sticky'
-    - '?: non-regular file; nothing else is known about this file'
-    - ""
-    - Unix permission bits, 0o777
-    - 'd: is a directory'
-    - 'u: setuid'
-    - 'g: setgid'
-    - 't: sticky'
-    - Unix permission bits, 0o777
-    x-enum-varnames:
-    - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
-    - ModeSetuid
-    - ModeSetgid
-    - ModeCharDevice
-    - ModeSticky
-    - ModeIrregular
-    - ModeType
-    - ModePerm
-    - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
-    - ModeSetuid
-    - ModeSetgid
-    - ModeCharDevice
-    - ModeSticky
-    - ModeIrregular
-    - ModeType
-    - ModePerm
-    - ModeDir
-    - ModeSetuid
-    - ModeSetgid
-    - ModeSticky
-    - ModePerm
   pkg_api_rest_controller.DBInspectReq:
     properties:
       auth_source:
@@ -3985,83 +3908,6 @@ definitions:
         description: Direct (non-recursive) object size sum in bytes (only when ObjectStorageMetric.PrefixObjectSize)
         type: integer
     type: object
-  time.Duration:
-    enum:
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    format: int64
-    type: integer
-    x-enum-varnames:
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
   v1.DockerOCIImageConfig:
     properties:
       ArgsEscaped:
@@ -4139,23 +3985,20 @@ definitions:
   v1.HealthcheckConfig:
     properties:
       interval:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: Zero means to inherit. Durations are expressed as integer nanoseconds.
+        type: integer
       retries:
         description: |-
           Retries is the number of consecutive failures needed to consider a container as unhealthy.
           Zero means inherit.
         type: integer
       startInterval:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: The interval to attempt healthchecks at during the start period
+        type: integer
       startPeriod:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: The start period for the container to initialize before the retries
           starts to count down.
+        type: integer
       test:
         description: |-
           Test is the test to perform to check that the container is healthy.
@@ -4169,10 +4012,9 @@ definitions:
           type: string
         type: array
       timeout:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: Timeout is the time to wait before considering the check to have
           hung.
+        type: integer
     type: object
 info:
   contact: {}
