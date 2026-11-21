@@ -190,7 +190,7 @@ func TestS3ConnRuleMissingMainKeyIsNotS3(t *testing.T) {
 
 func TestOpenStackS3Endpoint(t *testing.T) {
 	tests := map[string]string{
-		"http://192.0.2.10:5000/v3":     "192.0.2.10:8080",
+		"http://192.0.2.10:5000/v3":   "192.0.2.10:8080",
 		"https://keystone.example/v3": "keystone.example:8080",
 	}
 	for in, want := range tests {
