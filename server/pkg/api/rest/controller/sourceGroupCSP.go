@@ -243,7 +243,7 @@ func mapToKV(m map[string]string) []model.KeyValue {
 }
 
 // storeCSPCredential writes a source group's canonical plaintext credential to
-// OpenBao. OpenBao is the only secret store — no credential is kept in the DB.
+// OpenBao. OpenBao is the only secret store - no credential is kept in the DB.
 func storeCSPCredential(sgID string, plain []model.KeyValue) (model.KeyValueList, error) {
 	if !openbao.Enabled() {
 		return nil, errors.New("OpenBao is required to store CSP credentials (set cm-honeybee.openbao.address)")

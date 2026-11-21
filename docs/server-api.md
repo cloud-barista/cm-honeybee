@@ -37,7 +37,7 @@
 
 ## 핵심 개념
 
-- **SourceGroup** — 함께 마이그레이션할 소스 머신들의 논리적 그룹. 온프레미스 그룹과 `csp`(클라우드)
+- **SourceGroup** - 함께 마이그레이션할 소스 머신들의 논리적 그룹. 온프레미스 그룹과 `csp`(클라우드)
   그룹 등의 타입이 있습니다. SourceGroup은 등록된 *target* 정보(마이그레이션 후 cm-beetle이 돌려준
   결과)도 함께 가질 수 있습니다.
 - **ConnectionInfo** - SourceGroup에 속한 개별 소스의 연결 정보. SSH 대상이면 IP/SSH 포트/사용자·자격
@@ -330,7 +330,7 @@ SG=$(curl -s -X POST $BASE/source_group \
 #   (2) SSH 정보가 있으면 게스트에 에이전트 설치(agent_status). 이 단계에선 데이터를 저장하지 않음.
 #   응답의 connection_info_status_count로 connection/agent 성공 수를 확인.
 
-# 4. 수집 + 저장 (csp_data + infra_data) — import 단계에서 수행
+# 4. 수집 + 저장 (csp_data + infra_data) - import 단계에서 수행
 curl -s -X POST $BASE/source_group/$SG/import/infra      # CSP 메타 + (SSH 있으면)게스트 내부
 curl -s -X POST $BASE/source_group/$SG/import/software    # 게스트 소프트웨어(SSH 필요)
 #    또는 위 둘과 버킷·DB·K8s·NLB 연결까지 한 번에:
@@ -608,12 +608,12 @@ SSH 정보를 함께 준 CSP(Azure) VM 소스의 실제 응답 예시입니다. 
 
 ## SourceGroup
 
-### `POST /source_group` — SourceGroup 등록
+### `POST /source_group` - SourceGroup 등록
 Body: `model.CreateSourceGroupReq`. 생성된 `model.SourceGroupRes`를 반환.
 csp 그룹의 `credential`은 `GET /csp/{name}`의 `credential_keys`를 모두 담아야 하고, 그 밖의 키는
 `optional_credential_keys`만 받습니다([CSP credential의 선택 키](#csp-credential의-선택-키)). 나머지 키는 400입니다.
 
-### `GET /source_group` — SourceGroup 목록
+### `GET /source_group` - SourceGroup 목록
 Query: `page`, `row`, `name`, `description`, `type` (모두 선택 필터).
 `type`은 `onprem`·`csp`·`fs`·`db`·`minio` 중 하나이고, 그 밖의 값은 400입니다. `type=onprem`은
 `ssh`로 저장됐거나 `type` 없이 저장된 그룹도 함께 찾습니다.
@@ -635,28 +635,28 @@ CSP credential 키는 `GET /csp/{name}`이 알려줍니다.
   `isCollectKubernetes`, `isCollectObjectStorage`, `isCollectDb`, `isCollectFs`, `isCollectNlb`.
   수집이 다룰 연결이 없으면 `false`이므로 빈 그룹은 모두 `false`입니다.
 
-### `GET /source_group/{sgId}` — SourceGroup 조회
+### `GET /source_group/{sgId}` - SourceGroup 조회
 
-### `PUT /source_group/{sgId}` — SourceGroup 수정
+### `PUT /source_group/{sgId}` - SourceGroup 수정
 Body: `model.UpdateSourceGroupReq`.
 csp 그룹에 `credential`을 보내면 저장된 credential을 **통째로 바꿉니다**. 등록 때와 같이 검사하므로 필수 키도
 다시 담아야 하고, 선택 키를 빼고 보내면 선택 키는 지워집니다. 기존 그룹에 S3 키를 더할 때도 필수 키와 함께 보냅니다.
 
-### `DELETE /source_group/{sgId}` — SourceGroup 삭제
+### `DELETE /source_group/{sgId}` - SourceGroup 삭제
 그룹의 모든 연결과, 각 연결에 import가 저장한 기록(infra, software, kubernetes, helm, data, rdbms, nlb)을
 함께 지웁니다.
 
-### `PUT /source_group/{sgId}/refresh` — 그룹 연결 상태 갱신
+### `PUT /source_group/{sgId}/refresh` - 그룹 연결 상태 갱신
 그룹 내 모든 ConnectionInfo의 도달성/상태를 갱신합니다.
 
-### `POST /source_group/{sgId}/target` — TargetInfo 등록
-Body: `model.RegisterTargetInfoReq` — cm-beetle을 통한 인프라 마이그레이션에서 돌려받은 target 정보.
+### `POST /source_group/{sgId}/target` - TargetInfo 등록
+Body: `model.RegisterTargetInfoReq` - cm-beetle을 통한 인프라 마이그레이션에서 돌려받은 target 정보.
 
 ---
 
 ## ConnectionInfo
 
-### `POST /source_group/{sgId}/connection_info` — 생성
+### `POST /source_group/{sgId}/connection_info` - 생성
 Body: `model.CreateConnectionInfoReq`. 필수 필드는 그룹의 `type`과 이 요청의 `resource_type`에 따라
 갈립니다 - [SourceGroup 타입](#sourcegroup-타입-onprem--csp) 참고.
 
@@ -687,17 +687,17 @@ csp 연결은 등록할 때 CSP에 리소스를 확인합니다.
 - CSP에 물어볼 수 없는 일시 장애(타임아웃, credential, 엔드포인트 도달 불가)는 등록하고
   `connection_status: failed`와 사유를 남깁니다. `refresh`에서 다시 확인합니다.
 
-### `GET /source_group/{sgId}/connection_info` — 목록
+### `GET /source_group/{sgId}/connection_info` - 목록
 Query 필터: `page`, `row`, `name`, `description`, `ip_address`, `ssh_port`, `user`, `resource_type`.
 
 - `resource_type`: `vm`·`k8s`·`object_storage`·`nlb`·`rdbms` 중 하나, 그 밖의 값은 400. 온프레미스 그룹에서
   `vm`은 `resource_type` 없이 저장된 연결도 함께 찾습니다.
 - `ssh_port`: 포트 번호가 정확히 같은 연결만 찾습니다. 1~65535가 아닌 값은 필터로 쓰지 않습니다.
 
-### `GET /source_group/{sgId}/connection_info/{connId}` — 조회
+### `GET /source_group/{sgId}/connection_info/{connId}` - 조회
 `GET /connection_info/{connId}`로 그룹 없이도 조회 가능.
 
-### `PUT /source_group/{sgId}/connection_info/{connId}` — 수정
+### `PUT /source_group/{sgId}/connection_info/{connId}` - 수정
 Body: `model.CreateConnectionInfoReq`.
 
 csp 연결에서는 다음과 같이 동작합니다.
@@ -711,10 +711,10 @@ csp 연결에서는 다음과 같이 동작합니다.
 - `resource_type`이나 `resource_id`가 바뀌면 등록 때처럼 확인하고, 그룹 CSP가 수집할 수 없는 `resource_type`·
   S3 키가 없는 그룹의 버킷·없는 리소스·다른 리전 버킷은 400입니다.
 
-### `DELETE /source_group/{sgId}/connection_info/{connId}` — 삭제
+### `DELETE /source_group/{sgId}/connection_info/{connId}` - 삭제
 연결과, 그 연결에 import가 저장한 기록(infra, software, kubernetes, helm, data, rdbms, nlb)을 함께 지웁니다.
 
-### `PUT /source_group/{sgId}/connection_info/{connId}/refresh` — 상태 갱신
+### `PUT /source_group/{sgId}/connection_info/{connId}/refresh` - 상태 갱신
 `PUT /connection_info/{connId}/refresh`로 그룹 없이도 가능.
 **상태만 갱신하고 수집 데이터는 저장하지 않습니다.** 수집·저장은 `POST /import/*`가 합니다.
 
@@ -730,7 +730,7 @@ ConnectionInfo 자체는 남습니다.
 
 ## CSP & Discovery
 
-### `GET /csp` — 지원 CSP 목록
+### `GET /csp` - 지원 CSP 목록
 서버에 포함된 cb-spider 드라이버가 지원하는 CSP 목록을 반환합니다.
 
 ```bash
@@ -744,7 +744,7 @@ curl http://localhost:8081/honeybee/csp
 버킷을 읽는 CSP인지로 정합니다. 선택 S3 키가 필요한 CSP도 `object_storage`를 담습니다(키가 없는 그룹의 버킷은
 등록 때 거부). honeybee에 드라이버가 없는 CSP는 빈 목록입니다.
 
-### `GET /csp/{name}` — CSP 메타데이터 조회
+### `GET /csp/{name}` - CSP 메타데이터 조회
 해당 CSP의 자격 증명 키/리전/기타 메타데이터를 반환합니다.
 
 - **`name`은 대소문자 무시**(`aws` == `AWS`).
@@ -818,7 +818,7 @@ curl -X POST http://localhost:8081/honeybee/csp/aws/region \
                      {"key":"aws_secret_access_key","value":"$AWS_SECRET_ACCESS_KEY"}]}'
 ```
 
-### `GET /source_group/{sgId}/region` — CSP 실제 리전/존 목록 (live)
+### `GET /source_group/{sgId}/region` - CSP 실제 리전/존 목록 (live)
 `csp` SourceGroup의 **저장된 credential로 CSP에 live 질의**하여 그 CSP의 실제 리전 목록과
 각 리전의 zone을 반환합니다(등록 후 사용). 등록 前 단계(`GET /csp/{name}`)에서는 credential이 없어
 실제 리전을 못 주므로, 소스그룹 등록 후 이 API로 리전/zone 선택지를 채웁니다.
@@ -831,7 +831,7 @@ curl http://localhost:8081/honeybee/source_group/$SG/region
 
 > 여기서 얻은 `zones` 값이 ConnectionInfo의 `zone`(아래) 입력 후보가 됩니다.
 
-### `GET /source_group/{sgId}/discover` — CSP 리소스 디스커버리
+### `GET /source_group/{sgId}/discover` - CSP 리소스 디스커버리
 `type=csp` SourceGroup에 바인딩된 CSP 연결로 접근 가능한 VM / K8s 클러스터 / 오브젝트 스토리지 버킷 / NLB / 관리형 DB를
 나열합니다(UI에서 ConnectionInfo 선택지를 채울 때 사용).
 
@@ -1061,9 +1061,9 @@ K8s 소스 그룹의 정제 인프라 응답은 대략 다음과 같습니다.
 
 ## Benchmark
 
-### `GET /bench/{connId}` — 벤치마크 정보 조회
+### `GET /bench/{connId}` - 벤치마크 정보 조회
 
-### `POST /bench/{connId}/run` — 벤치마크 실행
+### `POST /bench/{connId}/run` - 벤치마크 실행
 연결된 서버에 벤치마크 에이전트가 없으면 자동으로 설치한 뒤 벤치마크를 실행합니다.
 
 | 쿼리 파라미터 | 기본값 | 설명 |
@@ -1077,4 +1077,4 @@ K8s 소스 그룹의 정제 인프라 응답은 대략 다음과 같습니다.
 curl -X POST "http://localhost:8081/honeybee/bench/$CONN/run?types=cpus,memR,fioW"
 ```
 
-### `POST /bench/{connId}/stop` — 벤치마크 중지
+### `POST /bench/{connId}/stop` - 벤치마크 중지

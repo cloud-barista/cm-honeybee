@@ -259,7 +259,7 @@ func (o *SSH) RunAgent(connectionInfo model.ConnectionInfo) error {
 
 // UninstallAgent removes cm-honeybee-agent from the connection's host by
 // running uninstallAgent.sh over SSH (inverse of RunAgent). No busybox is
-// needed — the script only uses systemctl/rm already present on the host.
+// needed - the script only uses systemctl/rm already present on the host.
 func (o *SSH) UninstallAgent(connectionInfo model.ConnectionInfo) error {
 	if err := o.NewClientConn(connectionInfo); err != nil {
 		return err

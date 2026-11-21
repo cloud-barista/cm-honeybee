@@ -1345,7 +1345,7 @@ definitions:
       id:
         type: string
       ip_address:
-        description: SSH fields — required when parent SourceGroup.Type == "ssh".
+        description: SSH fields - required when parent SourceGroup.Type == "ssh".
         type: string
       kubeconfig:
         description: Kubeconfig — on-prem k8s credential (Type onprem + ResourceType
@@ -1397,7 +1397,7 @@ definitions:
         type: string
       resource_type:
         description: |-
-          CSP fields — required when parent SourceGroup.Type == "csp".
+          CSP fields - required when parent SourceGroup.Type == "csp".
           ResourceType: "vm" | "k8s" | "object_storage" | "nlb" | "rdbms".
         type: string
       source_group_id:
@@ -1497,7 +1497,7 @@ definitions:
           "/" collects the whole host.
         type: string
       ip_address:
-        description: SSH fields — required when parent SourceGroup.Type == "ssh".
+        description: SSH fields - required when parent SourceGroup.Type == "ssh".
         type: string
       kubeconfig:
         description: Kubeconfig — required when on-prem + ResourceType "k8s".
@@ -1526,7 +1526,7 @@ definitions:
       resource_id:
         type: string
       resource_type:
-        description: CSP fields — required when parent SourceGroup.Type == "csp".
+        description: CSP fields - required when parent SourceGroup.Type == "csp".
         type: string
       ssh_port:
         type: string

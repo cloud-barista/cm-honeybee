@@ -1,8 +1,8 @@
 name: cm-honeybee
 
 # cm-honeybee with its own dedicated OpenBao secrets backend.
-#   openbao-honeybee  — OpenBao server (file storage, KV v2)
-#   cm-honeybee       — honeybee server; runs OpenBao init/unseal/KV-enable
+#   openbao-honeybee  - OpenBao server (file storage, KV v2)
+#   cm-honeybee       - honeybee server; runs OpenBao init/unseal/KV-enable
 #                       itself and waits until OpenBao is usable before serving.
 #
 # Bring up:   docker compose up -d
@@ -29,7 +29,7 @@ services:
       - ./data/openbao/data:/openbao/data
       - ./openbao/openbao-config.hcl:/openbao/config/openbao-config.hcl:ro
     healthcheck:
-      # 0=unsealed, 1=sealed, 2=uninitialized — all mean "running"; cm-honeybee
+      # 0=unsealed, 1=sealed, 2=uninitialized - all mean "running"; cm-honeybee
       # does the init/unseal, so "running" is enough to depend on.
       test: ["CMD", "sh", "-c", "rc=0; bao status || rc=$$?; [ $$rc -le 2 ]"]
       interval: 10s

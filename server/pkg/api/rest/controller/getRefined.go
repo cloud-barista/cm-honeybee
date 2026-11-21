@@ -643,7 +643,7 @@ func mergeK8sNodes(nodes []inframodel.NodeProperty, k8sInfo *kubernetes.Kubernet
 
 	for _, node := range k8sInfo.Nodes {
 		// SSH collection records the host's DMI system UUID as the machine id,
-		// which corresponds to the K8s node's systemUUID — NOT its machineID
+		// which corresponds to the K8s node's systemUUID - NOT its machineID
 		// (/etc/machine-id, a different value). Match on systemUUID first, then
 		// fall back to machineID, comparing normalized (hyphen/case-insensitive).
 		matched := false
@@ -794,7 +794,7 @@ type appRefiner func(b software.Binary) (appRefinement, bool)
 
 // appRefiners is the ordered list of application detectors. The first one that
 // matches a process wins. Support a new interpreter-hosted application (e.g. a
-// Python/Node service) by adding a refiner here — convertToBinaries needs no
+// Python/Node service) by adding a refiner here - convertToBinaries needs no
 // change.
 var appRefiners = []appRefiner{
 	tomcatRefiner,

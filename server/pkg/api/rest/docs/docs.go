@@ -6181,7 +6181,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ip_address": {
-                    "description": "SSH fields — required when parent SourceGroup.Type == \"ssh\".",
+                    "description": "SSH fields - required when parent SourceGroup.Type == \"ssh\".",
                     "type": "string"
                 },
                 "kubeconfig": {
@@ -6231,7 +6231,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "resource_type": {
-                    "description": "CSP fields — required when parent SourceGroup.Type == \"csp\".\nResourceType: \"vm\" | \"k8s\" | \"object_storage\" | \"nlb\" | \"rdbms\".",
+                    "description": "CSP fields - required when parent SourceGroup.Type == \"csp\".\nResourceType: \"vm\" | \"k8s\" | \"object_storage\" | \"nlb\" | \"rdbms\".",
                     "type": "string"
                 },
                 "source_group_id": {
@@ -6354,7 +6354,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "ip_address": {
-                    "description": "SSH fields — required when parent SourceGroup.Type == \"ssh\".",
+                    "description": "SSH fields - required when parent SourceGroup.Type == \"ssh\".",
                     "type": "string"
                 },
                 "kubeconfig": {
@@ -6396,7 +6396,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "resource_type": {
-                    "description": "CSP fields — required when parent SourceGroup.Type == \"csp\".",
+                    "description": "CSP fields - required when parent SourceGroup.Type == \"csp\".",
                     "type": "string"
                 },
                 "ssh_port": {

@@ -22,7 +22,7 @@ type ConnectionInfo struct {
 	Description   string `gorm:"column:description" json:"description"`
 	SourceGroupID string `gorm:"column:source_group_id" json:"source_group_id" validate:"required"`
 
-	// SSH fields — required when parent SourceGroup.Type == "ssh".
+	// SSH fields - required when parent SourceGroup.Type == "ssh".
 	IPAddress  string `gorm:"column:ip_address" json:"ip_address,omitempty"`
 	SSHPort    string `gorm:"column:ssh_port" json:"ssh_port,omitempty"`
 	User       string `gorm:"column:user" json:"user,omitempty"`
@@ -33,7 +33,7 @@ type ConnectionInfo struct {
 	// Kubeconfig — on-prem k8s credential (Type onprem + ResourceType k8s).
 	Kubeconfig string `gorm:"column:kubeconfig" json:"kubeconfig,omitempty"`
 
-	// CSP fields — required when parent SourceGroup.Type == "csp".
+	// CSP fields - required when parent SourceGroup.Type == "csp".
 	// ResourceType: "vm" | "k8s" | "object_storage" | "nlb" | "rdbms".
 	ResourceType string `gorm:"column:resource_type" json:"resource_type,omitempty"`
 	ResourceID   string `gorm:"column:resource_id" json:"resource_id,omitempty"`
@@ -105,7 +105,7 @@ type CreateConnectionInfoReq struct {
 	Name        string `json:"name" mapstructure:"name" validate:"required"`
 	Description string `json:"description"`
 
-	// SSH fields — required when parent SourceGroup.Type == "ssh".
+	// SSH fields - required when parent SourceGroup.Type == "ssh".
 	IPAddress  string `json:"ip_address,omitempty"`
 	SSHPort    string `json:"ssh_port,omitempty"`
 	User       string `json:"user,omitempty"`
@@ -115,7 +115,7 @@ type CreateConnectionInfoReq struct {
 	// Kubeconfig — required when on-prem + ResourceType "k8s".
 	Kubeconfig string `json:"kubeconfig,omitempty"`
 
-	// CSP fields — required when parent SourceGroup.Type == "csp".
+	// CSP fields - required when parent SourceGroup.Type == "csp".
 	ResourceType string `json:"resource_type,omitempty"`
 	ResourceID   string `json:"resource_id,omitempty"`
 	// Zone (optional) overrides the CSP zone for this connection. Empty → default.

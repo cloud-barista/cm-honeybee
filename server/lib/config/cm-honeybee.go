@@ -27,7 +27,7 @@ type cmHoneybeeConfig struct {
 		} `yaml:"agent"`
 		OpenBao struct {
 			// Address of the OpenBao server, e.g. http://openbao:8200. Empty
-			// disables OpenBao — secrets stay in the local (SQLite) store.
+			// disables OpenBao - secrets stay in the local (SQLite) store.
 			// cm-honeybee self-manages OpenBao init/unseal/KV-enable and stores
 			// the unseal key + root token RSA-encrypted in its DB.
 			Address string `yaml:"address"`
@@ -182,7 +182,7 @@ func readCMHoneybeeConfigFile() error {
 	expandConfigEnvRefs()
 
 	// Native env overrides (HONEYBEE_LISTEN_PORT, HONEYBEE_VAULT_ADDR, ...) so the
-	// stock image can be configured entirely from the environment — no mounted
+	// stock image can be configured entirely from the environment - no mounted
 	// cm-honeybee.yaml required. A set env var wins over file/default values.
 	applyConfigEnvOverrides()
 

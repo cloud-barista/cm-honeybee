@@ -32,7 +32,7 @@ func doGetInfraInfo(connID string) (*infra.Infra, error) {
 	}
 	var infraInfo infra.Infra
 	// InfraData holds the agent-collected data. It is empty for a CSP source that
-	// has not been imported via the agent yet — in that case only the CSP section
+	// has not been imported via the agent yet - in that case only the CSP section
 	// below is populated.
 	if strings.TrimSpace(savedInfraInfo.InfraData) != "" {
 		err = json.Unmarshal([]byte(savedInfraInfo.InfraData), &infraInfo)
@@ -211,7 +211,7 @@ func GetInfraInfoSourceGroup(c echo.Context) error {
 		infraInfo, err := doGetInfraInfo(conn.ID)
 		if err != nil || infraInfo == nil {
 			// Nothing collected for this connection yet (normal right after
-			// registration) or unreadable — skip it; the error is logged in
+			// registration) or unreadable - skip it; the error is logged in
 			// doGetInfraInfo. Avoids dereferencing a nil result.
 			continue
 		}
@@ -293,7 +293,7 @@ func GetSoftwareInfoSourceGroup(c echo.Context) error {
 	for _, conn := range *list {
 		softwareInfo, err := doGetSoftwareInfo(conn.ID)
 		if err != nil || softwareInfo == nil {
-			continue // not collected yet / unreadable — skip (logged in doGetSoftwareInfo)
+			continue // not collected yet / unreadable - skip (logged in doGetSoftwareInfo)
 		}
 		softwareInfoList.Servers = append(softwareInfoList.Servers, *softwareInfo)
 	}
@@ -373,7 +373,7 @@ func GetKubernetesInfoSourceGroup(c echo.Context) error {
 	for _, conn := range *list {
 		kubernetesInfo, err := doGetKubernetesInfo(conn.ID)
 		if err != nil || kubernetesInfo == nil {
-			continue // not collected yet / unreadable — skip (logged in doGetKubernetesInfo)
+			continue // not collected yet / unreadable - skip (logged in doGetKubernetesInfo)
 		}
 		kubernetesInfoList.Servers = append(kubernetesInfoList.Servers, *kubernetesInfo)
 	}
@@ -453,7 +453,7 @@ func GetHelmInfoSourceGroup(c echo.Context) error {
 	for _, conn := range *list {
 		helmInfo, err := doGetHelmInfo(conn.ID)
 		if err != nil || helmInfo == nil {
-			continue // not collected yet / unreadable — skip (logged in doGetHelmInfo)
+			continue // not collected yet / unreadable - skip (logged in doGetHelmInfo)
 		}
 		helmInfoList.Servers = append(helmInfoList.Servers, *helmInfo)
 	}
@@ -563,7 +563,7 @@ func GetDataInfoSourceGroup(c echo.Context) error {
 	for _, conn := range *list {
 		dataInfo, err := doGetDataInfo(conn.ID)
 		if err != nil || dataInfo == nil {
-			continue // not collected yet / unreadable — skip (logged in doGetDataInfo)
+			continue // not collected yet / unreadable - skip (logged in doGetDataInfo)
 		}
 		dataInfoList.MinIOData = append(dataInfoList.MinIOData, *dataInfo)
 	}
