@@ -15,7 +15,16 @@ import (
 // TestMain points $CBSPIDER_ROOT at a temp dir holding cb-spider's yaml files
 // from the module cache. info-store init() has already run by now against the
 // spiderroot default; everything else reads $CBSPIDER_ROOT lazily.
+//
+// A child started by TestCloudOSMetaInfoFirstLoad uses the parent's root and
+// leaves it in place. Its first loads start cb-spider's watcher goroutine,
+// which exits the process (cblog.Fatal) if cloudos_meta.yaml is gone when it
+// adds the watch; removing the root as the child exits made that happen now
+// and then. The parent removes the root after all children have exited.
 func TestMain(m *testing.M) {
+	if os.Getenv(metaChildEnv) != "" && os.Getenv("CBSPIDER_ROOT") != "" {
+		os.Exit(m.Run())
+	}
 	root, err := setupSpiderRoot()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "setup CBSPIDER_ROOT:", err)
