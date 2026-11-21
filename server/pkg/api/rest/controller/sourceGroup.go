@@ -503,7 +503,7 @@ func UpdateSourceGroup(c echo.Context) error {
 			if region == "" {
 				return common.ReturnErrorMsg(c, "region_name is empty")
 			}
-			oldSourceGroup.ProviderName = provider
+			oldSourceGroup.ProviderName = strings.ToLower(provider)
 			oldSourceGroup.RegionName = region
 		}
 	}
