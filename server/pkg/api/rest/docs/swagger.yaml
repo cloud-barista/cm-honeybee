@@ -1889,26 +1889,6 @@ definitions:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.SourceGroupTypeSpec'
         type: array
     type: object
-  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListeningPortProperty:
-    properties:
-      bindAddress:
-        description: |-
-          BindAddress is the local address the socket is bound to, e.g. "0.0.0.0",
-          "::", "127.0.0.1". It is left out when the agent that collected the node
-          predates per-socket collection and only reported the port.
-        example: 0.0.0.0
-        type: string
-      port:
-        example: 8080
-        type: integer
-      processName:
-        example: nginx
-        type: string
-      protocol:
-        description: tcp, udp
-        example: tcp
-        type: string
-    type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.NLBInfoList:
     properties:
       servers:
@@ -1988,75 +1968,6 @@ definitions:
         items:
           $ref: '#/definitions/onpremisemodel.NlbProperty'
         type: array
-    type: object
-  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedNodeProperty:
-    properties:
-      cpu:
-        $ref: '#/definitions/onpremisemodel.CpuProperty'
-      dataDisks:
-        items:
-          $ref: '#/definitions/onpremisemodel.DiskProperty'
-        type: array
-      firewallTable:
-        items:
-          $ref: '#/definitions/onpremisemodel.FirewallRuleProperty'
-        type: array
-      gpuCards:
-        description: Physical GPU cards installed on the node
-        items:
-          $ref: '#/definitions/onpremisemodel.GpuCardProperty'
-        type: array
-      hostname:
-        type: string
-      interfaces:
-        items:
-          $ref: '#/definitions/onpremisemodel.NetworkInterfaceProperty'
-        type: array
-      listeningPorts:
-        items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListeningPortProperty'
-        type: array
-      machineId:
-        description: Unique identifier for the node (e.g., UUID)
-        type: string
-      memory:
-        $ref: '#/definitions/onpremisemodel.MemoryProperty'
-      os:
-        $ref: '#/definitions/onpremisemodel.OsProperty'
-      role:
-        description: Node role (e.g., "control-plane", "worker", "standalone")
-        example: control-plane
-        type: string
-      rootDisk:
-        $ref: '#/definitions/onpremisemodel.DiskProperty'
-      routingTable:
-        items:
-          $ref: '#/definitions/onpremisemodel.RouteProperty'
-        type: array
-    type: object
-  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremInfra:
-    properties:
-      k8sCluster:
-        $ref: '#/definitions/onpremisemodel.K8sClusterProperty'
-      network:
-        $ref: '#/definitions/onpremisemodel.NetworkProperty'
-      nlbs:
-        items:
-          $ref: '#/definitions/onpremisemodel.NlbProperty'
-        type: array
-      nodes:
-        items:
-          $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedNodeProperty'
-        type: array
-    required:
-    - nodes
-    type: object
-  github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremiseInfraModel:
-    properties:
-      onpremiseInfraModel:
-        $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremInfra'
-    required:
-    - onpremiseInfraModel
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RegisterTargetInfoReq:
     properties:
@@ -4827,6 +4738,25 @@ definitions:
     - name
     - version
     type: object
+  onpremisemodel.ListeningPortProperty:
+    properties:
+      bindAddress:
+        description: Local bind address (e.g., "0.0.0.0", "::", "127.0.0.1")
+        example: 0.0.0.0
+        type: string
+      port:
+        description: Listening port number
+        example: 8080
+        type: integer
+      processName:
+        description: Owning process name if available
+        example: nginx
+        type: string
+      protocol:
+        description: Transport protocol (e.g., "tcp", "udp")
+        example: tcp
+        type: string
+    type: object
   onpremisemodel.MemoryProperty:
     properties:
       available:
@@ -4970,6 +4900,83 @@ definitions:
       weight:
         description: Traffic weight (reference only)
         type: integer
+    type: object
+  onpremisemodel.NodeProperty:
+    properties:
+      cpu:
+        $ref: '#/definitions/onpremisemodel.CpuProperty'
+      dataDisks:
+        items:
+          $ref: '#/definitions/onpremisemodel.DiskProperty'
+        type: array
+      firewallTable:
+        items:
+          $ref: '#/definitions/onpremisemodel.FirewallRuleProperty'
+        type: array
+      gpuCards:
+        description: Physical GPU cards installed on the node
+        items:
+          $ref: '#/definitions/onpremisemodel.GpuCardProperty'
+        type: array
+      hostname:
+        type: string
+      interfaces:
+        items:
+          $ref: '#/definitions/onpremisemodel.NetworkInterfaceProperty'
+        type: array
+      listeningPorts:
+        description: Listening TCP/UDP sockets on the node
+        items:
+          $ref: '#/definitions/onpremisemodel.ListeningPortProperty'
+        type: array
+      machineId:
+        description: Unique identifier for the node (e.g., UUID)
+        type: string
+      memory:
+        $ref: '#/definitions/onpremisemodel.MemoryProperty'
+      os:
+        $ref: '#/definitions/onpremisemodel.OsProperty'
+      role:
+        description: Node role (e.g., "control-plane", "worker", "standalone")
+        example: control-plane
+        type: string
+      rootDisk:
+        $ref: '#/definitions/onpremisemodel.DiskProperty'
+      routingTable:
+        items:
+          $ref: '#/definitions/onpremisemodel.RouteProperty'
+        type: array
+    type: object
+  onpremisemodel.OnpremInfra:
+    properties:
+      k8sCluster:
+        allOf:
+        - $ref: '#/definitions/onpremisemodel.K8sClusterProperty'
+        description: 'TODO: Extend to a general ClusterProperty if other orchestrators
+          (e.g., OpenShift, Rancher) are needed.'
+      network:
+        $ref: '#/definitions/onpremisemodel.NetworkProperty'
+      nlbs:
+        description: |-
+          NLBs holds on-premise NLB instances (HAProxy-based), one entry per frontend-backend pair.
+          Populated by cm-honeybee when HAProxy is detected on a node.
+          Used exclusively by POST /recommendation/infraWithNlb; ignored by POST /recommendation/infra.
+        items:
+          $ref: '#/definitions/onpremisemodel.NlbProperty'
+        type: array
+      nodes:
+        items:
+          $ref: '#/definitions/onpremisemodel.NodeProperty'
+        type: array
+    required:
+    - nodes
+    type: object
+  onpremisemodel.OnpremiseInfraModel:
+    properties:
+      onpremiseInfraModel:
+        $ref: '#/definitions/onpremisemodel.OnpremInfra'
+    required:
+    - onpremiseInfraModel
     type: object
   onpremisemodel.OsProperty:
     properties:
@@ -8112,7 +8119,7 @@ paths:
         "200":
           description: Successfully get refined information of the infra.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremiseInfraModel'
+            $ref: '#/definitions/onpremisemodel.OnpremiseInfraModel'
         "400":
           description: Sent bad request.
           schema:
@@ -9341,7 +9348,7 @@ paths:
         "200":
           description: Successfully get refined information of the infra.
           schema:
-            $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.RefinedOnpremiseInfraModel'
+            $ref: '#/definitions/onpremisemodel.OnpremiseInfraModel'
         "400":
           description: Sent bad request.
           schema:

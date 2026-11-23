@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	inframodel "github.com/cloud-barista/cm-beetle/imdl/on-premise-model"
 	softwaremodel "github.com/cloud-barista/cm-grasshopper/smdl"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/infra"
 	"github.com/cloud-barista/cm-honeybee/agent/pkg/api/rest/model/onprem/software"
@@ -411,7 +412,7 @@ func TestGetInfraInfoSourceGroupRefined_OnlyCollectedVMs(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
 	}
-	var got model.RefinedOnpremiseInfraModel
+	var got inframodel.OnpremiseInfraModel
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
@@ -438,7 +439,7 @@ func TestGetInfraInfoSourceGroupRefined_OnpremSkipsUncollected(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
 	}
-	var got model.RefinedOnpremiseInfraModel
+	var got inframodel.OnpremiseInfraModel
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
@@ -548,7 +549,7 @@ func TestGetInfraInfoSourceGroupRefined_FSHostsAreNodes(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", rec.Code, rec.Body.String())
 	}
-	var got model.RefinedOnpremiseInfraModel
+	var got inframodel.OnpremiseInfraModel
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
