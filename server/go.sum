@@ -195,16 +195,12 @@ github.com/cloud-barista/cb-log v0.12.0 h1:pNu4zkEf5Itv3L1J4Az0N2C3BuexBCTTBY9Bf
 github.com/cloud-barista/cb-log v0.12.0/go.mod h1:R3qwPv6oIyhDxtmBHOFfIVYn/Un7eRKj711uRnyGrGI=
 github.com/cloud-barista/cb-spider v0.14.0 h1:r4UnfC57/FPUk1x1Na9J6mBRT8RS8GT5oLnHqMxLgE0=
 github.com/cloud-barista/cb-spider v0.14.0/go.mod h1:zo10q5CxIzvw6Zq36Z4c+ENG8g2TJUpPDMJpJb5QXyA=
-github.com/cloud-barista/cm-beetle/imdl v0.1.20 h1:LFJW+R2m+azFQxt9F5eXynpTC71EJrtkHd0ttIOQij8=
-github.com/cloud-barista/cm-beetle/imdl v0.1.20/go.mod h1:RfpzPB67XRW5TDGs5f4Cv/W/zJ3c+eU8eV291oj+ns0=
 github.com/cloud-barista/cm-beetle/imdl v0.1.21 h1:Ewugk6m8C73ZmGgN68OXk9PuGIPYI4wtPa2WWXwAlAg=
 github.com/cloud-barista/cm-beetle/imdl v0.1.21/go.mod h1:RfpzPB67XRW5TDGs5f4Cv/W/zJ3c+eU8eV291oj+ns0=
 github.com/cloud-barista/cm-centipede/data-mig v0.1.3 h1:yjXi5gP0Z7G2c+QsRUD7928nWLw/jK0VMJNOP0uDwms=
 github.com/cloud-barista/cm-centipede/data-mig v0.1.3/go.mod h1:CQxhsCB9fOHpcqLgI57pCKz7p+utLNbbfm27LkccnWc=
 github.com/cloud-barista/cm-centipede/dmdl v0.1.2 h1:rlPhz/ZSultuqf56yq2I+KiG9EPEXm3UMdsrSeQgifM=
 github.com/cloud-barista/cm-centipede/dmdl v0.1.2/go.mod h1:q4XYst1te41FvTHX5qLsgjbAyvwgG7q7/IpM13bb/OM=
-github.com/cloud-barista/cm-centipede/transx-ex v0.1.2 h1:oKlRPGFjuzuV+8bdJm1C72oiS9oxVNEFSSK/k4ZODpM=
-github.com/cloud-barista/cm-centipede/transx-ex v0.1.2/go.mod h1:zJ/DrBc89LNq6hNTgkUtid96t2NXSUCxrAwjIcvOFjs=
 github.com/cloud-barista/cm-grasshopper/smdl v0.1.4 h1:2VzvRMqusoWu0IceDNX0JGzQuqpeSv/T+aEuBijWt+M=
 github.com/cloud-barista/cm-grasshopper/smdl v0.1.4/go.mod h1:WORfvOxkJr+NhRPCsJvkntzTEY/aG9JeuKFXKEBemAY=
 github.com/cloud-barista/cm-honeybee/agent v0.0.0-20261109091203-695e378f67cb h1:wqNRK0NEi/jKYV9h48FRFaBOzXbn3wfTr1AI4C/hJ8s=

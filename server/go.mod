@@ -8,7 +8,6 @@ require (
 	github.com/cloud-barista/cm-beetle/imdl v0.1.21
 	github.com/cloud-barista/cm-centipede/data-mig v0.1.3
 	github.com/cloud-barista/cm-centipede/dmdl v0.1.2
-	github.com/cloud-barista/cm-centipede/transx-ex v0.1.2
 	github.com/cloud-barista/cm-grasshopper/smdl v0.1.4
 	github.com/cloud-barista/cm-honeybee/agent v0.0.0-20261109091203-695e378f67cb
 	github.com/glebarez/sqlite v1.11.0
