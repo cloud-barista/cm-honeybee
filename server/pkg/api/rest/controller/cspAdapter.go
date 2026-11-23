@@ -1100,7 +1100,7 @@ const (
 // PUBLIC and keeps the load balancer's own scheme (internet-facing |
 // internal) in KeyValueList, alibaba reports an intranet NLB as PRIVATE, and
 // gcp copies its forwarding rule scheme (EXTERNAL | INTERNAL) when it fills
-// Type. The gcp driver (cb-spider v0.13.23) reads that scheme under another
+// Type. The gcp driver (cb-spider v0.14.0) reads that scheme under another
 // key and leaves Type empty, while the listener's KeyValueList still carries
 // it as LoadBalancingScheme; that is read only when Type and Scheme do not
 // decide.

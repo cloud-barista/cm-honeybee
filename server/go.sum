@@ -193,8 +193,8 @@ github.com/clbanning/mxj/v2 v2.7.0/go.mod h1:hNiWqW14h+kc+MdF9C6/YoRfjEJoR3ou6tn
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/cloud-barista/cb-log v0.12.0 h1:pNu4zkEf5Itv3L1J4Az0N2C3BuexBCTTBY9Bf3n1oxM=
 github.com/cloud-barista/cb-log v0.12.0/go.mod h1:R3qwPv6oIyhDxtmBHOFfIVYn/Un7eRKj711uRnyGrGI=
-github.com/cloud-barista/cb-spider v0.13.23 h1:/Mkyynb/DVaPNazaVpLbwtZONzf2MW9dmOEDQJxahRA=
-github.com/cloud-barista/cb-spider v0.13.23/go.mod h1:h2D8paagFhYUoeqbzEuDlj0yyOMYK+HD9jnBQUkGPuM=
+github.com/cloud-barista/cb-spider v0.14.0 h1:r4UnfC57/FPUk1x1Na9J6mBRT8RS8GT5oLnHqMxLgE0=
+github.com/cloud-barista/cb-spider v0.14.0/go.mod h1:zo10q5CxIzvw6Zq36Z4c+ENG8g2TJUpPDMJpJb5QXyA=
 github.com/cloud-barista/cm-beetle/imdl v0.1.20 h1:LFJW+R2m+azFQxt9F5eXynpTC71EJrtkHd0ttIOQij8=
 github.com/cloud-barista/cm-beetle/imdl v0.1.20/go.mod h1:RfpzPB67XRW5TDGs5f4Cv/W/zJ3c+eU8eV291oj+ns0=
 github.com/cloud-barista/cm-beetle/imdl v0.1.21 h1:Ewugk6m8C73ZmGgN68OXk9PuGIPYI4wtPa2WWXwAlAg=
@@ -213,8 +213,8 @@ github.com/cloud-barista/ktcloud-sdk-go v0.2.1-0.20251103105234-6cbc5279b7fb h1:
 github.com/cloud-barista/ktcloud-sdk-go v0.2.1-0.20251103105234-6cbc5279b7fb/go.mod h1:lgLL364ot3Z0Sa0xZjJQqT7LSaQzSug0YnwmQnTwzEg=
 github.com/cloud-barista/ktcloudvpc-sdk-go v0.0.0-20260713072217-58ff4a0ab139 h1:4vZeAomyjMJKUVzseDoUaLkrQIXwN1eeqDSq3dhacWE=
 github.com/cloud-barista/ktcloudvpc-sdk-go v0.0.0-20260713072217-58ff4a0ab139/go.mod h1:KTct9zIiho4yDWKGVDz1Wde20bqXkH51o8EKfLzoyG8=
-github.com/cloud-barista/nhncloud-sdk-go v0.0.2 h1:i/p74PyjNx+RczYEdQ8ofiti8nxWVVuf3xJr2XHdcpg=
-github.com/cloud-barista/nhncloud-sdk-go v0.0.2/go.mod h1:J+VrbCRKFXfUpGLFOTjNht6/7y0gZEYd9reNEPZ23Z8=
+github.com/cloud-barista/nhncloud-sdk-go v0.0.3 h1:J979uMr3EMdOAmA8Jv5CdMdAF0u66eLK4ZRbN0sOFpw=
+github.com/cloud-barista/nhncloud-sdk-go v0.0.3/go.mod h1:J+VrbCRKFXfUpGLFOTjNht6/7y0gZEYd9reNEPZ23Z8=
 github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGXZJjfX53e64911xZQV5JYwmTeXPW+k8Sc=
 github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2 h1:aBangftG7EVZoUb69Os8IaYg++6uMOdKK83QtkkvJik=
 github.com/cncf/xds/go v0.0.0-20260202195803-dba9d589def2/go.mod h1:qwXFYgsP6T7XnJtbKlf1HP8AjxZZyzxMmc+Lq5GjlU4=

@@ -4,7 +4,7 @@ go 1.27.1
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.8.3
-	github.com/cloud-barista/cb-spider v0.13.23
+	github.com/cloud-barista/cb-spider v0.14.0
 	github.com/cloud-barista/cm-beetle/imdl v0.1.21
 	github.com/cloud-barista/cm-centipede/data-mig v0.1.3
 	github.com/cloud-barista/cm-centipede/dmdl v0.1.2
@@ -92,7 +92,7 @@ require (
 	github.com/cloud-barista/cb-log v0.12.0 // indirect
 	github.com/cloud-barista/ktcloud-sdk-go v0.2.1-0.20251103105234-6cbc5279b7fb // indirect
 	github.com/cloud-barista/ktcloudvpc-sdk-go v0.0.0-20260713072217-58ff4a0ab139 // indirect
-	github.com/cloud-barista/nhncloud-sdk-go v0.0.2 // indirect
+	github.com/cloud-barista/nhncloud-sdk-go v0.0.3 // indirect
 	github.com/cyphar/filepath-securejoin v0.7.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/docker/go-units v0.5.0 // indirect
