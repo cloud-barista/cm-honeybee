@@ -104,7 +104,7 @@ func init() {
 	// The private key is required to decrypt secrets stored encrypted at rest
 	// (the OpenBao unseal material and CSP credentials). It is optional only for
 	// SSH-only deployments without OpenBao, so a missing/unreadable key is logged
-	// rather than fatal — features that need it report it on use.
+	// rather than fatal - features that need it report it on use.
 	if fileutil.IsExist(privateKeyPath) {
 		common.PrivKey, err = rsautil.ReadPrivateKey(privateKeyPath)
 		if err != nil {

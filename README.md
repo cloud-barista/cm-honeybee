@@ -180,6 +180,21 @@ spelling differs per CSP: AWS uses lowercase snake_case
 (`aws_access_key_id`, `aws_secret_access_key`) while Azure uses camelCase
 (`clientId`, `clientSecret`, `tenantId`, `subscriptionId`).
 
+`optional_credential_keys` lists the keys a group may take besides them. On
+ibm, openstack, kt, gcp, nhn and azure the buckets are read through an S3 API
+that the main credential does not reach, so these CSPs take `S3AccessKey` and
+`S3SecretKey` (the Cloud Storage interoperability keys of cb-tumblebug's
+`template.credentials.yaml`; on azure the storage account name and key, also
+taken as `StorageAccountName` and `StorageAccountKey`). They are optional: a group without them registers, lists
+regions and collects every other resource type, but its `object_storage`
+connections are refused (3.3). Give both or neither; one alone is refused with
+400 (`S3AccessKey and S3SecretKey must be given together`). The key names are
+matched case-insensitively and stored as `S3AccessKey` and `S3SecretKey`. The
+other CSPs read buckets with the main credential and have no optional keys;
+an S3 key sent to them is refused like any unknown key. `credentials` lists
+the required keys, then the optional ones with `optional: true` and
+`resource_types: ["object_storage"]`.
+
 It also includes `region_keys`, which is the shape of a region for that CSP
 (e.g. `["Region", "Zone"]`) rather than a list of regions, and `default_region`.
 The actual regions need a credential. Before the group exists, post the
@@ -197,7 +212,7 @@ curl -X 'POST' 'http://127.0.0.1:8081/honeybee/csp/aws/region' \
 `GET /csp` also returns `supported_resource_types`, the `resource_type` values a
 connection of each CSP can be collected as (3.3). It is read from the linked
 driver's capabilities; `object_storage` is listed for every CSP whose buckets are
-read through the S3 API.
+read through the S3 API, including the ones that need the optional S3 keys above.
 
 Then create the group:
 ```shell
@@ -218,6 +233,17 @@ curl -X 'POST' \
 honeybee stores the credential in OpenBao and keeps it there. For each call it
 hands the credential to the CSP driver in memory; it is not registered or
 written anywhere else. No connection name is kept on the source group.
+
+`region_name` (`"<region>"` or `"<region>/<zone>"`) is stored as the CSP's own
+region list spells it, matched case-insensitively (ncp `kr/kr-1` is stored as
+`KR/KR-1`; ncp takes only its own spelling). The list is read with the
+credential given at registration (or with a new credential on update), and
+with the stored credential when
+`PUT /source_group/{sgId}` changes only the region. If the list or the stored
+credential cannot be read, or the list does not name the region or zone, that
+part is stored as given and the request is not refused. Either way the region
+and the zone are each trimmed, so `" kr / kr-1 "` is stored as `kr/kr-1` even
+when nothing is matched.
 ### 3. Register connection info
 Register the connection information to the source group. The body shape
 depends on the group's `type`.
@@ -291,6 +317,11 @@ curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=
 curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=rdbms'
 curl 'http://127.0.0.1:8081/honeybee/source_group/{sgID}/discover?resource_type=nlb'
 ```
+When the CSP's driver has no handler for the `resource_type` (`k8s`, `nlb` or
+`rdbms`; e.g. `k8s` and `rdbms` on kt), discovery answers 200 with empty `items`,
+`unsupported: true` and the reason in `reason`, without asking the CSP. So does
+`object_storage` on a group whose CSP needs the optional S3 keys (2.2) when the
+group's credential has none.
 Then register the picked resource:
 ```shell
 curl -X 'POST' \
@@ -301,14 +332,30 @@ curl -X 'POST' \
 `resource_type` is one of `vm`, `k8s`, `object_storage`, `rdbms` or `nlb`.
 `GET /csp` tells which of them a CSP supports (`supported_resource_types`).
 
+NCP Kubernetes clusters do not appear in `discover?resource_type=k8s`, as the
+cb-spider NCP driver lists no clusters. Such a cluster is still registered and
+collected by its system ID (the cluster UUID): when the listing does not hold
+the cluster, honeybee reads it by that ID.
+
 A `vm` connection may also take `ip_address`, `ssh_port`, `user` and
 `password` or `private_key`; with them the agent is installed in the VM and
 collects the guest as well (section 4). The other resource types have no host to
 reach, so a request that sends any SSH field for them is refused with 400.
 
 Registration checks the resource with the CSP:
+- A `resource_type` the group's CSP is not collected as (not in its
+  `supported_resource_types` of `GET /csp`) is refused with 400 before the CSP
+  is asked, e.g. `resource_type 'rdbms' is not supported for kt (supported: vm,
+  object_storage, nlb)`. Connections stored with such a type before are kept,
+  and their refresh asks the CSP as before.
+- An `object_storage` connection on a group whose CSP needs the optional S3 keys
+  (2.2) and whose credential has none is refused with 400 before the CSP is
+  asked, e.g. `object_storage on gcp needs S3AccessKey and S3SecretKey in the
+  source group credential`. Add them with `PUT /source_group/{sgID}`, whose
+  `credential` replaces the stored one and so must carry the required keys as well.
 - A `resource_id` the CSP does not have is refused with 400. The resource counts
-  as missing only when the CSP listing came back and holds no such resource.
+  as missing only when the CSP listing came back and holds no such resource; for
+  `k8s`, reading the cluster by that ID must also fail or return another cluster.
 - A bucket in another region than the group's is refused with 400 (see the table
   below for the CSPs where the region is known).
 - When the CSP cannot be asked (timeout, credential, unreachable endpoint), the
@@ -322,8 +369,10 @@ Registration checks the resource with the CSP:
   to `22`.
 - On the other resource types SSH fields are refused with 400. A `vm` connection
   changed into another resource type drops its SSH fields and secrets.
-- A changed `resource_type` or `resource_id` is checked with the CSP as on
-  registration, with the same 400 for a missing resource or a bucket in another region.
+- A changed `resource_type` or `resource_id` is checked as on registration, with
+  the same 400 for a `resource_type` the CSP is not collected as, a bucket on a
+  group without the S3 keys its CSP needs, a missing resource or a bucket in
+  another region.
 
 `GET .../connection_info` takes `resource_type` (`vm`, `k8s`, `object_storage`,
 `nlb`, `rdbms`) to list one type. On an on-premise group `resource_type=vm`
@@ -370,11 +419,15 @@ What is collected:
   has none), version, status, creation time and node groups (spec, image, root
   disk, desired/min/max size, autoscaling). The nodes and workloads are not
   collected: the cluster is read through the CSP's API, not through a kubeconfig.
+  A cluster the CSP listing does not hold is read by its ID, which is how an NCP
+  cluster is collected.
 - `nlb`: the listener (protocol, IP, port, DNS name), the backend VM group
   (protocol, port, VMs) and the health check. `type` is `PUBLIC`, `INTERNAL`, or
-  empty when the driver does not tell. On AWS the cb-spider driver looks the
-  target group up by the NLB's own name, the name it gives the target groups it
-  creates. For an NLB created outside cb-spider whose target group has another
+  empty when the driver does not tell. On GCP the cb-spider driver leaves the
+  type empty; it is then read from the listener's `LoadBalancingScheme`
+  (`EXTERNAL` is `PUBLIC`, `INTERNAL` is `INTERNAL`). On AWS the cb-spider
+  driver looks the target group up by the NLB's own name, the name it gives the
+  target groups it creates. For an NLB created outside cb-spider whose target group has another
   name, the driver finds no target group and does not report it as an error, so
   the import succeeds with `vm_group` `{"protocol": "", "port": "", "vms": []}`
   and a zero `health_checker`. Such a record has `vm_group_unknown: true` (with a
@@ -525,6 +578,18 @@ Kubernetes entry for a managed cluster, since its workloads are not collected.
 was found in as `sourceCloud.region`, or the group's region where the CSP cannot
 tell. The group result names the group's region and leaves out a bucket found in
 another region, since the model has one region for all of its buckets.
+
+`rdbms/refined` of one connection names the zone the database runs in as
+`sourceCloud.zone`, read from the driver's record (AWS `AvailabilityZone`, GCP
+`GceZone`, Alibaba `ZoneId`, Tencent `Zone`), or the group's zone where the CSP
+does not report one (Azure, IBM). The group result names the databases' zone
+only when all of them report the same one, and the group's zone otherwise. The
+spec (vCPU and memory) of a database is collected in its own zone as well:
+Alibaba finds no spec when asked in another zone of the region. Where the
+driver's record already carries the vCPU count and memory (Alibaba
+`DBInstanceCPU` and `DBInstanceMemory`), those are used and the spec is not
+looked up, since Alibaba's spec lookup can outlast the 60-second driver call
+timeout.
 
 ## Health-check
 

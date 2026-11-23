@@ -182,19 +182,31 @@ func TestCheckCSPResource_NLB(t *testing.T) {
 
 func TestNormalizeNLBType(t *testing.T) {
 	tests := []struct {
-		typ    string
-		scheme string
-		want   string
+		typ      string
+		scheme   string
+		listener string
+		want     string
 	}{
-		{"PUBLIC", "", "PUBLIC"},
-		{"public", "", "PUBLIC"},
-		{" INTERNAL ", "", "INTERNAL"},
-		{"PRIVATE", "", "INTERNAL"},        // alibaba intranet
-		{"EXTERNAL", "", "PUBLIC"},         // gcp forwarding rule scheme
-		{"PUBLIC", "internal", "INTERNAL"}, // aws reports PUBLIC for every NLB
-		{"PUBLIC", "internet-facing", "PUBLIC"},
-		{"", "", ""},
-		{"GLOBAL", "", ""},
+		{"PUBLIC", "", "", "PUBLIC"},
+		{"public", "", "", "PUBLIC"},
+		{" INTERNAL ", "", "", "INTERNAL"},
+		{"PRIVATE", "", "", "INTERNAL"},        // alibaba intranet
+		{"EXTERNAL", "", "", "PUBLIC"},         // gcp forwarding rule scheme
+		{"PUBLIC", "internal", "", "INTERNAL"}, // aws reports PUBLIC for every NLB
+		{"PUBLIC", "internet-facing", "", "PUBLIC"},
+		{"", "", "", ""},
+		{"GLOBAL", "", "", ""},
+		// gcp leaves Type empty and keeps the scheme on the listener.
+		{"", "", "EXTERNAL", "PUBLIC"},
+		{"", "", "INTERNAL", "INTERNAL"},
+		{"", "", " internal ", "INTERNAL"},
+		{"GLOBAL", "", "EXTERNAL", "PUBLIC"},
+		{"", "", "INTERNAL_MANAGED", ""},
+		// Type and Scheme win over the listener.
+		{"INTERNAL", "", "EXTERNAL", "INTERNAL"},
+		{"PUBLIC", "", "INTERNAL", "PUBLIC"},
+		{"PUBLIC", "internal", "EXTERNAL", "INTERNAL"},
+		{"", "internet-facing", "INTERNAL", "PUBLIC"},
 	}
 
 	for _, tc := range tests {
@@ -202,8 +214,11 @@ func TestNormalizeNLBType(t *testing.T) {
 		if tc.scheme != "" {
 			n.KeyValueList = []spider.KeyValue{{Key: "Scheme", Value: tc.scheme}}
 		}
+		if tc.listener != "" {
+			n.Listener.KeyValueList = []spider.KeyValue{{Key: "LoadBalancingScheme", Value: tc.listener}}
+		}
 		if got := normalizeNLBType(n); got != tc.want {
-			t.Errorf("type %q scheme %q: got %q, want %q", tc.typ, tc.scheme, got, tc.want)
+			t.Errorf("type %q scheme %q listener %q: got %q, want %q", tc.typ, tc.scheme, tc.listener, got, tc.want)
 		}
 	}
 }

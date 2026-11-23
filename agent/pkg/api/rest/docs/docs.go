@@ -927,11 +927,7 @@ const docTemplate = `{
             "properties": {
                 "interval": {
                     "description": "Zero means to inherit. Durations are expressed as integer nanoseconds.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "retries": {
                     "description": "Retries is the number of consecutive failures needed to consider a container as unhealthy.\nZero means inherit.",
@@ -939,19 +935,11 @@ const docTemplate = `{
                 },
                 "startInterval": {
                     "description": "The interval to attempt healthchecks at during the start period",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "startPeriod": {
                     "description": "The start period for the container to initialize before the retries starts to count down.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "test": {
                     "description": "Test is the test to perform to check that the container is healthy.\nAn empty slice means to inherit the default.\nThe options are:\n{} : inherit healthcheck\n{\"NONE\"} : disable healthcheck\n{\"CMD\", args...} : exec arguments directly\n{\"CMD-SHELL\", command} : run command with system's default shell",
@@ -962,11 +950,7 @@ const docTemplate = `{
                 },
                 "timeout": {
                     "description": "Timeout is the time to wait before considering the check to have hung.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 }
             }
         },
@@ -2422,9 +2406,86 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPDataDisk": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "size": {
+                    "description": "GB",
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPGPU": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "memory_gb": {
+                    "description": "per device",
+                    "type": "integer"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "vendor": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPImage": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "os_architecture": {
+                    "description": "e.g. x86_64",
+                    "type": "string"
+                },
+                "os_disk_size_gb": {
+                    "type": "integer"
+                },
+                "os_disk_type": {
+                    "type": "string"
+                },
+                "os_distribution": {
+                    "description": "e.g. Ubuntu 22.04",
+                    "type": "string"
+                },
+                "os_platform": {
+                    "description": "e.g. Linux/UNIX",
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPInfo": {
             "type": "object",
             "properties": {
+                "data_disk_details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPDataDisk"
+                    }
+                },
                 "data_disks": {
                     "type": "array",
                     "items": {
@@ -2438,6 +2499,17 @@ const docTemplate = `{
                 "image": {
                     "description": "ImageIId NameId",
                     "type": "string"
+                },
+                "image_detail": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPImage"
+                },
+                "keypair": {
+                    "description": "The fields below come from separate driver calls made after GetVM. Each\nis left empty when its call fails or the driver has no such handler.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPKeyPair"
+                        }
+                    ]
                 },
                 "name": {
                     "description": "VM NameId",
@@ -2468,6 +2540,10 @@ const docTemplate = `{
                 "start_time": {
                     "type": "string"
                 },
+                "status": {
+                    "description": "e.g. Running, Suspended",
+                    "type": "string"
+                },
                 "tags": {
                     "type": "object",
                     "additionalProperties": {
@@ -2478,7 +2554,24 @@ const docTemplate = `{
                     "description": "e.g. Standard_D2s_v3",
                     "type": "string"
                 },
+                "vm_spec_detail": {
+                    "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPVMSpec"
+                },
                 "zone": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPKeyPair": {
+            "type": "object",
+            "properties": {
+                "fingerprint": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -2545,6 +2638,33 @@ const docTemplate = `{
                 },
                 "zone": {
                     "type": "string"
+                }
+            }
+        },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPVMSpec": {
+            "type": "object",
+            "properties": {
+                "architecture": {
+                    "type": "string"
+                },
+                "disk_gb": {
+                    "description": "0 when the spec has no fixed disk",
+                    "type": "integer"
+                },
+                "gpus": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_infra.CSPGPU"
+                    }
+                },
+                "memory_mib": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "vcpus": {
+                    "type": "integer"
                 }
             }
         },
@@ -4163,6 +4283,22 @@ const docTemplate = `{
                 }
             }
         },
+        "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.ListenSocket": {
+            "type": "object",
+            "properties": {
+                "bind_address": {
+                    "description": "BindAddress is the local address the socket is bound to, e.g. \"0.0.0.0\",\n\"::\", \"127.0.0.1\". A wildcard address accepts traffic on every interface.",
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
+                },
+                "protocol": {
+                    "description": "tcp, udp",
+                    "type": "string"
+                }
+            }
+        },
         "github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.Listener": {
             "type": "object",
             "properties": {
@@ -4172,6 +4308,13 @@ const docTemplate = `{
                 },
                 "executable_path": {
                     "type": "string"
+                },
+                "listen_sockets": {
+                    "description": "ListenSockets are the process's listening sockets one by one: its LISTEN\nTCP sockets and its bound, unconnected UDP sockets, each with the address\nit is bound to. A process listening only on UDP has these and no Ports.\nSorted by protocol, port and address, without duplicates.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_agent_pkg_api_rest_model_onprem_software.ListenSocket"
+                    }
                 },
                 "name": {
                     "type": "string"
@@ -5029,11 +5172,7 @@ const docTemplate = `{
             "properties": {
                 "mode": {
                     "description": "Mode of the tmpfs upon creation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/os.FileMode"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "options": {
                     "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
@@ -5216,197 +5355,6 @@ const docTemplate = `{
             "additionalProperties": {
                 "type": "object"
             }
-        },
-        "os.FileMode": {
-            "type": "integer",
-            "format": "int32",
-            "enum": [
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                8388608,
-                4194304,
-                1048576,
-                511
-            ],
-            "x-enum-comments": {
-                "ModeAppend": "a: append-only",
-                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
-                "ModeDevice": "D: device file",
-                "ModeDir": "d: is a directory",
-                "ModeExclusive": "l: exclusive use",
-                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
-                "ModeNamedPipe": "p: named pipe (FIFO)",
-                "ModePerm": "Unix permission bits, 0o777",
-                "ModeSetgid": "g: setgid",
-                "ModeSetuid": "u: setuid",
-                "ModeSocket": "S: Unix domain socket",
-                "ModeSticky": "t: sticky",
-                "ModeSymlink": "L: symbolic link",
-                "ModeTemporary": "T: temporary file; Plan 9 only"
-            },
-            "x-enum-descriptions": [
-                "d: is a directory",
-                "a: append-only",
-                "l: exclusive use",
-                "T: temporary file; Plan 9 only",
-                "L: symbolic link",
-                "D: device file",
-                "p: named pipe (FIFO)",
-                "S: Unix domain socket",
-                "u: setuid",
-                "g: setgid",
-                "c: Unix character device, when ModeDevice is set",
-                "t: sticky",
-                "?: non-regular file; nothing else is known about this file",
-                "",
-                "Unix permission bits, 0o777",
-                "d: is a directory",
-                "a: append-only",
-                "l: exclusive use",
-                "T: temporary file; Plan 9 only",
-                "L: symbolic link",
-                "D: device file",
-                "p: named pipe (FIFO)",
-                "S: Unix domain socket",
-                "u: setuid",
-                "g: setgid",
-                "c: Unix character device, when ModeDevice is set",
-                "t: sticky",
-                "?: non-regular file; nothing else is known about this file",
-                "",
-                "Unix permission bits, 0o777",
-                "d: is a directory",
-                "u: setuid",
-                "g: setgid",
-                "t: sticky",
-                "Unix permission bits, 0o777"
-            ],
-            "x-enum-varnames": [
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm",
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm",
-                "ModeDir",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeSticky",
-                "ModePerm"
-            ]
         },
         "pkg_api_rest_controller.DBInspectReq": {
             "type": "object",
@@ -5651,86 +5599,6 @@ const docTemplate = `{
                 }
             }
         },
-        "time.Duration": {
-            "type": "integer",
-            "format": "int64",
-            "enum": [
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000
-            ],
-            "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour"
-            ]
-        },
         "v1.DockerOCIImageConfig": {
             "type": "object",
             "properties": {
@@ -5821,11 +5689,7 @@ const docTemplate = `{
             "properties": {
                 "interval": {
                     "description": "Zero means to inherit. Durations are expressed as integer nanoseconds.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "retries": {
                     "description": "Retries is the number of consecutive failures needed to consider a container as unhealthy.\nZero means inherit.",
@@ -5833,19 +5697,11 @@ const docTemplate = `{
                 },
                 "startInterval": {
                     "description": "The interval to attempt healthchecks at during the start period",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "startPeriod": {
                     "description": "The start period for the container to initialize before the retries starts to count down.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "test": {
                     "description": "Test is the test to perform to check that the container is healthy.\nAn empty slice means to inherit the default.\nThe options are:\n{} : inherit healthcheck\n{\"NONE\"} : disable healthcheck\n{\"CMD\", args...} : exec arguments directly\n{\"CMD-SHELL\", command} : run command with system's default shell",
@@ -5856,11 +5712,7 @@ const docTemplate = `{
                 },
                 "timeout": {
                     "description": "Timeout is the time to wait before considering the check to have hung.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 }
             }
         }

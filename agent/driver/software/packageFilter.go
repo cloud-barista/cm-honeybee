@@ -82,7 +82,7 @@ func fetchURL(url string) ([]byte, error) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		// Not fatal on its own — callers try fallback URLs and log a final verdict.
+		// Not fatal on its own - callers try fallback URLs and log a final verdict.
 		errMsg := fmt.Sprintf("packageFilter: failed to fetch URL %s: %s", url, resp.Status)
 		logger.Println(logger.WARN, false, errMsg)
 		return nil, errors.New(errMsg)
@@ -412,7 +412,7 @@ func GetDefaultPackages() ([]string, error) {
 			return nil, errors.New(msg)
 		}
 		baseURL = fmt.Sprintf("https://cloud-images.ubuntu.com/minimal/releases/%s/release/ubuntu-%s-minimal-cloudimg-amd64.manifest", releaseName, version)
-		// Development / not-yet-released versions are not under releases/ yet —
+		// Development / not-yet-released versions are not under releases/ yet -
 		// fall back to the codename-keyed daily build manifest.
 		secondaryURL = fmt.Sprintf("https://cloud-images.ubuntu.com/minimal/daily/%s/current/%s-minimal-cloudimg-amd64.manifest", releaseName, releaseName)
 	case "debian":
@@ -452,7 +452,7 @@ func GetDefaultPackages() ([]string, error) {
 		logger.Println(logger.INFO, false, "packageFilter: Fetching Ubuntu manifest from:", baseURL)
 		manifestData, err := fetchURL(baseURL)
 		if err != nil && secondaryURL != "" && strings.Contains(err.Error(), "404") {
-			// Not published under releases/ (e.g. a development release) — try daily.
+			// Not published under releases/ (e.g. a development release) - try daily.
 			logger.Println(logger.WARN, false, "packageFilter: releases manifest not found, trying daily:", secondaryURL)
 			manifestData, err = fetchURL(secondaryURL)
 		}

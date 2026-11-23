@@ -41,7 +41,7 @@ var defaultClient *client
 
 // Init wires the OpenBao client from config. Safe to call once at startup; when
 // no address is configured OpenBao stays disabled. cm-honeybee always
-// self-manages OpenBao (init/unseal/KV-enable) — see WaitReady — persisting the
+// self-manages OpenBao (init/unseal/KV-enable) - see WaitReady - persisting the
 // unseal key + root token RSA-encrypted in the DB so it can re-unseal after
 // restarts.
 func Init() {
@@ -92,7 +92,7 @@ func (c *client) sealStatus() (sealState, error) {
 }
 
 // kvReady confirms the KV v2 engine is mounted at secret/ and the token is
-// accepted — i.e. secrets can actually be read/written end to end.
+// accepted - i.e. secrets can actually be read/written end to end.
 func (c *client) kvReady() error {
 	raw, err := c.do(http.MethodGet, "/v1/sys/mounts", nil)
 	if err != nil {
@@ -105,7 +105,7 @@ func (c *client) kvReady() error {
 }
 
 // WaitReady blocks until OpenBao is reachable, initialized, unsealed, this
-// client holds a usable token, and the KV v2 engine is mounted — everything
+// client holds a usable token, and the KV v2 engine is mounted - everything
 // cm-honeybee needs to store/read secrets. cm-honeybee stays not-ready
 // (readyz 503) until this returns.
 //
@@ -132,7 +132,7 @@ func WaitReady() {
 		// Log on every state change, plus a heartbeat every ~30s so a stuck
 		// state stays visible without spamming.
 		if reason != lastReason || i%10 == 0 {
-			logger.Println(logger.WARN, false, "OpenBao: not ready yet — "+reason)
+			logger.Println(logger.WARN, false, "OpenBao: not ready yet - "+reason)
 			lastReason = reason
 		}
 		time.Sleep(3 * time.Second)
@@ -241,7 +241,7 @@ func (c *client) ensureKV() error {
 	body, _ := json.Marshal(map[string]any{"type": "kv", "options": map[string]string{"version": "2"}})
 	_, err := c.do(http.MethodPost, "/v1/sys/mounts/"+mount, body)
 	if err != nil && strings.Contains(err.Error(), "already in use") {
-		return nil // mounted concurrently — fine
+		return nil // mounted concurrently - fine
 	}
 	return err
 }

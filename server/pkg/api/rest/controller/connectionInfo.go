@@ -1003,12 +1003,13 @@ func doCreateConnectionInfo(connectionInfo *model.ConnectionInfo) (*model.Connec
 		return nil, err
 	}
 
-	// A csp resource that is not there is refused before anything is written.
+	// A csp resource that is not there, or of a resource_type the provider is
+	// not collected as, is refused before anything is written.
 	// One the CSP could not be asked about is registered as before, with
 	// connection_status failed, and checked again on refresh.
 	var checked *cspCheckResult
 	if sourceGroup.Type == serverCommon.SourceGroupTypeCSP {
-		checkErr := checkCSP(sourceGroup, connectionInfo)
+		checkErr := checkNewCSPResource(sourceGroup, connectionInfo)
 		if cspResourceRejected(checkErr) {
 			return nil, checkErr
 		}
@@ -1388,7 +1389,7 @@ func UpdateConnectionInfo(c echo.Context) error {
 
 		// Last, so that a request refused above does not reach the CSP.
 		if resourceChanged {
-			checkErr := checkCSP(sourceGroup, oldConnectionInfo)
+			checkErr := checkNewCSPResource(sourceGroup, oldConnectionInfo)
 			if cspResourceRejected(checkErr) {
 				return common.ReturnErrorMsg(c, checkErr.Error())
 			}

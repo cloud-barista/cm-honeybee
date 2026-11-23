@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"reflect"
 	"strings"
@@ -512,5 +513,36 @@ func TestGetKubernetesInfoSourceGroup_CSPSection(t *testing.T) {
 	}
 	if csp.SystemID != "cls-0a1b2c3d" || len(csp.NodeGroups) != 2 {
 		t.Errorf("csp = %+v", csp)
+	}
+}
+
+// Discovery asks the driver capability before listing clusters: a driver
+// without a cluster handler is reported unsupported, not a failure, and the
+// CSP is not asked.
+func TestDiscoverK8s_DriverUnsupported(t *testing.T) {
+	stubDriverCapability(t, testDriverCaps)
+	calls := 0
+	orig := discoverClusters
+	t.Cleanup(func() { discoverClusters = orig })
+	discoverClusters = func(spider.Conn) ([]spider.ClusterInfo, error) {
+		calls++
+		return []spider.ClusterInfo{*managedCluster()}, nil
+	}
+
+	_, err := discoverByType(spider.Conn{Provider: "kt", Region: "KR1"}, common.ResourceTypeK8s)
+	var unsupported errDriverUnsupported
+	if !errors.As(err, &unsupported) {
+		t.Fatalf("kt: err = %v, want errDriverUnsupported", err)
+	}
+	if calls != 0 {
+		t.Errorf("kt: listing calls = %d, want 0", calls)
+	}
+
+	items, err := discoverByType(testCSPConn, common.ResourceTypeK8s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 || items[0].ResourceID != "cls-0a1b2c3d" || calls != 1 {
+		t.Errorf("aws: items = %+v, calls = %d, want cls-0a1b2c3d listed once", items, calls)
 	}
 }

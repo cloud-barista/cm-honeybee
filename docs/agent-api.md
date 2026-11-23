@@ -75,7 +75,7 @@ ssh -L 8082:127.0.0.1:$PORT <user>@<source-host>
 
 ## Admin
 
-### `GET /readyz` — 준비 상태 확인
+### `GET /readyz` - 준비 상태 확인
 
 에이전트가 기동되어 요청을 처리할 수 있으면 `200 OK`를 반환합니다.
 
@@ -87,7 +87,7 @@ curl http://127.0.0.1:$PORT/honeybee-agent/readyz
 
 ## Infra
 
-### `GET /infra` — 통합 인프라 정보 조회
+### `GET /infra` - 통합 인프라 정보 조회
 
 호스트의 전체 인프라 구성을 수집합니다: 컴퓨트(CPU/메모리), 루트 + 데이터 디스크, 네트워크 인터페이스,
 라우팅 테이블, 방화벽 규칙, OS 메타데이터, GPU.
@@ -374,7 +374,7 @@ rocm-smi 가 주지 않아 다른 곳에서 읽는 것도 있습니다. 둘 다 
 
 ## Software
 
-### `GET /software` — 소프트웨어 정보 조회
+### `GET /software` - 소프트웨어 정보 조회
 
 설치된 소프트웨어를 수집합니다: OS 패키지, 독립 실행 바이너리, 실행 중인 컨테이너.
 
@@ -394,7 +394,7 @@ curl "http://127.0.0.1:$PORT/honeybee-agent/software?show_default_packages=true"
 
 ## Kubernetes
 
-### `GET /kubernetes` — 쿠버네티스 정보 조회
+### `GET /kubernetes` - 쿠버네티스 정보 조회
 
 쿠버네티스 **클러스터** 메타데이터(이름, 버전, CNI 플러그인, Pod/Service CIDR, NodePort 범위)와
 **노드** 정보(`control-plane`/`worker` 등 역할, 노드 스펙, machine ID)를 수집합니다.
@@ -413,14 +413,14 @@ curl "http://127.0.0.1:$PORT/honeybee-agent/software?show_default_packages=true"
 curl http://127.0.0.1:$PORT/honeybee-agent/kubernetes
 ```
 
-Server는 이 출력을 정제 소스 모델로 매핑합니다 —
+Server는 이 출력을 정제 소스 모델로 매핑합니다 -
 [Server API → 쿠버네티스 소스 모델](./server-api.md#쿠버네티스-소스-모델) 참고.
 
 ---
 
 ## Helm
 
-### `GET /helm` — Helm 정보 조회
+### `GET /helm` - Helm 정보 조회
 
 호스트가 속한 클러스터에 설치된 Helm 릴리스 목록을 수집합니다. 쿠버네티스 엔드포인트와 마찬가지로
 접근 가능한 컨트롤 플레인 호스트에서만 의미가 있습니다.
@@ -433,7 +433,7 @@ curl http://127.0.0.1:$PORT/honeybee-agent/helm
 
 ## Data
 
-### `GET /data` — 데이터 마이그레이션 정보 조회
+### `GET /data` - 데이터 마이그레이션 정보 조회
 
 데이터 마이그레이션에 필요한 필드로 한정하여 관련 정보를 수집합니다.
 

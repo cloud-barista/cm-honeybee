@@ -471,3 +471,102 @@ func TestUpdateCSPConnection_ResourceChange(t *testing.T) {
 		t.Errorf("agent runs = %d, want no new run for the nlb", len(*agentRuns))
 	}
 }
+
+// ktGroup is a csp source group of a provider whose driver has no cluster or
+// database handler (testDriverCaps).
+var ktGroup = &model.SourceGroup{ID: "sg-kt", Name: "sg-kt", Type: common.SourceGroupTypeCSP,
+	ProviderName: "kt", RegionName: "KR1"}
+
+// A resource_type the provider is not collected as is refused at registration
+// without asking the CSP; one it is collected as goes on to the CSP check.
+func TestCreateCSPConnection_UnsupportedResourceType(t *testing.T) {
+	openTestDB(t)
+	createGroup(t, ktGroup, nil)
+	useSpiderRoot(t)
+	stubDriverCapability(t, testDriverCaps)
+	_, _, checks := stubConnectionSide(t, func(*model.ConnectionInfo) error { return nil })
+
+	for _, rt := range []string{"rdbms", "k8s"} {
+		rec := jsonConnRequest(t, http.MethodPost, ktGroup.ID, "",
+			model.CreateConnectionInfoReq{Name: rt, ResourceType: rt, ResourceID: "res-1"}, CreateConnectionInfo)
+		want := "resource_type '" + rt + "' is not supported for kt (supported: vm, object_storage, nlb)"
+		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), want) {
+			t.Errorf("%s: %d %s, want 400 with %q", rt, rec.Code, rec.Body.String(), want)
+		}
+	}
+	if conns := groupConnections(t, ktGroup.ID); len(conns) != 0 {
+		t.Errorf("connections = %d, want none", len(conns))
+	}
+	if *checks != 0 {
+		t.Errorf("CSP checks = %d, want 0", *checks)
+	}
+
+	rec := jsonConnRequest(t, http.MethodPost, ktGroup.ID, "",
+		model.CreateConnectionInfoReq{Name: "lb", ResourceType: "nlb", ResourceID: "lb-1"}, CreateConnectionInfo)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("nlb: %d %s, want 200", rec.Code, rec.Body.String())
+	}
+	if *checks != 1 {
+		t.Errorf("CSP checks = %d, want 1 for the nlb", *checks)
+	}
+	conns := groupConnections(t, ktGroup.ID)
+	if len(conns) != 1 || conns[0].ResourceType != common.ResourceTypeNLB || conns[0].ConnectionStatus != model.ConnectionInfoStatusSuccess {
+		t.Errorf("connections = %+v, want the nlb with success", conns)
+	}
+}
+
+// An update pointing a connection at a resource_type the provider is not
+// collected as is refused without asking the CSP. A connection stored with
+// such a type before is left alone: an update that does not change the
+// resource goes through, and its refresh asks the CSP as before.
+func TestUpdateCSPConnection_UnsupportedResourceType(t *testing.T) {
+	openTestDB(t)
+	createGroup(t, ktGroup, []model.ConnectionInfo{
+		{ID: "vm", Name: "vm", SourceGroupID: ktGroup.ID, ResourceType: common.ResourceTypeVM, ResourceID: "vm-1"},
+		{ID: "db", Name: "db", SourceGroupID: ktGroup.ID, ResourceType: common.ResourceTypeRDBMS, ResourceID: "db-1"},
+	})
+	useSpiderRoot(t)
+	stubDriverCapability(t, testDriverCaps)
+	_, _, checks := stubConnectionSide(t, func(*model.ConnectionInfo) error { return errors.New("no RDBMS handler") })
+
+	tests := []struct {
+		name   string
+		connID string
+		req    model.CreateConnectionInfoReq
+		want   string
+	}{
+		{"vm turned to k8s", "vm", model.CreateConnectionInfoReq{ResourceType: "k8s"},
+			"resource_type 'k8s' is not supported for kt (supported: vm, object_storage, nlb)"},
+		{"stored rdbms pointed at another id", "db", model.CreateConnectionInfoReq{ResourceID: "db-2"},
+			"resource_type 'rdbms' is not supported for kt"},
+	}
+	for _, tc := range tests {
+		rec := jsonConnRequest(t, http.MethodPut, ktGroup.ID, tc.connID, tc.req, UpdateConnectionInfo)
+		if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), tc.want) {
+			t.Errorf("%s: %d %s, want 400 with %q", tc.name, rec.Code, rec.Body.String(), tc.want)
+		}
+	}
+	if got := getConnection(t, "vm"); got.ResourceType != common.ResourceTypeVM {
+		t.Errorf("vm row = %+v, want unchanged", got)
+	}
+	if got := getConnection(t, "db"); got.ResourceID != "db-1" {
+		t.Errorf("db row = %+v, want unchanged", got)
+	}
+	if *checks != 0 {
+		t.Errorf("CSP checks = %d, want 0", *checks)
+	}
+
+	rec := jsonConnRequest(t, http.MethodPut, ktGroup.ID, "db",
+		model.CreateConnectionInfoReq{Description: "kept"}, UpdateConnectionInfo)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("description: %d %s, want 200", rec.Code, rec.Body.String())
+	}
+	got := getConnection(t, "db")
+	if got.Description != "kept" || got.ConnectionStatus != model.ConnectionInfoStatusFailed ||
+		got.ConnectionFailedMessage != "no RDBMS handler" {
+		t.Errorf("db row = %+v, want the description and the CSP's failure", got)
+	}
+	if *checks != 1 {
+		t.Errorf("CSP checks = %d, want 1 (the refresh)", *checks)
+	}
+}

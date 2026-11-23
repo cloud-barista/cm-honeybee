@@ -16,7 +16,7 @@ const flatpakColumns = "--columns=name,application,version,branch,arch,origin,ru
 // error) when flatpak is not installed or none are present.
 //
 // Both system (/var/lib/flatpak) and per-user (~/.local/share/flatpak) scopes
-// are scanned — scanning only as root would miss every user-scope install.
+// are scanned - scanning only as root would miss every user-scope install.
 //
 // When showDefaultPackages is false (default), only applications are listed
 // (--app), excluding the shared runtimes/platforms.

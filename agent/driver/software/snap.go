@@ -50,7 +50,7 @@ func GetSnaps(showDefaultPackages bool) ([]software.Snap, error) {
 
 	apiSnaps := snapdSnaps()
 	if apiSnaps == nil {
-		return getSnapsFromCLI(showDefaultPackages) // API unavailable — fallback
+		return getSnapsFromCLI(showDefaultPackages) // API unavailable - fallback
 	}
 
 	for _, s := range apiSnaps {

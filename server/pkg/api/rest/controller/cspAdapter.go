@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -785,14 +786,23 @@ func cspVMIdentifier(resourceID string) string {
 }
 
 // ErrCSPResourceNotFound marks a lookup the CSP answered without the
-// resource: the listing came back and nothing in it matched. A resource the CSP
-// could not be asked about (timeout, credential, unreachable endpoint) is not
-// marked, as nothing is known about it then.
+// resource: the listing came back and nothing in it matched, and for a k8s
+// cluster the read by its identifier that follows failed as well or returned
+// another cluster. A resource the CSP could not be asked about (timeout,
+// credential, unreachable endpoint) is not marked, as nothing is known about it
+// then. The read of a cluster is the exception: its failure is marked even
+// though it may be a passing outage, since the drivers do not tell one apart
+// from a missing cluster.
 var ErrCSPResourceNotFound = errors.New("the csp resource was not found")
 
 // ErrBucketRegionMismatch marks a bucket that exists but lives outside the
 // source group's region (bucketRegionMismatch).
 var ErrBucketRegionMismatch = errors.New("the bucket is outside the source group's region")
+
+// ErrCSPResourceUnsupported marks a resource_type the provider's connections
+// cannot be collected as (supportedResourceTypes): the driver has no handler
+// for it, so asking the CSP could only fail.
+var ErrCSPResourceUnsupported = errors.New("the resource_type is not supported for the csp")
 
 // cspResourceError carries one of the sentinels above under its own message,
 // so that the messages stay as they were while errors.Is can tell them apart.
@@ -813,14 +823,46 @@ func cspNotFound(msg string) error {
 // the resource cannot be the connection's, rather than because the CSP could
 // not be asked. Such a connection is refused at registration; the others are
 // registered with connection_status failed and checked again on refresh.
+// A bucket of a group whose credential has no S3 keys is refused as well: no
+// CSP is contacted then (spider.ErrS3CredentialMissing), and asking again
+// cannot succeed until the group's credential is changed.
 func cspResourceRejected(err error) bool {
-	return errors.Is(err, ErrCSPResourceNotFound) || errors.Is(err, ErrBucketRegionMismatch)
+	return errors.Is(err, ErrCSPResourceNotFound) || errors.Is(err, ErrBucketRegionMismatch) ||
+		errors.Is(err, ErrCSPResourceUnsupported) || errors.Is(err, spider.ErrS3CredentialMissing)
+}
+
+// checkCSPResourceType refuses a resource_type the source group's provider is
+// not collected as, by the list GET /csp gives (supportedResourceTypes). A
+// provider that cannot be told is left to the CSP check, which reports it as
+// it did.
+func checkCSPResourceType(sg *model.SourceGroup, resourceType string) error {
+	provider, err := spider.NormalizeProvider(sg.ProviderName)
+	if err != nil {
+		return nil
+	}
+	supported := supportedResourceTypes(provider)
+	if slices.Contains(supported, resourceType) {
+		return nil
+	}
+	list := "none"
+	if len(supported) > 0 {
+		list = strings.Join(supported, ", ")
+	}
+	return cspResourceError{kind: ErrCSPResourceUnsupported,
+		msg: "resource_type '" + resourceType + "' is not supported for " + strings.ToLower(provider) +
+			" (supported: " + list + ")"}
 }
 
 // The VM calls of the CSP, kept in variables so tests can stand in for it.
 var (
 	getCSPVM  = spider.GetCSPVM
 	listCSPVM = spider.ListVM
+)
+
+// The cluster calls of the CSP, kept in variables so tests can stand in for it.
+var (
+	getCSPCluster  = spider.GetCluster
+	listCSPCluster = spider.ListCluster
 )
 
 // findVMByID asks the driver for the VM, and when that fails, tells a VM that
@@ -872,8 +914,14 @@ func matchVM(vms []spider.VMInfo, resourceID string) *spider.VMInfo {
 // meta-DB, which never held a cluster cb-spider did not create. SystemId is matched first because
 // it is the identifier a CSP-only cluster carries; NameId is accepted as well
 // for a cluster cb-spider does manage.
+//
+// A listing that succeeds without the cluster is not taken as its absence:
+// some drivers list nothing at all (ncp's ListCluster returns nil, nil) yet
+// read a cluster by its SystemId. GetCluster is asked then, and its answer is
+// taken only when it is the cluster asked for, so a driver that answers with
+// another cluster still leaves this one missing.
 func findClusterByID(conn spider.Conn, resourceID string) (*spider.ClusterInfo, error) {
-	clusters, err := spider.ListCluster(conn)
+	clusters, err := listCSPCluster(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -882,7 +930,16 @@ func findClusterByID(conn spider.Conn, resourceID string) (*spider.ClusterInfo, 
 		return cl, nil
 	}
 
-	return nil, cspNotFound("cluster '" + resourceID + "' was not found " + connLabel(conn))
+	msg := "cluster '" + resourceID + "' was not found " + connLabel(conn)
+	cl, getErr := getCSPCluster(conn, resourceID)
+	if getErr != nil {
+		return nil, cspNotFound(msg + " (" + getErr.Error() + ")")
+	}
+	if cl != nil && matchCluster([]spider.ClusterInfo{*cl}, resourceID) != nil {
+		return cl, nil
+	}
+
+	return nil, cspNotFound(msg)
 }
 
 // matchCluster picks the cluster whose identifier is resourceID. SystemId is
@@ -903,13 +960,20 @@ func matchCluster(clusters []spider.ClusterInfo, resourceID string) *spider.Clus
 	return nil
 }
 
+// The managed database calls of the CSP, kept in variables so tests can stand
+// in for it.
+var (
+	listCSPRDBMS = spider.ListRDBMS
+	getCSPDBSpec = spider.GetDBSpec
+)
+
 // findRDBMSByID looks a managed database instance up by the identifier
-// discovery reported for it. It lists and filters, as findClusterByID does,
-// rather than calling the driver's GetRDBMS: drivers' GetRDBMS takes a SystemId,
+// discovery reported for it. It lists and filters, as findClusterByID does
+// first, but does not fall back to the driver's GetRDBMS: drivers' GetRDBMS takes a SystemId,
 // but discovery falls back to NameId when a driver leaves SystemId blank
 // (pickIIDSystem), and only a listing can resolve both.
 func findRDBMSByID(conn spider.Conn, resourceID string) (*spider.RDBMSInfo, error) {
-	instances, err := spider.ListRDBMS(conn)
+	instances, err := listCSPRDBMS(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -942,16 +1006,34 @@ func matchRDBMS(instances []spider.RDBMSInfo, resourceID string) *spider.RDBMSIn
 // lookup is best-effort: without it the refined model leaves CPU and memory
 // empty for cm-beetle to fill in, which is still a usable result, whereas
 // failing here would lose the engine, version and storage as well.
+//
+// The spec is asked for in the zone the instance runs in, when the CSP reports
+// one, rather than in the group's zone: alibaba looks the spec up among the
+// engine versions a zone offers, and in another zone of the region it finds
+// none, which left a database outside the group's zone without CPU and memory.
+//
+// Where the CSP's record of the instance already carries its vCPU count and
+// memory (rdbmsSizeKeys), those are the spec and the spec is not asked for:
+// alibaba's spec lookup can outlast the driver call timeout.
 func collectRDBMS(conn spider.Conn, resourceID string) (model.RDBMSInfo, error) {
 	db, err := findRDBMSByID(conn, resourceID)
 	if err != nil {
 		return model.RDBMSInfo{}, err
 	}
 
+	if spec := rdbmsSpecFromRecord(db); spec != nil {
+		return model.RDBMSInfo{RDBMS: db, DBSpec: spec}, nil
+	}
+
+	specConn := conn
+	if zone := rdbmsZone(db); zone != "" && zone != conn.Zone {
+		specConn.Zone = zone
+	}
+
 	payload := model.RDBMSInfo{RDBMS: db}
-	spec, err := spider.GetDBSpec(conn, db.DBEngine, db.DBSpec)
+	spec, err := getCSPDBSpec(specConn, db.DBEngine, db.DBSpec)
 	if err != nil {
-		logger.Println(logger.WARN, true, "CSP: failed to get db spec '"+db.DBSpec+"' "+connLabel(conn)+": "+err.Error())
+		logger.Println(logger.WARN, true, "CSP: failed to get db spec '"+db.DBSpec+"' "+connLabel(specConn)+": "+err.Error())
 	} else {
 		payload.DBSpec = spec
 	}
@@ -1018,13 +1100,25 @@ const (
 // PUBLIC and keeps the load balancer's own scheme (internet-facing |
 // internal) in KeyValueList, alibaba reports an intranet NLB as PRIVATE, and
 // gcp copies its forwarding rule scheme (EXTERNAL | INTERNAL) when it fills
-// Type.
+// Type. The gcp driver (cb-spider v0.13.23) reads that scheme under another
+// key and leaves Type empty, while the listener's KeyValueList still carries
+// it as LoadBalancingScheme; that is read only when Type and Scheme do not
+// decide.
 func normalizeNLBType(n *spider.NLBInfo) string {
 	t := n.Type
 	if scheme := strings.TrimSpace(keyValueListToMap(n.KeyValueList)["Scheme"]); scheme != "" {
 		t = scheme
 	}
 
+	if typ := nlbTypeOf(t); typ != "" {
+		return typ
+	}
+	return nlbTypeOf(keyValueListToMap(n.Listener.KeyValueList)["LoadBalancingScheme"])
+}
+
+// nlbTypeOf maps one driver spelling of an NLB's exposure to PUBLIC or
+// INTERNAL, or "" when it is not one of them.
+func nlbTypeOf(t string) string {
 	switch strings.ToUpper(strings.TrimSpace(t)) {
 	case "PUBLIC", "EXTERNAL", "INTERNET-FACING":
 		return nlbTypePublic
@@ -1116,7 +1210,7 @@ var (
 func findBucketByName(conn spider.Conn, bucketName string) (*spider.S3BucketInfo, error) {
 	buckets, err := listS3Buckets(conn)
 	if err != nil {
-		return nil, err
+		return nil, s3CredentialMissing(conn, err)
 	}
 
 	found := matchBucket(buckets, bucketName)
@@ -1133,6 +1227,23 @@ func findBucketByName(conn spider.Conn, bucketName string) (*spider.S3BucketInfo
 	}
 
 	return found, nil
+}
+
+// s3CredentialMissingMsg says which keys the source group's credential lacks
+// for object_storage on the provider.
+func s3CredentialMissingMsg(provider string) string {
+	return "object_storage on " + strings.ToLower(provider) + " needs " +
+		strings.Join(optionalCredentialKeys(provider), " and ") + " in the source group credential"
+}
+
+// s3CredentialMissing words an error of the bucket calls that the group's
+// credential has no S3 keys (spider.ErrS3CredentialMissing) as what the group
+// is missing, keeping it marked. Other errors are returned as they are.
+func s3CredentialMissing(conn spider.Conn, err error) error {
+	if !errors.Is(err, spider.ErrS3CredentialMissing) {
+		return err
+	}
+	return cspResourceError{kind: spider.ErrS3CredentialMissing, msg: s3CredentialMissingMsg(conn.Provider)}
 }
 
 // bucketRegionMismatch refuses a bucket that lives outside the source group's
@@ -1225,6 +1336,18 @@ func checkCSPConnection(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
 	return withCSPConn(sg, ci.Zone, func(conn spider.Conn) error {
 		return checkCSPResource(conn, ci)
 	})
+}
+
+// checkNewCSPResource checks a resource a connection is registered for or
+// pointed at: a resource_type the provider is not collected as is refused
+// without asking the CSP, the others go to the CSP check. The refresh of a
+// stored connection asks the CSP only (checkCSP), so a connection stored
+// before the refusal keeps its status as the CSP gives it.
+func checkNewCSPResource(sg *model.SourceGroup, ci *model.ConnectionInfo) error {
+	if err := checkCSPResourceType(sg, ci.ResourceType); err != nil {
+		return err
+	}
+	return checkCSP(sg, ci)
 }
 
 // checkCSPResource is the driver side of checkCSPConnection, given the

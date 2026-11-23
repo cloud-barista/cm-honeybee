@@ -276,7 +276,7 @@
         },
         "/csp/{name}": {
             "get": {
-                "description": "Return the credential keys, regions, and other metadata for the given CSP. Name is matched case-insensitively.",
+                "description": "Return the credential keys, regions, and other metadata for the given CSP. Name is matched case-insensitively. credential_keys must all be given to a csp source group; optional_credential_keys (S3AccessKey, S3SecretKey on ibm, openstack, kt, gcp, nhn and azure) may be given besides, all or none, and object_storage connections of those CSPs need them.",
                 "consumes": [
                     "application/json"
                 ],
@@ -321,7 +321,7 @@
         },
         "/csp/{name}/region": {
             "post": {
-                "description": "Return the CSP's available regions and zones, queried live with the credential in the body, so the region of a csp source group can be chosen before the group exists. The credential takes the keys GET /csp/{name} lists and is neither stored nor logged. The region queried is the CSP's default one for listing.",
+                "description": "Return the CSP's available regions and zones, queried live with the credential in the body, so the region of a csp source group can be chosen before the group exists. The credential takes the keys GET /csp/{name} lists (credential_keys, and optional_credential_keys as a csp source group does) and is neither stored nor logged. The region queried is the CSP's default one for listing.",
                 "consumes": [
                     "application/json"
                 ],
@@ -359,7 +359,7 @@
                         }
                     },
                     "400": {
-                        "description": "Unsupported CSP name, or a credential key missing or not accepted",
+                        "description": "Unsupported CSP name, a credential key missing or not accepted, or one optional key without the other",
                         "schema": {
                             "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse"
                         }
@@ -2874,7 +2874,7 @@
         },
         "/source_group/{sgId}/discover": {
             "get": {
-                "description": "Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Object-storage buckets are limited to the source group's region where the CSP reports a bucket's region (AWS), and carry that region. Used by the UI to populate ConnectionInfo selection.",
+                "description": "Lists VMs / K8s clusters / object-storage buckets / network load balancers / managed databases reachable through the CSP connection bound to this SourceGroup. Object-storage buckets are limited to the source group's region where the CSP reports a bucket's region (AWS), and carry that region. A resource type the CSP's driver has no handler for (k8s, nlb, rdbms) answers 200 with empty items and unsupported true, and so does object_storage on a CSP that reads buckets with S3 keys (GET /csp/{name} optional_credential_keys) when the source group credential has none. Used by the UI to populate ConnectionInfo selection.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5030,11 +5030,7 @@
             "properties": {
                 "interval": {
                     "description": "Zero means to inherit. Durations are expressed as integer nanoseconds.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "retries": {
                     "description": "Retries is the number of consecutive failures needed to consider a container as unhealthy.\nZero means inherit.",
@@ -5042,19 +5038,11 @@
                 },
                 "startInterval": {
                     "description": "The interval to attempt healthchecks at during the start period",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "startPeriod": {
                     "description": "The start period for the container to initialize before the retries starts to count down.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "test": {
                     "description": "Test is the test to perform to check that the container is healthy.\nAn empty slice means to inherit the default.\nThe options are:\n{} : inherit healthcheck\n{\"NONE\"} : disable healthcheck\n{\"CMD\", args...} : exec arguments directly\n{\"CMD-SHELL\", command} : run command with system's default shell",
@@ -5065,11 +5053,7 @@
                 },
                 "timeout": {
                     "description": "Timeout is the time to wait before considering the check to have hung.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 }
             }
         },
@@ -5852,6 +5836,17 @@
                 "key": {
                     "type": "string",
                     "example": "ClientId"
+                },
+                "optional": {
+                    "description": "Optional is true for a key of OptionalCredentialKeys.",
+                    "type": "boolean"
+                },
+                "resource_types": {
+                    "description": "ResourceTypes are the resource_type values an optional key is needed for\n(e.g. [\"object_storage\"]). Empty for a required key, which every\nresource_type needs.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -5859,13 +5854,14 @@
             "type": "object",
             "properties": {
                 "credential_keys": {
+                    "description": "CredentialKeys are the credential keys a csp source group must be given.",
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
                 "credentials": {
-                    "description": "Credentials lists each required credential key with an example value and a\nshort description, so a client can render a self-documenting input form.",
+                    "description": "Credentials lists each required credential key, then each optional one,\nwith an example value and a short description, so a client can render a\nself-documenting input form.",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPCredentialField"
@@ -5877,6 +5873,13 @@
                 "name": {
                     "type": "string",
                     "example": "AWS"
+                },
+                "optional_credential_keys": {
+                    "description": "OptionalCredentialKeys are the credential keys a csp source group may be\ngiven besides CredentialKeys, all of them or none. They are the S3 keys\nbuckets are read with on a CSP whose main keys do not reach its object\nstorage, so object_storage connections need them. Empty for the others.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "region_keys": {
                     "description": "RegionKeys are the keys needed to define a region for this CSP (e.g.\n[\"Region\",\"Zone\"]) - NOT the list of available regions. The actual region\nlist requires a credential; get it via GET /source_group/{sgId}/region,\nor via POST /csp/{name}/region before the group exists.",
@@ -6171,7 +6174,7 @@
                     "type": "string"
                 },
                 "ip_address": {
-                    "description": "SSH fields — required when parent SourceGroup.Type == \"ssh\".",
+                    "description": "SSH fields - required when parent SourceGroup.Type == \"ssh\".",
                     "type": "string"
                 },
                 "kubeconfig": {
@@ -6221,7 +6224,7 @@
                     "type": "string"
                 },
                 "resource_type": {
-                    "description": "CSP fields — required when parent SourceGroup.Type == \"csp\".\nResourceType: \"vm\" | \"k8s\" | \"object_storage\" | \"nlb\" | \"rdbms\".",
+                    "description": "CSP fields - required when parent SourceGroup.Type == \"csp\".\nResourceType: \"vm\" | \"k8s\" | \"object_storage\" | \"nlb\" | \"rdbms\".",
                     "type": "string"
                 },
                 "source_group_id": {
@@ -6344,7 +6347,7 @@
                     "type": "string"
                 },
                 "ip_address": {
-                    "description": "SSH fields — required when parent SourceGroup.Type == \"ssh\".",
+                    "description": "SSH fields - required when parent SourceGroup.Type == \"ssh\".",
                     "type": "string"
                 },
                 "kubeconfig": {
@@ -6386,7 +6389,7 @@
                     "type": "string"
                 },
                 "resource_type": {
-                    "description": "CSP fields — required when parent SourceGroup.Type == \"csp\".",
+                    "description": "CSP fields - required when parent SourceGroup.Type == \"csp\".",
                     "type": "string"
                 },
                 "ssh_port": {
@@ -6810,7 +6813,7 @@
             "type": "object",
             "properties": {
                 "credential": {
-                    "description": "Credential takes the keys GET /csp/{name} lists in credential_keys.",
+                    "description": "Credential takes the keys GET /csp/{name} lists in credential_keys, and\nthe ones in optional_credential_keys as a csp source group does.",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue"
@@ -10015,11 +10018,7 @@
             "properties": {
                 "mode": {
                     "description": "Mode of the tmpfs upon creation",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/os.FileMode"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "options": {
                     "description": "Options to be passed to the tmpfs mount. An array of arrays. Flag\noptions should be provided as 1-length arrays. Other types should be\nprovided as 2-length arrays, where the first item is the key and the\nsecond the value.",
@@ -11106,107 +11105,6 @@
                     "type": "string"
                 }
             }
-        },
-        "os.FileMode": {
-            "type": "integer",
-            "format": "int32",
-            "enum": [
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511,
-                2147483648,
-                1073741824,
-                536870912,
-                268435456,
-                134217728,
-                67108864,
-                33554432,
-                16777216,
-                8388608,
-                4194304,
-                2097152,
-                1048576,
-                524288,
-                2401763328,
-                511
-            ],
-            "x-enum-comments": {
-                "ModeAppend": "a: append-only",
-                "ModeCharDevice": "c: Unix character device, when ModeDevice is set",
-                "ModeDevice": "D: device file",
-                "ModeDir": "d: is a directory",
-                "ModeExclusive": "l: exclusive use",
-                "ModeIrregular": "?: non-regular file; nothing else is known about this file",
-                "ModeNamedPipe": "p: named pipe (FIFO)",
-                "ModePerm": "Unix permission bits, 0o777",
-                "ModeSetgid": "g: setgid",
-                "ModeSetuid": "u: setuid",
-                "ModeSocket": "S: Unix domain socket",
-                "ModeSticky": "t: sticky",
-                "ModeSymlink": "L: symbolic link",
-                "ModeTemporary": "T: temporary file; Plan 9 only"
-            },
-            "x-enum-descriptions": [
-                "d: is a directory",
-                "a: append-only",
-                "l: exclusive use",
-                "T: temporary file; Plan 9 only",
-                "L: symbolic link",
-                "D: device file",
-                "p: named pipe (FIFO)",
-                "S: Unix domain socket",
-                "u: setuid",
-                "g: setgid",
-                "c: Unix character device, when ModeDevice is set",
-                "t: sticky",
-                "?: non-regular file; nothing else is known about this file",
-                "",
-                "Unix permission bits, 0o777"
-            ],
-            "x-enum-varnames": [
-                "ModeDir",
-                "ModeAppend",
-                "ModeExclusive",
-                "ModeTemporary",
-                "ModeSymlink",
-                "ModeDevice",
-                "ModeNamedPipe",
-                "ModeSocket",
-                "ModeSetuid",
-                "ModeSetgid",
-                "ModeCharDevice",
-                "ModeSticky",
-                "ModeIrregular",
-                "ModeType",
-                "ModePerm"
-            ]
         },
         "rdbmsmodel.CloudProperty": {
             "type": "object",
@@ -13234,58 +13132,6 @@
                 }
             }
         },
-        "time.Duration": {
-            "type": "integer",
-            "format": "int64",
-            "enum": [
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                -9223372036854775808,
-                9223372036854775807,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000,
-                1,
-                1000,
-                1000000,
-                1000000000,
-                60000000000,
-                3600000000000
-            ],
-            "x-enum-varnames": [
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "minDuration",
-                "maxDuration",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour",
-                "Nanosecond",
-                "Microsecond",
-                "Millisecond",
-                "Second",
-                "Minute",
-                "Hour"
-            ]
-        },
         "v1.Descriptor": {
             "type": "object",
             "properties": {
@@ -13426,11 +13272,7 @@
             "properties": {
                 "interval": {
                     "description": "Zero means to inherit. Durations are expressed as integer nanoseconds.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "retries": {
                     "description": "Retries is the number of consecutive failures needed to consider a container as unhealthy.\nZero means inherit.",
@@ -13438,19 +13280,11 @@
                 },
                 "startInterval": {
                     "description": "The interval to attempt healthchecks at during the start period",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "startPeriod": {
                     "description": "The start period for the container to initialize before the retries starts to count down.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 },
                 "test": {
                     "description": "Test is the test to perform to check that the container is healthy.\nAn empty slice means to inherit the default.\nThe options are:\n{} : inherit healthcheck\n{\"NONE\"} : disable healthcheck\n{\"CMD\", args...} : exec arguments directly\n{\"CMD-SHELL\", command} : run command with system's default shell",
@@ -13461,11 +13295,7 @@
                 },
                 "timeout": {
                     "description": "Timeout is the time to wait before considering the check to have hung.",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/time.Duration"
-                        }
-                    ]
+                    "type": "integer"
                 }
             }
         },

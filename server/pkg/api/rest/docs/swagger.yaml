@@ -495,23 +495,20 @@ definitions:
   container.HealthConfig:
     properties:
       interval:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: Zero means to inherit. Durations are expressed as integer nanoseconds.
+        type: integer
       retries:
         description: |-
           Retries is the number of consecutive failures needed to consider a container as unhealthy.
           Zero means inherit.
         type: integer
       startInterval:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: The interval to attempt healthchecks at during the start period
+        type: integer
       startPeriod:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: The start period for the container to initialize before the retries
           starts to count down.
+        type: integer
       test:
         description: |-
           Test is the test to perform to check that the container is healthy.
@@ -525,10 +522,9 @@ definitions:
           type: string
         type: array
       timeout:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: Timeout is the time to wait before considering the check to have
           hung.
+        type: integer
     type: object
   container.HealthStatus:
     enum:
@@ -1087,17 +1083,31 @@ definitions:
       key:
         example: ClientId
         type: string
+      optional:
+        description: Optional is true for a key of OptionalCredentialKeys.
+        type: boolean
+      resource_types:
+        description: |-
+          ResourceTypes are the resource_type values an optional key is needed for
+          (e.g. ["object_storage"]). Empty for a required key, which every
+          resource_type needs.
+        items:
+          type: string
+        type: array
     type: object
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPInfo:
     properties:
       credential_keys:
+        description: CredentialKeys are the credential keys a csp source group must
+          be given.
         items:
           type: string
         type: array
       credentials:
         description: |-
-          Credentials lists each required credential key with an example value and a
-          short description, so a client can render a self-documenting input form.
+          Credentials lists each required credential key, then each optional one,
+          with an example value and a short description, so a client can render a
+          self-documenting input form.
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.CSPCredentialField'
         type: array
@@ -1106,6 +1116,15 @@ definitions:
       name:
         example: AWS
         type: string
+      optional_credential_keys:
+        description: |-
+          OptionalCredentialKeys are the credential keys a csp source group may be
+          given besides CredentialKeys, all of them or none. They are the S3 keys
+          buckets are read with on a CSP whose main keys do not reach its object
+          storage, so object_storage connections need them. Empty for the others.
+        items:
+          type: string
+        type: array
       region_keys:
         description: |-
           RegionKeys are the keys needed to define a region for this CSP (e.g.
@@ -1326,7 +1345,7 @@ definitions:
       id:
         type: string
       ip_address:
-        description: SSH fields — required when parent SourceGroup.Type == "ssh".
+        description: SSH fields - required when parent SourceGroup.Type == "ssh".
         type: string
       kubeconfig:
         description: Kubeconfig — on-prem k8s credential (Type onprem + ResourceType
@@ -1378,7 +1397,7 @@ definitions:
         type: string
       resource_type:
         description: |-
-          CSP fields — required when parent SourceGroup.Type == "csp".
+          CSP fields - required when parent SourceGroup.Type == "csp".
           ResourceType: "vm" | "k8s" | "object_storage" | "nlb" | "rdbms".
         type: string
       source_group_id:
@@ -1478,7 +1497,7 @@ definitions:
           "/" collects the whole host.
         type: string
       ip_address:
-        description: SSH fields — required when parent SourceGroup.Type == "ssh".
+        description: SSH fields - required when parent SourceGroup.Type == "ssh".
         type: string
       kubeconfig:
         description: Kubeconfig — required when on-prem + ResourceType "k8s".
@@ -1507,7 +1526,7 @@ definitions:
       resource_id:
         type: string
       resource_type:
-        description: CSP fields — required when parent SourceGroup.Type == "csp".
+        description: CSP fields - required when parent SourceGroup.Type == "csp".
         type: string
       ssh_port:
         type: string
@@ -1813,7 +1832,9 @@ definitions:
   github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListCSPRegionReq:
     properties:
       credential:
-        description: Credential takes the keys GET /csp/{name} lists in credential_keys.
+        description: |-
+          Credential takes the keys GET /csp/{name} lists in credential_keys, and
+          the ones in optional_credential_keys as a csp source group does.
         items:
           $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.KeyValue'
         type: array
@@ -4221,9 +4242,8 @@ definitions:
   mount.TmpfsOptions:
     properties:
       mode:
-        allOf:
-        - $ref: '#/definitions/os.FileMode'
         description: Mode of the tmpfs upon creation
+        type: integer
       options:
         description: |-
           Options to be passed to the tmpfs mount. An array of arrays. Flag
@@ -5013,102 +5033,6 @@ definitions:
         description: Optionally stores the source address (used for policy-based routing)
         type: string
     type: object
-  os.FileMode:
-    enum:
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    - 2147483648
-    - 1073741824
-    - 536870912
-    - 268435456
-    - 134217728
-    - 67108864
-    - 33554432
-    - 16777216
-    - 8388608
-    - 4194304
-    - 2097152
-    - 1048576
-    - 524288
-    - 2401763328
-    - 511
-    format: int32
-    type: integer
-    x-enum-comments:
-      ModeAppend: 'a: append-only'
-      ModeCharDevice: 'c: Unix character device, when ModeDevice is set'
-      ModeDevice: 'D: device file'
-      ModeDir: 'd: is a directory'
-      ModeExclusive: 'l: exclusive use'
-      ModeIrregular: '?: non-regular file; nothing else is known about this file'
-      ModeNamedPipe: 'p: named pipe (FIFO)'
-      ModePerm: Unix permission bits, 0o777
-      ModeSetgid: 'g: setgid'
-      ModeSetuid: 'u: setuid'
-      ModeSocket: 'S: Unix domain socket'
-      ModeSticky: 't: sticky'
-      ModeSymlink: 'L: symbolic link'
-      ModeTemporary: 'T: temporary file; Plan 9 only'
-    x-enum-descriptions:
-    - 'd: is a directory'
-    - 'a: append-only'
-    - 'l: exclusive use'
-    - 'T: temporary file; Plan 9 only'
-    - 'L: symbolic link'
-    - 'D: device file'
-    - 'p: named pipe (FIFO)'
-    - 'S: Unix domain socket'
-    - 'u: setuid'
-    - 'g: setgid'
-    - 'c: Unix character device, when ModeDevice is set'
-    - 't: sticky'
-    - '?: non-regular file; nothing else is known about this file'
-    - ""
-    - Unix permission bits, 0o777
-    x-enum-varnames:
-    - ModeDir
-    - ModeAppend
-    - ModeExclusive
-    - ModeTemporary
-    - ModeSymlink
-    - ModeDevice
-    - ModeNamedPipe
-    - ModeSocket
-    - ModeSetuid
-    - ModeSetgid
-    - ModeCharDevice
-    - ModeSticky
-    - ModeIrregular
-    - ModeType
-    - ModePerm
   rdbmsmodel.CloudProperty:
     properties:
       csp:
@@ -6579,55 +6503,6 @@ definitions:
     required:
     - bucketName
     type: object
-  time.Duration:
-    enum:
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
-    format: int64
-    type: integer
-    x-enum-varnames:
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
   v1.Descriptor:
     properties:
       annotations:
@@ -6747,23 +6622,20 @@ definitions:
   v1.HealthcheckConfig:
     properties:
       interval:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: Zero means to inherit. Durations are expressed as integer nanoseconds.
+        type: integer
       retries:
         description: |-
           Retries is the number of consecutive failures needed to consider a container as unhealthy.
           Zero means inherit.
         type: integer
       startInterval:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: The interval to attempt healthchecks at during the start period
+        type: integer
       startPeriod:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: The start period for the container to initialize before the retries
           starts to count down.
+        type: integer
       test:
         description: |-
           Test is the test to perform to check that the container is healthy.
@@ -6777,10 +6649,9 @@ definitions:
           type: string
         type: array
       timeout:
-        allOf:
-        - $ref: '#/definitions/time.Duration'
         description: Timeout is the time to wait before considering the check to have
           hung.
+        type: integer
     type: object
   v1.Platform:
     properties:
@@ -7003,7 +6874,10 @@ paths:
       consumes:
       - application/json
       description: Return the credential keys, regions, and other metadata for the
-        given CSP. Name is matched case-insensitively.
+        given CSP. Name is matched case-insensitively. credential_keys must all be
+        given to a csp source group; optional_credential_keys (S3AccessKey, S3SecretKey
+        on ibm, openstack, kt, gcp, nhn and azure) may be given besides, all or none,
+        and object_storage connections of those CSPs need them.
       operationId: get-csp
       parameters:
       - description: CSP name (case-insensitive, e.g. aws or AWS)
@@ -7036,6 +6910,7 @@ paths:
       description: Return the CSP's available regions and zones, queried live with
         the credential in the body, so the region of a csp source group can be chosen
         before the group exists. The credential takes the keys GET /csp/{name} lists
+        (credential_keys, and optional_credential_keys as a csp source group does)
         and is neither stored nor logged. The region queried is the CSP's default
         one for listing.
       operationId: list-csp-regions
@@ -7059,7 +6934,8 @@ paths:
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_model.ListRegionRes'
         "400":
-          description: Unsupported CSP name, or a credential key missing or not accepted
+          description: Unsupported CSP name, a credential key missing or not accepted,
+            or one optional key without the other
           schema:
             $ref: '#/definitions/github_com_cloud-barista_cm-honeybee_server_pkg_api_rest_common.ErrorResponse'
         "500":
@@ -8790,7 +8666,11 @@ paths:
         balancers / managed databases reachable through the CSP connection bound to
         this SourceGroup. Object-storage buckets are limited to the source group's
         region where the CSP reports a bucket's region (AWS), and carry that region.
-        Used by the UI to populate ConnectionInfo selection.
+        A resource type the CSP's driver has no handler for (k8s, nlb, rdbms) answers
+        200 with empty items and unsupported true, and so does object_storage on a
+        CSP that reads buckets with S3 keys (GET /csp/{name} optional_credential_keys)
+        when the source group credential has none. Used by the UI to populate ConnectionInfo
+        selection.
       operationId: discover-source-group-resources
       parameters:
       - description: ID of the SourceGroup (must be type=csp)
